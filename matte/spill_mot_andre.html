@@ -3,9 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Ligningsspillet - Flerspiller</title>
-    <!-- SIKRE SKRIPT SOM FUNGERER LIVE OVERALLT (PORT 443) -->
-    <script src="gstatic.com"></script>
-    <script src="gstatic.com"></script>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
         .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0 0 0; }
@@ -14,6 +11,11 @@
         
         .game-header { text-align: center; margin-bottom: 10px; }
         .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
+        
+        /* Flerspiller-statuslinje */
+        .multiplayer-status { background: #34495e; color: white; padding: 12px 20px; border-radius: 8px; display: flex; gap: 20px; align-items: center; margin-bottom: 15px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .car-badge { background: #e67e22; padding: 4px 10px; border-radius: 4px; font-size: 1.1rem; border: 1px solid #d35400; color: white; }
+
         .controls { margin: 10px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
         .control-group { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; border-right: 1px solid #ddd; }
         .control-group:last-child { border-right: none; }
@@ -22,7 +24,6 @@
         .demo-panel { background: #e8f4f8; border: 1px solid #2980b9; display: none; }
         .input-row { display: flex; gap: 5px; align-items: center; }
 
-        .car-badge { background: #2980b9; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
         select, input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         button { cursor: pointer; padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; font-weight: bold; }
         .btn-op { background: #e67e22; color: white; border: none; }
@@ -69,28 +70,32 @@
     </div>
 
     <div class="game-header">
-        <h1>Ligningsspillet: Flerspiler-modus</h1>
+        <h1>Ligningsspillet: Flerspiller-modus</h1>
+    </div>
+
+    <!-- Live statuslinje for rommet -->
+    <div class="multiplayer-status">
+        <div>Din bil: <span id="carNameText" class="car-badge">Genererer...</span></div>
+        <div style="border-left: 2px solid #555; padding-left: 15px;">
+            <input type="text" id="roomCodeInput" placeholder="Skriv inn romkode" style="width: 130px; font-weight: bold; text-transform: uppercase;">
+            <button onclick="window.connectToRoom()" style="background: #27ae60; color: white; border: none; padding: 6px 12px;">Koble til</button>
+        </div>
     </div>
 
     <div class="level-bar">
-        <div><strong>Din bil:</strong> <span id="myCarName" class="car-badge">Genererer...</span></div>
+        <label for="levelSelect"><strong>Velg nivå:</strong></label>
+        <select id="levelSelect" onchange="changeLevel(this.value)">
+            <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
+            <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
+            <option value="3">Nivå 3: Flere ledd og samling (ax+b=cx+d)</option>
+            <option value="4">Nivå 4: Enkle brøker</option>
+            <option value="5">Nivå 5: Avanserte brøker</option>
+            <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
+        </select>
+        <span id="streakDisplay" style="color: #27ae60; font-weight: bold;">Seire på rad: 0/6</span>
         <div style="margin-left: 20px;">
-            <input type="text" id="roomCodeInput" placeholder="Skriv inn romkode" style="width: 120px; text-transform: uppercase;">
-            <button onclick="connectToRoom()" style="background: #2980b9; color: white; border: none;">Koble til rom</button>
-        </div>
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
-            <label for="levelSelect"><strong>Nivå:</strong></label>
-            <select id="levelSelect" onchange="changeLevel(this.value)">
-                <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
-                <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
-                <option value="3">Nivå 3: Flere ledd og samling</option>
-                <option value="4">Nivå 4: Enkle brøker</option>
-                <option value="5">Nivå 5: Avanserte brøker</option>
-                <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
-            </select>
-            <span id="streakDisplay" style="color: #27ae60; font-weight: bold;">Seire: 0/6</span>
             <input type="checkbox" id="demoPanelToggle" onchange="toggleDemoPanel()">
-            <label for="demoPanelToggle">Bygg selv (frimodus)</label>
+            <label for="demoPanelToggle"><strong>Bygg selv (frimodus)</strong></label>
         </div>
     </div>
 
@@ -99,7 +104,7 @@
 
     <div class="controls">
         <div id="demoPanel" class="control-group demo-panel">
-            <strong>Bygg (Venstre)</strong>
+            <strong>Legg til (Venstre)</strong>
             <div class="input-row"><input type="number" id="x-qty-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'x')">+ X</button></div>
             <div class="input-row"><input type="number" id="val-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'num')">+ Tall</button></div>
         </div>
@@ -122,7 +127,7 @@
         </div>
 
         <div id="demoPanelRight" class="control-group demo-panel" style="border-left:none;">
-            <strong>Bygg (Høyre)</strong>
+            <strong>Legg til (Høyre)</strong>
             <div class="input-row"><input type="number" id="x-qty-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'x')">+ X</button></div>
             <div class="input-row"><input type="number" id="val-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'num')">+ Tall</button></div>
         </div>
@@ -141,26 +146,27 @@
         <button id="splitBtn" onclick="menuSplitInTwo()">⚏ Splitt opp i to deler</button>
     </div>
 
-    <script>
-        // FIREBASE INSTILLINGER SATT OPP LIVE UTEN PROBEMER
+    <!-- EKSTERNE BIBLIOTEKER LASTES SIKKERT VIA UNPKG SÅ DE ALDRI BLIR 404 ELLER CORS -->
+    <script type="module">
+        import { initializeApp } from "unpkg.com";
+        import { getDatabase, ref, set, update } from "unpkg.com";
+
+        // FIREBASE CONFIG MED EKTE ENDEPUNKT I BELGIA (EUROPE-WEST1)
         const firebaseConfig = {
             apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
             authDomain: "firebaseapp.com",
-            databaseURL: "firebaseio.com",
+            databaseURL: "firebasedatabase.app",
             projectId: "likningsspill",
             storageBucket: "likningsspill.firebasestorage.app",
             messagingSenderId: "630190192081",
             appId: "1:630190192081:web:71968d390422ace3f15cf0"
         };
 
-        // Bilnavn-generator plassert slik at den kjører absolutt umiddelbart
-        const adjectives = ["Raske", "Lynraske", "Smidige", "Gylne", "Smarte", "Tøffe", "Ivrige", "Viltre", "Kvikke", "Magiske"];
-        const animals = ["Gaupe", "Rev", "Ulv", "Bjørn", "Grevling", "Hauk", "Ørn", "Oter", "Ugle", "Leopard"];
-        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-        const randomAnim = animals[Math.floor(Math.random() * animals.length)];
-        const myCarName = randomAdj + " " + randomAnim;
-        document.getElementById("myCarName").innerText = myCarName;
+        // Start Firebase-motoren trygt
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
+        // --- MANGLENDE ALGEBRA-LOGIKK, NAVNEGENERATOR OG MOTOR ---
         let sides = { left: [], right: [] };
         let xValue = 0; 
         let idCounter = 0;
@@ -168,23 +174,24 @@
         let currentLevel = 1;
         let winStreak = 0;
         let activeMenuTarget = null;
-        let db = null;
 
-        // Start Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.database();
-        } catch(e) {
-            console.error("Kunne ikke koble til Firebase:", e);
-        }
+        // Anonym navnegenerator
+        const adjectives = ["Raske", "Lynraske", "Smidige", "Gylne", "Smarte", "Tøffe", "Ivrige", "Viltre", "Kvikke", "Magiske"];
+        const animals = ["Gaupe", "Rev", "Ulv", "Bjørn", "Ettbein", "Grevling", "Hauk", "Ørn", "Oter", "Ugle"];
+        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomAnim = animals[Math.floor(Math.random() * animals.length)];
+        const myCarName = randomAdj + " " + randomAnim;
 
-        function toggleDemoPanel() {
+        // Skriv bilnavnet til statuslinjen umiddelbart
+        document.getElementById("carNameText").innerText = myCarName;
+
+        window.toggleDemoPanel = function() {
             const show = document.getElementById('demoPanelToggle').checked;
             document.getElementById('demoPanel').style.display = show ? 'flex' : 'none';
             document.getElementById('demoPanelRight').style.display = show ? 'flex' : 'none';
         }
 
-        function manualAdd(side, type) {
+        window.manualAdd = function(side, type) {
             saveHistory();
             if (type === 'x') {
                 const qty = parseFloat(document.getElementById(`x-qty-${side}`).value);
@@ -238,12 +245,6 @@
             }}
         };
 
-        window.onload = function() {
-            let savedLevel = localStorage.getItem('ligningsSpill_level');
-            if (savedLevel) { currentLevel = parseInt(savedLevel); document.getElementById('levelSelect').value = currentLevel; }
-            updateStreakDisplay(); initGame();
-        };
-
         function initGame() {
             sides.left = []; sides.right = []; history = [];
             document.getElementById('undoBtn').disabled = true;
@@ -252,52 +253,51 @@
             render();
         }
 
-        function skipToNewTask() {
+        window.skipToNewTask = function() {
             if (winStreak > 0) {
                 let confirmSkip = confirm("Er du sikker? Seire på rad vil bli nullstilt.");
                 if (!confirmSkip) return;
             }
-            winStreak = 0; updateStreakDisplay(); initGame(); syncToFirebase();
+            winStreak = 0; updateStreakDisplay(); syncProgressToFirebase(); initGame();
         }
 
-        function changeLevel(val) {
+        window.changeLevel = function(val) {
             currentLevel = parseInt(val); localStorage.setItem('ligningsSpill_level', currentLevel);
-            winStreak = 0; updateStreakDisplay(); initGame(); syncToFirebase();
+            winStreak = 0; updateStreakDisplay(); syncProgressToFirebase(); initGame();
         }
 
         function updateStreakDisplay() {
-            document.getElementById('streakDisplay').innerText = `Seire: ${winStreak}/${levels[currentLevel].targetStreak}`;
+            document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/${levels[currentLevel].targetStreak}`;
         }
 
-        function checkSolution() {
+        window.checkSolution = function() {
             let isSolved = false;
-            if (sides.left.length === 1 && sides.left[0].type === 'x' && sides.left[0].num === 1 && sides.left[0].den === 1 && sides.right.length === 1 && sides.right[0].type === 'number') {
-                let finalVal = sides.right[0].num / sides.right[0].den;
+            if (sides.left.length === 1 && sides.left.type === 'x' && sides.left.num === 1 && sides.left.den === 1 && sides.right.length === 1 && sides.right.type === 'number') {
+                let finalVal = sides.right.num / sides.right.den;
                 if (Math.abs(finalVal - xValue) < 0.01) isSolved = true;
             }
             if (isSolved) {
-                winStreak++; updateStreakDisplay();
+                winStreak++; updateStreakDisplay(); syncProgressToFirebase();
                 if (winStreak >= levels[currentLevel].targetStreak && currentLevel < 6) {
                     alert("Fantastisk! Du flyttes opp til neste nivå!");
                     currentLevel++; document.getElementById('levelSelect').value = currentLevel;
-                    localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay();
+                    localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay(); syncProgressToFirebase();
                 } else if (winStreak >= levels[currentLevel].targetStreak && currentLevel === 6) {
-                    alert("Utrolig bra! Du har fullført hele spillet!"); winStreak = 0; updateStreakDisplay();
+                    alert("Utrolig bra! Du har fullført spillet!"); winStreak = 0; updateStreakDisplay(); syncProgressToFirebase();
                 } else { alert("Riktig svar! Bra jobbet."); }
                 initGame();
             } else {
                 alert("For å løse ligningen må du isolere én positiv X alene på venstre skål, og kun ha tall på høyre skål.");
-                winStreak = 0; updateStreakDisplay();
+                winStreak = 0; updateStreakDisplay(); syncProgressToFirebase();
             }
-            syncToFirebase();
         }
 
         function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
         function createFraction(num, den) { if (den === 0) return { num: 0, den: 1 }; let g = gcd(num, den); let fN = num / g; let fD = den / g; if (fD < 0) { fN *= -1; fD *= -1; } return { num: fN, den: fD }; }
         function saveHistory() { history.push(JSON.stringify({ sides: JSON.parse(JSON.stringify(sides)), idCounter })); document.getElementById('undoBtn').disabled = false; }
-        function undo() { if (history.length === 0) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(false); if (history.length === 0) document.getElementById('undoBtn').disabled = true; }
+        window.undo = function() { if (history.length === 0) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(false); if (history.length === 0) document.getElementById('undoBtn').disabled = true; }
 
-        function operate(type) {
+        window.operate = function(type) {
             saveHistory();
             const rawVal = document.getElementById('op-val').value.trim();
             ['left', 'right'].forEach(side => {
@@ -322,8 +322,8 @@
             render();
         }
 
-        function drag(ev, side, id) { ev.dataTransfer.setData("text", JSON.stringify({ side, id })); }
-        function drop(ev, targetSide) {
+        window.drag = function(ev, side, id) { ev.dataTransfer.setData("text", JSON.stringify({ side, id })); }
+        window.drop = function(ev, targetSide) {
             ev.preventDefault(); const data = JSON.parse(ev.dataTransfer.getData("text"));
             const sourceSide = data.side; const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
             if (sourceIdx === -1) return;
@@ -342,8 +342,8 @@
             render();
         }
 
-        function menuInvert() { if (!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
-        function menuSplitInTwo() {
+        window.menuInvert = function() { if (!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
+        window.menuSplitInTwo = function() {
             if (!activeMenuTarget) return; saveHistory(); const item = activeMenuTarget.item; const sideList = sides[activeMenuTarget.side];
             let part1 = item.num > 0 ? Math.ceil(item.num / 2) : Math.floor(item.num / 2); let part2 = item.num - part1;
             const idx = sideList.findIndex(i => i.id === item.id); sideList.splice(idx, 1);
@@ -393,22 +393,12 @@
                 });
             });
             
-            const display = document.getElementById('math');
-            if (display) {
-                display.innerHTML = '';
-                display.appendChild(buildHTMLSide(sides.left));
-                const eqSign = document.createElement('span'); eqSign.innerText = ' = '; display.appendChild(eqSign);
-                display.appendChild(buildHTMLSide(sides.right));
-            }
+            const display = document.getElementById('math'); display.innerHTML = '';
+            display.appendChild(buildHTMLSide(sides.left));
+            const eqSign = document.createElement('span'); eqSign.innerText = ' = '; display.appendChild(eqSign);
+            display.appendChild(buildHTMLSide(sides.right));
             
             let L = getTotals('left'), R = getTotals('right');
             let diff = (R.xs * xValue + R.units) - (L.xs * xValue + L.units);
             let angle = Math.min(Math.max(diff * 4, -25), 25);
-            document.getElementById('beam').style.transform = `rotate(${angle}deg)`;
-            document.getElementById('pan-left').style.transform = `rotate(${-angle}deg)`;
-            document.getElementById('pan-right').style.transform = `rotate(${-angle}deg)`;
-        }
-
-        function buildHTMLSide(items) {
-            const container = document.createElement('span'); container.className = 'math-side';
-            if (items.length === 0) { container.innerText = '0
+            document.getElementById('beam').style
