@@ -111,7 +111,19 @@
             align-items: center; justify-content: center; font-size: 0.8rem;
             box-shadow: 0 3px 0 rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
             user-select: none;
+            transition: transform 0.2s;
         }
+        
+        /* NY HIGHLIGHT ANIMASJON */
+        .new-item-glow {
+            animation: highlightGlow 2s ease-out;
+        }
+
+        @keyframes highlightGlow {
+            0% { box-shadow: 0 0 20px var(--math-green); transform: scale(1.1); border-color: var(--math-green); }
+            100% { box-shadow: 0 3px 0 rgba(0,0,0,0.4); transform: scale(1); border-color: rgba(255,255,255,0.1); }
+        }
+
         .box-x { background: #d35400; } .box-x-neg { background: #c0392b; }
         .val-pos { background: #2980b9; } .val-neg { background: #8e44ad; }
         
@@ -160,7 +172,6 @@
 
     <div class="cockpit">
         <div class="main-dash">
-            <!-- Byggepanel Venstre -->
             <div id="panelL" class="manual-side">
                 <strong>VENSTRE</strong>
                 <input type="number" id="qtyL" value="1">
@@ -168,10 +179,8 @@
                 <button onclick="addManual('left','num')">+ Tall</button>
             </div>
 
-            <!-- Venstre Instrument -->
             <div id="gaugeL" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'left')"></div>
 
-            <!-- Midtkonsoll (Kortere knapper) -->
             <div class="center-console">
                 <div class="gear-indicator" id="gearDisplay">1</div>
                 
@@ -187,10 +196,8 @@
                 <a href="https://bjarneelb.github.io/ligningsvekt/index.html" class="car-btn btn-home">Hjem</a>
             </div>
 
-            <!-- Høyre Instrument -->
             <div id="gaugeR" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'right')"></div>
 
-            <!-- Byggepanel Høyre -->
             <div id="panelR" class="manual-side">
                 <strong>HØYRE</strong>
                 <input type="number" id="qtyR" value="1">
@@ -243,7 +250,7 @@
     </script>
 
     <script>
-        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0, activeMenuTarget = null;
+        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0, activeMenuTarget = null, lastAddedId = null;
 
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
         function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
@@ -258,7 +265,7 @@
         };
 
         function initGame() {
-            sides = { left: [], right: [] }; history = []; idCounter = 0;
+            sides = { left: [], right: [] }; history = []; idCounter = 0; lastAddedId = null;
             const lvl = levels[currentLevel] || levels[1];
             lvl.generate(); render();
         }
@@ -270,7 +277,13 @@
                 sides[side].forEach(item => {
                     const div = document.createElement('div');
                     let isNeg = item.num < 0;
-                    div.className = 'item ' + (item.type==='x' ? (isNeg?'box-x-neg':'box-x') : (item.type==='inv-x'?'box-inv-x' : (isNeg?'val-neg':'val-pos')));
+                    let classList = 'item ' + (item.type==='x' ? (isNeg?'box-x-neg':'box-x') : (item.type==='inv-x'?'box-inv-x' : (isNeg?'val-neg':'val-pos')));
+                    
+                    if (item.id === lastAddedId) {
+                        classList += ' new-item-glow';
+                    }
+
+                    div.className = classList;
                     div.draggable = true; div.setAttribute('data-id', item.id);
                     div.innerHTML = getBoxHTML(item);
                     
@@ -338,6 +351,8 @@
             if(sourceIdx === -1) return;
             const item = sides[sourceSide][sourceIdx];
 
+            lastAddedId = item.id; // Highlight flyttet element
+
             const targetEl = ev.target.closest('.item');
             if(targetEl && sourceSide === targetSide) {
                 const targetId = parseInt(targetEl.getAttribute('data-id'));
@@ -348,6 +363,7 @@
                     targetItem.num = f.num; targetItem.den = f.den;
                     sides[sourceSide].splice(sourceIdx, 1);
                     if(targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
+                    lastAddedId = targetItem.id; // Highlight sammenslått element
                     render(); return;
                 }
             }
@@ -366,6 +382,7 @@
             const val = parseInt(document.getElementById('opVal').value);
             if(isNaN(val) || val === 0) return;
             saveHistory();
+            lastAddedId = null; // Operasjon endrer alt, fjerner spesifikk highlight
             ['left', 'right'].forEach(s => {
                 sides[s] = sides[s].map(i => {
                     let f = type==='multiply' ? createFraction(i.num*val, i.den) : createFraction(i.num, i.den*val);
@@ -389,16 +406,41 @@
         window.addManual = function(side, type) {
             saveHistory();
             const qty = parseInt(document.getElementById('qty' + (side === 'left' ? 'L' : 'R')).value);
-            sides[side].push({ id: idCounter++, type: type === 'x' ? 'x' : 'number', num: qty, den: 1 });
+            const newItem = { id: idCounter++, type: type === 'x' ? 'x' : 'number', num: qty, den: 1 };
+            lastAddedId = newItem.id; // Highlight nylig lagt til element
+            sides[side].push(newItem);
             render();
         };
 
         function saveHistory() { history.push(JSON.stringify({ sides: JSON.parse(JSON.stringify(sides)), idCounter })); }
-        window.undo = function() { if(!history.length) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(); };
+        window.undo = function() { 
+            if(!history.length) return; 
+            const s = JSON.parse(history.pop()); 
+            sides = s.sides; idCounter = s.idCounter; 
+            lastAddedId = null; 
+            render(); 
+        };
         window.initGame = initGame;
 
-        window.menuInvert = function() { if(!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); };
-        window.menuSplit = function() { if(!activeMenuTarget) return; saveHistory(); let i = activeMenuTarget.item; let p1 = Math.ceil(i.num/2), p2 = i.num - p1; sides[activeMenuTarget.side].splice(sides[activeMenuTarget.side].indexOf(i), 1); sides[activeMenuTarget.side].push({id: idCounter++, type: i.type, num: p1, den: i.den}, {id: idCounter++, type: i.type, num: p2, den: i.den}); render(); };
+        window.menuInvert = function() { 
+            if(!activeMenuTarget) return; 
+            saveHistory(); 
+            activeMenuTarget.item.num *= -1; 
+            lastAddedId = activeMenuTarget.item.id;
+            render(); 
+        };
+        window.menuSplit = function() { 
+            if(!activeMenuTarget) return; 
+            saveHistory(); 
+            let i = activeMenuTarget.item; 
+            let p1 = Math.ceil(i.num/2), p2 = i.num - p1; 
+            sides[activeMenuTarget.side].splice(sides[activeMenuTarget.side].indexOf(i), 1); 
+            const newItem1 = {id: idCounter++, type: i.type, num: p1, den: i.den};
+            const newItem2 = {id: idCounter++, type: i.type, num: p2, den: i.den};
+            sides[activeMenuTarget.side].push(newItem1, newItem2);
+            lastAddedId = null; // Begge er nye, dropper highlight her
+            render(); 
+        };
         
         document.addEventListener('click', () => document.getElementById('customMenu').style.display = 'none');
     </script>
