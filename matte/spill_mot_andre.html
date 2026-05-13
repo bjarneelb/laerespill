@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>Ligningsspillet - Flerspiller</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
+        .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0 0 0; }
+        .btn-back { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; }
+        .btn-back:hover { background: #c0392b; transform: translateY(-1px); }
+        
+        .game-header { text-align: center; margin-bottom: 10px; }
+        .setup-bar { background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 15px; min-width: 510px; }
+        .setup-row { display: flex; gap: 15px; align-items: center; width: 100%; justify-content: center; }
+        .controls { margin: 10px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
+        .control-group { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; border-right: 1px solid #ddd; }
+        .control-group:last-child { border-right: none; }
+        .operation-group { background: #fdf2e9; padding: 10px; border-radius: 8px; border: 1px solid #e67e22; text-align: center; }
+        
+        .demo-panel { background: #e8f4f8; border: 1px solid #2980b9; display: none; }
+        .input-row { display: flex; gap: 5px; align-items: center; }
+
+        select, input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { cursor: pointer; padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; font-weight: bold; }
+        .btn-op { background: #e67e22; color: white; border: none; }
+        .btn-eq { background: #27ae60; color: white; border: none; }
+        .btn-new-task { background: #2980b9; color: white; border: none; }
+        .btn-new-task:hover { background: #1f6391; }
+        .btn-undo { background: #34495e; color: white; border: none; }
+        .btn-undo:disabled { background: #bdc3c7; cursor: not-allowed; }
+
+        .task-box { background: #2c3e50; color: white; padding: 15px; border-radius: 8px; font-size: 1.4rem; margin-bottom: 15px; width: 550px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .math-display { font-family: monospace; background: #1a1a1a; color: #4af626; padding: 15px; border-radius: 8px; font-size: 1.6rem; min-width: 550px; box-shadow: inset 0 0 10px #000; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .math-side { display: inline-flex; align-items: center; gap: 8px; }
+        .math-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; padding: 0 4px; }
+        .math-num { border-bottom: 2px solid #4af626; text-align: center; width: 100%; padding-bottom: 2px; }
+        .math-den { text-align: center; width: 100%; padding-top: 2px; }
+
+        /* Sideliste for å se andre spillere */
+        .leaderboard-box { margin-top: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); min-width: 550px; text-align: left; }
+        .leaderboard-title { font-weight: bold; font-size: 1.1rem; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 50x; }
+        .player-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.95rem; }
+
+        .balance-container { position: relative; width: 850px; height: 400px; margin-top: 30px; }
+        .base { position: absolute; bottom: 0; left: 400px; width: 50px; height: 250px; background: #34495e; border-radius: 8px 8px 0 0; }
+        .beam { position: absolute; top: 100px; left: 75px; width: 700px; height: 12px; background: #7f8c8d; transition: transform 0.6s ease-in-out; transform-origin: center; display: flex; justify-content: space-between; }
+        .pan { position: absolute; top: 12px; width: 240px; min-height: 150px; background: rgba(0,0,0,0.05); border-top: 4px solid #444; border-radius: 0 0 20px 20px; transition: transform 0.6s ease-in-out; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 10px; padding: 15px; }
+        #pan-left { left: -120px; } #pan-right { right: -120px; }
+
+        .item { min-width: 50px; height: 50px; padding: 0 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; border-radius: 8px; color: white; cursor: grab; user-select: none; text-align: center; font-size: 14px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
+        .box-x { background: #d35400; border: 2px solid #a04000; }
+        .box-x-neg { background: #e74c3c; border: 2px solid #c0392b; }
+        .val-pos { background: #2980b9; border: 2px solid #1c5982; }
+        .val-neg { background: #c0392b; border: 2px solid #7b241c; }
+        .box-inv-x { background: #9b59b6; border: 2px solid #6c3483; }
+        
+        .fraction { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; padding: 2px 0; }
+        .numerator { border-bottom: 1px solid white; padding-bottom: 2px; text-align: center; width: 100%; }
+        .denominator { padding-top: 2px; text-align: center; width: 100%; }
+
+        .context-menu { display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; padding: 5px 0; }
+        .context-menu button { display: block; width: 100%; border: none; background: none; text-align: left; padding: 8px 12px; cursor: pointer; font-size: 14px; }
+        .context-menu button:hover { background: #f0f2f5; }
+    </style>
+
+    <!-- HENT FIREBASE FRA GOOGLE SIN TJENER OVER PORT 443 -->
+    <script src="gstatic.com"></script>
+    <script src="gstatic.com"></script>
+</head>
+<body>
+
+    <div class="top-navigation">
+        <a href="index.html" class="btn-back">⬅ Tilbake til menyen</a>
+    </div>
+
+    <div class="game-header">
+        <h1>Flerspiller: Ligningskampen</h1>
+    </div>
+
+    <div class="setup-bar">
+        <div class="setup-row">
+            <div>Din bil: <strong id="carNameDisplay" style="color: #2980b9;">Genererer...</strong></div>
+            <div>
+                <input type="text" id="roomInput" placeholder="Skriv romkode (f.eks MATTE1)" style="text-transform: uppercase; width: 200px;">
+                <button onclick="joinRoom()" style="background: #2c3e50; color: white; border: none;">Koble til rom</button>
+            </div>
+        </div>
+        <div class="setup-row" style="font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 8px; width: 100%;">
+            <label for="levelSelect"><strong>Nivå:</strong></label>
+            <select id="levelSelect" onchange="changeLevel(this.value)">
+                <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
+                <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
+                <option value="3">Nivå 3: Flere ledd og samling (ax+b=cx+d)</option>
+                <option value="4">Nivå 4: Enkle brøker</option>
+                <option value="5">Nivå 5: Avanserte brøker</option>
+                <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
+            </select>
+            <span id="streakDisplay" style="color: #27ae60; margin-left: auto;">Seire på rad: 0/6</span>
+            <div style="margin-left: 15px;">
+                <input type="checkbox" id="demoPanelToggle" onchange="toggleDemoPanel()">
+                <label for="demoPanelToggle">Bygg selv (frimodus)</label>
+            </div>
+        </div>
+    </div>
+
+    <div id="taskText" class="task-box">Koble til et rom over for å starte ligningskampen!</div>
+    <div id="math" class="math-display"></div>
+
+    <div class="controls">
+        <div id="demoPanel" class="control-group demo-panel">
+            <strong>Legg til manuelt (Venstre)</strong>
+            <div class="input-row"><input type="number" id="x-qty-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'x')">+ X</button></div>
+            <div class="input-row"><input type="number" id="val-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'num')">+ Tall</button></div>
+        </div>
+
+        <div class="control-group operation-group">
+            <strong>Gjør på begge sider</strong>
+            <div style="margin-bottom: 5px;">
+                <input type="text" id="op-val" value="2" style="width: 50px; text-align: center;">
+            </div>
+            <button class="btn-op" onclick="operate('multiply')">× Multipliser</button>
+            <button class="btn-op" onclick="operate('divide')">÷ Divider</button>
+        </div>
+
+        <div class="control-group">
+            <button class="btn-undo" id="undoBtn" onclick="undo()" disabled>⟲ Angre</button>
+            <div style="display: flex; gap: 5px; margin-top: 5px;">
+                <button class="btn-eq" id="checkBtn" onclick="checkSolution()" disabled>SJEKK SVAR</button>
+                <button class="btn-new-task" id="newBtn" onclick="skipToNewTask()" disabled>NY OPPGAVE</button>
+            </div>
+        </div>
+
+        <div id="demoPanelRight" class="control-group demo-panel" style="border-left:none;">
+            <strong>Legg til manuelt (Høyre)</strong>
+            <div class="input-row"><input type="number" id="x-qty-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'x')">+ X</button></div>
+            <div class="input-row"><input type="number" id="val-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'num')">+ Tall</button></div>
+        </div>
+    </div>
+
+    <div class="balance-container">
+        <div class="base"></div>
+        <div id="beam" class="beam">
+            <div id="pan-left" class="pan" ondragover="event.preventDefault()" ondrop="drop(event, 'left')"></div>
+            <div id="pan-right" class="pan" ondragover="event.preventDefault()" ondrop="drop(event, 'right')"></div>
+        </div>
+    </div>
+
+    <!-- Live resultater direkte på elevens egen skjerm -->
+    <div class="leaderboard-box" id="leaderboardSection" style="display:none;">
+        <div class="leaderboard-title">🏁 Live stilling i rommet: <span id="roomCodeDisplay" style="color:#e67e22;"></span></div>
+        <div id="playerList"></div>
+    </div>
+
+    <div id="customContextMenu" class="context-menu">
+        <button onclick="menuInvert()">± Bytt fortegn (m/ -1)</button>
+        <button id="splitBtn" onclick="menuSplitInTwo()">⚏ Splitt opp i to deler</button>
+    </div>
+
+    <script>
+        // DINE UNIKE FIREBASE NØKLER MED DEN KORREKTE BELGIA-DATABASE-URLEN
+        const firebaseConfig = {
+          apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
+          authDomain: "firebaseapp.com",
+          databaseURL: "firebasedatabase.app",
+          projectId: "likningsspill",
+          storageBucket: "likningsspill.firebasestorage.app",
+          messagingSenderId: "630190192081",
+          appId: "1:630190192081:web:71968d390422ace3f15cf0"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let sides = { left: [], right: [] };
+        let xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0, activeMenuTarget = null;
+        let myRoomCode = "", myPlayerId = "", myCarName = "";
+
+        // Generator for anonyme, morsomme bilnavn
+        const adjektiver = ["Raske", "Turbo", "Lyn", "Glitrende", "Gull", "Smarte", "Kloke", "Svevende", "Gass", "Super"];
+        const dyr = ["Troll", "Rev", "Gaupe", "Ulv", "Bjørn", "Hare", "Elg", "Gepard", "Falk", "Ørn"];
+        
+        myCarName = adjektiver[Math.floor(Math.random() * adjektiver.length)] + "-" + dyr[Math.floor(Math.random() * dyr.length)];
+        myPlayerId = "p_" + Math.random().toString(36).substr(2, 9);
+        document.getElementById('carNameDisplay').innerText = myCarName;
+
+        function toggleDemoPanel() {
+            const show = document.getElementById('demoPanelToggle').checked;
+            document.getElementById('demoPanel').style.display = show ? 'flex' : 'none';
+            document.getElementById('demoPanelRight').style.display = show ? 'flex' : 'none';
+        }
+
+        function manualAdd(side, type) {
+            saveHistory();
+            if (type === 'x') {
+                const qty = parseFloat(document.getElementById(`x-qty-${side}`).value);
+                if (qty !== 0) sides[side].push({ id: idCounter++, type: 'x', num: qty, den: 1 });
+            } else {
+                const val = parseFloat(document.getElementById(`val-${side}`).value);
+                if (val !== 0) sides[side].push({ id: idCounter++, type: 'number', num: val, den: 1 });
+            }
+            render();
+        }
+
+        function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        const levels = {
+            1: { targetStreak: 6, generate: () => {
+                let x = getRandomInt(2, 9); let a = getRandomInt(1, 8); xValue = x;
+                sides.left = [{ id: idCounter++, type: 'x', num: 1, den: 1 }, { id: idCounter++, type: 'number', num: a, den: 1 }];
+                sides.right = [{ id: idCounter++, type: 'number', num: x + a, den: 1 }];
+            }},
+            2: { targetStreak: 6, generate: () => {
+                let x = getRandomInt(2, 8); let c = getRandomInt(1, 4); let a = c + 1; let b = getRandomInt(1, 5); let d = (a * x + b) - (c * x); xValue = x;
+                sides.left = [{ id: idCounter++, type: 'x', num: a, den: 1 }, { id: idCounter++, type: 'number', num: b, den: 1 }];
+                sides.right = [{ id: idCounter++, type: 'x', num: c, den: 1 }, { id: idCounter++, type: 'number', num: d, den: 1 }];
+            }},
+            3: { targetStreak: 6, generate: () => {
+                let x = getRandomInt(2, 6); let a = getRandomInt(3, 5); let c = getRandomInt(1, a - 2); let b = getRandomInt(1, 6); let d = (a * x + b) - (c * x); xValue = x;
+                sides.left = [{ id: idCounter++, type: 'x', num: a, den: 1 }, { id: idCounter++, type: 'number', num: b, den: 1 }];
+                sides.right = [{ id: idCounter++, type: 'x', num: c, den: 1 }, { id: idCounter++, type: 'number', num: d, den: 1 }];
+            }},
+            4: { targetStreak: 6, generate: () => {
+                let den = getRandomInt(2, 4); let x = den * getRandomInt(1, 5); xValue = x;
+                sides.left = [{ id: idCounter++, type: 'x', num: 1, den: den }];
+                sides.right = [{ id: idCounter++, type: 'number', num: x / den, den: 1 }];
+            }},
+            5: { targetStreak: 6, generate: () => {
+                let variant = getRandomInt(1, 2); xValue = 6; 
+                if (variant === 1) {
+                    sides.left = [{ id: idCounter++, type: 'x', num: 1, den: 2 }, { id: idCounter++, type: 'number', num: 1, den: 3 }];
+                    sides.right = [{ id: idCounter++, type: 'number', num: 10, den: 3 }];
+                } else {
+                    sides.left = [{ id: idCounter++, type: 'x', num: 1, den: 3 }, { id: idCounter++, type: 'number', num: 1, den: 2 }];
+                    sides.right = [{ id: idCounter++, type: 'number', num: 5, den: 2 }];
+                }
+            }},
+            6: { targetStreak: 6, generate: () => {
+                let x = getRandomInt(2, 5); let multiplier = getRandomInt(1, 3); let num = x * multiplier; xValue = x;
+                sides.left = [{ id: idCounter++, type: 'inv-x', num: num, den: 1 }];
+                sides.right = [{ id: idCounter++, type: 'number', num: multiplier, den: 1 }];
+            }}
+        };
+
+        // KOBLE TIL DET DELTE SKY-ROMMET
+        function joinRoom() {
+            let code = document.getElementById('roomInput').value.trim().toUpperCase();
+            if (!code) { alert("Skriv inn en romkode først!"); return; }
+            
+            myRoomCode = code;
+            document.getElementById('roomCodeDisplay').innerText = myRoomCode;
+            document.getElementById('leaderboardSection').style.display = 'block';
+            
+            // Aktiver knappene i spillet
+            document.getElementById('checkBtn').disabled = false;
+            document.getElementById('newBtn').disabled = false;
+            
+            // Rapporter at vi har blitt med
+            updateScoreInCloud();
+            
+            // Lytt til oppdateringer fra andre biler i samme rom
+            database.ref('rooms/' + myRoomCode).on('value', (snapshot) => {
+                const data = snapshot.val();
+                updateLeaderboardUI(data);
+            });
+            
+            initGame();
+        }
+
+        // Send elevens framgang til skyen i sanntid
+        function updateScoreInCloud() {
+            if (!myRoomCode) return;
+            database.ref('rooms/' + myRoomCode + '/' + myPlayerId).set({
+                carName: myCarName,
+                level: currentLevel,
+                streak: winStreak
+            });
+        }
+
+        function updateLeaderboardUI(roomData) {
+            const container = document.getElementById('playerList');
+            container.innerHTML = '';
+            if (!roomData) return;
+            
+            // Sorter spillerne basert på høyest nivå og streak
+            let players = Object.keys(roomData).map(key => roomData[key]);
+            players.sort((a, b) => b.level - a.level || b.streak - a.streak);
+            
+            players.forEach((p, index) => {
+                const row = document.createElement('div');
+                row.className = 'player-row';
+                if (p.carName === myCarName) row.style.fontWeight = 'bold';
+                row.innerHTML = `<span>${index + 1}. 🚗 ${p.carName}</span> <span>Nivå ${p.level} (Streak: ${p.streak}/6)</span>`;
+                container.appendChild(row);
+            });
+        }
+
+        function initGame() {
+            if (!myRoomCode) return;
+            sides.left = []; sides.right = []; history = [];
+            document.getElementById('undoBtn').disabled = true;
+            levels[currentLevel].generate();
+            document.getElementById('taskText').innerHTML = `<strong>Oppgave:</strong> Finn verdien av <strong>x</strong> slik at vekten blir i balanse.`;
+            render();
+        }
+
+        function skipToNewTask() {
+            if (winStreak > 0) {
+                let confirmSkip = confirm("Er du sikker? Seire på rad vil bli nullstilt.");
+                if (!confirmSkip) return;
+            }
+            winStreak = 0; updateStreakDisplay(); updateScoreInCloud(); initGame();
+        }
+
+        function changeLevel(val) {
+            currentLevel = parseInt(val); winStreak = 0;
+            updateStreakDisplay(); updateScoreInCloud(); initGame();
+        }
+
+        function updateStreakDisplay() {
+            document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/${levels[currentLevel].targetStreak}`;
+        }
+
+        function checkSolution() {
+            let isSolved = false;
+            if (sides.left.length === 1 && sides.left.type === 'x' && sides.left.num === 1 && sides.left.den === 1 && sides.right.length === 1 && sides.right.type === 'number') {
+                let finalVal = sides.right.num / sides.right.den;
+                if (Math.abs(finalVal - xValue) < 0.01) isSolved = true;
+            }
+            if (isSolved) {
+                winStreak++; 
+                if (winStreak >= levels[currentLevel].targetStreak && currentLevel < 6) {
+                    alert("Fantastisk! Du rykker opp til neste nivå!");
+                    currentLevel++; document.getElementById('levelSelect').value = currentLevel; winStreak = 0;
+                } else if (winStreak >= levels[currentLevel].targetStreak && currentLevel === 6) {
+                    alert("Utrolig bra! Du har fullført hele løpet!"); winStreak = 0;
+                } else { alert("Riktig svar! Bra jobbet."); }
+                updateStreakDisplay(); updateScoreInCloud(); initGame();
+            } else {
+                alert("For å løse ligningen må du isolere én positiv X alene på venstre skål, og kun ha tall på høyre skål.");
+                winStreak = 0; updateStreakDisplay(); updateScoreInCloud();
+            }
+        }
+
+        function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
+        function createFraction(num, den) { if (den === 0) return { num: 0, den: 1 }; let g = gcd(num, den); let fN = num / g; let fD = den / g; if (fD < 0) { fN *= -1; fD *= -1; } return { num: fN, den: fD }; }
+        function saveHistory() { history.push(JSON.stringify({ sides: JSON.parse(JSON.stringify(sides)), idCounter })); document.getElementById('undoBtn').disabled = false; }
+        function undo() { if (history.length === 0) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(false); if (history.length === 0) document.getElementById('undoBtn').disabled = true; }
+
+        function operate(type) {
+            saveHistory();
+            const rawVal = document.getElementById('op-val').value.trim();
+            ['left', 'right'].forEach(side => {
+                if (rawVal.toLowerCase() === 'x') {
+                    if (type === 'multiply') {
+                        sides[side] = sides[side].map(item => {
+                            if (item.type === 'inv-x') return { ...item, type: 'number' };
+                            if (item.type === 'number') return { ...item, type: 'x' };
+                            return item;
+                        });
+                    }
+                } else {
+                    const factor = parseInt(rawVal); if (isNaN(factor) || factor === 0) return;
+                    sides[side] = sides[side].map(item => {
+                        let newItem = {...item};
+                        if (type === 'multiply') { let f = createFraction(newItem.num * factor, newItem.den); newItem.num = f.num; newItem.den = f.den; }
+                        else { let f = createFraction(newItem.num, newItem.den * factor); newItem.num = f.num; newItem.den = f.den; }
+                        return newItem;
+                    }).filter(item => item.num !== 0);
+                }
+            });
+            render();
+        }
+
+        function drag(ev, side, id) { ev.dataTransfer.setData("text", JSON.stringify({ side, id })); }
+        function drop(ev, targetSide) {
+            ev.preventDefault(); const data = JSON.parse(ev.dataTransfer.getData("text"));
+            const sourceSide = data.side; const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
+            if (sourceIdx === -1) return;
+            saveHistory(); let item = sides[sourceSide].splice(sourceIdx, 1);
+            const targetEl = ev.target.closest('.item');
+            if (targetEl && sourceSide === targetSide) {
+                const targetId = parseInt(targetEl.getAttribute('data-id'));
+                const targetItem = sides[targetSide].find(i => i.id === targetId);
+                if (item.type === targetItem.type && item.id !== targetId) {
+                    let commonNum = (targetItem.num * item.den) + (item.num * targetItem.den);
+                    let commonDen = targetItem.den * item.den; let frac = createFraction(commonNum, commonDen);
+                    targetItem.num = frac.num; targetItem.den = frac.den;
+                    if (targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
+                } else sides[targetSide].push(item);
+            } else { sides[targetSide].push(item); }
+            render();
+        }
+
+        function menuInvert() { if (!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
+        function menuSplitInTwo() {
+            if (!activeMenuTarget) return; saveHistory(); const item = activeMenuTarget.item; const sideList = sides[activeMenuTarget.side];
+            let part1 = item.num > 0 ? Math.ceil(item.num / 2) : Math.floor(item.num / 2); let part2 = item.num - part1;
+            const idx = sideList.findIndex(i => i.id === item.id); sideList.splice(idx, 1);
+            sideList.push({ id: idCounter++, type: item.type, num: part1, den: item.den });
+            sideList.push({ id: idCounter++, type: item.type, num: part2, den: item.den });
+            render();
+        }
+
+        function getTotals(side) {
+            let units = 0, xs = 0;
+            sides[side].forEach(i => {
+                let realVal = i.num / i.den;
+                if (i.type === 'x') xs += realVal;
+                else if (i.type === 'inv
