@@ -142,14 +142,17 @@
         // RETTET: Bruker direkte lenker til Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
+    
+        
         const firebaseConfig = {
             apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
-            authDomain: "likningsspill.firebaseapp.com",
-            databaseURL: "https://likningsspill-default-rtdb.firebaseio.com",
+            authDomain: "likningsspill.firebaseapp.js",
+            // OPPDATERT LINJE UNDER:
+            databaseURL: "https://likningsspill-default-rtdb.europe-west1.firebasedatabase.app", 
             projectId: "likningsspill",
             storageBucket: "likningsspill.appspot.com",
             appId: "1:630190192081:web:71968d390422ace3f15cf0"
+
         };
 
         const app = initializeApp(firebaseConfig);
