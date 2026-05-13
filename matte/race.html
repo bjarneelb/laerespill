@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>Ligningsløpet - Storskjerm</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; margin: 0; overflow: hidden; }
+        .header { text-align: center; padding: 15px; background: linear-gradient(to bottom, #333, #1a1a1a); border-bottom: 3px solid #f1c40f; }
+        h1 { margin: 0; color: #f1c40f; text-transform: uppercase; letter-spacing: 3px; font-size: 2.5rem; }
+        
+        .track-container { 
+            position: relative; 
+            width: 98vw; 
+            height: 80vh; 
+            margin: 20px auto; 
+            background: #333; 
+            border: 10px solid #555; 
+            border-radius: 20px;
+            box-sizing: border-box;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 100px 100px;
+        }
+        
+        /* Mållinje (sjakkrutet mønster) */
+        .finish-line {
+            position: absolute;
+            right: 50px;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            background-color: #fff;
+            background-image: 
+                linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), 
+                linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            border-left: 5px solid #e74c3c;
+            z-index: 5;
+        }
+
+        .lane { 
+            position: relative; 
+            height: 100px; 
+            border-bottom: 2px dashed #444; 
+            display: flex; 
+            align-items: center; 
+        }
+
+        .car-container { 
+            position: absolute; 
+            left: 0; 
+            transition: left 1.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            z-index: 10; 
+        }
+
+        .car-wrapper {
+            animation: engineShake 0.2s infinite;
+            font-size: 50px;
+            line-height: 1;
+        }
+
+        @keyframes engineShake {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(1px, 1px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .driver-tag {
+            background: #f1c40f;
+            color: #000;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 5px;
+            white-space: nowrap;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            border: 2px solid #000;
+        }
+
+        .level-info {
+            font-size: 10px;
+            color: #eee;
+            margin-top: 2px;
+        }
+
+        /* Markeringsskilt for nivåer */
+        .markers {
+            position: absolute;
+            top: -30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 60px;
+            box-sizing: border-box;
+            color: #aaa;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        .setup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .setup-box { background: white; color: #333; padding: 40px; border-radius: 15px; text-align: center; box-shadow: 0 0 30px #f1c40f; }
+        input { padding: 15px; font-size: 24px; width: 200px; text-transform: uppercase; text-align: center; border: 3px solid #34495e; border-radius: 10px; }
+        button { padding: 15px 30px; font-size: 24px; background: #27ae60; color: white; border: none; cursor: pointer; border-radius: 10px; margin-top: 20px; font-weight: bold; }
+        button:hover { background: #2ecc71; }
+    </style>
+</head>
+<body>
+
+    <div id="setup" class="setup-overlay">
+        <div class="setup-box">
+            <h1 style="color:#333; margin-bottom:20px;">Klar for Ligningsløp?</h1>
+            <p>Skriv inn romkode fra tavla:</p>
+            <input type="text" id="roomInput" placeholder="KODE">
+            <br>
+            <button onclick="startRace()">START RACET!</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1 id="roomTitle">Ligningsløpet</h1>
+    </div>
+
+    <div class="track-container">
+        <div class="markers">
+            <span>START</span>
+            <span>NIVÅ 2</span>
+            <span>NIVÅ 3</span>
+            <span>NIVÅ 4</span>
+            <span>NIVÅ 5</span>
+            <span>MÅL</span>
+        </div>
+        <div class="finish-line"></div>
+        <div id="track"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
+            authDomain: "likningsspill.firebaseapp.com",
+            databaseURL: "https://likningsspill-default-rtdb.europe-west1.firebasedatabase.app/", 
+            projectId: "likningsspill",
+            storageBucket: "likningsspill.appspot.com",
+            appId: "1:630190192081:web:71968d390422ace3f15cf0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app, firebaseConfig.databaseURL);
+
+        const carEmojis = ["🏎️", "🏎", "🚗", "🏎️", "🏎️", "🚓", "🏎", "🏎️"];
+
+        window.startRace = function() {
+            const room = document.getElementById("roomInput").value.trim().toUpperCase();
+            if(!room) return;
+            document.getElementById("setup").style.display = "none";
+            document.getElementById("roomTitle").innerText = "LØP PÅGÅR: " + room;
+            const roomRef = ref(database, 'rooms/' + room + '/players');
+            onValue(roomRef, (snapshot) => {
+                const players = snapshot.val();
+                updateTrack(players);
+            });
+        };
+
+        function updateTrack(players) {
+            const track = document.getElementById("track");
+            track.innerHTML = "";
+            if (!players) return;
+
+            const sortedEntries = Object.entries(players).sort((a,b) => b[1].level - a[1].level);
+            
+            sortedEntries.forEach(([name, data], index) => {
+                const lane = document.createElement("div");
+                lane.className = "lane";
+
+                // Beregn posisjon
+                // Nivå 1-6 fordeles over 85% av bredden (slik at biler ikke kjører av skjermen)
+                const stepSize = 85 / 5; 
+                const levelPos = (data.level - 1) * stepSize;
+                const streakBonus = (data.streak / 6) * stepSize;
+                const totalPos = Math.min(levelPos + streakBonus, 92); 
+
+                // Velg en emoji basert på navnet (likt hver gang for samme bil)
+                const emojiIdx = name.length % carEmojis.length;
+                const emoji = carEmojis[emojiIdx];
+
+                lane.innerHTML = `
+                    <div class="car-container" style="left: ${totalPos}%">
+                        <div class="car-wrapper">${emoji}</div>
+                        <div class="driver-tag">${name}</div>
+                        <div class="level-info">Nivå ${data.level} - ${data.streak}/6</div>
+                    </div>
+                `;
+                track.appendChild(lane);
+            });
+        }
+    </script>
+</body>
+</html>
