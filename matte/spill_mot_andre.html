@@ -2,153 +2,178 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsspillet - Flerspiller</title>
+    <title>Ligningsløpet - Spill</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
-        .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0; gap: 10px; }
-        .btn-back { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; }
-        .btn-back:hover { background: #c0392b; transform: translateY(-1px); }
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-color: #2c3e50;
+            --accent-color: #f1c40f;
+            --math-green: #4af626;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg-color); 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- STARTSKJERM --- */
+        #startScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .start-box {
+            background: white; color: #333; padding: 40px; border-radius: 15px;
+            max-width: 500px; text-align: center; border: 5px solid var(--accent-color);
+        }
+        .instr { font-size: 0.9rem; background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 5px solid var(--panel-color); text-align: left; }
         
-        .game-header { text-align: center; margin-bottom: 10px; }
-        .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
-        .controls { margin: 10px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
-        .control-group { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; border-right: 1px solid #ddd; }
-        .control-group:last-child { border-right: none; }
-        .operation-group { background: #fdf2e9; padding: 10px; border-radius: 8px; border: 1px solid #e67e22; text-align: center; }
-        
-        .demo-panel { background: #e8f4f8; border: 1px solid #2980b9; display: none; }
-        .input-row { display: flex; gap: 5px; align-items: center; }
+        /* --- DASHBORD --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 200px 1fr 200px;
+            grid-template-rows: auto auto;
+            gap: 20px;
+            width: 95vw;
+            max-width: 1100px;
+            margin-top: 30px;
+            background: #34495e;
+            padding: 30px;
+            border-radius: 50px 50px 20px 20px;
+            border-bottom: 10px solid #222;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
+        }
 
-        select, input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        button { cursor: pointer; padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; font-weight: bold; }
-        .btn-op { background: #e67e22; color: white; border: none; }
-        .btn-eq { background: #27ae60; color: white; border: none; }
-        .btn-new-task { background: #2980b9; color: white; border: none; }
-        .btn-undo { background: #34495e; color: white; border: none; }
-        .btn-undo:disabled { background: #bdc3c7; cursor: not-allowed; }
+        /* Instrumentene */
+        .gauge-container {
+            grid-column: 2;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #222;
+            padding: 40px 20px;
+            border-radius: 100px;
+            border: 8px solid #555;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .gauge {
+            width: 260px; height: 260px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50%;
+            border: 4px solid #444;
+            display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 5px;
+            overflow: hidden; padding: 10px;
+        }
 
-        .task-box { background: #2c3e50; color: white; padding: 15px; border-radius: 8px; font-size: 1.4rem; margin-bottom: 15px; width: 550px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        
-        .math-display { font-family: monospace; background: #1a1a1a; color: #4af626; padding: 15px; border-radius: 8px; font-size: 1.6rem; min-width: 550px; box-shadow: inset 0 0 10px #000; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .math-side { display: inline-flex; align-items: center; gap: 8px; }
-        .math-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; padding: 0 4px; }
-        .math-num { border-bottom: 2px solid #4af626; text-align: center; width: 100%; padding-bottom: 2px; }
-        .math-den { text-align: center; width: 100%; padding-top: 2px; }
+        /* Senter-kontroll (Giring/Operasjoner) */
+        .center-stack {
+            grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: -20px;
+        }
+        .gear-box {
+            background: #111; border: 3px solid #f1c40f; color: #f1c40f;
+            padding: 10px 20px; font-family: monospace; font-size: 2rem; border-radius: 5px;
+        }
+        .op-unit { background: #444; padding: 15px; border-radius: 10px; border: 2px solid #666; }
 
-        .balance-container { position: relative; width: 850px; height: 400px; margin-top: 30px; }
-        .base { position: absolute; bottom: 0; left: 400px; width: 50px; height: 250px; background: #34495e; border-radius: 8px 8px 0 0; }
-        .beam { position: absolute; top: 100px; left: 75px; width: 700px; height: 12px; background: #7f8c8d; transition: transform 0.6s ease-in-out; transform-origin: center; display: flex; justify-content: space-between; }
-        .pan { position: absolute; top: 12px; width: 240px; min-height: 150px; background: rgba(0,0,0,0.05); border-top: 4px solid #444; border-radius: 0 0 20px 20px; transition: transform 0.6s ease-in-out; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 10px; padding: 15px; }
-        #pan-left { left: -120px; } #pan-right { right: -120px; }
+        /* Manuelt panel (Utsiden) */
+        .side-panel { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; display: none; }
 
-        .item { min-width: 50px; height: 50px; padding: 0 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; border-radius: 8px; color: white; cursor: grab; user-select: none; text-align: center; font-size: 14px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
-        .box-x { background: #d35400; border: 2px solid #a04000; }
-        .box-x-neg { background: #e74c3c; border: 2px solid #c0392b; }
-        .val-pos { background: #2980b9; border: 2px solid #1c5982; }
-        .val-neg { background: #c0392b; border: 2px solid #7b241c; }
-        .box-inv-x { background: #9b59b6; border: 2px solid #6c3483; }
-        
-        .fraction { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; padding: 2px 0; }
-        .numerator { border-bottom: 1px solid white; padding-bottom: 2px; text-align: center; width: 100%; }
-        .denominator { padding-top: 2px; text-align: center; width: 100%; }
+        /* Mattevisning (Displayet) */
+        .math-display {
+            grid-column: 2; background: #000; color: var(--math-green);
+            font-family: monospace; font-size: 1.8rem; padding: 15px;
+            border-radius: 8px; text-align: center; border: 2px solid #333; margin-top: 20px;
+            box-shadow: inset 0 0 10px #000; display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
 
-        .context-menu { display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; padding: 5px 0; }
-        .context-menu button { display: block; width: 100%; border: none; background: none; text-align: left; padding: 8px 12px; cursor: pointer; font-size: 14px; }
-        .context-menu button:hover { background: #f0f2f5; }
-        .car-badge { background: #e67e22; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+        /* --- KNAPPER OG ITEMS --- */
+        .btn-row { grid-column: 2; display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .item { min-width: 45px; height: 45px; border-radius: 5px; color: white; font-weight: bold; cursor: grab; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; box-shadow: 0 3px 0 rgba(0,0,0,0.3); }
+        .box-x { background: #d35400; } .box-x-neg { background: #e74c3c; } .val-pos { background: #2980b9; } .val-neg { background: #c0392b; }
+        .btn-action { padding: 10px 25px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        .btn-green { background: #27ae60; } .btn-blue { background: #2980b9; } .btn-gray { background: #7f8c8d; }
+
+        .math-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; padding: 0 4px; font-size: 1.2rem; }
+        .math-num { border-bottom: 2px solid var(--math-green); }
+        .fraction { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
+        .numerator { border-bottom: 1px solid white; }
     </style>
 </head>
 <body>
 
-    <div class="top-navigation">
-        <a href="https://bjarneelb.github.io/ligningsvekt/index.html" class="btn-back">⬅ Tilbake til menyen</a>
-        <button onclick="location.reload()" class="btn-undo" style="padding: 8px 15px; font-size: 0.9rem;">↺ Start på nytt</button>
-    </div>
-
-    <div class="game-header">
-        <h1>Ligningsspillet: Flerspiller</h1>
-    </div>
-
-    <div class="level-bar">
-        <label for="levelSelect"><strong>Nivå:</strong></label>
-        <select id="levelSelect" onchange="changeLevel(this.value)">
-            <option value="1">Nivå 1: Hele tall</option>
-            <option value="2">Nivå 2: X på begge sider</option>
-            <option value="3">Nivå 3: ax+b=cx+d</option>
-            <option value="4">Nivå 4: Enkle brøker</option>
-            <option value="5">Nivå 5: Avanserte brøker</option>
-            <option value="6">Nivå 6: 1/x (Ukjent i nevner)</option>
-        </select>
-        <span id="streakDisplay" style="color: #27ae60; font-weight: bold;">Seire på rad: 0/6</span>
-        
-        <div style="margin-left: 10px; border-left: 1px solid #ccc; padding-left: 15px;">
-            <span>Bil: <span id="myCarName" class="car-badge">...</span></span>
-            <input type="text" id="roomCodeInput" placeholder="ROMKODE" style="width: 80px; text-transform: uppercase;">
-            <button onclick="connectToRoom()" class="btn-eq" style="padding: 5px 10px;">Koble til</button>
-        </div>
-        <div style="margin-left: 10px;">
-            <input type="checkbox" id="demoPanelToggle" onchange="toggleDemoPanel()">
-            <label for="demoPanelToggle"><small>Bygg selv</small></label>
-        </div>
-    </div>
-
-    <div id="taskText" class="task-box">Laster oppgave...</div>
-    <div id="math" class="math-display"></div>
-
-    <div class="controls">
-        <div id="demoPanel" class="control-group demo-panel">
-            <strong>Bygg (Venstre)</strong>
-            <div class="input-row">
-                <input type="number" id="x-qty-left" value="1" style="width:40px;"> 
-                <button onclick="manualAdd('left', 'x')">+ X</button>
+    <!-- START-SKJERM -->
+    <div id="startScreen">
+        <div class="start-box">
+            <h1>Ligningsløpet</h1>
+            <p>Din bil: <strong id="carDisplay" style="color: #e67e22;">...</strong></p>
+            <div class="instr">
+                <strong>Slik vinner du:</strong> Målet er å løse likningen på dashbordet ved å få <strong>x alene</strong> på det ene instrumentet, og kun et <strong>tall</strong> på det andre.
             </div>
-            <div class="input-row">
-                <input type="number" id="val-left" value="1" style="width:40px;"> 
-                <button onclick="manualAdd('left', 'num')">+ Tall</button>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="text" id="roomInput" placeholder="ROMKODE">
+                <select id="startLvl">
+                    <option value="0">Tilfeldig nivå</option>
+                    <option value="1">Nivå 1: Hele tall</option>
+                    <option value="2">Nivå 2: X begge sider</option>
+                    <option value="3">Nivå 3: ax+b=cx+d</option>
+                    <option value="4">Nivå 4: Brøker</option>
+                    <option value="6">Nivå 6: 1/x</option>
+                </select>
+                <button class="btn-action btn-green" onclick="startGame()">START RACET</button>
             </div>
-        </div>
-
-        <div class="control-group operation-group">
-            <strong>Gjør på begge sider</strong>
-            <input type="text" id="op-val" value="2" style="width: 50px; text-align: center; margin-bottom:5px;">
-            <div>
-                <button class="btn-op" onclick="operate('multiply')">×</button>
-                <button class="btn-op" onclick="operate('divide')">÷</button>
-            </div>
-        </div>
-
-        <div class="control-group">
-            <button class="btn-undo" id="undoBtn" onclick="undo()" disabled>⟲ Angre</button>
-            <div style="display: flex; gap: 5px; margin-top: 5px;">
-                <button class="btn-eq" onclick="checkSolution()">SJEKK SVAR</button>
-                <button class="btn-new-task" onclick="skipToNewTask()">NY</button>
-            </div>
-        </div>
-
-        <div id="demoPanelRight" class="control-group demo-panel">
-            <strong>Bygg (Høyre)</strong>
-            <div class="input-row">
-                <input type="number" id="x-qty-right" value="1" style="width:40px;"> 
-                <button onclick="manualAdd('right', 'x')">+ X</button>
-            </div>
-            <div class="input-row">
-                <input type="number" id="val-right" value="1" style="width:40px;"> 
-                <button onclick="manualAdd('right', 'num')">+ Tall</button>
+            <div style="margin-top:15px;">
+                <input type="checkbox" id="demoToggle"> <small>Aktiver bygg-selv i dashbordet</small>
             </div>
         </div>
     </div>
 
-    <div class="balance-container">
-        <div class="base"></div>
-        <div id="beam" class="beam">
-            <div id="pan-left" class="pan" ondragover="event.preventDefault()" ondrop="drop(event, 'left')"></div>
-            <div id="pan-right" class="pan" ondragover="event.preventDefault()" ondrop="drop(event, 'right')"></div>
+    <!-- DASHBORD -->
+    <div class="dashboard">
+        <!-- Venstre panel -->
+        <div id="panelL" class="side-panel">
+            <strong>Bygg V</strong>
+            <input type="number" id="qtyL" value="1" style="width:40px;">
+            <button onclick="addManual('left', 'x')">+X</button>
+            <button onclick="addManual('left', 'num')">+1</button>
         </div>
-    </div>
 
-    <div id="customContextMenu" class="context-menu">
-        <button onclick="menuInvert()">± Bytt fortegn</button>
-        <button onclick="menuSplitInTwo()">⚏ Splitt opp</button>
+        <div class="center-stack">
+            <div class="gear-box" id="gearDisplay">R</div>
+            <div class="op-unit">
+                <input type="text" id="opVal" value="2" style="width:40px; text-align:center;">
+                <button onclick="operate('multiply')">×</button>
+                <button onclick="operate('divide')">÷</button>
+            </div>
+        </div>
+
+        <!-- Høyre panel -->
+        <div id="panelR" class="side-panel">
+            <strong>Bygg H</strong>
+            <input type="number" id="qtyR" value="1" style="width:40px;">
+            <button onclick="addManual('right', 'x')">+X</button>
+            <button onclick="addManual('right', 'num')">+1</button>
+        </div>
+
+        <!-- Instrumentene -->
+        <div class="gauge-container" id="dashGauges">
+            <div id="gaugeL" class="gauge" ondragover="event.preventDefault()" ondrop="drop(event, 'left')"></div>
+            <div id="gaugeR" class="gauge" ondragover="event.preventDefault()" ondrop="drop(event, 'right')"></div>
+        </div>
+
+        <div class="math-display" id="mathDisplay">0 = 0</div>
+
+        <div class="btn-row">
+            <button class="btn-action btn-gray" onclick="undo()">Angre</button>
+            <button class="btn-action btn-blue" onclick="initGame()">Ny</button>
+            <button class="btn-action btn-green" onclick="checkSolution()">Sjekk</button>
+        </div>
     </div>
 
     <script type="module">
@@ -158,32 +183,44 @@
         const firebaseConfig = {
             apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
             authDomain: "likningsspill.firebaseapp.com",
-            databaseURL: "https://likningsspill-default-rtdb.europe-west1.firebasedatabase.app/", 
+            databaseURL: "https://likningsspill-default-rtdb.europe-west1.firebasedatabase.app/",
             projectId: "likningsspill",
-            storageBucket: "likningsspill.appspot.com",
             appId: "1:630190192081:web:71968d390422ace3f15cf0"
         };
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app, firebaseConfig.databaseURL);
 
-        const adj = ["Raske", "Lynraske", "Smidige", "Gylne", "Smarte", "Tøffe", "Viltre", "Kvikke", "Ivrige"];
-        const ani = ["Gaupe", "Rev", "Ulv", "Bjørn", "Ørn", "Oter", "Ugle", "Hauk", "Grevling"];
+        const adj = ["Raske", "Lynraske", "Smarte", "Gylne", "Viltre", "Smidige"];
+        const ani = ["Gaupe", "Ulv", "Bjørn", "Oter", "Hauk", "Ugle"];
         const myName = adj[Math.floor(Math.random()*adj.length)] + " " + ani[Math.floor(Math.random()*ani.length)];
-        document.getElementById("myCarName").innerText = myName;
+        document.getElementById("carDisplay").innerText = myName;
 
-        window.connectToRoom = function() {
-            const room = document.getElementById("roomCodeInput").value.trim().toUpperCase();
+        window.startGame = function() {
+            const room = document.getElementById("roomInput").value.trim().toUpperCase();
             if(!room) { alert("Skriv inn romkode!"); return; }
+            
+            const startLvl = parseInt(document.getElementById("startLvl").value);
+            if(startLvl > 0) currentLevel = startLvl;
+            else currentLevel = Math.floor(Math.random()*3) + 1;
+
+            if(document.getElementById("demoToggle").checked) {
+                document.getElementById("panelL").style.display = "block";
+                document.getElementById("panelR").style.display = "block";
+            }
+
+            document.getElementById("startScreen").style.display = "none";
+            
             set(ref(database, 'rooms/'+room+'/players/'+myName), {
-                score: 0, level: window.getCurrentLevel(), streak: window.getWinStreak(), lastUpdated: Date.now()
-            }).then(() => alert("Tilkoblet rom: " + room));
+                score: 0, level: currentLevel, streak: 0, lastUpdated: Date.now()
+            });
+            window.roomCode = room;
+            initGame();
         };
 
-        window.syncProgressToFirebase = function(lvl, str) {
-            const room = document.getElementById("roomCodeInput").value.trim().toUpperCase();
-            if(room) {
-                update(ref(database, 'rooms/'+room+'/players/'+myName), {
+        window.syncFB = function(lvl, str) {
+            if(window.roomCode) {
+                update(ref(database, 'rooms/'+window.roomCode+'/players/'+myName), {
                     level: lvl, streak: str, score: str*100, lastUpdated: Date.now()
                 });
             }
@@ -191,82 +228,79 @@
     </script>
 
     <script>
-        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0, activeMenuTarget = null;
-
-        window.getCurrentLevel = () => currentLevel;
-        window.getWinStreak = () => winStreak;
+        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0;
 
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
         function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
         function createFraction(num, den) { if (den === 0) return { num: 0, den: 1 }; let g = gcd(num, den); let fN = num / g; let fD = den / g; if (fD < 0) { fN *= -1; fD *= -1; } return { num: fN, den: fD }; }
-        function saveHistory() { history.push(JSON.stringify({ sides: JSON.parse(JSON.stringify(sides)), idCounter })); document.getElementById('undoBtn').disabled = false; }
-        function undo() { if (!history.length) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(); if (!history.length) document.getElementById('undoBtn').disabled = true; }
-
+        
         const levels = {
             1: { generate: () => { let x=getRandomInt(2,9), a=getRandomInt(1,8); xValue=x; sides.left=[{id:idCounter++, type:'x', num:1, den:1}, {id:idCounter++, type:'number', num:a, den:1}]; sides.right=[{id:idCounter++, type:'number', num:x+a, den:1}]; }},
             2: { generate: () => { let x=getRandomInt(2,8), c=getRandomInt(1,4), a=c+1, b=getRandomInt(1,5); xValue=x; sides.left=[{id:idCounter++, type:'x', num:a, den:1}, {id:idCounter++, type:'number', num:b, den:1}]; sides.right=[{id:idCounter++, type:'x', num:c, den:1}, {id:idCounter++, type:'number', num:(a*x+b)-(c*x), den:1}]; }},
             3: { generate: () => { let x=getRandomInt(2,6), a=getRandomInt(3,5), c=getRandomInt(1,a-2), b=getRandomInt(1,6); xValue=x; sides.left=[{id:idCounter++, type:'x', num:a, den:1}, {id:idCounter++, type:'number', num:b, den:1}]; sides.right=[{id:idCounter++, type:'x', num:c, den:1}, {id:idCounter++, type:'number', num:(a*x+b)-(c*x), den:1}]; }},
             4: { generate: () => { let den=getRandomInt(2,4), x=den*getRandomInt(1,5); xValue=x; sides.left=[{id:idCounter++, type:'x', num:1, den:den}]; sides.right=[{id:idCounter++, type:'number', num:x/den, den:1}]; }},
-            5: { generate: () => { xValue=6; if(getRandomInt(1,2)===1){ sides.left=[{id:idCounter++, type:'x', num:1, den:2}, {id:idCounter++, type:'number', num:1, den:3}]; sides.right=[{id:idCounter++, type:'number', num:10, den:3}]; }else{ sides.left=[{id:idCounter++, type:'x', num:1, den:3}, {id:idCounter++, type:'number', num:1, den:2}]; sides.right=[{id:idCounter++, type:'number', num:5, den:2}]; } }},
             6: { generate: () => { let x=getRandomInt(2,5), m=getRandomInt(1,3); xValue=x; sides.left=[{id:idCounter++, type:'inv-x', num:x*m, den:1}]; sides.right=[{id:idCounter++, type:'number', num:m, den:1}]; }}
         };
 
         function initGame() {
-            sides = { left: [], right: [] }; history = []; idCounter = 0; document.getElementById('undoBtn').disabled = true;
-            levels[currentLevel].generate(); 
-            document.getElementById('taskText').innerHTML = `<strong>Oppgave:</strong> Finn x slik at vekten balanserer.`;
+            sides = { left: [], right: [] }; history = []; idCounter = 0;
+            levels[currentLevel].generate();
             render();
         }
 
         function render() {
             ['left', 'right'].forEach(side => {
-                const pan = document.getElementById('pan-' + side); pan.innerHTML = '';
+                const gauge = document.getElementById('gauge' + (side === 'left' ? 'L' : 'R'));
+                gauge.innerHTML = '';
                 sides[side].forEach(item => {
-                    const div = document.createElement('div'); let isNeg = item.num < 0;
+                    const div = document.createElement('div');
+                    let isNeg = item.num < 0;
                     div.className = 'item ' + (item.type==='x' ? (isNeg?'box-x-neg':'box-x') : (item.type==='inv-x'?'box-inv-x' : (isNeg?'val-neg':'val-pos')));
-                    div.draggable = true; div.setAttribute('data-id', item.id);
+                    div.draggable = true;
                     div.innerHTML = getBoxHTML(item);
                     div.ondragstart = (e) => e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id }));
-                    div.oncontextmenu = (e) => { 
-                        e.preventDefault(); activeMenuTarget = { side, item }; 
-                        const m = document.getElementById('customContextMenu'); 
-                        m.style.display = 'block'; m.style.left = e.pageX + 'px'; m.style.top = e.pageY + 'px'; 
-                    };
-                    pan.appendChild(div);
+                    gauge.appendChild(div);
                 });
             });
 
-            const display = document.getElementById('math'); display.innerHTML = '';
-            display.appendChild(buildHTMLSide(sides.left));
+            // Matte-display
+            const display = document.getElementById('mathDisplay');
+            display.innerHTML = '';
+            display.appendChild(buildMathSide(sides.left));
             const eq = document.createElement('span'); eq.innerText = ' = '; display.appendChild(eq);
-            display.appendChild(buildHTMLSide(sides.right));
+            display.appendChild(buildMathSide(sides.right));
 
+            // Vipp instrumentene
             let L = getTotals('left'), R = getTotals('right');
             let diff = (R.xs * xValue + R.units) - (L.xs * xValue + L.units);
-            let angle = Math.min(Math.max(diff * 4, -25), 25);
-            document.getElementById('beam').style.transform = `rotate(${angle}deg)`;
-            document.querySelectorAll('.pan').forEach(p => p.style.transform = `rotate(${-angle}deg)`);
-            document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/6`;
+            let angle = Math.min(Math.max(diff * 3, -20), 20);
+            document.getElementById('dashGauges').style.transform = `rotate(${angle}deg)`;
+            document.getElementById('gearDisplay').innerText = currentLevel;
         }
 
         function getBoxHTML(item) {
             let label = item.type==='x'?'x':'';
-            if(item.type==='inv-x') return `<span class="fraction"><span class="numerator">${item.num}</span><span class="denominator">x</span></span>`;
+            if(item.type==='inv-x') return `<span class="fraction"><span class="numerator">${item.num}</span><span>x</span></span>`;
             if(item.den===1) return (item.num===1 && item.type==='x') ? 'x' : (item.num===-1 && item.type==='x'?'-x':item.num+label);
-            let nStr = (item.num===1 && item.type==='x') ? 'x' : (item.num===-1 && item.type==='x'?'-x':item.num+label);
-            return `<span class="fraction"><span class="numerator">${nStr}</span><span class="denominator">${item.den}</span></span>`;
+            let n = (item.num===1 && item.type==='x') ? 'x' : (item.num===-1 && item.type==='x'?'-x':item.num+label);
+            return `<span class="fraction"><span class="numerator">${n}</span><span>${item.den}</span></span>`;
         }
 
-        function buildHTMLSide(items) {
-            const container = document.createElement('span'); container.className = 'math-side';
-            if(!items.length){ container.innerText = '0'; return container; }
+        function buildMathSide(items) {
+            const container = document.createElement('span');
+            if(!items.length) { container.innerText = '0'; return container; }
             items.forEach((item, idx) => {
-                if(idx > 0){ const op = document.createElement('span'); op.innerText = item.num < 0 ? ' - ' : ' + '; container.appendChild(op); }
-                else if(item.num < 0){ const op = document.createElement('span'); op.innerText = '-'; container.appendChild(op); }
+                if(idx > 0) container.innerHTML += (item.num < 0 ? ' - ' : ' + ');
+                else if(item.num < 0) container.innerHTML += '-';
                 let absNum = Math.abs(item.num), label = item.type==='x'?'x':'';
-                if(item.type==='inv-x'){ const f = document.createElement('span'); f.className='math-frac'; f.innerHTML=`<span class="math-num">${absNum}</span><span class="math-den">x</span>`; container.appendChild(f); }
-                else if(item.den===1){ const s = document.createElement('span'); s.innerText = (absNum===1 && item.type==='x') ? 'x' : absNum+label; container.appendChild(s); }
-                else { const f = document.createElement('span'); f.className='math-frac'; let n = (absNum===1 && item.type==='x')?'x':absNum+label; f.innerHTML=`<span class="math-num">${n}</span><span class="math-den">${item.den}</span>`; container.appendChild(f); }
+                if(item.type==='inv-x') {
+                    container.innerHTML += `<span class="math-frac"><span class="math-num">${absNum}</span><span>x</span></span>`;
+                } else if(item.den === 1) {
+                    container.innerHTML += (absNum===1 && item.type==='x') ? 'x' : absNum+label;
+                } else {
+                    let n = (absNum===1 && item.type==='x') ? 'x' : absNum+label;
+                    container.innerHTML += `<span class="math-frac"><span class="math-num">${n}</span><span>${item.den}</span></span>`;
+                }
             });
             return container;
         }
@@ -278,77 +312,51 @@
         }
 
         function drop(ev, targetSide) {
-            ev.preventDefault(); 
+            ev.preventDefault();
             const data = JSON.parse(ev.dataTransfer.getData("text"));
-            const sourceIdx = sides[data.side].findIndex(i => i.id === data.id);
-            if(sourceIdx === -1) return;
-            const item = sides[data.side][sourceIdx];
-            
-            const targetEl = ev.target.closest('.item');
-            if (targetEl && data.side === targetSide) {
-                const targetId = parseInt(targetEl.getAttribute('data-id'));
-                const targetIdx = sides[targetSide].findIndex(i => i.id === targetId);
-                const targetItem = sides[targetSide][targetIdx];
-                if (item.type === targetItem.type && item.id !== targetId) {
-                    saveHistory();
-                    let commonNum = (targetItem.num * item.den) + (item.num * targetItem.den);
-                    let commonDen = targetItem.den * item.den;
-                    let frac = createFraction(commonNum, commonDen);
-                    targetItem.num = frac.num; targetItem.den = frac.den;
-                    sides[data.side].splice(sourceIdx, 1);
-                    if (targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
-                    render(); return;
-                }
-            }
-            
             saveHistory();
-            sides[targetSide].push(sides[data.side].splice(sourceIdx, 1)[0]);
+            const idx = sides[data.side].findIndex(i => i.id === data.id);
+            const item = sides[data.side].splice(idx, 1)[0];
+            sides[targetSide].push(item);
             render();
         }
 
         function operate(type) {
-            const raw = document.getElementById('op-val').value.trim(); saveHistory();
+            const val = parseInt(document.getElementById('opVal').value);
+            if(isNaN(val) || val === 0) return;
+            saveHistory();
             ['left', 'right'].forEach(s => {
-                if(raw.toLowerCase()==='x'){
-                    if(type==='multiply') sides[s] = sides[s].map(i => i.type==='inv-x' ? {...i, type:'number'} : (i.type==='number' ? {...i, type:'x'} : i));
-                } else {
-                    const fct = parseInt(raw); if(isNaN(fct)||fct===0) return;
-                    sides[s] = sides[s].map(i => { let f = type==='multiply' ? createFraction(i.num*fct, i.den) : createFraction(i.num, i.den*fct); return {...i, num:f.num, den:f.den}; }).filter(i => i.num!==0);
-                }
+                sides[s] = sides[s].map(i => {
+                    let f = type==='multiply' ? createFraction(i.num*val, i.den) : createFraction(i.num, i.den*val);
+                    return {...i, num: f.num, den: f.den};
+                }).filter(i => i.num !== 0);
             });
             render();
         }
 
         function checkSolution() {
-            let L=sides.left, R=sides.right;
-            if(L.length===1 && L[0].type==='x' && L[0].num===1 && L[0].den===1 && R.length===1 && R[0].type==='number' && Math.abs((R[0].num/R[0].den)-xValue)<0.01){
-                alert("Riktig!"); winStreak++; 
-                if(winStreak>=6 && currentLevel<6){ currentLevel++; winStreak=0; alert("Gratulerer! Du flyttes opp til neste nivå."); }
-                if(window.syncProgressToFirebase) window.syncProgressToFirebase(currentLevel, winStreak);
+            let L=getTotals('left'), R=getTotals('right');
+            let solved = (sides.left.length === 1 && sides.left[0].type === 'x' && sides.left[0].num === 1 && sides.left[0].den === 1 && sides.right.length === 1 && sides.right[0].type === 'number');
+            if(solved && Math.abs(R.units - xValue) < 0.01) {
+                alert("Riktig!"); winStreak++;
+                if(winStreak >= 6 && currentLevel < 6) { currentLevel++; winStreak = 0; }
+                if(window.syncFB) window.syncFB(currentLevel, winStreak);
                 initGame();
-            } else { alert("For å løse ligningen må du ha én positiv x alene på venstre side (x = tall)."); }
+            } else { alert("Isoler 1x på den ene siden!"); }
         }
 
-        function manualAdd(side, type) {
+        function addManual(side, type) {
             saveHistory();
-            if (type === 'x') {
-                const qty = parseFloat(document.getElementById(`x-qty-${side}`).value);
-                if (qty !== 0) sides[side].push({ id: idCounter++, type: 'x', num: qty, den: 1 });
-            } else {
-                const val = parseFloat(document.getElementById(`val-${side}`).value);
-                if (val !== 0) sides[side].push({ id: idCounter++, type: 'number', num: val, den: 1 });
-            }
+            const qty = parseInt(document.getElementById('qty' + (side === 'left' ? 'L' : 'R')).value);
+            sides[side].push({ id: idCounter++, type: type === 'x' ? 'x' : 'number', num: qty, den: 1 });
             render();
         }
 
-        function toggleDemoPanel(){ document.querySelectorAll('.demo-panel').forEach(p=>p.style.display=document.getElementById('demoPanelToggle').checked?'flex':'none'); }
-        function changeLevel(v){ currentLevel=parseInt(v); winStreak=0; initGame(); }
-        function skipToNewTask(){ winStreak=0; initGame(); }
-        function menuInvert(){ if(!activeMenuTarget)return; saveHistory(); activeMenuTarget.item.num*=-1; render(); }
-        function menuSplitInTwo(){ if(!activeMenuTarget)return; saveHistory(); let i=activeMenuTarget.item; let p1=Math.ceil(i.num/2), p2=i.num-p1; sides[activeMenuTarget.side].splice(sides[activeMenuTarget.side].indexOf(i),1); sides[activeMenuTarget.side].push({id:idCounter++, type:i.type, num:p1, den:i.den}, {id:idCounter++, type:i.type, num:p2, den:i.den}); render(); }
-        
-        document.addEventListener('click',()=>document.getElementById('customContextMenu').style.display='none');
-        window.onload = initGame;
+        function saveHistory() { history.push(JSON.stringify({ sides, idCounter })); document.getElementById('undoBtn').disabled = false; }
+        function undo() { if(!history.length) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(); }
+
+        window.roomCode = null;
+        window.onload = () => {}; 
     </script>
 </body>
 </html>
