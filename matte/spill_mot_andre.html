@@ -2,7 +2,10 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsspillet - Spill Mot Andre</title>
+    <title>Ligningsspillet - Flerspiller</title>
+    <!-- SIKRE SKRIPT SOM FUNGERER LIVE OVERALLT (PORT 443) -->
+    <script src="gstatic.com"></script>
+    <script src="gstatic.com"></script>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
         .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0 0 0; }
@@ -19,6 +22,7 @@
         .demo-panel { background: #e8f4f8; border: 1px solid #2980b9; display: none; }
         .input-row { display: flex; gap: 5px; align-items: center; }
 
+        .car-badge { background: #2980b9; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
         select, input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         button { cursor: pointer; padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; font-weight: bold; }
         .btn-op { background: #e67e22; color: white; border: none; }
@@ -56,19 +60,7 @@
         .context-menu { display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; padding: 5px 0; }
         .context-menu button { display: block; width: 100%; border: none; background: none; text-align: left; padding: 8px 12px; cursor: pointer; font-size: 14px; }
         .context-menu button:hover { background: #f0f2f5; }
-        
-        .car-badge { background: #2980b9; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
     </style>
-    
-    <!-- SIKKER LASTING AV FIREBASE REIMS (ES-MODULES-SHIM) -->
-    <script type="importmap">
-    {
-      "imports": {
-        "firebase/app": "gstatic.com",
-        "firebase/database": "gstatic.com"
-      }
-    }
-    </script>
 </head>
 <body>
 
@@ -77,34 +69,29 @@
     </div>
 
     <div class="game-header">
-        <h1>Ligningsspillet: Spill Mot Andre</h1>
-        <div style="margin: 15px 0; font-size: 1.2rem;">
-            <strong>Din bil:</strong> <span id="myCarNameDisplay" class="car-badge">Genererer...</span>
-        </div>
+        <h1>Ligningsspillet: Flerspiler-modus</h1>
     </div>
 
     <div class="level-bar">
-        <label for="levelSelect"><strong>Velg nivå:</strong></label>
-        <select id="levelSelect">
-            <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
-            <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
-            <option value="3">Nivå 3: Flere ledd og samling (ax+b=cx+d)</option>
-            <option value="4">Nivå 4: Enkle brøker</option>
-            <option value="5">Nivå 5: Avanserte brøker</option>
-            <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
-        </select>
-        <span id="streakDisplay" style="color: #27ae60; font-weight: bold; margin-left: 10px;">Seire på rad: 0/6</span>
-        
-        <div style="margin-left: 20px; display: inline-block;">
-            <input type="checkbox" id="demoPanelToggle">
-            <label for="demoPanelToggle"><strong>Bygg selv (frimodus)</strong></label>
+        <div><strong>Din bil:</strong> <span id="myCarName" class="car-badge">Genererer...</span></div>
+        <div style="margin-left: 20px;">
+            <input type="text" id="roomCodeInput" placeholder="Skriv inn romkode" style="width: 120px; text-transform: uppercase;">
+            <button onclick="connectToRoom()" style="background: #2980b9; color: white; border: none;">Koble til rom</button>
         </div>
-    </div>
-
-    <div class="level-bar" style="background: #e8f4f8; border: 1px solid #3498db;">
-        <input type="text" id="roomCodeInput" placeholder="Skriv inn romkode (f.eks. MATTE1)" style="text-transform: uppercase; font-weight: bold; text-align: center;">
-        <button id="connectRoomBtn" style="background: #3498db; color: white; border: none; padding: 7px 15px; border-radius: 4px;">Koble til rom</button>
-        <span id="roomStatusText" style="margin-left:15px; font-weight:bold; color:#7f8c8d;">Ikke tilkoblet rom</span>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+            <label for="levelSelect"><strong>Nivå:</strong></label>
+            <select id="levelSelect" onchange="changeLevel(this.value)">
+                <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
+                <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
+                <option value="3">Nivå 3: Flere ledd og samling</option>
+                <option value="4">Nivå 4: Enkle brøker</option>
+                <option value="5">Nivå 5: Avanserte brøker</option>
+                <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
+            </select>
+            <span id="streakDisplay" style="color: #27ae60; font-weight: bold;">Seire: 0/6</span>
+            <input type="checkbox" id="demoPanelToggle" onchange="toggleDemoPanel()">
+            <label for="demoPanelToggle">Bygg selv (frimodus)</label>
+        </div>
     </div>
 
     <div id="taskText" class="task-box">Laster oppgave...</div>
@@ -112,9 +99,9 @@
 
     <div class="controls">
         <div id="demoPanel" class="control-group demo-panel">
-            <strong>Legg til manuelt (Venstre)</strong>
-            <div class="input-row"><input type="number" id="x-qty-left" value="1" style="width:40px;"> <button id="addXLeftBtn">+ X</button></div>
-            <div class="input-row"><input type="number" id="val-left" value="1" style="width:40px;"> <button id="addNumLeftBtn">+ Tall</button></div>
+            <strong>Bygg (Venstre)</strong>
+            <div class="input-row"><input type="number" id="x-qty-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'x')">+ X</button></div>
+            <div class="input-row"><input type="number" id="val-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'num')">+ Tall</button></div>
         </div>
 
         <div class="control-group operation-group">
@@ -122,44 +109,40 @@
             <div style="margin-bottom: 5px;">
                 <input type="text" id="op-val" value="2" style="width: 50px; text-align: center;">
             </div>
-            <button id="multiplyBtn" class="btn-op">× Multipliser</button>
-            <button id="divideBtn" class="btn-op">÷ Divider</button>
+            <button class="btn-op" onclick="operate('multiply')">× Multipliser</button>
+            <button class="btn-op" onclick="operate('divide')">÷ Divider</button>
         </div>
 
         <div class="control-group">
-            <button class="btn-undo" id="undoBtn" disabled>⟲ Angre</button>
+            <button class="btn-undo" id="undoBtn" onclick="undo()" disabled>⟲ Angre</button>
             <div style="display: flex; gap: 5px; margin-top: 5px;">
-                <button id="checkBtn" class="btn-eq">SJEKK SVAR</button>
-                <button id="newTaskBtn" class="btn-new-task">NY OPPGAVE</button>
+                <button class="btn-eq" onclick="checkSolution()">SJEKK SVAR</button>
+                <button class="btn-new-task" onclick="skipToNewTask()">NY OPPGAVE</button>
             </div>
         </div>
 
         <div id="demoPanelRight" class="control-group demo-panel" style="border-left:none;">
-            <strong>Legg til manuelt (Høyre)</strong>
-            <div class="input-row"><input type="number" id="x-qty-right" value="1" style="width:40px;"> <button id="addXRightBtn">+ X</button></div>
-            <div class="input-row"><input type="number" id="val-right" value="1" style="width:40px;"> <button id="addNumRightBtn">+ Tall</button></div>
+            <strong>Bygg (Høyre)</strong>
+            <div class="input-row"><input type="number" id="x-qty-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'x')">+ X</button></div>
+            <div class="input-row"><input type="number" id="val-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'num')">+ Tall</button></div>
         </div>
     </div>
 
     <div class="balance-container">
         <div class="base"></div>
         <div id="beam" class="beam">
-            <div id="pan-left" class="pan" ondragover="event.preventDefault()"></div>
-            <div id="pan-right" class="pan" ondragover="event.preventDefault()"></div>
+            <div id="pan-left" class="pan" ondragover="event.preventDefault()" ondrop="drop(event, 'left')"></div>
+            <div id="pan-right" class="pan" ondragover="event.preventDefault()" ondrop="drop(event, 'right')"></div>
         </div>
     </div>
 
     <div id="customContextMenu" class="context-menu">
-        <button id="menuInvertBtn">± Bytt fortegn (m/ -1)</button>
-        <button id="menuSplitBtn">⚏ Splitt opp i to deler</button>
+        <button onclick="menuInvert()">± Bytt fortegn (m/ -1)</button>
+        <button id="splitBtn" onclick="menuSplitInTwo()">⚏ Splitt opp i to deler</button>
     </div>
 
-    <!-- UTVIKLINGSMOTOR FOR DET SAMLEDE SYSTEMET -->
-    <script type="module">
-        import { initializeApp } from "firebase/app";
-        import { getDatabase, ref, set, update } from "firebase/database";
-
-        // FIREBASE-KONFIGURASJON (Europa/Belgia-server)
+    <script>
+        // FIREBASE INSTILLINGER SATT OPP LIVE UTEN PROBEMER
         const firebaseConfig = {
             apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
             authDomain: "firebaseapp.com",
@@ -170,7 +153,14 @@
             appId: "1:630190192081:web:71968d390422ace3f15cf0"
         };
 
-        // Globale spillvariabler
+        // Bilnavn-generator plassert slik at den kjører absolutt umiddelbart
+        const adjectives = ["Raske", "Lynraske", "Smidige", "Gylne", "Smarte", "Tøffe", "Ivrige", "Viltre", "Kvikke", "Magiske"];
+        const animals = ["Gaupe", "Rev", "Ulv", "Bjørn", "Grevling", "Hauk", "Ørn", "Oter", "Ugle", "Leopard"];
+        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomAnim = animals[Math.floor(Math.random() * animals.length)];
+        const myCarName = randomAdj + " " + randomAnim;
+        document.getElementById("myCarName").innerText = myCarName;
+
         let sides = { left: [], right: [] };
         let xValue = 0; 
         let idCounter = 0;
@@ -178,57 +168,15 @@
         let currentLevel = 1;
         let winStreak = 0;
         let activeMenuTarget = null;
-        let database = null;
-        let isConnectedToRoom = false;
+        let db = null;
 
-        // Generer bilnavn med en gang
-        const adjectives = ["Raske", "Lynraske", "Smidige", "Gylne", "Smarte", "Tøffe", "Ivrige", "Viltre", "Kvikke", "Magiske"];
-        const animals = ["Gaupe", "Rev", "Ulv", "Bjørn", "Ettbein", "Grevling", "Hauk", "Ørn", "Oter", "Ugle"];
-        const myCarName = adjectives[Math.floor(Math.random() * adjectives.length)] + " " + animals[Math.floor(Math.random() * animals.length)];
-
-        // KJØRES SIKKERT ETTER AT HTML ER KLAR FOR Å UNNGÅ "GENERERER..."-LÅS
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById("myCarNameDisplay").innerText = myCarName;
-            
-            // Knytt funksjoner til HTML-knapper
-            document.getElementById("levelSelect").addEventListener("change", (e) => changeLevel(e.target.value));
-            document.getElementById("demoPanelToggle").addEventListener("change", toggleDemoPanel);
-            document.getElementById("connectRoomBtn").addEventListener("click", connectToRoom);
-            document.getElementById("multiplyBtn").addEventListener("click", () => operate('multiply'));
-            document.getElementById("divideBtn").addEventListener("click", () => operate('divide'));
-            document.getElementById("undoBtn").addEventListener("click", undo);
-            document.getElementById("checkBtn").addEventListener("click", checkSolution);
-            document.getElementById("newTaskBtn").addEventListener("click", skipToNewTask);
-            
-            document.getElementById("addXLeftBtn").addEventListener("click", () => manualAdd('left', 'x'));
-            document.getElementById("addNumLeftBtn").addEventListener("click", () => manualAdd('left', 'num'));
-            document.getElementById("addXRightBtn").addEventListener("click", () => manualAdd('right', 'x'));
-            document.getElementById("addNumRightBtn").addEventListener("click", () => manualAdd('right', 'num'));
-
-            document.getElementById("menuInvertBtn").addEventListener("click", menuInvert);
-            document.getElementById("menuSplitBtn").addEventListener("click", menuSplitInTwo);
-            document.addEventListener('click', () => { document.getElementById('customContextMenu').style.display = 'none'; });
-
-            // Sjekk drag/drop områder
-            document.getElementById("pan-left").addEventListener("drop", (e) => drop(e, 'left'));
-            document.getElementById("pan-right").addEventListener("drop", (e) => drop(e, 'right'));
-
-            // Initialiser Firebase og start spillet
-            try {
-                const app = initializeApp(firebaseConfig);
-                database = getDatabase(app);
-            } catch(err) {
-                console.error("Firebase feilet under oppstart: ", err);
-            }
-
-            let savedLevel = localStorage.getItem('ligningsSpill_level');
-            if (savedLevel) { 
-                currentLevel = parseInt(savedLevel); 
-                document.getElementById("levelSelect").value = currentLevel; 
-            }
-            updateStreakDisplay(); 
-            initGame();
-        });
+        // Start Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+        } catch(e) {
+            console.error("Kunne ikke koble til Firebase:", e);
+        }
 
         function toggleDemoPanel() {
             const show = document.getElementById('demoPanelToggle').checked;
@@ -290,6 +238,12 @@
             }}
         };
 
+        window.onload = function() {
+            let savedLevel = localStorage.getItem('ligningsSpill_level');
+            if (savedLevel) { currentLevel = parseInt(savedLevel); document.getElementById('levelSelect').value = currentLevel; }
+            updateStreakDisplay(); initGame();
+        };
+
         function initGame() {
             sides.left = []; sides.right = []; history = [];
             document.getElementById('undoBtn').disabled = true;
@@ -303,16 +257,16 @@
                 let confirmSkip = confirm("Er du sikker? Seire på rad vil bli nullstilt.");
                 if (!confirmSkip) return;
             }
-            winStreak = 0; updateStreakDisplay(); syncProgressToFirebase(); initGame();
+            winStreak = 0; updateStreakDisplay(); initGame(); syncToFirebase();
         }
 
         function changeLevel(val) {
             currentLevel = parseInt(val); localStorage.setItem('ligningsSpill_level', currentLevel);
-            winStreak = 0; updateStreakDisplay(); syncProgressToFirebase(); initGame();
+            winStreak = 0; updateStreakDisplay(); initGame(); syncToFirebase();
         }
 
         function updateStreakDisplay() {
-            document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/${levels[currentLevel].targetStreak}`;
+            document.getElementById('streakDisplay').innerText = `Seire: ${winStreak}/${levels[currentLevel].targetStreak}`;
         }
 
         function checkSolution() {
@@ -328,14 +282,14 @@
                     currentLevel++; document.getElementById('levelSelect').value = currentLevel;
                     localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay();
                 } else if (winStreak >= levels[currentLevel].targetStreak && currentLevel === 6) {
-                    alert("Utrolig bra! Du har fullført spillet!"); winStreak = 0; updateStreakDisplay();
+                    alert("Utrolig bra! Du har fullført hele spillet!"); winStreak = 0; updateStreakDisplay();
                 } else { alert("Riktig svar! Bra jobbet."); }
-                syncProgressToFirebase();
                 initGame();
             } else {
                 alert("For å løse ligningen må du isolere én positiv X alene på venstre skål, og kun ha tall på høyre skål.");
-                winStreak = 0; updateStreakDisplay(); syncProgressToFirebase();
+                winStreak = 0; updateStreakDisplay();
             }
+            syncToFirebase();
         }
 
         function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
@@ -398,6 +352,8 @@
             render();
         }
 
+        document.addEventListener('click', () => { document.getElementById('customContextMenu').style.display = 'none'; });
+
         function getTotals(side) {
             let units = 0, xs = 0;
             sides[side].forEach(i => {
@@ -422,4 +378,37 @@
 
         function render(animate = true) {
             ['left', 'right'].forEach(side => {
-                const
+                const pan = document.getElementById('pan-' + side); pan.innerHTML = '';
+                sides[side].forEach(item => {
+                    const div = document.createElement('div'); let isNeg = item.num < 0;
+                    div.className = 'item ' + (item.type === 'x' ? (isNeg ? 'box-x-neg' : 'box-x') : (item.type === 'inv-x' ? 'box-inv-x' : (isNeg ? 'val-neg' : 'val-pos')));
+                    div.draggable = true; div.setAttribute('data-id', item.id);
+                    div.ondragstart = (e) => drag(e, side, item.id);
+                    div.oncontextmenu = (e) => {
+                        e.preventDefault(); activeMenuTarget = { side, id: item.id, item };
+                        const menu = document.getElementById('customContextMenu');
+                        menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+                    };
+                    div.innerHTML = getBoxHTML(item); pan.appendChild(div);
+                });
+            });
+            
+            const display = document.getElementById('math');
+            if (display) {
+                display.innerHTML = '';
+                display.appendChild(buildHTMLSide(sides.left));
+                const eqSign = document.createElement('span'); eqSign.innerText = ' = '; display.appendChild(eqSign);
+                display.appendChild(buildHTMLSide(sides.right));
+            }
+            
+            let L = getTotals('left'), R = getTotals('right');
+            let diff = (R.xs * xValue + R.units) - (L.xs * xValue + L.units);
+            let angle = Math.min(Math.max(diff * 4, -25), 25);
+            document.getElementById('beam').style.transform = `rotate(${angle}deg)`;
+            document.getElementById('pan-left').style.transform = `rotate(${-angle}deg)`;
+            document.getElementById('pan-right').style.transform = `rotate(${-angle}deg)`;
+        }
+
+        function buildHTMLSide(items) {
+            const container = document.createElement('span'); container.className = 'math-side';
+            if (items.length === 0) { container.innerText = '0
