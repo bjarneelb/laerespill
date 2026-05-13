@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsspillet - Flerspiller</title>
+    <title>Ligningsspillet - Spill mot andre</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
         .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0 0 0; }
@@ -10,15 +10,18 @@
         .btn-back:hover { background: #c0392b; transform: translateY(-1px); }
         
         .game-header { text-align: center; margin-bottom: 10px; }
-        .setup-bar { background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; align-items: center; margin-bottom: 15px; min-width: 510px; }
-        .setup-row { display: flex; gap: 15px; align-items: center; width: 100%; justify-content: center; }
+        
+        /* Flerspiller-bar */
+        .multiplayer-bar { background: #d5dbdb; width: 100%; max-width: 810px; padding: 12px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .room-inputs { display: flex; gap: 8px; align-items: center; }
+        .status-badge { background: #34495e; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.9rem; }
+        .status-connected { background: #27ae60; }
+
+        .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
         .controls { margin: 10px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
         .control-group { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; border-right: 1px solid #ddd; }
         .control-group:last-child { border-right: none; }
         .operation-group { background: #fdf2e9; padding: 10px; border-radius: 8px; border: 1px solid #e67e22; text-align: center; }
-        
-        .demo-panel { background: #e8f4f8; border: 1px solid #2980b9; display: none; }
-        .input-row { display: flex; gap: 5px; align-items: center; }
 
         select, input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         button { cursor: pointer; padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; font-weight: bold; }
@@ -37,12 +40,14 @@
         .math-num { border-bottom: 2px solid #4af626; text-align: center; width: 100%; padding-bottom: 2px; }
         .math-den { text-align: center; width: 100%; padding-top: 2px; }
 
-        /* Sideliste for å se andre spillere */
-        .leaderboard-box { margin-top: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); min-width: 550px; text-align: left; }
-        .leaderboard-title { font-weight: bold; font-size: 1.1rem; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 50x; }
-        .player-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.95rem; }
+        /* Toppliste / Leaderboard-stil */
+        .leaderboard-box { background: white; border-radius: 12px; padding: 15px; width: 100%; max-width: 810px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .leaderboard-title { margin-top: 0; color: #2c3e50; font-size: 1.1rem; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        .player-row { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid #f2f4f4; font-size: 1rem; }
+        .player-row:last-child { border-bottom: none; }
+        .current-user-row { background: #e8f4f8; font-weight: bold; border-radius: 6px; }
 
-        .balance-container { position: relative; width: 850px; height: 400px; margin-top: 30px; }
+        .balance-container { position: relative; width: 850px; height: 400px; margin-top: 10px; }
         .base { position: absolute; bottom: 0; left: 400px; width: 50px; height: 250px; background: #34495e; border-radius: 8px 8px 0 0; }
         .beam { position: absolute; top: 100px; left: 75px; width: 700px; height: 12px; background: #7f8c8d; transition: transform 0.6s ease-in-out; transform-origin: center; display: flex; justify-content: space-between; }
         .pan { position: absolute; top: 12px; width: 240px; min-height: 150px; background: rgba(0,0,0,0.05); border-top: 4px solid #444; border-radius: 0 0 20px 20px; transition: transform 0.6s ease-in-out; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 10px; padding: 15px; }
@@ -63,8 +68,8 @@
         .context-menu button { display: block; width: 100%; border: none; background: none; text-align: left; padding: 8px 12px; cursor: pointer; font-size: 14px; }
         .context-menu button:hover { background: #f0f2f5; }
     </style>
-
-    <!-- HENT FIREBASE FRA GOOGLE SIN TJENER OVER PORT 443 -->
+    
+    <!-- Henter de offisielle Firebase-skriptene fra nettet -->
     <script src="gstatic.com"></script>
     <script src="gstatic.com"></script>
 </head>
@@ -75,45 +80,42 @@
     </div>
 
     <div class="game-header">
-        <h1>Flerspiller: Ligningskampen</h1>
+        <h1>Ligningsspillet: Spill mot andre</h1>
     </div>
 
-    <div class="setup-bar">
-        <div class="setup-row">
-            <div>Din bil: <strong id="carNameDisplay" style="color: #2980b9;">Genererer...</strong></div>
-            <div>
-                <input type="text" id="roomInput" placeholder="Skriv romkode (f.eks MATTE1)" style="text-transform: uppercase; width: 200px;">
-                <button onclick="joinRoom()" style="background: #2c3e50; color: white; border: none;">Koble til rom</button>
-            </div>
+    <!-- Nytt flerspillerpanel -->
+    <div class="multiplayer-bar">
+        <span id="carNameDisplay">Din bil: Genererer...</span>
+        <div class="room-inputs">
+            <input type="text" id="roomInput" placeholder="Skriv romkode (f.eks MATTE1)" style="text-transform: uppercase; width: 180px;">
+            <button onclick="joinRoom()" style="background: #34495e; color: white; border: none;">Koble til rom</button>
         </div>
-        <div class="setup-row" style="font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 8px; width: 100%;">
-            <label for="levelSelect"><strong>Nivå:</strong></label>
-            <select id="levelSelect" onchange="changeLevel(this.value)">
-                <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
-                <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
-                <option value="3">Nivå 3: Flere ledd og samling (ax+b=cx+d)</option>
-                <option value="4">Nivå 4: Enkle brøker</option>
-                <option value="5">Nivå 5: Avanserte brøker</option>
-                <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
-            </select>
-            <span id="streakDisplay" style="color: #27ae60; margin-left: auto;">Seire på rad: 0/6</span>
-            <div style="margin-left: 15px;">
-                <input type="checkbox" id="demoPanelToggle" onchange="toggleDemoPanel()">
-                <label for="demoPanelToggle">Bygg selv (frimodus)</label>
-            </div>
-        </div>
+        <span id="statusBadge" class="status-badge">Frakoblet</span>
     </div>
 
-    <div id="taskText" class="task-box">Koble til et rom over for å starte ligningskampen!</div>
+    <!-- Live Toppliste for klassen -->
+    <div class="leaderboard-box" id="leaderboardBox" style="display:none;">
+        <h3 class="leaderboard-title">🏁 Live stilling i rommet:</h3>
+        <div id="leaderboardContent">Logg inn i et rom for å se andre biler...</div>
+    </div>
+
+    <div class="level-bar">
+        <label for="levelSelect"><strong>Velg nivå:</strong></label>
+        <select id="levelSelect" onchange="changeLevel(this.value)">
+            <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
+            <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
+            <option value="3">Nivå 3: Flere ledd og samling (ax+b=cx+d)</option>
+            <option value="4">Nivå 4: Enkle brøker</option>
+            <option value="5">Nivå 5: Avanserte brøker</option>
+            <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
+        </select>
+        <span id="streakDisplay" style="color: #27ae60;">Seire på rad: 0/6</span>
+    </div>
+
+    <div id="taskText" class="task-box">Laster oppgave...</div>
     <div id="math" class="math-display"></div>
 
     <div class="controls">
-        <div id="demoPanel" class="control-group demo-panel">
-            <strong>Legg til manuelt (Venstre)</strong>
-            <div class="input-row"><input type="number" id="x-qty-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'x')">+ X</button></div>
-            <div class="input-row"><input type="number" id="val-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'num')">+ Tall</button></div>
-        </div>
-
         <div class="control-group operation-group">
             <strong>Gjør på begge sider</strong>
             <div style="margin-bottom: 5px;">
@@ -126,15 +128,9 @@
         <div class="control-group">
             <button class="btn-undo" id="undoBtn" onclick="undo()" disabled>⟲ Angre</button>
             <div style="display: flex; gap: 5px; margin-top: 5px;">
-                <button class="btn-eq" id="checkBtn" onclick="checkSolution()" disabled>SJEKK SVAR</button>
-                <button class="btn-new-task" id="newBtn" onclick="skipToNewTask()" disabled>NY OPPGAVE</button>
+                <button class="btn-eq" onclick="checkSolution()">SJEKK SVAR</button>
+                <button class="btn-new-task" onclick="skipToNewTask()">NY OPPGAVE</button>
             </div>
-        </div>
-
-        <div id="demoPanelRight" class="control-group demo-panel" style="border-left:none;">
-            <strong>Legg til manuelt (Høyre)</strong>
-            <div class="input-row"><input type="number" id="x-qty-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'x')">+ X</button></div>
-            <div class="input-row"><input type="number" id="val-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'num')">+ Tall</button></div>
         </div>
     </div>
 
@@ -146,62 +142,126 @@
         </div>
     </div>
 
-    <!-- Live resultater direkte på elevens egen skjerm -->
-    <div class="leaderboard-box" id="leaderboardSection" style="display:none;">
-        <div class="leaderboard-title">🏁 Live stilling i rommet: <span id="roomCodeDisplay" style="color:#e67e22;"></span></div>
-        <div id="playerList"></div>
-    </div>
-
     <div id="customContextMenu" class="context-menu">
         <button onclick="menuInvert()">± Bytt fortegn (m/ -1)</button>
         <button id="splitBtn" onclick="menuSplitInTwo()">⚏ Splitt opp i to deler</button>
     </div>
 
     <script>
-        // DINE UNIKE FIREBASE NØKLER MED DEN KORREKTE BELGIA-DATABASE-URLEN
+        // --- DIN FIREBASE KONFIGURASJON ---
         const firebaseConfig = {
-          apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
-          authDomain: "firebaseapp.com",
-          databaseURL: "firebasedatabase.app",
-          projectId: "likningsspill",
-          storageBucket: "likningsspill.firebasestorage.app",
-          messagingSenderId: "630190192081",
-          appId: "1:630190192081:web:71968d390422ace3f15cf0"
+            apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
+            authDomain: "firebaseapp.com",
+            projectId: "likningsspill",
+            storageBucket: "likningsspill.firebasestorage.app",
+            messagingSenderId: "630190192081",
+            appId: "1:630190192081:web:71968d390422ace3f15cf0",
+            // GENERERER DATABASEURL AUTOMATISK SIDEN GOOGLE MANGLER DEN I OVERSIKTEN DIN
+            databaseURL: "firebasedatabase.app"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        let database = null;
+        let currentRoom = null;
+        let myCarName = "";
+        let totalScore = 0;
 
         let sides = { left: [], right: [] };
-        let xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0, activeMenuTarget = null;
-        let myRoomCode = "", myPlayerId = "", myCarName = "";
+        let xValue = 0; 
+        let idCounter = 0;
+        let history = [];
+        let currentLevel = 1;
+        let winStreak = 0;
+        let activeMenuTarget = null;
 
-        // Generator for anonyme, morsomme bilnavn
-        const adjektiver = ["Raske", "Turbo", "Lyn", "Glitrende", "Gull", "Smarte", "Kloke", "Svevende", "Gass", "Super"];
-        const dyr = ["Troll", "Rev", "Gaupe", "Ulv", "Bjørn", "Hare", "Elg", "Gepard", "Falk", "Ørn"];
-        
-        myCarName = adjektiver[Math.floor(Math.random() * adjektiver.length)] + "-" + dyr[Math.floor(Math.random() * dyr.length)];
-        myPlayerId = "p_" + Math.random().toString(36).substr(2, 9);
-        document.getElementById('carNameDisplay').innerText = myCarName;
+        // Anonyme bilnavn-generatorer
+        const adjectives = ["Raske", "Smarte", "Turbo", "Lynraske", "Smidige", "Gylne", "Elektriske", "Flyvende"];
+        const animals = ["Gaupe", "Troll", "Rev", "Bjørn", "Ulv", "Falk", "Gepard", "Hare", "Ekorn", "Tiger"];
 
-        function toggleDemoPanel() {
-            const show = document.getElementById('demoPanelToggle').checked;
-            document.getElementById('demoPanel').style.display = show ? 'flex' : 'none';
-            document.getElementById('demoPanelRight').style.display = show ? 'flex' : 'none';
-        }
+        // Venter til hele nettsiden og Firebase-skriptene er klare før oppstart
+        document.addEventListener("DOMContentLoaded", function() {
+            // Generer anonymt bilnavn
+            let adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            let anim = animals[Math.floor(Math.random() * animals.length)];
+            myCarName = adj + " " + anim + " #" + Math.floor(Math.random() * 900 + 100);
+            document.getElementById('carNameDisplay').innerText = "Din bil: 🏎 " + myCarName;
 
-        function manualAdd(side, type) {
-            saveHistory();
-            if (type === 'x') {
-                const qty = parseFloat(document.getElementById(`x-qty-${side}`).value);
-                if (qty !== 0) sides[side].push({ id: idCounter++, type: 'x', num: qty, den: 1 });
-            } else {
-                const val = parseFloat(document.getElementById(`val-${side}`).value);
-                if (val !== 0) sides[side].push({ id: idCounter++, type: 'number', num: val, den: 1 });
+            // Start spill-motor og sjekk lokallagring
+            let savedLevel = localStorage.getItem('ligningsSpill_level');
+            if (savedLevel) {
+                currentLevel = parseInt(savedLevel);
+                document.getElementById('levelSelect').value = currentLevel;
             }
-            render();
+            updateStreakDisplay();
+            initGame();
+        });
+
+        // Koble opp til et spillrom opprettet av læreren (eller en medelev)
+        function joinRoom() {
+            let roomCode = document.getElementById('roomInput').value.trim().toUpperCase();
+            if (!roomCode) { alert("Vennligst skriv inn en romkode!"); return; }
+            
+            // Initialiser Firebase om det ikke er gjort
+            if (!database) {
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    database = firebase.database();
+                } catch(e) {
+                    console.error("Firebase feil:", e);
+                    alert("Klarte ikke koble til Firebase. Sjekk at skolenettverket ikke blokkerer skytjenester.");
+                    return;
+                }
+            }
+
+            currentRoom = roomCode;
+            document.getElementById('statusBadge').innerText = "Tilkoblet: " + currentRoom;
+            document.getElementById('statusBadge').classList.add('status-connected');
+            document.getElementById('leaderboardBox').style.display = 'block';
+
+            // Send din bil inn i databasen med 0 poeng med en gang
+            sendDataToFirebase();
+
+            // Lytt til oppdateringer fra andre biler i samme rom
+            database.ref("rooms/" + currentRoom).on("value", function(snapshot) {
+                let data = snapshot.val();
+                updateLeaderboard(data);
+            });
         }
 
+        function sendDataToFirebase() {
+            if (!database || !currentRoom) return;
+            database.ref("rooms/" + currentRoom + "/" + myCarName).set({
+                score: totalScore,
+                level: currentLevel,
+                streak: winStreak,
+                lastUpdate: firebase.database.ServerValue.TIMESTAMP
+            });
+        }
+
+        function updateLeaderboard(roomData) {
+            const content = document.getElementById('leaderboardContent');
+            if (!roomData) { content.innerText = "Venter på flere biler..."; return; }
+            
+            content.innerHTML = '';
+            
+            // Sorter bilene etter poengsum (høyest først)
+            let players = [];
+            for (let name in roomData) {
+                players.push({ name: name, ...roomData[name] });
+            }
+            players.sort((a, b) => b.score - a.score);
+
+            players.forEach((player, idx) => {
+                const row = document.createElement('div');
+                row.className = "player-row" + (player.name === myCarName ? " current-user-row" : "");
+                row.innerHTML = `
+                    <span>${idx + 1}. 🏎 ${player.name}</span>
+                    <span>Nivå ${player.level} (Streak: ${player.streak}/6) — <strong>${player.score} poeng</strong></span>
+                `;
+                content.appendChild(row);
+            });
+        }
+
+        // --- Standard spill-logikk (Forblir uendret, unntatt poengberegning) ---
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
         const levels = {
@@ -242,63 +302,9 @@
             }}
         };
 
-        // KOBLE TIL DET DELTE SKY-ROMMET
-        function joinRoom() {
-            let code = document.getElementById('roomInput').value.trim().toUpperCase();
-            if (!code) { alert("Skriv inn en romkode først!"); return; }
-            
-            myRoomCode = code;
-            document.getElementById('roomCodeDisplay').innerText = myRoomCode;
-            document.getElementById('leaderboardSection').style.display = 'block';
-            
-            // Aktiver knappene i spillet
-            document.getElementById('checkBtn').disabled = false;
-            document.getElementById('newBtn').disabled = false;
-            
-            // Rapporter at vi har blitt med
-            updateScoreInCloud();
-            
-            // Lytt til oppdateringer fra andre biler i samme rom
-            database.ref('rooms/' + myRoomCode).on('value', (snapshot) => {
-                const data = snapshot.val();
-                updateLeaderboardUI(data);
-            });
-            
-            initGame();
-        }
-
-        // Send elevens framgang til skyen i sanntid
-        function updateScoreInCloud() {
-            if (!myRoomCode) return;
-            database.ref('rooms/' + myRoomCode + '/' + myPlayerId).set({
-                carName: myCarName,
-                level: currentLevel,
-                streak: winStreak
-            });
-        }
-
-        function updateLeaderboardUI(roomData) {
-            const container = document.getElementById('playerList');
-            container.innerHTML = '';
-            if (!roomData) return;
-            
-            // Sorter spillerne basert på høyest nivå og streak
-            let players = Object.keys(roomData).map(key => roomData[key]);
-            players.sort((a, b) => b.level - a.level || b.streak - a.streak);
-            
-            players.forEach((p, index) => {
-                const row = document.createElement('div');
-                row.className = 'player-row';
-                if (p.carName === myCarName) row.style.fontWeight = 'bold';
-                row.innerHTML = `<span>${index + 1}. 🚗 ${p.carName}</span> <span>Nivå ${p.level} (Streak: ${p.streak}/6)</span>`;
-                container.appendChild(row);
-            });
-        }
-
         function initGame() {
-            if (!myRoomCode) return;
             sides.left = []; sides.right = []; history = [];
-            document.getElementById('undoBtn').disabled = true;
+            if(document.getElementById('undoBtn')) document.getElementById('undoBtn').disabled = true;
             levels[currentLevel].generate();
             document.getElementById('taskText').innerHTML = `<strong>Oppgave:</strong> Finn verdien av <strong>x</strong> slik at vekten blir i balanse.`;
             render();
@@ -309,12 +315,12 @@
                 let confirmSkip = confirm("Er du sikker? Seire på rad vil bli nullstilt.");
                 if (!confirmSkip) return;
             }
-            winStreak = 0; updateStreakDisplay(); updateScoreInCloud(); initGame();
+            winStreak = 0; updateStreakDisplay(); sendDataToFirebase(); initGame();
         }
 
         function changeLevel(val) {
-            currentLevel = parseInt(val); winStreak = 0;
-            updateStreakDisplay(); updateScoreInCloud(); initGame();
+            currentLevel = parseInt(val); localStorage.setItem('ligningsSpill_level', currentLevel);
+            winStreak = 0; updateStreakDisplay(); sendDataToFirebase(); initGame();
         }
 
         function updateStreakDisplay() {
@@ -328,17 +334,24 @@
                 if (Math.abs(finalVal - xValue) < 0.01) isSolved = true;
             }
             if (isSolved) {
-                winStreak++; 
+                winStreak++;
+                totalScore += currentLevel * 100; // Poengsum øker basert på vanskelighetsgrad
+                updateStreakDisplay();
+                sendDataToFirebase(); // Send nye poeng live til klassen
+
                 if (winStreak >= levels[currentLevel].targetStreak && currentLevel < 6) {
-                    alert("Fantastisk! Du rykker opp til neste nivå!");
-                    currentLevel++; document.getElementById('levelSelect').value = currentLevel; winStreak = 0;
+                    alert("Fantastisk! Du flyttes opp til neste nivå!");
+                    currentLevel++; document.getElementById('levelSelect').value = currentLevel;
+                    localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay();
+                    sendDataToFirebase();
                 } else if (winStreak >= levels[currentLevel].targetStreak && currentLevel === 6) {
-                    alert("Utrolig bra! Du har fullført hele løpet!"); winStreak = 0;
-                } else { alert("Riktig svar! Bra jobbet."); }
-                updateStreakDisplay(); updateScoreInCloud(); initGame();
+                    alert("Utrolig bra! Du har fullført spillet!"); winStreak = 0; updateStreakDisplay();
+                    sendDataToFirebase();
+                } else { alert("Riktig svar! Bra jobbet. Bilens poengsum øker."); }
+                initGame();
             } else {
                 alert("For å løse ligningen må du isolere én positiv X alene på venstre skål, og kun ha tall på høyre skål.");
-                winStreak = 0; updateStreakDisplay(); updateScoreInCloud();
+                winStreak = 0; updateStreakDisplay(); sendDataToFirebase();
             }
         }
 
@@ -377,7 +390,7 @@
             ev.preventDefault(); const data = JSON.parse(ev.dataTransfer.getData("text"));
             const sourceSide = data.side; const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
             if (sourceIdx === -1) return;
-            saveHistory(); let item = sides[sourceSide].splice(sourceIdx, 1);
+            saveHistory(); let item = sides[sourceSide].splice(sourceIdx, 1)[0]; // Sørg for unwrap
             const targetEl = ev.target.closest('.item');
             if (targetEl && sourceSide === targetSide) {
                 const targetId = parseInt(targetEl.getAttribute('data-id'));
@@ -407,4 +420,12 @@
             sides[side].forEach(i => {
                 let realVal = i.num / i.den;
                 if (i.type === 'x') xs += realVal;
-                else if (i.type === 'inv
+                else if (i.type === 'inv-x') xs += (realVal * (1/xValue)); 
+                else units += realVal;
+            });
+            return { units, xs };
+        }
+
+        function getBoxHTML(item) {
+            let label = item.type === 'x' ? 'x' : '';
+            if (item.type === 'inv-
