@@ -58,11 +58,21 @@
             z-index: 10; 
         }
 
-        .car-wrapper {
-            animation: engineShake 0.2s infinite;
-            font-size: 50px;
-            line-height: 1;
-        }
+    .car-wrapper {
+    animation: engineShake 0.2s infinite;
+    font-size: 50px;
+    line-height: 1;
+    /* Legg til denne linjen for å snu bilen: */
+    transform: scaleX(-1); 
+    display: inline-block;
+}
+
+/* Vi må også justere animasjonen litt siden vi nå bruker transform på wrapperen */
+@keyframes engineShake {
+    0% { margin-top: 0; }
+    50% { margin-top: 2px; }
+    100% { margin-top: 0; }
+}
 
         @keyframes engineShake {
             0% { transform: translate(0, 0); }
