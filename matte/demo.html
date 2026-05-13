@@ -2,10 +2,17 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Avansert Interaktiv Ligningsvekt</title>
+    <title>Ligningsvekt - Demo / Fri utforsking</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; }
-        .controls { margin: 20px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
+        
+        /* Tilbake-knapp bar */
+        .top-bar { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 15px 20px 0 20px; box-sizing: border-box; }
+        .btn-back { background: #7f8c8d; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 6px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-back:hover { background: #647071; }
+
+        h1 { margin-top: 10px; margin-bottom: 10px; }
+        .controls { margin: 10px 20px 20px 20px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
         .control-group { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; border-right: 1px solid #ddd; }
         .control-group:last-child { border-right: none; }
         .operation-group { background: #fdf2e9; padding: 10px; border-radius: 8px; border: 1px solid #e67e22; text-align: center; }
@@ -51,7 +58,12 @@
 </head>
 <body class="hide-fraction">
 
-    <h1>Interaktiv Ligningsvekt</h1>
+    <!-- Ny topplinje med tilbakeknapp -->
+    <div class="top-bar">
+        <a href="index.html" class="btn-back">⬅ Tilbake til hovedmeny</a>
+    </div>
+
+    <h1>Demo / Fri utforsking</h1>
 
     <div class="settings-bar">
         <div class="setting-item">
@@ -59,7 +71,6 @@
             <label for="fractionModeToggle">Aktiver brøkinntasting</label>
         </div>
         <div class="setting-item">
-            <!-- FJERNET 'checked' HER SÅ DEN STARTER UTEN AUTOMATISK BYTTE -->
             <input type="checkbox" id="autoSignToggle">
             <label for="autoSignToggle">Bytt fortegn automatisk ved flytting mellom skåler</label>
         </div>
@@ -448,6 +459,7 @@
             });
             return result;
         }
+        history.push(JSON.stringify({ sides, xWeight, idCounter }));
     </script>
 </body>
 </html>
