@@ -411,9 +411,159 @@
         }
 
         function menuInvert() { if (!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
+             function menuInvert() { if (!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
+        
         function menuSplitInTwo() {
-            if (!activeMenuTarget) return; saveHistory(); const item = activeMenuTarget.item; const sideList = sides[activeMenuTarget.side];
-            let part1 = item.num > 0 ? Math.ceil(item.num / 2) : Math.floor(item.num / 2); let
+            if (!activeMenuTarget) return; saveHistory(); 
+            const item = activeMenuTarget.item; 
+            const sideList = sides[activeMenuTarget.side];
+            let part1 = item.num > 0 ? Math.ceil(item.num / 2) : Math.floor(item.num / 2); 
+            let part2 = item.num - part1;
+            const idx = sideList.findIndex(i => i.id === item.id); 
+            sideList.splice(idx, 1);
+            sideList.push({ id: idCounter++, type: item.type, num: part1, den: item.den });
+            sideList.push({ id: idCounter++, type: item.type, num: part2, den: item.den });
+            render();
+        }
 
-            startMultiplayerLogic();
+        document.addEventListener('click', () => { document.getElementById('customContextMenu').style.display = 'none'; });
 
+        function getTotals(side) {
+            let units = 0, xs = 0;
+            sides[side].forEach(i => {
+                let realVal = i.num / i.den;
+                if (i.type === 'x') xs += realVal;
+                else if (i.type === 'inv-x') xs += (realVal * (1/xValue)); 
+                else units += realVal;
+            });
+            return { units, xs };
+        }
+
+        function getBoxHTML(item) {
+            let label = item.type === 'x' ? 'x' : '';
+            if (item.type === 'inv-x') return `<span class="fraction"><span class="numerator">${item.num}</span><span class="denominator">x</span></span>`;
+            if (item.den === 1) {
+                return item.num === 1 && item.type === 'x' ? 'x' : (item.num === -1 && item.type === 'x' ? '-x' : item.num + label);
+            } else {
+                let nStr = item.num === 1 && item.type === 'x' ? 'x' : (item.num === -1 && item.type === 'x' ? '-x' : item.num + label);
+                return `<span class="fraction"><span class="numerator">${nStr}</span><span class="denominator">${item.den}</span></span>`;
+            }
+        }
+
+        function render(animate = true) {
+            ['left', 'right'].forEach(side => {
+                const pan = document.getElementById('pan-' + side); pan.innerHTML = '';
+                sides[side].forEach(item => {
+                    const div = document.createElement('div'); let isNeg = item.num < 0;
+                    div.className = 'item ' + (item.type === 'x' ? (isNeg ? 'box-x-neg' : 'box-x') : (item.type === 'inv-x' ? 'box-inv-x' : (isNeg ? 'val-neg' : 'val-pos')));
+                    div.draggable = true; div.setAttribute('data-id', item.id);
+                    div.ondragstart = (e) => drag(e, side, item.id);
+                    div.oncontextmenu = (e) => {
+                        e.preventDefault(); activeMenuTarget = { side, id: item.id, item };
+                        const menu = document.getElementById('customContextMenu');
+                        menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+                    };
+                    div.innerHTML = getBoxHTML(item); pan.appendChild(div);
+                });
+            });
+            
+            const display = document.getElementById('math');
+            display.innerHTML = '';
+            display.appendChild(buildHTMLSide(sides.left));
+            const eqSign = document.createElement('span'); eqSign.innerText = ' = '; display.appendChild(eqSign);
+            display.appendChild(buildHTMLSide(sides.right));
+            
+            let L = getTotals('left'), R = getTotals('right');
+            let diff = (R.xs * xValue + R.units) - (L.xs * xValue + L.units);
+            let angle = Math.min(Math.max(diff * 4, -25), 25);
+            document.getElementById('beam').style.transform = `rotate(${angle}deg)`;
+            document.getElementById('pan-left').style.transform = `rotate(${-angle}deg)`;
+            document.getElementById('pan-right').style.transform = `rotate(${-angle}deg)`;
+        }
+
+        function buildHTMLSide(items) {
+            const container = document.createElement('span'); container.className = 'math-side';
+            if (items.length === 0) { container.innerText = '0'; return container; }
+            items.forEach((item, idx) => {
+                if (idx > 0) {
+                    const op = document.createElement('span'); op.innerText = item.num < 0 ? ' - ' : ' + '; container.appendChild(op);
+                } else if (item.num < 0) {
+                    const op = document.createElement('span'); op.innerText = '-'; container.appendChild(op);
+                }
+                let absNum = Math.abs(item.num); let label = item.type === 'x' ? 'x' : '';
+                if (item.type === 'inv-x') {
+                    const fracSpan = document.createElement('span'); fracSpan.className = 'math-frac';
+                    fracSpan.innerHTML = `<span class="math-num">${absNum}</span><span class="math-den">x</span>`; container.appendChild(fracSpan);
+                } else if (item.den === 1) {
+                    const termSpan = document.createElement('span'); termSpan.innerText = (absNum === 1 && item.type === 'x') ? 'x' : absNum + label; container.appendChild(termSpan);
+                } else {
+                    const fracSpan = document.createElement('span'); fracSpan.className = 'math-frac';
+                    let numText = (absNum === 1 && item.type === 'x') ? 'x' : absNum + label;
+                    fracSpan.innerHTML = `<span class="math-num">${numText}</span><span class="math-den">${item.den}</span>`; container.appendChild(fracSpan);
+                }
+            });
+            return container;
+        }
+
+        // --- FLERSPILLER- MOTOR OG NAVNEGENERATOR ---
+        const adjectives = ["Raske", "Lynraske", "Smidige", "Gylne", "Smarte", "Tøffe", "Ivrige", "Viltre", "Kvikke", "Magiske"];
+        const animals = ["Gaupe", "Rev", "Ulv", "Bjørn", "Ettbein", "Grevling", "Hauk", "Ørn", "Oter", "Ugle"];
+        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomAnim = animals[Math.floor(Math.random() * animals.length)];
+        const myCarName = randomAdj + " " + randomAnim;
+
+        document.getElementById("carNameDisplay").innerText = myCarName;
+
+        let database;
+        function startMultiplayerLogic() {
+            database = getDatabase();
+            initGame();
+        }
+
+        window.connectToRoom = function() {
+            const roomCode = document.getElementById("roomCodeInput").value.trim().toUpperCase();
+            if (!roomCode) { alert("Skriv inn en romkode først!"); return; }
+            
+            // Send poeng og startposisjon til Firebase under valgt rom
+            const playerRef = ref(database, 'rooms/' + roomCode + '/players/' + myCarName);
+            set(playerRef, {
+                score: 0,
+                level: currentLevel,
+                streak: 0,
+                lastUpdated: Date.now()
+            });
+
+            alert("Du er koblet til rom: " + roomCode + "! Bilen din er på startstreken.");
+        };
+
+        // Oppdater poeng i skyen ved seier
+        function syncProgressToFirebase() {
+            const roomCode = document.getElementById("roomCodeInput").value.trim().toUpperCase();
+            if (!roomCode) return;
+            
+            const playerRef = ref(database, 'rooms/' + roomCode + '/players/' + myCarName);
+            update(playerRef, {
+                score: winStreak * 100, // Enkelt poengsystem basert på streak
+                level: currentLevel,
+                streak: winStreak,
+                lastUpdated: Date.now()
+            });
+        }
+
+        // Overstyr checkSolution fra det vanlige spillet så det synkroniserer med Firebase
+        const originalCheckSolution = checkSolution;
+        checkSolution = function() {
+            let oldStreak = winStreak;
+            let oldLevel = currentLevel;
+            
+            // Kjør den vanlige sjekken
+            originalCheckSolution();
+            
+            // Hvis de svarte riktig (streaken økte) eller de rykket opp et nivå, send til skyen
+            if (winStreak !== oldStreak || currentLevel !== oldLevel) {
+                syncProgressToFirebase();
+            }
+        };
+
+        // Start flerspiller-motoren til slutt
+        startMultiplayerLogic();
