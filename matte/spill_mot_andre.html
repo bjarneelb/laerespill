@@ -2,25 +2,24 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsspillet - Spill Mot Andre</title>
+    <title>Ligningsspillet - Spill mot andre</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #eef2f7; padding-bottom: 50px; margin: 0; }
         .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0 0 0; }
-        .btn-back { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-back { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; }
+        .btn-back:hover { background: #2c3e50; transform: translateY(-1px); }
         
-        .game-header { text-align: center; margin-bottom: 10px; }
-        
-        /* Flerspiller-panel */
-        .multiplayer-panel { background: #d5dbdb; width: 100%; max-width: 810px; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .multiplayer-box { background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; margin: 15px 0; width: 800px; max-width: 90%; }
         .mp-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .car-info { font-size: 1.1rem; font-weight: bold; background: #34495e; color: white; padding: 8px 15px; border-radius: 6px; }
-        .leaderboard-box { background: white; padding: 10px; border-radius: 6px; border: 1px solid #ccc; width: 100%; max-height: 120px; overflow-y: auto; }
-        .leaderboard-title { font-weight: bold; margin-bottom: 5px; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 3px; }
-        .leaderboard-list { display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.95rem; }
-        .leaderboard-item { background: #e8f4f8; padding: 4px 10px; border-radius: 4px; border: 1px solid #d4e6f1; font-weight: bold; }
-        .leaderboard-item.me { background: #27ae60; color: white; border-color: #219150; }
+        .car-badge { background: #2980b9; color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; }
+        
+        .leaderboard { background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-top: 10px; }
+        .leaderboard-title { font-weight: bold; margin-bottom: 5px; color: #475569; font-size: 0.9rem; text-transform: uppercase; }
+        .player-row { display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px solid #edf2f7; font-size: 0.95rem; }
+        .player-row:last-child { border-bottom: none; }
+        .player-row.is-me { font-weight: bold; color: #2b6cb0; background: #ebf8ff; border-radius: 4px; }
 
-        .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; width: 100%; max-width: 800px; box-sizing: border-box; }
+        .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; width: 810px; max-width: 90%; justify-content: space-between; }
         .controls { margin: 10px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
         .control-group { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; border-right: 1px solid #ddd; }
         .control-group:last-child { border-right: none; }
@@ -67,9 +66,35 @@
         .context-menu button:hover { background: #f0f2f5; }
     </style>
 
-    <!-- Last inn Firebase-bibliotekene -->
-    <script src="gstatic.com"></script>
-    <script src="gstatic.com"></script>
+    <!-- NYE IMPORTER FRA UNPKG FOR Å UNNGÅ BLOKKERING PÅ SKOLEN -->
+    <script type="module">
+        import { initializeApp } from "unpkg.com";
+        import { getDatabase, ref, set, onValue, update } from "unpkg.com";
+
+        // CONFIG MED DIN NYE ADRESSE I BELGIA
+        const firebaseConfig = {
+            apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
+            authDomain: "firebaseapp.com",
+            databaseURL: "firebasedatabase.app",
+            projectId: "likningsspill",
+            storageBucket: "likningsspill.firebasestorage.app",
+            messagingSenderId: "630190192081",
+            appId: "1:630190192081:web:71968d390422ace3f15cf0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Eksporter til globalt vindu slik at resten av spillet finner motoren
+        window.db = database;
+        window.dbRef = ref;
+        window.dbSet = set;
+        window.dbOnValue = onValue;
+        window.dbUpdate = update;
+
+        // Start spillet når Firebase-ressursene er lastet inn
+        window.startMultiplayerLogic();
+    </script>
 </head>
 <body>
 
@@ -77,39 +102,35 @@
         <a href="index.html" class="btn-back">⬅ Tilbake til menyen</a>
     </div>
 
-    <div class="game-header">
-        <h1>Ligningsspillet: Flerspiller</h1>
-    </div>
-
-    <!-- FLERSPILLET-PANEL -->
-    <div class="multiplayer-panel">
+    <!-- Flerspiller-grensesnitt -->
+    <div class="multiplayer-box">
         <div class="mp-row">
-            <div class="car-info" id="myCarDisplay">Din bil: Genererer...</div>
+            <div><strong>Din bil:</strong> <span id="myCarName" class="car-badge">Genererer...</span></div>
             <div>
-                <input type="text" id="roomCodeInput" placeholder="Skriv inn romkode..." style="text-transform: uppercase;">
-                <button onclick="connectToRoom()" style="background: #2980b9; color: white; border: none;">Koble til rom</button>
+                <input type="text" id="roomCodeInput" placeholder="Skriv inn romkode (f.eks. KLASSE1)" style="width: 220px; text-transform: uppercase;">
+                <button onclick="joinRoom()" style="background: #2980b9; color: white; border: none;">Koble til rom</button>
             </div>
         </div>
-        <div class="leaderboard-box">
-            <div class="leaderboard-title" id="roomTitle">Rom: Ikke tilkoblet (Spiller alene)</div>
-            <div class="leaderboard-list" id="leaderboardList">
-                <span style="color:#7f8c8d; font-style:italic;">Koble til et rom for å se andre biler live!</span>
-            </div>
+        <div id="leaderboardBox" class="leaderboard" style="display: none;">
+            <div class="leaderboard-title">Klassens Resultatliste (Live 🏁)</div>
+            <div id="playerList"></div>
         </div>
     </div>
 
     <div class="level-bar">
-        <label for="levelSelect"><strong>Velg nivå:</strong></label>
-        <select id="levelSelect" onchange="changeLevel(this.value)">
-            <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
-            <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
-            <option value="3">Nivå 3: Flere ledd og samling (ax+b=cx+d)</option>
-            <option value="4">Nivå 4: Enkle brøker</option>
-            <option value="5">Nivå 5: Avanserte brøker</option>
-            <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
-        </select>
-        <span id="streakDisplay" style="color: #27ae60;">Seire på rad: 0/6</span>
-        <div style="margin-left: 20px;">
+        <div>
+            <label for="levelSelect"><strong>Velg nivå:</strong></label>
+            <select id="levelSelect" onchange="changeLevel(this.value)">
+                <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
+                <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
+                <option value="3">Nivå 3: Flere ledd og samling (ax+b=cx+d)</option>
+                <option value="4">Nivå 4: Enkle brøker</option>
+                <option value="5">Nivå 5: Avanserte brøker</option>
+                <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
+            </select>
+            <span id="streakDisplay" style="color: #27ae60; margin-left: 10px;">Seire på rad: 0/6</span>
+        </div>
+        <div>
             <input type="checkbox" id="demoPanelToggle" onchange="toggleDemoPanel()">
             <label for="demoPanelToggle"><strong>Bygg selv (frimodus)</strong></label>
         </div>
@@ -163,21 +184,6 @@
     </div>
 
     <script>
-        // --- DIN FIREBASE KONFIGURASJON ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
-            authDomain: "firebaseapp.com",
-            projectId: "likningsspill",
-            storageBucket: "likningsspill.firebasestorage.app",
-            messagingSenderId: "630190192081",
-            appId: "1:630190192081:web:71968d390422ace3f15cf0",
-            databaseURL: "firebasedatabase.app" // Manuelt tilføyd for Belgia server
-        };
-
-        // Initialiser Firebase trygt
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
         let sides = { left: [], right: [] };
         let xValue = 0; 
         let idCounter = 0;
@@ -185,84 +191,65 @@
         let currentLevel = 1;
         let winStreak = 0;
         let activeMenuTarget = null;
-        
-        // Flerspiller-variabler
-        let myCarName = "";
+
+        // Flerspiller-tilstander
+        let myCar = "";
         let currentRoom = "";
-        let totalScore = 0;
+        let currentScore = 0;
 
-        // GENERER BILNAVN DIREKTE LOKALT SÅ DET ALDRI STÅR FAST PÅ GENERERER
-        function generateLocalCarName() {
-            const adj = ["Rask", "Turbo", "Gull", "Lyn", "Super", "Smidig", "Smart", "Gnist", "Racer", "Suser"];
-            const dyr = ["Gaupe", "Troll", "Rev", "Ulv", "Bjørn", "Hare", "Ørn", "Falk", "Gjerv", "Elg"];
-            let rAdj = adj[Math.floor(Math.random() * adj.length)];
-            let rDyr = dyr[Math.floor(Math.random() * dyr.length)];
-            let num = Math.floor(Math.random() * 90) + 10;
-            return rAdj + " " + rDyr + " #" + num;
-        }
+        const adjectives = ["Raske", "Gylne", "Smarte", "Vilde", "Lynhastige", "Smidige", "Tøffe", "Magiske", "Rosa", "Kosmiske"];
+        const animals = ["Gaupe", "Rev", "Troll", "Ulv", "Bjørn", "Panda", "Ettbein", "Falk", "Gepard", "Tiger"];
 
-        window.onload = function() {
-            // Generer og vis bilnavn umiddelbart
-            myCarName = generateLocalCarName();
-            document.getElementById('myCarDisplay').innerText = "🚗 Din bil: " + myCarName;
-
+        // Startes automatisk når Firebase-modulen er godkjent og klar
+        window.startMultiplayerLogic = function() {
+            myCar = adjectives[Math.floor(Math.random() * adjectives.length)] + " " + animals[Math.floor(Math.random() * animals.length)];
+            document.getElementById('myCarName').innerText = myCar;
+            
             let savedLevel = localStorage.getItem('ligningsSpill_level');
             if (savedLevel) { currentLevel = parseInt(savedLevel); document.getElementById('levelSelect').value = currentLevel; }
-            updateStreakDisplay(); 
-            initGame();
+            updateStreakDisplay(); initGame();
         };
 
-        // Koble seg til et felles spillrom i skyen
-        function connectToRoom() {
+        function joinRoom() {
             let roomInput = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-            if (roomInput === "") { alert("Skriv inn en romkode først (f.eks. MATTE1)"); return; }
-            
-            // Hvis man allerede var i et rom, fjern seg fra det gamle
-            if (currentRoom !== "") {
-                database.ref('rooms/' + currentRoom + '/' + myCarName).remove();
-            }
-            
+            if (!roomInput) { alert("Skriv inn en romkode!"); return; }
             currentRoom = roomInput;
-            document.getElementById('roomTitle').innerText = "Rom: " + currentRoom;
             
-            // Send nåværende score og nivå opp til databasen
-            updateFirebaseData();
-            
-            // Lytt til oppdateringer fra andre biler i samme rom i sanntid
-            database.ref('rooms/' + currentRoom).on('value', (snapshot) => {
+            document.getElementById('leaderboardBox').style.display = 'block';
+            updateFirebaseScore();
+
+            // Lytt til live poeng-oppdateringer fra rommet i skyen over port 443
+            const roomRef = window.dbRef(window.db, "rooms/" + currentRoom);
+            window.dbOnValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
                 updateLeaderboardUI(data);
             });
+            alert("Du har koblet deg til rommet: " + currentRoom + "! Løs oppgaver for å gi bilen fart!");
         }
 
-        function updateFirebaseData() {
-            if (currentRoom === "") return;
-            database.ref('rooms/' + currentRoom + '/' + myCarName).set({
-                score: totalScore,
-                level: currentLevel,
-                streak: winStreak
-            });
+        function updateFirebaseScore() {
+            if (!currentRoom || !window.db) return;
+            const playerRef = window.dbRef(window.db, "rooms/" + currentRoom + "/" + myCar);
+            window.dbSet(playerRef, { score: currentScore, level: currentLevel, lastUpdate: Date.now() });
         }
 
         function updateLeaderboardUI(roomData) {
-            const listContainer = document.getElementById('leaderboardList');
+            const listContainer = document.getElementById('playerList');
             listContainer.innerHTML = '';
-            
             if (!roomData) return;
-            
-            // Sorter spillerne etter poeng (høyest først)
+
+            // Gjør om databasen til en sortert liste basert på poengsum
             let players = [];
             for (let name in roomData) {
-                players.push({ name: name, ...roomData[name] });
+                players.push({ name: name, score: roomData[name].score, level: roomData[name].level });
             }
             players.sort((a, b) => b.score - a.score);
-            
-            // Tegn bilene på skjermen
+
             players.forEach(p => {
-                const span = document.createElement('span');
-                span.className = 'leaderboard-item' + (p.name === myCarName ? ' me' : '');
-                span.innerText = `🏎️ ${p.name}: Nivå ${p.level} (${p.score}p)`;
-                listContainer.appendChild(span);
+                const row = document.createElement('div');
+                row.className = "player-row" + (p.name === myCar ? " is-me" : "");
+                row.innerHTML = `<span>🏎️ ${p.name} (Nivå ${p.level})</span> <span><strong>${p.score} poeng</strong></span>`;
+                listContainer.appendChild(row);
             });
         }
 
@@ -327,7 +314,7 @@
         function initGame() {
             sides.left = []; sides.right = []; history = [];
             document.getElementById('undoBtn').disabled = true;
-            levels[currentLevel].generate();
+            if (levels[currentLevel]) levels[currentLevel].generate();
             document.getElementById('taskText').innerHTML = `<strong>Oppgave:</strong> Finn verdien av <strong>x</strong> slik at vekten blir i balanse.`;
             render();
         }
@@ -337,16 +324,16 @@
                 let confirmSkip = confirm("Er du sikker? Seire på rad vil bli nullstilt.");
                 if (!confirmSkip) return;
             }
-            winStreak = 0; updateStreakDisplay(); updateFirebaseData(); initGame();
+            winStreak = 0; updateStreakDisplay(); initGame();
         }
 
         function changeLevel(val) {
             currentLevel = parseInt(val); localStorage.setItem('ligningsSpill_level', currentLevel);
-            winStreak = 0; updateStreakDisplay(); updateFirebaseData(); initGame();
+            winStreak = 0; updateStreakDisplay(); updateFirebaseScore(); initGame();
         }
 
         function updateStreakDisplay() {
-            document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/${levels[currentLevel].targetStreak}`;
+            document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/${levels[currentLevel] ? levels[currentLevel].targetStreak : 6}`;
         }
 
         function checkSolution() {
@@ -357,21 +344,21 @@
             }
             if (isSolved) {
                 winStreak++;
-                totalScore += (currentLevel * 100); // Gi poeng basert på nivå
+                currentScore += (currentLevel * 100); // Mer poeng for vanskeligere nivåer!
                 updateStreakDisplay();
-                updateFirebaseData(); // Send ny score til alle
-                
+                updateFirebaseScore(); // Send poengsum til skyen live
+
                 if (winStreak >= levels[currentLevel].targetStreak && currentLevel < 6) {
-                    alert("Fantastisk! Du flyttes opp til neste nivå!");
+                    alert("Fantastisk! Du rykker opp til neste nivå!");
                     currentLevel++; document.getElementById('levelSelect').value = currentLevel;
-                    localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay(); updateFirebaseData();
+                    localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay(); updateFirebaseScore();
                 } else if (winStreak >= levels[currentLevel].targetStreak && currentLevel === 6) {
-                    alert("Utrolig bra! Du har fullført spillet!"); winStreak = 0; updateStreakDisplay(); updateFirebaseData();
-                } else { alert("Riktig svar! Bra jobbet."); }
+                    alert("Utrolig bra! Du har fullført hele spillet!"); winStreak = 0; updateStreakDisplay();
+                } else { alert("Riktig svar! Du fikk poeng."); }
                 initGame();
             } else {
-                alert("For å løse ligningen må du isolere én positiv X alene på venstre skål, og kun ha tall på høyre skål.");
-                winStreak = 0; updateStreakDisplay(); updateFirebaseData();
+                alert("Ikke helt riktig. Isoler x alene på venstre skål, og kun et tall på høyre.");
+                winStreak = 0; updateStreakDisplay();
             }
         }
 
@@ -381,8 +368,7 @@
         function undo() { if (history.length === 0) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(false); if (history.length === 0) document.getElementById('undoBtn').disabled = true; }
 
         function operate(type) {
-            saveHistory();
-            const rawVal = document.getElementById('op-val').value.trim();
+            saveHistory(); const rawVal = document.getElementById('op-val').value.trim();
             ['left', 'right'].forEach(side => {
                 if (rawVal.toLowerCase() === 'x') {
                     if (type === 'multiply') {
@@ -412,3 +398,20 @@
             if (sourceIdx === -1) return;
             saveHistory(); let item = sides[sourceSide].splice(sourceIdx, 1)[0];
             const targetEl = ev.target.closest('.item');
+            if (targetEl && sourceSide === targetSide) {
+                const targetId = parseInt(targetEl.getAttribute('data-id'));
+                const targetItem = sides[targetSide].find(i => i.id === targetId);
+                if (item.type === targetItem.type && item.id !== targetId) {
+                    let commonNum = (targetItem.num * item.den) + (item.num * targetItem.den);
+                    let commonDen = targetItem.den * item.den; let frac = createFraction(commonNum, commonDen);
+                    targetItem.num = frac.num; targetItem.den = frac.den;
+                    if (targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
+                } else sides[targetSide].push(item);
+            } else { sides[targetSide].push(item); }
+            render();
+        }
+
+        function menuInvert() { if (!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
+        function menuSplitInTwo() {
+            if (!activeMenuTarget) return; saveHistory(); const item = activeMenuTarget.item; const sideList = sides[activeMenuTarget.side];
+            let part1 = item.num > 0 ? Math.ceil(item.num / 2) : Math.floor(item.num / 2); let
