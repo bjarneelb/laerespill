@@ -2,40 +2,44 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsspillet - Flerspiller</title>
-    <!-- Last inn Firebase v8 (Classic) som fungerer feilfritt i enkeltfiler -->
-    <script src="gstatic.com"></script>
-    <script src="gstatic.com"></script>
-
+    <title>Ligningsspillet - Spill Mot Andre</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
-        .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: space-between; padding: 20px; box-sizing: border-box; }
-        .btn-back { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0 0 0; }
+        .btn-back { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .game-header { text-align: center; margin-bottom: 10px; }
         
         /* Flerspiller-panel */
-        .multiplayer-bar { background: #2c3e50; color: white; padding: 15px 20px; border-radius: 8px; width: 100%; max-width: 810px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .room-controls { display: flex; gap: 10px; align-items: center; }
-        
-        /* Racerbane / Leaderboard */
-        .leaderboard-box { background: white; padding: 15px; border-radius: 12px; width: 100%; max-width: 810px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .track-lane { height: 40px; border-bottom: 1px dashed #ccc; display: flex; align-items: center; position: relative; background: #fafafa; margin-bottom: 5px; border-radius: 4px; overflow: hidden; }
-        .car-sprite { padding: 4px 10px; background: #27ae60; color: white; font-weight: bold; border-radius: 20px; font-size: 0.8rem; position: absolute; transition: left 0.5s ease-out; white-space: nowrap; }
-        .car-sprite.me { background: #e67e22; border: 2px solid #d35400; }
+        .multiplayer-panel { background: #d5dbdb; width: 100%; max-width: 810px; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .mp-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .car-info { font-size: 1.1rem; font-weight: bold; background: #34495e; color: white; padding: 8px 15px; border-radius: 6px; }
+        .leaderboard-box { background: white; padding: 10px; border-radius: 6px; border: 1px solid #ccc; width: 100%; max-height: 120px; overflow-y: auto; }
+        .leaderboard-title { font-weight: bold; margin-bottom: 5px; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+        .leaderboard-list { display: flex; flex-wrap: wrap; gap: 15px; font-size: 0.95rem; }
+        .leaderboard-item { background: #e8f4f8; padding: 4px 10px; border-radius: 4px; border: 1px solid #d4e6f1; font-weight: bold; }
+        .leaderboard-item.me { background: #27ae60; color: white; border-color: #219150; }
 
-        .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; width: 100%; max-width: 810px; box-sizing: border-box; }
+        .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; width: 100%; max-width: 800px; box-sizing: border-box; }
         .controls { margin: 10px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
         .control-group { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; border-right: 1px solid #ddd; }
         .control-group:last-child { border-right: none; }
         .operation-group { background: #fdf2e9; padding: 10px; border-radius: 8px; border: 1px solid #e67e22; text-align: center; }
         
+        .demo-panel { background: #e8f4f8; border: 1px solid #2980b9; display: none; }
+        .input-row { display: flex; gap: 5px; align-items: center; }
+
         select, input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         button { cursor: pointer; padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; font-weight: bold; }
         .btn-op { background: #e67e22; color: white; border: none; }
         .btn-eq { background: #27ae60; color: white; border: none; }
         .btn-new-task { background: #2980b9; color: white; border: none; }
+        .btn-undo { background: #34495e; color: white; border: none; }
+        .btn-undo:disabled { background: #bdc3c7; cursor: not-allowed; }
 
-        .task-box { background: #2c3e50; color: white; padding: 15px; border-radius: 8px; font-size: 1.4rem; margin-bottom: 15px; width: 550px; text-align: center; }
-        .math-display { font-family: monospace; background: #1a1a1a; color: #4af626; padding: 15px; border-radius: 8px; font-size: 1.6rem; min-width: 550px; text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .task-box { background: #2c3e50; color: white; padding: 15px; border-radius: 8px; font-size: 1.4rem; margin-bottom: 15px; width: 550px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .math-display { font-family: monospace; background: #1a1a1a; color: #4af626; padding: 15px; border-radius: 8px; font-size: 1.6rem; min-width: 550px; box-shadow: inset 0 0 10px #000; display: flex; justify-content: center; align-items: center; gap: 10px; }
         .math-side { display: inline-flex; align-items: center; gap: 8px; }
         .math-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; padding: 0 4px; }
         .math-num { border-bottom: 2px solid #4af626; text-align: center; width: 100%; padding-bottom: 2px; }
@@ -47,14 +51,14 @@
         .pan { position: absolute; top: 12px; width: 240px; min-height: 150px; background: rgba(0,0,0,0.05); border-top: 4px solid #444; border-radius: 0 0 20px 20px; transition: transform 0.6s ease-in-out; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 10px; padding: 15px; }
         #pan-left { left: -120px; } #pan-right { right: -120px; }
 
-        .item { min-width: 50px; height: 50px; padding: 0 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; border-radius: 8px; color: white; cursor: grab; text-align: center; font-size: 14px; }
+        .item { min-width: 50px; height: 50px; padding: 0 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; border-radius: 8px; color: white; cursor: grab; user-select: none; text-align: center; font-size: 14px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
         .box-x { background: #d35400; border: 2px solid #a04000; }
         .box-x-neg { background: #e74c3c; border: 2px solid #c0392b; }
         .val-pos { background: #2980b9; border: 2px solid #1c5982; }
         .val-neg { background: #c0392b; border: 2px solid #7b241c; }
         .box-inv-x { background: #9b59b6; border: 2px solid #6c3483; }
         
-        .fraction { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; }
+        .fraction { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; padding: 2px 0; }
         .numerator { border-bottom: 1px solid white; padding-bottom: 2px; text-align: center; width: 100%; }
         .denominator { padding-top: 2px; text-align: center; width: 100%; }
 
@@ -62,6 +66,10 @@
         .context-menu button { display: block; width: 100%; border: none; background: none; text-align: left; padding: 8px 12px; cursor: pointer; font-size: 14px; }
         .context-menu button:hover { background: #f0f2f5; }
     </style>
+
+    <!-- Last inn Firebase-bibliotekene -->
+    <script src="gstatic.com"></script>
+    <script src="gstatic.com"></script>
 </head>
 <body>
 
@@ -69,18 +77,25 @@
         <a href="index.html" class="btn-back">⬅ Tilbake til menyen</a>
     </div>
 
-    <div class="multiplayer-bar">
-        <div><span id="myCarDisplay">Din bil: Genererer...</span></div>
-        <div class="room-controls">
-            <input type="text" id="roomInput" placeholder="Skriv romkode (f.eks. 6A)" style="width: 180px; text-align: center;">
-            <button class="btn-eq" onclick="joinRoom()">Koble til klasserom</button>
-        </div>
+    <div class="game-header">
+        <h1>Ligningsspillet: Flerspiller</h1>
     </div>
 
-    <!-- Racerbanen som viser alle live -->
-    <div class="leaderboard-box" id="raceTrack">
-        <strong style="color: #2c3e50; display:block; margin-bottom:10px;">🏎️ Klassens racerbane (Skriv romkode for å starte)</strong>
-        <div id="lanesContainer"></div>
+    <!-- FLERSPILLET-PANEL -->
+    <div class="multiplayer-panel">
+        <div class="mp-row">
+            <div class="car-info" id="myCarDisplay">Din bil: Genererer...</div>
+            <div>
+                <input type="text" id="roomCodeInput" placeholder="Skriv inn romkode..." style="text-transform: uppercase;">
+                <button onclick="connectToRoom()" style="background: #2980b9; color: white; border: none;">Koble til rom</button>
+            </div>
+        </div>
+        <div class="leaderboard-box">
+            <div class="leaderboard-title" id="roomTitle">Rom: Ikke tilkoblet (Spiller alene)</div>
+            <div class="leaderboard-list" id="leaderboardList">
+                <span style="color:#7f8c8d; font-style:italic;">Koble til et rom for å se andre biler live!</span>
+            </div>
+        </div>
     </div>
 
     <div class="level-bar">
@@ -94,12 +109,22 @@
             <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
         </select>
         <span id="streakDisplay" style="color: #27ae60;">Seire på rad: 0/6</span>
+        <div style="margin-left: 20px;">
+            <input type="checkbox" id="demoPanelToggle" onchange="toggleDemoPanel()">
+            <label for="demoPanelToggle"><strong>Bygg selv (frimodus)</strong></label>
+        </div>
     </div>
 
     <div id="taskText" class="task-box">Laster oppgave...</div>
     <div id="math" class="math-display"></div>
 
     <div class="controls">
+        <div id="demoPanel" class="control-group demo-panel">
+            <strong>Legg til manuelt (Venstre)</strong>
+            <div class="input-row"><input type="number" id="x-qty-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'x')">+ X</button></div>
+            <div class="input-row"><input type="number" id="val-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'num')">+ Tall</button></div>
+        </div>
+
         <div class="control-group operation-group">
             <strong>Gjør på begge sider</strong>
             <div style="margin-bottom: 5px;">
@@ -115,6 +140,12 @@
                 <button class="btn-eq" onclick="checkSolution()">SJEKK SVAR</button>
                 <button class="btn-new-task" onclick="skipToNewTask()">NY OPPGAVE</button>
             </div>
+        </div>
+
+        <div id="demoPanelRight" class="control-group demo-panel" style="border-left:none;">
+            <strong>Legg til manuelt (Høyre)</strong>
+            <div class="input-row"><input type="number" id="x-qty-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'x')">+ X</button></div>
+            <div class="input-row"><input type="number" id="val-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'num')">+ Tall</button></div>
         </div>
     </div>
 
@@ -132,7 +163,7 @@
     </div>
 
     <script>
-        // --- 1. CONFIG OG ADRESSE-FIKS ---
+        // --- DIN FIREBASE KONFIGURASJON ---
         const firebaseConfig = {
             apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
             authDomain: "firebaseapp.com",
@@ -140,23 +171,13 @@
             storageBucket: "likningsspill.firebasestorage.app",
             messagingSenderId: "630190192081",
             appId: "1:630190192081:web:71968d390422ace3f15cf0",
-            // MANUELL REPARASJON FOR DET EUROPEISKE REGION-AVVIKET
-            databaseURL: "firebasedatabase.app"
+            databaseURL: "firebasedatabase.app" // Manuelt tilføyd for Belgia server
         };
 
-        // Initialiser Firebase v8
+        // Initialiser Firebase trygt
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // --- 2. MULTIPLAYER VARIABLER ---
-        const carNames = ["Raske Rev", "Turbo-Troll", "Lyn-Gaupe", "Gass-Geit", "Fart-Falk", "Super-Snaill", "Asfalt-Ape", "Nitro-Nise", "Cyber-Ulv", "Bane-Bjørn"];
-        const myCarName = carNames[Math.floor(Math.random() * carNames.length)] + " #" + Math.floor(Math.random() * 900 + 100);
-        document.getElementById('myCarDisplay').innerText = "Din bil: 🏎️ " + myCarName;
-
-        let currentRoom = null;
-        let totalScore = 0; // Brukes til å flytte bilen fremover (1 poeng = 1% fremdrift på banen)
-
-        // --- 3. SPILL LOGIKK ---
         let sides = { left: [], right: [] };
         let xValue = 0; 
         let idCounter = 0;
@@ -164,6 +185,104 @@
         let currentLevel = 1;
         let winStreak = 0;
         let activeMenuTarget = null;
+        
+        // Flerspiller-variabler
+        let myCarName = "";
+        let currentRoom = "";
+        let totalScore = 0;
+
+        // GENERER BILNAVN DIREKTE LOKALT SÅ DET ALDRI STÅR FAST PÅ GENERERER
+        function generateLocalCarName() {
+            const adj = ["Rask", "Turbo", "Gull", "Lyn", "Super", "Smidig", "Smart", "Gnist", "Racer", "Suser"];
+            const dyr = ["Gaupe", "Troll", "Rev", "Ulv", "Bjørn", "Hare", "Ørn", "Falk", "Gjerv", "Elg"];
+            let rAdj = adj[Math.floor(Math.random() * adj.length)];
+            let rDyr = dyr[Math.floor(Math.random() * dyr.length)];
+            let num = Math.floor(Math.random() * 90) + 10;
+            return rAdj + " " + rDyr + " #" + num;
+        }
+
+        window.onload = function() {
+            // Generer og vis bilnavn umiddelbart
+            myCarName = generateLocalCarName();
+            document.getElementById('myCarDisplay').innerText = "🚗 Din bil: " + myCarName;
+
+            let savedLevel = localStorage.getItem('ligningsSpill_level');
+            if (savedLevel) { currentLevel = parseInt(savedLevel); document.getElementById('levelSelect').value = currentLevel; }
+            updateStreakDisplay(); 
+            initGame();
+        };
+
+        // Koble seg til et felles spillrom i skyen
+        function connectToRoom() {
+            let roomInput = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (roomInput === "") { alert("Skriv inn en romkode først (f.eks. MATTE1)"); return; }
+            
+            // Hvis man allerede var i et rom, fjern seg fra det gamle
+            if (currentRoom !== "") {
+                database.ref('rooms/' + currentRoom + '/' + myCarName).remove();
+            }
+            
+            currentRoom = roomInput;
+            document.getElementById('roomTitle').innerText = "Rom: " + currentRoom;
+            
+            // Send nåværende score og nivå opp til databasen
+            updateFirebaseData();
+            
+            // Lytt til oppdateringer fra andre biler i samme rom i sanntid
+            database.ref('rooms/' + currentRoom).on('value', (snapshot) => {
+                const data = snapshot.val();
+                updateLeaderboardUI(data);
+            });
+        }
+
+        function updateFirebaseData() {
+            if (currentRoom === "") return;
+            database.ref('rooms/' + currentRoom + '/' + myCarName).set({
+                score: totalScore,
+                level: currentLevel,
+                streak: winStreak
+            });
+        }
+
+        function updateLeaderboardUI(roomData) {
+            const listContainer = document.getElementById('leaderboardList');
+            listContainer.innerHTML = '';
+            
+            if (!roomData) return;
+            
+            // Sorter spillerne etter poeng (høyest først)
+            let players = [];
+            for (let name in roomData) {
+                players.push({ name: name, ...roomData[name] });
+            }
+            players.sort((a, b) => b.score - a.score);
+            
+            // Tegn bilene på skjermen
+            players.forEach(p => {
+                const span = document.createElement('span');
+                span.className = 'leaderboard-item' + (p.name === myCarName ? ' me' : '');
+                span.innerText = `🏎️ ${p.name}: Nivå ${p.level} (${p.score}p)`;
+                listContainer.appendChild(span);
+            });
+        }
+
+        function toggleDemoPanel() {
+            const show = document.getElementById('demoPanelToggle').checked;
+            document.getElementById('demoPanel').style.display = show ? 'flex' : 'none';
+            document.getElementById('demoPanelRight').style.display = show ? 'flex' : 'none';
+        }
+
+        function manualAdd(side, type) {
+            saveHistory();
+            if (type === 'x') {
+                const qty = parseFloat(document.getElementById(`x-qty-${side}`).value);
+                if (qty !== 0) sides[side].push({ id: idCounter++, type: 'x', num: qty, den: 1 });
+            } else {
+                const val = parseFloat(document.getElementById(`val-${side}`).value);
+                if (val !== 0) sides[side].push({ id: idCounter++, type: 'number', num: val, den: 1 });
+            }
+            render();
+        }
 
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
@@ -205,74 +324,29 @@
             }}
         };
 
-        window.onload = function() {
-            let savedLevel = localStorage.getItem('ligningsSpill_level');
-            if (savedLevel) { currentLevel = parseInt(savedLevel); document.getElementById('levelSelect').value = currentLevel; }
-            updateStreakDisplay(); initGame();
-        };
-
         function initGame() {
             sides.left = []; sides.right = []; history = [];
             document.getElementById('undoBtn').disabled = true;
             levels[currentLevel].generate();
+            document.getElementById('taskText').innerHTML = `<strong>Oppgave:</strong> Finn verdien av <strong>x</strong> slik at vekten blir i balanse.`;
             render();
         }
 
-        // --- 4. MULTIPLAYER NETTVERKSHÅNDTERING ---
-        function joinRoom() {
-            const roomCode = document.getElementById('roomInput').value.trim().toUpperCase();
-            if (!roomCode) { alert("Skriv inn en romkode først!"); return; }
-            
-            // Koble fra forrige rom hvis aktivt
-            if (currentRoom) { database.ref('rooms/' + currentRoom + '/' + myCarName).remove(); database.ref('rooms/' + currentRoom).off(); }
-            
-            currentRoom = roomCode;
-            
-            // Send min startposisjon til skyen
-            database.ref('rooms/' + currentRoom + '/' + myCarName).set({
-                score: totalScore,
-                lastUpdate: firebase.database.ServerValue.TIMESTAMP
-            });
-
-            // Lytt live etter oppdateringer fra alle andre biler i rommet
-            database.ref('rooms/' + currentRoom).on('value', (snapshot) => {
-                const data = snapshot.val();
-                updateTrackUI(data);
-            });
-
-            alert("Koblet til rom " + currentRoom + "! Løs oppgaver for å gi bilen fart!");
-        }
-
-        function updateTrackUI(roomData) {
-            const container = document.getElementById('lanesContainer');
-            container.innerHTML = '';
-            if (!roomData) return;
-
-            Object.keys(roomData).forEach(carKey => {
-                const carData = roomData[carKey];
-                const lane = document.createElement('div');
-                lane.className = 'track-lane';
-                
-                const car = document.createElement('div');
-                car.className = 'car-sprite' + (carKey === myCarName ? ' me' : '');
-                
-                // Regn ut posisjon (maks 90% så de ikke kjører av skjermen)
-                let leftPercent = Math.min(carData.score || 0, 90);
-                car.style.left = leftPercent + '%';
-                car.innerText = carKey + " (" + (carData.score || 0) + "m)";
-                
-                lane.appendChild(car);
-                container.appendChild(lane);
-            });
-        }
-
-        function sendScoreToFirebase() {
-            if (currentRoom) {
-                database.ref('rooms/' + currentRoom + '/' + myCarName).update({
-                    score: totalScore,
-                    lastUpdate: firebase.database.ServerValue.TIMESTAMP
-                });
+        function skipToNewTask() {
+            if (winStreak > 0) {
+                let confirmSkip = confirm("Er du sikker? Seire på rad vil bli nullstilt.");
+                if (!confirmSkip) return;
             }
+            winStreak = 0; updateStreakDisplay(); updateFirebaseData(); initGame();
+        }
+
+        function changeLevel(val) {
+            currentLevel = parseInt(val); localStorage.setItem('ligningsSpill_level', currentLevel);
+            winStreak = 0; updateStreakDisplay(); updateFirebaseData(); initGame();
+        }
+
+        function updateStreakDisplay() {
+            document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/${levels[currentLevel].targetStreak}`;
         }
 
         function checkSolution() {
@@ -283,31 +357,23 @@
             }
             if (isSolved) {
                 winStreak++;
-                totalScore += 5; // Gir 5 meter fremdrift per løste oppgave
-                sendScoreToFirebase();
+                totalScore += (currentLevel * 100); // Gi poeng basert på nivå
                 updateStreakDisplay();
+                updateFirebaseData(); // Send ny score til alle
                 
                 if (winStreak >= levels[currentLevel].targetStreak && currentLevel < 6) {
-                    alert("Riktig! Du har klart 6 på rad og flyttes opp til neste nivå (+5 meter!)");
+                    alert("Fantastisk! Du flyttes opp til neste nivå!");
                     currentLevel++; document.getElementById('levelSelect').value = currentLevel;
-                    localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay();
-                } else {
-                    alert("Riktig svar! Bilen din rykker fremover 5 meter.");
-                }
+                    localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay(); updateFirebaseData();
+                } else if (winStreak >= levels[currentLevel].targetStreak && currentLevel === 6) {
+                    alert("Utrolig bra! Du har fullført spillet!"); winStreak = 0; updateStreakDisplay(); updateFirebaseData();
+                } else { alert("Riktig svar! Bra jobbet."); }
                 initGame();
             } else {
-                alert("Ikke riktig. Husk å isolere x alene på venstre skål.");
-                winStreak = 0; updateStreakDisplay();
+                alert("For å løse ligningen må du isolere én positiv X alene på venstre skål, og kun ha tall på høyre skål.");
+                winStreak = 0; updateStreakDisplay(); updateFirebaseData();
             }
         }
-
-        function skipToNewTask() {
-            if (winStreak > 0) { if (!confirm("Vil du ha ny oppgave? Seierstreaken din nullstilles.")) return; }
-            winStreak = 0; updateStreakDisplay(); initGame();
-        }
-
-        function changeLevel(val) { currentLevel = parseInt(val); localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay(); initGame(); }
-        function updateStreakDisplay() { document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/${levels[currentLevel].targetStreak}`; }
 
         function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
         function createFraction(num, den) { if (den === 0) return { num: 0, den: 1 }; let g = gcd(num, den); let fN = num / g; let fD = den / g; if (fD < 0) { fN *= -1; fD *= -1; } return { num: fN, den: fD }; }
@@ -339,87 +405,10 @@
             render();
         }
 
+        function drag(ev, side, id) { ev.dataTransfer.setData("text", JSON.stringify({ side, id })); }
         function drop(ev, targetSide) {
             ev.preventDefault(); const data = JSON.parse(ev.dataTransfer.getData("text"));
             const sourceSide = data.side; const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
             if (sourceIdx === -1) return;
             saveHistory(); let item = sides[sourceSide].splice(sourceIdx, 1)[0];
             const targetEl = ev.target.closest('.item');
-            if (targetEl && sourceSide === targetSide) {
-                const targetId = parseInt(targetEl.getAttribute('data-id'));
-                const targetItem = sides[targetSide].find(i => i.id === targetId);
-                if (item.type === targetItem.type && item.id !== targetId) {
-                    let commonNum = (targetItem.num * item.den) + (item.num * targetItem.den);
-                    let commonDen = targetItem.den * item.den; let frac = createFraction(commonNum, commonDen);
-                    targetItem.num = frac.num; targetItem.den = frac.den;
-                    if (targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
-                } else sides[targetSide].push(item);
-            } else { sides[targetSide].push(item); }
-            render();
-        }
-
-        function menuInvert() { if (!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
-        function menuSplitInTwo() {
-            if (!activeMenuTarget) return; saveHistory(); const item = activeMenuTarget.item; const sideList = sides[activeMenuTarget.side];
-            let part1 = item.num > 0 ? Math.ceil(item.num / 2) : Math.floor(item.num / 2); let part2 = item.num - part1;
-            const idx = sideList.findIndex(i => i.id === item.id); sideList.splice(idx, 1);
-            sideList.push({ id: idCounter++, type: item.type, num: part1, den: item.den });
-            sideList.push({ id: idCounter++, type: item.type, num: part2, den: item.den });
-            render();
-        }
-
-        function getTotals(side) {
-            let units = 0, xs = 0;
-            sides[side].forEach(i => {
-                let realVal = i.num / i.den;
-                if (i.type === 'x') xs += realVal;
-                else if (i.type === 'inv-x') xs += (realVal * (1/xValue)); 
-                else units += realVal;
-            });
-            return { units, xs };
-        }
-
-        function getBoxHTML(item) {
-            let label = item.type === 'x' ? 'x' : '';
-            if (item.type === 'inv-x') return `<span class="fraction"><span class="numerator">${item.num}</span><span class="denominator">x</span></span>`;
-            if (item.den === 1) {
-                return item.num === 1 && item.type === 'x' ? 'x' : (item.num === -1 && item.type === 'x' ? '-x' : item.num + label);
-            } else {
-                let nStr = item.num === 1 && item.type === 'x' ? 'x' : (item.num === -1 && item.type === 'x' ? '-x' : item.num + label);
-                return `<span class="fraction"><span class="numerator">${nStr}</span><span class="denominator">${item.den}</span></span>`;
-            }
-        }
-
-        function render(animate = true) {
-            ['left', 'right'].forEach(side => {
-                const pan = document.getElementById('pan-' + side); pan.innerHTML = '';
-                sides[side].forEach(item => {
-                    const div = document.createElement('div'); let isNeg = item.num < 0;
-                    div.className = 'item ' + (item.type === 'x' ? (isNeg ? 'box-x-neg' : 'box-x') : (item.type === 'inv-x' ? 'box-inv-x' : (isNeg ? 'val-neg' : 'val-pos')));
-                    div.draggable = true; div.setAttribute('data-id', item.id);
-                    div.ondragstart = (e) => { e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id })); };
-                    div.oncontextmenu = (e) => {
-                        e.preventDefault(); activeMenuTarget = { side, id: item.id, item };
-                        const menu = document.getElementById('customContextMenu');
-                        menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
-                    };
-                    div.innerHTML = getBoxHTML(item); pan.appendChild(div);
-                });
-            });
-            
-            const display = document.getElementById('math');
-            display.innerHTML = '';
-            display.appendChild(buildHTMLSide(sides.left));
-            const eqSign = document.createElement('span'); eqSign.innerText = ' = '; display.appendChild(eqSign);
-            display.appendChild(buildHTMLSide(sides.right));
-            
-            let L = getTotals('left'), R = getTotals('right');
-            let diff = (R.xs * xValue + R.units) - (L.xs * xValue + L.units);
-            let angle = Math.min(Math.max(diff * 4, -25), 25);
-            document.getElementById('beam').style.transform = `rotate(${angle}deg)`;
-            document.getElementById('pan-left').style.transform = `rotate(${-angle}deg)`;
-            document.getElementById('pan-right').style.transform = `rotate(${-angle}deg)`;
-        }
-
-        function buildHTMLSide(items) {
-            const container = document.createElement('span'); container.className = 'math
