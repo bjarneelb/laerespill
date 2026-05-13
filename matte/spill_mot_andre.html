@@ -2,177 +2,199 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsløpet - Spill</title>
+    <title>Ligningsløpet - Sportsbil Edition</title>
     <style>
         :root {
-            --bg-color: #1a1a1a;
-            --panel-color: #2c3e50;
-            --accent-color: #f1c40f;
+            --car-interior: #1c1c1c;
+            --leather: #2c3e50;
+            --stitch: #e74c3c;
             --math-green: #4af626;
+            --chrome: linear-gradient(145deg, #e6e6e6, #999);
         }
 
         body { 
             font-family: 'Segoe UI', sans-serif; 
-            background: var(--bg-color); 
+            background: #050b14; /* Nattehimmel utenfor vinduet */
             color: white; 
             margin: 0; 
             display: flex; 
             flex-direction: column; 
             align-items: center;
-            min-height: 100vh;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* --- FRONTRETE / BAKGRUNN --- */
+        .windshield {
+            position: fixed; top: 0; width: 100%; height: 50vh;
+            background: linear-gradient(to bottom, #050b14 0%, #1a2a6c 100%);
+            z-index: -1;
+        }
+
+        /* --- BAKSPEIL --- */
+        .rearview-mirror {
+            position: absolute; top: 20px; width: 450px; height: 80px;
+            background: #000; border: 6px solid #444; border-radius: 10px 10px 50px 50px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 0 15px var(--math-green);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10; border-bottom: 8px solid #222;
         }
 
         /* --- STARTSKJERM --- */
         #startScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 1000;
+            background: rgba(0,0,0,0.9); z-index: 1000;
             display: flex; justify-content: center; align-items: center;
         }
         .start-box {
-            background: white; color: #333; padding: 40px; border-radius: 15px;
-            max-width: 500px; text-align: center; border: 5px solid var(--accent-color);
+            background: #fff; color: #333; padding: 40px; border-radius: 15px;
+            text-align: center; border: 10px solid #444; box-shadow: 0 0 50px #000;
         }
-        .instr { font-size: 0.9rem; background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 5px solid var(--panel-color); text-align: left; }
+
+        /* --- COCKPIT / DASHBORD --- */
+        .cockpit {
+            position: absolute; bottom: 0; width: 100%; height: 75vh;
+            background: var(--car-interior);
+            border-top: 15px solid #111;
+            border-radius: 50% 50% 0 0 / 15% 15% 0 0;
+            box-shadow: inset 0 20px 50px rgba(0,0,0,0.9);
+            display: flex; flex-direction: column; align-items: center;
+            padding-top: 40px;
+            background-image: radial-gradient(#333 10%, transparent 11%);
+            background-size: 5px 5px; /* Karbonfiber-effekt */
+        }
+
+        .main-dash {
+            display: flex; align-items: flex-end; gap: 30px; margin-top: 20px;
+        }
+
+        /* Instrumentene (Turtellere) */
+        .gauge-pod {
+            width: 320px; height: 320px;
+            background: #111; border: 10px solid #444; border-radius: 50%;
+            box-shadow: 0 10px 0 #222, inset 0 0 20px rgba(0,0,0,0.8);
+            display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 8px;
+            position: relative; transition: transform 0.4s ease-out;
+        }
+        .gauge-pod::after {
+            content: ""; position: absolute; inset: -5px; border-radius: 50%;
+            border: 2px solid var(--stitch); opacity: 0.5;
+        }
+
+        /* Midtkonsoll */
+        .center-console {
+            width: 280px; display: flex; flex-direction: column; align-items: center;
+            background: #222; padding: 20px; border-radius: 20px;
+            border: 3px solid #333; box-shadow: 0 15px 0 #111;
+        }
+
+        .gear-indicator {
+            background: #000; color: #f1c40f; padding: 10px 25px;
+            font-family: 'Orbitron', monospace; font-size: 2.5rem;
+            border-radius: 5px; border: 2px solid #444; margin-bottom: 20px;
+            text-shadow: 0 0 10px #f1c40f;
+        }
+
+        /* --- KNAPPER --- */
+        .car-btn {
+            width: 100%; margin: 5px 0; padding: 12px;
+            border-radius: 5px; border: none; font-weight: bold;
+            text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 4px 0 #000; transition: 0.1s;
+        }
+        .car-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+        .btn-check { background: #27ae60; color: white; }
+        .btn-new { background: #2980b9; color: white; }
+        .btn-undo { background: #7f8c8d; color: white; }
+
+        /* Byggepanel integrert */
+        .manual-side { 
+            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; 
+            font-size: 0.8rem; border-top: 2px solid var(--stitch); display: none;
+        }
+
+        /* --- ITEMS --- */
+        .item { 
+            min-width: 55px; height: 55px; border-radius: 8px; color: white; 
+            font-weight: bold; cursor: grab; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; font-size: 0.9rem;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.1);
+        }
+        .box-x { background: #d35400; } .box-x-neg { background: #c0392b; }
+        .val-pos { background: #2980b9; } .val-neg { background: #8e44ad; }
         
-        /* --- DASHBORD --- */
-        .dashboard {
-            display: grid;
-            grid-template-columns: 200px 1fr 200px;
-            grid-template-rows: auto auto;
-            gap: 20px;
-            width: 95vw;
-            max-width: 1100px;
-            margin-top: 30px;
-            background: #34495e;
-            padding: 30px;
-            border-radius: 50px 50px 20px 20px;
-            border-bottom: 10px solid #222;
-            box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
-        }
+        .fraction { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; font-size: 0.8rem; }
+        .numerator { border-bottom: 1px solid white; width: 100%; text-align: center; }
 
-        /* Instrumentene */
-        .gauge-container {
-            grid-column: 2;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            background: #222;
-            padding: 40px 20px;
-            border-radius: 100px;
-            border: 8px solid #555;
-            position: relative;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .gauge {
-            width: 260px; height: 260px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 50%;
-            border: 4px solid #444;
-            display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 5px;
-            overflow: hidden; padding: 10px;
-        }
+        #mirrorText { font-family: monospace; color: var(--math-green); font-size: 1.5rem; text-shadow: 0 0 5px var(--math-green); }
 
-        /* Senter-kontroll (Giring/Operasjoner) */
-        .center-stack {
-            grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: -20px;
-        }
-        .gear-box {
-            background: #111; border: 3px solid #f1c40f; color: #f1c40f;
-            padding: 10px 20px; font-family: monospace; font-size: 2rem; border-radius: 5px;
-        }
-        .op-unit { background: #444; padding: 15px; border-radius: 10px; border: 2px solid #666; }
-
-        /* Manuelt panel (Utsiden) */
-        .side-panel { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; display: none; }
-
-        /* Mattevisning (Displayet) */
-        .math-display {
-            grid-column: 2; background: #000; color: var(--math-green);
-            font-family: monospace; font-size: 1.8rem; padding: 15px;
-            border-radius: 8px; text-align: center; border: 2px solid #333; margin-top: 20px;
-            box-shadow: inset 0 0 10px #000; display: flex; justify-content: center; align-items: center; gap: 10px;
-        }
-
-        /* --- KNAPPER OG ITEMS --- */
-        .btn-row { grid-column: 2; display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-        .item { min-width: 45px; height: 45px; border-radius: 5px; color: white; font-weight: bold; cursor: grab; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; box-shadow: 0 3px 0 rgba(0,0,0,0.3); }
-        .box-x { background: #d35400; } .box-x-neg { background: #e74c3c; } .val-pos { background: #2980b9; } .val-neg { background: #c0392b; }
-        .btn-action { padding: 10px 25px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; color: white; }
-        .btn-green { background: #27ae60; } .btn-blue { background: #2980b9; } .btn-gray { background: #7f8c8d; }
-
-        .math-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; padding: 0 4px; font-size: 1.2rem; }
-        .math-num { border-bottom: 2px solid var(--math-green); }
-        .fraction { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
-        .numerator { border-bottom: 1px solid white; }
+        .context-menu { display: none; position: absolute; background: #333; border: 1px solid #555; color: white; border-radius: 5px; z-index: 2000; }
+        .context-menu button { display: block; width: 100%; border: none; background: none; color: white; padding: 10px; cursor: pointer; text-align: left; }
+        .context-menu button:hover { background: #444; }
     </style>
 </head>
 <body>
 
-    <!-- START-SKJERM -->
+    <div class="windshield"></div>
+
+    <div class="rearview-mirror">
+        <div id="mirrorText">0 = 0</div>
+    </div>
+
     <div id="startScreen">
         <div class="start-box">
-            <h1>Ligningsløpet</h1>
+            <h1 style="margin-top:0">Ligningsløpet</h1>
             <p>Din bil: <strong id="carDisplay" style="color: #e67e22;">...</strong></p>
-            <div class="instr">
-                <strong>Slik vinner du:</strong> Målet er å løse likningen på dashbordet ved å få <strong>x alene</strong> på det ene instrumentet, og kun et <strong>tall</strong> på det andre.
+            <div style="background:#eee; padding:15px; border-radius:10px; margin:20px 0; font-size:0.9rem;">
+                <strong>Oppdrag:</strong> Få vektene i balanse ved å isolere 1x på det ene instrumentet.
             </div>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <input type="text" id="roomInput" placeholder="ROMKODE">
-                <select id="startLvl">
-                    <option value="0">Tilfeldig nivå</option>
-                    <option value="1">Nivå 1: Hele tall</option>
-                    <option value="2">Nivå 2: X begge sider</option>
-                    <option value="3">Nivå 3: ax+b=cx+d</option>
-                    <option value="4">Nivå 4: Brøker</option>
-                    <option value="6">Nivå 6: 1/x</option>
-                </select>
-                <button class="btn-action btn-green" onclick="startGame()">START RACET</button>
-            </div>
-            <div style="margin-top:15px;">
-                <input type="checkbox" id="demoToggle"> <small>Aktiver bygg-selv i dashbordet</small>
-            </div>
+            <input type="text" id="roomInput" placeholder="ROMKODE" style="padding:10px; width:200px; text-transform:uppercase;"><br><br>
+            <button class="car-btn btn-check" onclick="startGame()" style="width:220px">Kjør i gang!</button>
+            <div style="margin-top:10px;"><input type="checkbox" id="demoToggle"> <small>Vis byggepaneler</small></div>
         </div>
     </div>
 
-    <!-- DASHBORD -->
-    <div class="dashboard">
-        <!-- Venstre panel -->
-        <div id="panelL" class="side-panel">
-            <strong>Bygg V</strong>
-            <input type="number" id="qtyL" value="1" style="width:40px;">
-            <button onclick="addManual('left', 'x')">+X</button>
-            <button onclick="addManual('left', 'num')">+1</button>
-        </div>
+    <div id="customMenu" class="context-menu">
+        <button onclick="menuInvert()">± Bytt fortegn</button>
+        <button onclick="menuSplit()">⚏ Splitt opp</button>
+    </div>
 
-        <div class="center-stack">
-            <div class="gear-box" id="gearDisplay">R</div>
-            <div class="op-unit">
-                <input type="text" id="opVal" value="2" style="width:40px; text-align:center;">
-                <button onclick="operate('multiply')">×</button>
-                <button onclick="operate('divide')">÷</button>
+    <div class="cockpit">
+        <div class="main-dash" id="dashFrame">
+            <!-- Venstre Panel -->
+            <div id="panelL" class="manual-side">
+                <strong>V</strong><br>
+                <input type="number" id="qtyL" value="1" style="width:35px; background:#000; color:#fff; border:1px solid #555;">
+                <button onclick="addManual('left','x')">+X</button>
+                <button onclick="addManual('left','num')">+1</button>
             </div>
-        </div>
 
-        <!-- Høyre panel -->
-        <div id="panelR" class="side-panel">
-            <strong>Bygg H</strong>
-            <input type="number" id="qtyR" value="1" style="width:40px;">
-            <button onclick="addManual('right', 'x')">+X</button>
-            <button onclick="addManual('right', 'num')">+1</button>
-        </div>
+            <div id="gaugeL" class="gauge-pod" ondragover="event.preventDefault()" ondrop="drop(event, 'left')"></div>
 
-        <!-- Instrumentene -->
-        <div class="gauge-container" id="dashGauges">
-            <div id="gaugeL" class="gauge" ondragover="event.preventDefault()" ondrop="drop(event, 'left')"></div>
-            <div id="gaugeR" class="gauge" ondragover="event.preventDefault()" ondrop="drop(event, 'right')"></div>
-        </div>
+            <!-- Midtkonsoll -->
+            <div class="center-console">
+                <div class="gear-indicator" id="gearDisplay">1</div>
+                
+                <div style="background:#111; padding:10px; border-radius:5px; border:1px solid #444; margin-bottom:15px;">
+                    <input type="text" id="opVal" value="2" style="width:40px; text-align:center; background:#000; color:#fff; border:none; font-size:1.2rem;">
+                    <button class="car-btn btn-new" style="width:40px; padding:5px;" onclick="operate('multiply')">×</button>
+                    <button class="car-btn btn-new" style="width:40px; padding:5px;" onclick="operate('divide')">÷</button>
+                </div>
 
-        <div class="math-display" id="mathDisplay">0 = 0</div>
+                <button class="car-btn btn-check" onclick="checkSolution()">Sjekk</button>
+                <button class="car-btn btn-undo" onclick="undo()">Angre</button>
+                <button class="car-btn btn-new" onclick="initGame()">Ny</button>
+            </div>
 
-        <div class="btn-row">
-            <button class="btn-action btn-gray" onclick="undo()">Angre</button>
-            <button class="btn-action btn-blue" onclick="initGame()">Ny</button>
-            <button class="btn-action btn-green" onclick="checkSolution()">Sjekk</button>
+            <div id="gaugeR" class="gauge-pod" ondragover="event.preventDefault()" ondrop="drop(event, 'right')"></div>
+
+            <!-- Høyre Panel -->
+            <div id="panelR" class="manual-side">
+                <strong>H</strong><br>
+                <input type="number" id="qtyR" value="1" style="width:35px; background:#000; color:#fff; border:1px solid #555;">
+                <button onclick="addManual('right','x')">+X</button>
+                <button onclick="addManual('right','num')">+1</button>
+            </div>
         </div>
     </div>
 
@@ -191,49 +213,36 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app, firebaseConfig.databaseURL);
 
-        const adj = ["Raske", "Lynraske", "Smarte", "Gylne", "Viltre", "Smidige"];
-        const ani = ["Gaupe", "Ulv", "Bjørn", "Oter", "Hauk", "Ugle"];
+        const adj = ["Raske", "Lynraske", "Smarte", "Viltre", "Smidige", "Gylne"];
+        const ani = ["Gaupe", "Rev", "Bjørn", "Ulv", "Hauk", "Ugle"];
         const myName = adj[Math.floor(Math.random()*adj.length)] + " " + ani[Math.floor(Math.random()*ani.length)];
         document.getElementById("carDisplay").innerText = myName;
 
         window.startGame = function() {
             const room = document.getElementById("roomInput").value.trim().toUpperCase();
             if(!room) { alert("Skriv inn romkode!"); return; }
-            
-            const startLvl = parseInt(document.getElementById("startLvl").value);
-            if(startLvl > 0) currentLevel = startLvl;
-            else currentLevel = Math.floor(Math.random()*3) + 1;
-
             if(document.getElementById("demoToggle").checked) {
                 document.getElementById("panelL").style.display = "block";
                 document.getElementById("panelR").style.display = "block";
             }
-
             document.getElementById("startScreen").style.display = "none";
-            
-            set(ref(database, 'rooms/'+room+'/players/'+myName), {
-                score: 0, level: currentLevel, streak: 0, lastUpdated: Date.now()
-            });
             window.roomCode = room;
+            set(ref(database, 'rooms/'+room+'/players/'+myName), { score: 0, level: 1, streak: 0, lastUpdated: Date.now() });
             initGame();
         };
 
-        window.syncFB = function(lvl, str) {
-            if(window.roomCode) {
-                update(ref(database, 'rooms/'+window.roomCode+'/players/'+myName), {
-                    level: lvl, streak: str, score: str*100, lastUpdated: Date.now()
-                });
-            }
+        window.syncFB = (lvl, str) => {
+            if(window.roomCode) update(ref(database, 'rooms/'+window.roomCode+'/players/'+myName), { level: lvl, streak: str, score: str*100, lastUpdated: Date.now() });
         };
     </script>
 
     <script>
-        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0;
+        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0, activeMenuTarget = null;
 
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
         function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
         function createFraction(num, den) { if (den === 0) return { num: 0, den: 1 }; let g = gcd(num, den); let fN = num / g; let fD = den / g; if (fD < 0) { fN *= -1; fD *= -1; } return { num: fN, den: fD }; }
-        
+
         const levels = {
             1: { generate: () => { let x=getRandomInt(2,9), a=getRandomInt(1,8); xValue=x; sides.left=[{id:idCounter++, type:'x', num:1, den:1}, {id:idCounter++, type:'number', num:a, den:1}]; sides.right=[{id:idCounter++, type:'number', num:x+a, den:1}]; }},
             2: { generate: () => { let x=getRandomInt(2,8), c=getRandomInt(1,4), a=c+1, b=getRandomInt(1,5); xValue=x; sides.left=[{id:idCounter++, type:'x', num:a, den:1}, {id:idCounter++, type:'number', num:b, den:1}]; sides.right=[{id:idCounter++, type:'x', num:c, den:1}, {id:idCounter++, type:'number', num:(a*x+b)-(c*x), den:1}]; }},
@@ -244,8 +253,8 @@
 
         function initGame() {
             sides = { left: [], right: [] }; history = []; idCounter = 0;
-            levels[currentLevel].generate();
-            render();
+            const lvl = levels[currentLevel] || levels[1];
+            lvl.generate(); render();
         }
 
         function render() {
@@ -256,25 +265,28 @@
                     const div = document.createElement('div');
                     let isNeg = item.num < 0;
                     div.className = 'item ' + (item.type==='x' ? (isNeg?'box-x-neg':'box-x') : (item.type==='inv-x'?'box-inv-x' : (isNeg?'val-neg':'val-pos')));
-                    div.draggable = true;
+                    div.draggable = true; div.setAttribute('data-id', item.id);
                     div.innerHTML = getBoxHTML(item);
                     div.ondragstart = (e) => e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id }));
+                    div.oncontextmenu = (e) => {
+                        e.preventDefault(); activeMenuTarget = { side, item };
+                        const menu = document.getElementById('customMenu');
+                        menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+                    };
                     gauge.appendChild(div);
                 });
             });
 
-            // Matte-display
-            const display = document.getElementById('mathDisplay');
-            display.innerHTML = '';
-            display.appendChild(buildMathSide(sides.left));
-            const eq = document.createElement('span'); eq.innerText = ' = '; display.appendChild(eq);
-            display.appendChild(buildMathSide(sides.right));
+            const mirror = document.getElementById('mirrorText');
+            mirror.innerHTML = '';
+            mirror.appendChild(buildMathSide(sides.left));
+            mirror.innerHTML += ' = ';
+            mirror.appendChild(buildMathSide(sides.right));
 
-            // Vipp instrumentene
             let L = getTotals('left'), R = getTotals('right');
             let diff = (R.xs * xValue + R.units) - (L.xs * xValue + L.units);
-            let angle = Math.min(Math.max(diff * 3, -20), 20);
-            document.getElementById('dashGauges').style.transform = `rotate(${angle}deg)`;
+            let angle = Math.min(Math.max(diff * 3, -15), 15);
+            document.getElementById('dashFrame').style.transform = `rotate(${angle}deg)`;
             document.getElementById('gearDisplay').innerText = currentLevel;
         }
 
@@ -306,18 +318,34 @@
         }
 
         function getTotals(side) {
-            let units = 0, xs = 0;
-            sides[side].forEach(i => { let v = i.num/i.den; if(i.type==='x') xs+=v; else if(i.type==='inv-x') xs+=(v*(1/xValue)); else units+=v; });
-            return { units, xs };
+            let u = 0, x = 0;
+            sides[side].forEach(i => { let v = i.num/i.den; if(i.type==='x') x+=v; else if(i.type==='inv-x') x+=(v*(1/xValue)); else u+=v; });
+            return { units: u, xs: x };
         }
 
         function drop(ev, targetSide) {
             ev.preventDefault();
             const data = JSON.parse(ev.dataTransfer.getData("text"));
+            const sourceSide = data.side;
+            const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
+            if(sourceIdx === -1) return;
+            const item = sides[sourceSide][sourceIdx];
+
+            const targetEl = ev.target.closest('.item');
+            if(targetEl && sourceSide === targetSide) {
+                const targetId = parseInt(targetEl.getAttribute('data-id'));
+                const targetItem = sides[targetSide].find(i => i.id === targetId);
+                if(item.type === targetItem.type && item.id !== targetId) {
+                    saveHistory();
+                    let f = createFraction((targetItem.num * item.den) + (item.num * targetItem.den), targetItem.den * item.den);
+                    targetItem.num = f.num; targetItem.den = f.den;
+                    sides[sourceSide].splice(sourceIdx, 1);
+                    if(targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
+                    render(); return;
+                }
+            }
             saveHistory();
-            const idx = sides[data.side].findIndex(i => i.id === data.id);
-            const item = sides[data.side].splice(idx, 1)[0];
-            sides[targetSide].push(item);
+            sides[targetSide].push(sides[sourceSide].splice(sourceIdx, 1)[0]);
             render();
         }
 
@@ -336,13 +364,13 @@
 
         function checkSolution() {
             let L=getTotals('left'), R=getTotals('right');
-            let solved = (sides.left.length === 1 && sides.left[0].type === 'x' && sides.left[0].num === 1 && sides.left[0].den === 1 && sides.right.length === 1 && sides.right[0].type === 'number');
+            const solved = (sides.left.length === 1 && sides.left[0].type === 'x' && sides.left[0].num === 1 && sides.left[0].den === 1 && sides.right.length === 1 && sides.right[0].type === 'number');
             if(solved && Math.abs(R.units - xValue) < 0.01) {
-                alert("Riktig!"); winStreak++;
+                alert("Bra kjørt!"); winStreak++;
                 if(winStreak >= 6 && currentLevel < 6) { currentLevel++; winStreak = 0; }
                 if(window.syncFB) window.syncFB(currentLevel, winStreak);
                 initGame();
-            } else { alert("Isoler 1x på den ene siden!"); }
+            } else { alert("Du må isolere 1x på venstre side for å få grønt lys!"); }
         }
 
         function addManual(side, type) {
@@ -352,11 +380,11 @@
             render();
         }
 
-        function saveHistory() { history.push(JSON.stringify({ sides, idCounter })); document.getElementById('undoBtn').disabled = false; }
+        function saveHistory() { history.push(JSON.stringify({ sides: JSON.parse(JSON.stringify(sides)), idCounter })); }
         function undo() { if(!history.length) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(); }
-
-        window.roomCode = null;
-        window.onload = () => {}; 
+        function menuInvert() { if(!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
+        function menuSplit() { if(!activeMenuTarget) return; saveHistory(); let i = activeMenuTarget.item; let p1 = Math.ceil(i.num/2), p2 = i.num - p1; sides[activeMenuTarget.side].splice(sides[activeMenuTarget.side].indexOf(i), 1); sides[activeMenuTarget.side].push({id: idCounter++, type: i.type, num: p1, den: i.den}, {id: idCounter++, type: i.type, num: p2, den: i.den}); render(); }
+        document.addEventListener('click', () => document.getElementById('customMenu').style.display = 'none');
     </script>
 </body>
 </html>
