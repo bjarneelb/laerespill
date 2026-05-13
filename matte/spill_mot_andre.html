@@ -93,8 +93,6 @@
         window.dbOnValue = onValue;
         window.dbUpdate = update;
 
-        // Start spillet når Firebase-ressursene er lastet inn
-        window.startMultiplayerLogic();
     </script>
 </head>
 <body>
@@ -416,3 +414,6 @@
         function menuSplitInTwo() {
             if (!activeMenuTarget) return; saveHistory(); const item = activeMenuTarget.item; const sideList = sides[activeMenuTarget.side];
             let part1 = item.num > 0 ? Math.ceil(item.num / 2) : Math.floor(item.num / 2); let
+
+            startMultiplayerLogic();
+
