@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <title>Ligningsspillet - Vekt</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
+        .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0 0 0; }
+        .btn-back { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; }
+        .btn-back:hover { background: #c0392b; transform: translateY(-1px); }
+        
         .game-header { text-align: center; margin-bottom: 10px; }
         .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
         .controls { margin: 10px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
@@ -33,7 +37,7 @@
         .box-x-neg { background: #e74c3c; border: 2px solid #c0392b; }
         .val-pos { background: #2980b9; border: 2px solid #1c5982; }
         .val-neg { background: #c0392b; border: 2px solid #7b241c; }
-        .box-inv-x { background: #9b59b6; border: 2px solid #6c3483; } /* 1/x boks */
+        .box-inv-x { background: #9b59b6; border: 2px solid #6c3483; }
         
         .fraction { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; padding: 2px 0; }
         .numerator { border-bottom: 1px solid white; padding-bottom: 2px; text-align: center; width: 100%; }
@@ -46,8 +50,12 @@
 </head>
 <body>
 
+    <div class="top-navigation">
+        <a href="index.html" class="btn-back">⬅ Tilbake til menyen</a>
+    </div>
+
     <div class="game-header">
-        <h1>Ligningsspillet: Balanser Vekkten</h1>
+        <h1>Ligningsspillet: Balanser Vekten</h1>
     </div>
 
     <div class="level-bar">
@@ -69,7 +77,7 @@
         <div class="control-group operation-group">
             <strong>Gjør på begge sider</strong>
             <div style="margin-bottom: 5px;">
-                <input type="number" id="op-val" value="2" style="width: 50px;">
+                <input type="text" id="op-val" value="2" style="width: 50px; text-align: center;">
             </div>
             <button class="btn-op" onclick="operate('multiply')">× Multipliser</button>
             <button class="btn-op" onclick="operate('divide')">÷ Divider</button>
@@ -101,11 +109,10 @@
         let history = [];
         let currentLevel = 1;
         let winStreak = 0;
+        let activeMenuTarget = null;
 
-        // Nivådefinisjoner med generatorer
         const levels = {
             1: { targetStreak: 3, generate: () => {
-                // x + a = b  eller x - a = b
                 let x = Math.floor(Math.random() * 8) + 2;
                 let a = Math.floor(Math.random() * 7) + 1;
                 xValue = x;
@@ -114,10 +121,9 @@
                 sides.right = [{ id: idCounter++, type: 'number', num: x + a, den: 1 }];
             }},
             2: { targetStreak: 3, generate: () => {
-                // ax + b = cx + d
                 let x = Math.floor(Math.random() * 5) + 2;
-                let a = Math.floor(Math.random() * 3) + 2; // 2 til 4
-                let c = Math.floor(Math.random() * (a-1)) + 1; // mindre enn a
+                let a = Math.floor(Math.random() * 3) + 2;
+                let c = Math.floor(Math.random() * (a-1)) + 1;
                 let b = Math.floor(Math.random() * 5) + 1;
                 let d = (a * x + b) - (c * x);
                 xValue = x;
@@ -125,32 +131,27 @@
                 sides.right = [{ id: idCounter++, type: 'x', num: c, den: 1 }, { id: idCounter++, type: 'number', num: d, den: 1 }];
             }},
             3: { targetStreak: 3, generate: () => {
-                // x/a = b
-                let den = Math.floor(Math.random() * 3) + 2; // 2, 3 eller 4
+                let den = Math.floor(Math.random() * 3) + 2;
                 let x = den * (Math.floor(Math.random() * 4) + 1);
                 xValue = x;
                 sides.left = [{ id: idCounter++, type: 'x', num: 1, den: den }];
                 sides.right = [{ id: idCounter++, type: 'number', num: x / den, den: 1 }];
             }},
             4: { targetStreak: 3, generate: () => {
-                // x/a + b/c = d/c
                 let den1 = 2; let den2 = 3;
-                xValue = 6; // Fast x for enklere brøkflyt
+                xValue = 6;
                 sides.left = [{ id: idCounter++, type: 'x', num: 1, den: den1 }, { id: idCounter++, type: 'number', num: 1, den: den2 }];
-                sides.right = [{ id: idCounter++, type: 'number', num: 11, den: 6 }]; // x/2 + 1/3 = 3 + 1/3 = 11/6
+                sides.right = [{ id: idCounter++, type: 'number', num: 11, den: 6 }];
             }},
             5: { targetStreak: 3, generate: () => {
-                // a/x = b
-                let x = Math.floor(Math.random() * 3) + 2; // 2, 3 eller 4
+                let x = Math.floor(Math.random() * 3) + 2;
                 let num = x * (Math.floor(Math.random() * 2) + 1);
                 xValue = x;
-                // Representerer 1/x som en egen type 'inv-x' med en koeffisient (num)
                 sides.left = [{ id: idCounter++, type: 'inv-x', num: num, den: 1 }];
                 sides.right = [{ id: idCounter++, type: 'number', num: num / x, den: 1 }];
             }}
         };
 
-        // Last lagret nivå fra nettleserens minne (localStorage)
         window.onload = function() {
             let savedLevel = localStorage.getItem('ligningsSpill_level');
             if (savedLevel) {
@@ -170,7 +171,7 @@
 
         function changeLevel(val) {
             currentLevel = parseInt(val);
-            localStorage.setItem('ligningsSpill_level', currentLevel); // Lagre valget
+            localStorage.setItem('ligningsSpill_level', currentLevel);
             winStreak = 0;
             updateStreakDisplay();
             initGame();
@@ -181,19 +182,13 @@
         }
 
         function checkSolution() {
-            // Sjekk om venstre side har nøyaktig én 'x' (eller 'inv-x' på nivå 5) med verdi 1, og ingenting annet, og høyre side har et tall
-            let L = getTotals('left'), R = getTotals('right');
-            
             let isSolved = false;
             if (currentLevel === 5) {
-                // Nivå 5 krever at man står igjen med 1/x = 1/verdi, og dermed vet svar, eller har snudd den
-                // For å gjøre det enkelt for eleven på vektmodellen: Sjekk om det bare er tall på høyre side og formelen stemmer
-                if (sides.left.length === 1 && sides.left[0].type === 'inv-x' && sides.left[0].num === 1 && sides.left[0].den === 1 && sides.right.length === 1 && sides.right[0].type === 'number') {
+                if (sides.left.length === 1 && sides.left[0].type === 'x' && sides.left[0].num === 1 && sides.left[0].den === 1 && sides.right.length === 1 && sides.right[0].type === 'number') {
                     let finalVal = sides.right[0].num / sides.right[0].den;
-                    if (Math.abs((1 / finalVal) - xValue) < 0.01) isSolved = true;
+                    if (Math.abs(finalVal - xValue) < 0.01) isSolved = true;
                 }
             } else {
-                // Standard sjekk: Står det x = [korrekt verdi]?
                 if (sides.left.length === 1 && sides.left[0].type === 'x' && sides.left[0].num === 1 && sides.left[0].den === 1 && sides.right.length === 1 && sides.right[0].type === 'number') {
                     let finalVal = sides.right[0].num / sides.right[0].den;
                     if (Math.abs(finalVal - xValue) < 0.01) isSolved = true;
@@ -221,29 +216,63 @@
             }
         }
 
-        // --- Standard algebra- og motorlogikk (fra forrige tråd) ---
         function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
-        function createFraction(num, den) { if (den === 0) return { num: 0, den: 1 }; let g = gcd(num, den); let fN = num / g; let fD = den / g; if (fD < 0) { fN *= -1; fD *= -1; } return { num: fN, den: fD }; }
         
-        function saveHistory() { history.push(JSON.stringify({ sides, idCounter })); document.getElementById('undoBtn').disabled = false; }
-        function undo() { if (history.length === 0) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(false); if (history.length === 0) document.getElementById('undoBtn').disabled = true; }
+        function createFraction(num, den) { 
+            if (den === 0) return { num: 0, den: 1 }; 
+            let g = gcd(num, den); 
+            let fN = num / g; 
+            let fD = den / g; 
+            if (fD < 0) { fN *= -1; fD *= -1; } 
+            return { num: fN, den: fD }; 
+        }
+        
+        function saveHistory() { 
+            history.push(JSON.stringify({ sides: JSON.parse(JSON.stringify(sides)), idCounter })); 
+            document.getElementById('undoBtn').disabled = false; 
+        }
+        
+        function undo() { 
+            if (history.length === 0) return; 
+            const s = JSON.parse(history.pop()); 
+            sides = s.sides; 
+            idCounter = s.idCounter; 
+            render(false); 
+            if (history.length === 0) document.getElementById('undoBtn').disabled = true; 
+        }
 
         function operate(type) {
             saveHistory();
-            const factor = parseInt(document.getElementById('op-val').value);
-            if (factor === 0) return;
+            const rawVal = document.getElementById('op-val').value.trim();
+            
             ['left', 'right'].forEach(side => {
-                sides[side] = sides[side].map(item => {
-                    let newItem = {...item};
-                    if (type === 'multiply') { let f = createFraction(newItem.num * factor, newItem.den); newItem.num = f.num; newItem.den = f.den; }
-                    else { let f = createFraction(newItem.num, newItem.den * factor); newItem.num = f.num; newItem.den = f.den; }
-                    return newItem;
-                }).filter(item => item.num !== 0);
+                if (rawVal.toLowerCase() === 'x') {
+                    // Hvis brukeren skriver 'x' i ruten på nivå 5
+                    if (type === 'multiply') {
+                        sides[side] = sides[side].map(item => {
+                            if (item.type === 'inv-x') return { ...item, type: 'number' };
+                            if (item.type === 'number') return { ...item, type: 'x' };
+                            return item;
+                        });
+                    }
+                } else {
+                    const factor = parseInt(rawVal);
+                    if (isNaN(factor) || factor === 0) return;
+                    sides[side] = sides[side].map(item => {
+                        let newItem = {...item};
+                        if (type === 'multiply') { let f = createFraction(newItem.num * factor, newItem.den); newItem.num = f.num; newItem.den = f.den; }
+                        else { let f = createFraction(newItem.num, newItem.den * factor); newItem.num = f.num; newItem.den = f.den; }
+                        return newItem;
+                    }).filter(item => item.num !== 0);
+                }
             });
             render();
         }
 
+        function drag(ev, side, id) { ev.dataTransfer.setData("text", JSON.stringify({ side, id })); }
+
         function drop(ev, targetSide) {
+            ev.preventDefault();
             const data = JSON.parse(ev.dataTransfer.getData("text"));
             const sourceSide = data.side;
             const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
@@ -252,7 +281,6 @@
             saveHistory();
             let item = sides[sourceSide].splice(sourceIdx, 1)[0]; 
             
-            // Siden det er et spill, er "auto-fortegnsbytte" slått av slik du ba om!
             const targetEl = ev.target.closest('.item');
             if (targetEl && sourceSide === targetSide) {
                 const targetId = parseInt(targetEl.getAttribute('data-id'));
@@ -292,21 +320,25 @@
             render();
         }
 
+        document.addEventListener('click', () => { document.getElementById('customContextMenu').style.display = 'none'; });
+
         function getTotals(side) {
             let units = 0, xs = 0;
             sides[side].forEach(i => {
                 let realVal = i.num / i.den;
                 if (i.type === 'x') xs += realVal;
-                else if (i.type === 'inv-x') xs += (realVal * (1/xValue)); // Simulerer vekten av 1/x
+                else if (i.type === 'inv-x') xs += (realVal * (1/xValue)); 
                 else units += realVal;
             });
             return { units, xs };
         }
 
         function getBoxHTML(item) {
-            let label = item.type === 'x' ? 'x' : (item.type === 'inv-x' ? '/x' : '');
+            let label = item.type === 'x' ? 'x' : '';
+            if (item.type === 'inv-x') {
+                return `<span class="fraction"><span class="numerator">${item.num}</span><span class="denominator">x</span></span>`;
+            }
             if (item.den === 1) {
-                if (item.type === 'inv-x') return `<span class="fraction"><span class="numerator">${item.num}</span><span class="denominator">x</span></span>`;
                 return item.num === 1 && item.type === 'x' ? 'x' : (item.num === -1 && item.type === 'x' ? '-x' : item.num + label);
             } else {
                 let nStr = item.num === 1 && item.type === 'x' ? 'x' : (item.num === -1 && item.type === 'x' ? '-x' : item.num + label);
@@ -323,7 +355,7 @@
                     let isNeg = item.num < 0;
                     div.className = 'item ' + (item.type === 'x' ? (isNeg ? 'box-x-neg' : 'box-x') : (item.type === 'inv-x' ? 'box-inv-x' : (isNeg ? 'val-neg' : 'val-pos')));
                     div.draggable = true; div.setAttribute('data-id', item.id);
-                    div.ondragstart = (e) => { ev = e; e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id })); };
+                    div.ondragstart = (e) => drag(e, side, item.id);
                     div.oncontextmenu = (e) => {
                         e.preventDefault(); activeMenuTarget = { side, id: item.id, item };
                         const menu = document.getElementById('customContextMenu');
@@ -335,17 +367,10 @@
             });
             document.getElementById('math').innerText = `${formatSide(sides.left)} = ${formatSide(sides.right)}`;
             
-            // Fysikkberegning (faktisk mekanisk ubalanse)
             let L = getTotals('left'), R = getTotals('right');
-            let weightL = (L.xs * (currentLevel === 5 ? 1/xValue : xValue)) + L.units;
-            let weightR = (R.xs * (currentLevel === 5 ? 1/xValue : xValue)) + R.units;
-            if (currentLevel === 5) {
-                // Spesialvekt for inv-x nivå
-                let lx = 0, lu = 0, rx = 0, ru = 0;
-                sides.left.forEach(i => i.type === 'inv-x' ? lx += i.num/i.den : lu += i.num/i.den);
-                sides.right.forEach(i => i.type === 'inv-x' ? rx += i.num/i.den : ru += i.num/i.den);
-                weightL = (lx * 2) + lu; weightR = (rx * 2) + ru; // Gi inv-x en fiktiv vekt for ubalansevisning
-            }
+            let weightL = (L.xs * xValue) + L.units;
+            let weightR = (R.xs * xValue) + R.units;
+            
             let diff = weightR - weightL;
             let angle = Math.min(Math.max(diff * 4, -25), 25);
             document.getElementById('beam').style.transform = `rotate(${angle}deg)`;
@@ -370,8 +395,6 @@
             });
             return result;
         }
-
-        function resetAll() { initGame(); }
     </script>
 </body>
 </html>
