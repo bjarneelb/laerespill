@@ -2,247 +2,98 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsløpet - KI Tekstoppgaver</title>
+    <title>Smarte Revs Matteløp</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; margin: 0; }
-        
-        .rearview-mirror {
-            width: 80%; max-width: 700px; height: 120px;
-            background: #000; border: 4px solid #444; border-radius: 0 0 40px 40px;
-            margin-bottom: 20px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); padding: 15px;
-        }
-        #mirrorText { color: #4af626; text-align: center; font-size: 1.1rem; font-family: monospace; }
-
-        .cockpit { background: #2c3e50; padding: 25px; border-radius: 20px; border: 5px solid #1a1a1a; width: 90%; max-width: 1000px; box-shadow: inset 0 0 20px #000; }
-        .phase-indicator { background: #f1c40f; color: #000; padding: 10px; border-radius: 5px; font-weight: bold; text-align: center; margin-bottom: 20px; box-shadow: 0 3px 0 #95a5a6; }
-        
-        .main-dash { display: flex; justify-content: space-around; align-items: center; gap: 20px; }
-        .gauge-pod { width: 260px; height: 260px; background: #111; border: 8px solid #444; border-radius: 50%; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; padding: 10px; box-shadow: inset 0 0 15px #000; }
-        
-        .center-console { display: flex; flex-direction: column; gap: 15px; align-items: center; min-width: 150px; }
-        .manual-side { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #555; }
-        .manual-side input { width: 45px; background: #000; color: #fff; border: 1px solid #666; padding: 5px; text-align: center; }
-        
-        button { cursor: pointer; padding: 10px; font-weight: bold; border-radius: 5px; border: none; transition: 0.2s; }
-        .btn-check { background: #27ae60; color: white; padding: 15px 25px; font-size: 1.1rem; width: 100%; }
-        .btn-check:hover { background: #2ecc71; }
-        .car-btn { background: #555; color: white; width: 100%; }
-
-        #startScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 100; }
-        .start-box { background: white; color: #333; padding: 40px; border-radius: 15px; text-align: center; border: 8px solid #444; }
-
-        .item { width: 45px; height: 45px; margin: 3px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: bold; box-shadow: 0 3px 0 rgba(0,0,0,0.3); }
-        .x-item { background: #d35400; color: white; }
-        .num-item { background: #2980b9; color: white; }
+        body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding: 20px; }
+        #game-container { background: white; max-width: 600px; margin: 0 auto; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .setup-section { margin-top: 50px; padding: 15px; border-top: 2px dashed #ccc; font-size: 0.9em; color: #666; }
+        input { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ddd; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #45a049; }
+        #question { font-size: 24px; margin: 20px 0; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="startScreen">
-        <div class="start-box">
-            <h1>Tekst-Løpet (KI)</h1>
-            <p>Din bil: <strong id="carDisplay" style="color: #d35400;">Genererer...</strong></p>
-            <input type="text" id="roomInput" placeholder="ROMKODE">
-            <br><br>
-            <button class="btn-check" onclick="startGame()">START RACET</button>
-        </div>
+<div id="game-container">
+    <h1>🦊 Smarte Revs Matteløp</h1>
+    <div id="start-screen">
+        <p>Trykk på knappen for å starte løpet!</p>
+        <button onclick="startGame()">Start Spill</button>
     </div>
 
-    <div class="rearview-mirror">
-        <div id="mirrorText">Gjør deg klar for tekstoppgaver...</div>
+    <div id="game-screen" style="display:none;">
+        <p id="car-name-display"></p>
+        <div id="question">Laster oppgave...</div>
+        <input type="number" id="answerInput" placeholder="Svar her">
+        <button onclick="checkAnswer()">Sjekk svar</button>
     </div>
-
-    <div class="cockpit">
-        <div id="phaseDisplay" class="phase-indicator">FASE 1: BYGG LIKNINGEN</div>
-        
-        <div class="main-dash">
-            <div class="manual-side">
-                <strong>V-SIDE</strong><br><br>
-                <input type="number" id="qtyL" value="1" min="1"><br><br>
-                <button class="car-btn" onclick="addManual('left','x')">+ X</button><br><br>
-                <button class="car-btn" onclick="addManual('left','num')">+ 1</button>
-            </div>
-
-            <div id="gaugeL" class="gauge-pod"></div>
-
-            <div class="center-console">
-                <div id="opPanel" style="opacity: 0.2; pointer-events: none; text-align:center; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px;">
-                    <small>OPERASJONER</small><br>
-                    <input type="number" id="opVal" value="2" style="width:40px; margin: 5px 0;"><br>
-                    <button class="car-btn" onclick="operate('divide')">÷ Dele</button>
-                    <button class="car-btn" onclick="operate('subtract')" style="margin-top:5px;">- Trekk fra</button>
-                </div>
-                
-                <button id="mainBtn" class="btn-check" onclick="checkPhase()">SJEKK MODELL</button>
-                <button class="car-btn" onclick="resetBoard()">NULLSTILL</button>
-            </div>
-
-            <div id="gaugeR" class="gauge-pod"></div>
-
-            <div class="manual-side">
-                <strong>H-SIDE</strong><br><br>
-                <input type="number" id="qtyR" value="1" min="1"><br><br>
-                <button class="car-btn" onclick="addManual('right','x')">+ X</button><br><br>
-                <button class="car-btn" onclick="addManual('right','num')">+ 1</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { database, ref, set, update } from "./js/firebase-config.js";
-        import { generateEquationTask } from "./js/gemini-api.js";
-
-        // Global tilstand
-        window.playerName = "";
-        window.totalScore = 0;
-        let currentPhase = 1;
-        let targetEquation = null;
-        let xValue = null;
-        let currentRoom = "";
-
-        // 1. Navne-generering (Synkronisert med game.html)
-        const adj = ["Raske", "Lynraske", "Smarte", "Viltre", "Smidige", "Gylne"];
-        const ani = ["Gaupe", "Rev", "Bjørn", "Ulv", "Hauk", "Ugle"];
-        window.playerName = adj[Math.floor(Math.random()*adj.length)] + " " + ani[Math.floor(Math.random()*ani.length)];
-        document.getElementById("carDisplay").innerText = window.playerName;
-
-        <div style="margin: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
-    <p>For å starte må du legge inn en API-nøkkel fra Google AI Studio:</p>
-    <input type="password" id="apiKeyInput" placeholder="Lim inn AIzaSy..." style="padding: 8px; width: 250px;">
-    <button onclick="saveKey()">Lagre nøkkel</button>
 </div>
 
-<script>
-function saveKey() {
-    const key = document.getElementById('apiKeyInput').value.trim();
-    if (key.startsWith("AIza")) {
-        localStorage.setItem("gemini_api_key", key);
-        alert("Nøkkel lagret i nettleseren! Du kan nå starte spillet.");
-    } else {
-        alert("Dette ser ikke ut som en gyldig nøkkel.");
-    }
-}
-</script>
+<!-- Denne seksjonen holder nøkkelen din trygg og lokalt lagret -->
+<div class="setup-section">
+    <h3>⚙️ API-Innstillinger</h3>
+    <p>Lim inn din API-nøkkel her (den lagres kun i din nettleser):</p>
+    <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
+    <button onclick="saveApiKey()" style="background: #2196F3;">Lagre nøkkel</button>
+    <p id="keyStatus"></p>
+</div>
+
+<script type="module">
+    import { generateEquationTask, generateCarName } from './js/gemini-api.js';
+
+    let currentX = 0;
+
+    window.saveApiKey = function() {
+        const key = document.getElementById('apiKeyInput').value.trim();
+        if (key.startsWith("AIza")) {
+            localStorage.setItem("gemini_api_key", key);
+            document.getElementById('keyStatus').innerText = "✅ Nøkkel lagret!";
+            document.getElementById('keyStatus').style.color = "green";
+        } else {
+            alert("Ugyldig nøkkel-format. Den skal starte med AIza.");
+        }
+    };
+
+    window.startGame = async function() {
+        const key = localStorage.getItem("gemini_api_key");
+        if (!key) {
+            alert("Du må lagre en API-nøkkel nederst på siden først!");
+            return;
+        }
+
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
         
-        // 2. Start spill
-        window.startGame = async function() {
-            currentRoom = document.getElementById("roomInput").value.trim().toUpperCase();
-            if(!currentRoom) { alert("Skriv inn romkode!"); return; }
+        const carName = await generateCarName();
+        document.getElementById('car-name-display').innerText = "Din bil: 🏎️ " + carName;
+        
+        loadNewTask();
+    };
 
-            document.getElementById("startScreen").style.display = "none";
-            document.getElementById("mirrorText").innerText = "KI-Lærer genererer oppgave...";
-
-            const task = await generateEquationTask(3); // Nivå 3 er sammensatte oppgaver
-            
-            if(task) {
-                document.getElementById("mirrorText").innerText = task.oppgaveTekst;
-                targetEquation = task.fasitLikning;
-                xValue = task.xVerdi;
-                currentPhase = 1;
-                resetBoard();
-                
-                // Registrer spiller i Firebase
-                set(ref(database, `rooms/${currentRoom}/players/${window.playerName}`), {
-                    score: window.totalScore,
-                    lastUpdated: Date.now()
-                });
-            } else {
-                document.getElementById("mirrorText").innerText = "Feil ved henting av oppgave. Prøv igjen.";
-            }
-        };
-
-        // 3. Logikk for vekten
-        let board = { left: [], right: [] };
-
-        window.addManual = function(side, type) {
-            const qty = parseInt(document.getElementById(side === 'left' ? 'qtyL' : 'qtyR').value);
-            for(let i=0; i<qty; i++) board[side].push(type);
-            render();
-        };
-
-        window.resetBoard = function() {
-            board = { left: [], right: [] };
-            render();
-        };
-
-        function render() {
-            ['left', 'right'].forEach(side => {
-                const container = document.getElementById(side === 'left' ? 'gaugeL' : 'gaugeR');
-                container.innerHTML = "";
-                board[side].forEach(item => {
-                    const div = document.createElement("div");
-                    div.className = `item ${item}-item`;
-                    div.innerText = item === 'x' ? 'X' : '1';
-                    container.appendChild(div);
-                });
-            });
+    async function loadNewTask() {
+        document.getElementById('question').innerText = "Henter ny oppgave...";
+        const task = await generateEquationTask(1);
+        
+        if (task) {
+            document.getElementById('question').innerText = task.oppgaveTekst;
+            currentX = task.xVerdi;
+        } else {
+            document.getElementById('question').innerText = "Kunne ikke hente oppgave. Sjekk nøkkelen.";
         }
+    }
 
-        function getTotals(side) {
-            return {
-                xs: board[side].filter(i => i === 'x').length,
-                nums: board[side].filter(i => i === 'num').length
-            };
+    window.checkAnswer = function() {
+        const userAnswer = parseInt(document.getElementById('answerInput').value);
+        if (userAnswer === currentX) {
+            alert("Riktig! 🎉");
+            document.getElementById('answerInput').value = "";
+            loadNewTask();
+        } else {
+            alert("Feil, prøv igjen! 🦊");
         }
+    };
+</script>
 
-        // 4. Sjekk fase
-        window.checkPhase = function() {
-            const L = getTotals('left');
-            const R = getTotals('right');
-
-            if (currentPhase === 1) {
-                if (L.xs === targetEquation.leftX && L.nums === targetEquation.leftNum &&
-                    R.xs === targetEquation.rightX && R.nums === targetEquation.rightNum) {
-                    
-                    alert("Riktig bygget! Nå kan du løse den.");
-                    currentPhase = 2;
-                    document.getElementById("phaseDisplay").innerText = "FASE 2: LØS LIKNINGEN";
-                    document.getElementById("opPanel").style.opacity = "1";
-                    document.getElementById("opPanel").style.pointerEvents = "auto";
-                    document.getElementById("mainBtn").innerText = "SJEKK SVAR";
-                } else {
-                    alert("Modellen stemmer ikke med teksten.");
-                }
-            } else {
-                if ((L.xs === 1 && L.nums === 0 && R.xs === 0 && R.nums === xValue) ||
-                    (R.xs === 1 && R.nums === 0 && L.xs === 0 && L.nums === xValue)) {
-                    
-                    alert("Korrekt! Svaret er " + xValue);
-                    sendScore();
-                    window.startGame(); 
-                } else {
-                    alert("Ikke helt isolert ennå.");
-                }
-            }
-        };
-
-        async function sendScore() {
-            window.totalScore += 500; // Gir 500 poeng for tekstoppgave
-            const scoreRef = ref(database, `rooms/${currentRoom}/players/${window.playerName}`);
-            update(scoreRef, { 
-                score: window.totalScore,
-                lastUpdated: Date.now()
-            });
-        }
-
-        // Enkle operasjoner for fase 2
-        window.operate = function(type) {
-            const val = parseInt(document.getElementById("opVal").value);
-            if (type === 'divide') {
-                const divideArr = (arr) => {
-                    const xs = arr.filter(i => i === 'x').length / val;
-                    const ns = arr.filter(i => i === 'num').length / val;
-                    const res = [];
-                    for(let i=0; i<xs; i++) res.push('x');
-                    for(let i=0; i<ns; i++) res.push('num');
-                    return res;
-                };
-                board.left = divideArr(board.left);
-                board.right = divideArr(board.right);
-            }
-            render();
-        };
-    </script>
 </body>
 </html>
