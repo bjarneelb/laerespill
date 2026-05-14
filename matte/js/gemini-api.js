@@ -1,39 +1,32 @@
 // js/gemini-api.js
 
-// DIN_API_NØKKEL_HER må byttes ut med nøkkelen fra https://aistudio.google.com/
 const API_KEY = "AIzaSyBIZ4HsB_TwwBvTJnYhdy5ejnmsKudO7wk"; 
 const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
-/**
- * Genererer en tekstoppgave basert på nivået som sendes inn.
- * @param {number} level - Nivået på likningen (1-4).
- * @returns {Promise<Object|null>} - Returnerer et objekt med oppgave og fasit, eller null ved feil.
- */
 export async function generateEquationTask(level) {
     const prompt = `
-        Du er en pedagogisk mattelærer-KI for ungdomsskolen. 
-        Lag en tekstoppgave basert på nivå ${level}.
+        Du er en pedagogisk mattelærer-KI. 
+        Lag en tekstoppgave på norsk basert på nivå ${level}.
         
-        Nivåbeskrivelse for likningen:
+        Nivåbeskrivelse:
         1: Enkel (x + a = b)
         2: Multiplikativ (ax = b)
         3: Sammensatt (ax + b = c)
         4: X på begge sider (ax + b = cx + d)
 
-        OPPGAVETEKST:
-        Lag en kort og morsom tekstoppgave på norsk. Bruk navn på kjente steder eller personer.
-        Viktig: Sørget for at svaret (x) alltid blir et positivt heltall.
+        Viktig: Svaret (x) må bli et positivt heltall.
+        Returner KUN JSON.
 
-        SVARET SKAL KUN VÆRE I RENT JSON-FORMAT med denne strukturen:
+        Struktur:
         {
-            "oppgaveTekst": "Teksten på norsk her...",
+            "oppgaveTekst": "Teksten her...",
             "fasitLikning": {
-                "leftX": antall x på venstre side,
-                "leftNum": tallet på venstre side,
-                "rightX": antall x på høyre side,
-                "rightNum": tallet på høyre side
+                "leftX": antall x venstre,
+                "leftNum": tall venstre,
+                "rightX": antall x høyre,
+                "rightNum": tall høyre
             },
-            "xVerdi": selve løsningen (heltall)
+            "xVerdi": løsningen
         }
     `;
 
@@ -44,35 +37,39 @@ export async function generateEquationTask(level) {
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: { 
-                    responseMimeType: "application/json",
-                    temperature: 0.7 
+                    // Vi fjerner responseMimeType midlertidig for å sikre kompatibilitet
+                    // og bruker standardinnstillinger som fungerer overalt
+                    temperature: 0.7,
+                    topP: 0.95,
+                    topK: 40,
+                    maxOutputTokens: 1024,
                 }
             })
         });
 
         const data = await response.json();
 
-        // Sjekk om API-et returnerte en feil (f.eks. ugyldig nøkkel)
         if (data.error) {
             console.error("API-feil fra Google:", data.error.message);
             return null;
         }
 
-        // Sjekk om vi fikk kandidater (faktisk svar)
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-            console.error("Ingen gyldig respons fra Gemini. Sjekk API-kvoter/nøkkel.", data);
+        if (!data.candidates || !data.candidates[0]) {
+            console.error("Ingen respons fra Gemini:", data);
             return null;
         }
 
-        // Pakk ut teksten og konverter fra JSON-streng til et JS-objekt
-        const resultText = data.candidates[0].content.parts[0].text;
-        const resultObject = JSON.parse(resultText);
-
-        console.log("KI-Oppgave generert:", resultObject);
-        return resultObject;
+        let resultText = data.candidates[0].content.parts[0].text;
+        
+        // VASKING AV SVAR: Gemini legger av og til til ```json ... 
+``` rundt koden.
+        // Vi fjerner dette for å unngå JSON-krasj.
+        resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        return JSON.parse(resultText);
 
     } catch (error) {
-        console.error("Systemfeil ved kommunikasjon med Gemini:", error);
+        console.error("Systemfeil ved henting av KI-oppgave:", error);
         return null;
     }
 }
