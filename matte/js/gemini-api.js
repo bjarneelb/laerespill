@@ -4,27 +4,25 @@ export async function generateEquationTask(level) {
 
     const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + key;
 
-    const bodyData = {
-        contents: [{
-            parts: [{
-                text: "Lag en enkel matteoppgave for barn niva " + level + ". Returner kun JSON: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}"
-            }]
-        }]
-    };
-
     try {
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(bodyData)
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: "Lag en enkel matteoppgave niva " + level + ". Returner kun JSON: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}" }] }]
+            })
         });
 
         const data = await response.json();
-        const text = data.candidates[0].content.parts[0].text;
+        let rawText = data.candidates[0].content.parts[0].text;
         
-        const cleanText = text.split("```json").join("").split("
-```").join("").trim();
-        return JSON.parse(cleanText);
+        // Vi bruker en metode som ikke bruker skråstreker eller rare tegn
+        let vask1 = rawText.split("```json").join("");
+        let vask2 = vask1.split("
+```").join("");
+        let ferdigTekst = vask2.trim();
+        
+        return JSON.parse(ferdigTekst);
     } catch (e) {
         console.error("API-feil:", e);
         return null;
@@ -34,9 +32,7 @@ export async function generateEquationTask(level) {
 export async function generateCarName() {
     const key = localStorage.getItem("gemini_api_key");
     if (!key) return "Raske Racer";
-
     const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + key;
-
     try {
         const response = await fetch(url, {
             method: "POST",
