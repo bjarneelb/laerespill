@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsløpet - Storskjerm</title>
+    <title>Ligningsløpet - Klassisk Bane</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; margin: 0; overflow: hidden; }
         
@@ -14,14 +14,11 @@
         }
         h1 { margin: 0; color: #f1c40f; text-transform: uppercase; letter-spacing: 3px; font-size: 1.8rem; }
         
-        /* Mute-knapp */
         #muteBtn {
             background: #444; color: white; border: 2px solid #f1c40f;
             padding: 8px 15px; cursor: pointer; border-radius: 20px; font-weight: bold;
         }
-        #muteBtn:hover { background: #555; }
 
-        /* Poengskala over banen */
         .scoreboard-header {
             width: 98vw; margin: 10px auto 0 auto;
             display: flex; justify-content: space-between;
@@ -30,7 +27,6 @@
             color: #f1c40f; font-family: monospace; font-size: 1.2rem; font-weight: bold;
         }
 
-        /* Racebanen */
         .track-container { 
             position: relative; 
             width: 98vw; height: 80vh; 
@@ -41,6 +37,7 @@
                 linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
             background-size: 100px 100px;
+            overflow-y: auto;
         }
         
         .finish-line {
@@ -74,11 +71,9 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.5); border: 2px solid #000;
         }
 
-        /* Oppstart-skjerm */
         .setup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .setup-box { background: white; color: #333; padding: 40px; border-radius: 15px; text-align: center; border: 5px solid #f1c40f; width: 400px; }
         .setup-box input { padding: 12px; font-size: 1.2rem; width: 80%; margin: 10px 0; text-align: center; border: 2px solid #ccc; border-radius: 8px; }
-        .setup-box label { display: block; margin-top: 10px; font-weight: bold; color: #555; }
         button#startBtn { padding: 15px 30px; font-size: 1.5rem; background: #27ae60; color: white; border: none; cursor: pointer; border-radius: 10px; margin-top: 20px; font-weight: bold; width: 100%; }
     </style>
 </head>
@@ -91,10 +86,10 @@
     <div id="setup" class="setup-overlay">
         <div class="setup-box">
             <h1>Ligningsløpet</h1>
-            <label>ROMKODE:</label>
-            <input type="text" id="roomInput" placeholder="F.EKS. MATTE8" style="text-transform: uppercase;">
+            <label><strong>ROMKODE:</strong></label><br>
+            <input type="text" id="roomInput" placeholder="F.EKS. MATTE8" style="text-transform: uppercase;"><br>
             
-            <label>POENG FOR Å VINNE:</label>
+            <label><strong>POENG FOR Å VINNE:</strong></label><br>
             <input type="number" id="goalInput" value="3000">
             
             <button id="startBtn" onclick="startRace()">START LØPET!</button>
@@ -120,19 +115,8 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
-            authDomain: "likningsspill.firebaseapp.com",
-            databaseURL: "https://likningsspill-default-rtdb.europe-west1.firebasedatabase.app/", 
-            projectId: "likningsspill",
-            appId: "1:630190192081:web:71968d390422ace3f15cf0"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app, firebaseConfig.databaseURL);
+        // Importerer fra din sentrale js-mappe
+        import { database, ref, onValue } from "./js/firebase-config.js";
 
         const carEmojis = ["🏎️", "🏎", "🚗", "🚓", "🏎️", "🏎️"];
         let goalPoints = 3000;
@@ -153,9 +137,10 @@
             document.getElementById("mark3").innerText = Math.round(goalPoints * 0.75);
             document.getElementById("markGoal").innerText = "MÅL (" + goalPoints + ")";
 
-            // Start musikk
-            music.play().catch(e => console.log("Musikk blokkert av nettleser før interaksjon."));
+            // Forsøk å starte musikk
+            music.play().catch(e => console.log("Lyd krever interaksjon først."));
 
+            // Lytt på spillere i sanntid
             const roomRef = ref(database, 'rooms/' + room + '/players');
             onValue(roomRef, (snapshot) => {
                 const players = snapshot.val();
@@ -164,13 +149,8 @@
         };
 
         window.toggleMute = function() {
-            if (music.muted) {
-                music.muted = false;
-                document.getElementById("muteBtn").innerText = "🔊 LYD PÅ";
-            } else {
-                music.muted = true;
-                document.getElementById("muteBtn").innerText = "🔇 LYD AV";
-            }
+            music.muted = !music.muted;
+            document.getElementById("muteBtn").innerText = music.muted ? "🔇 LYD AV" : "🔊 LYD PÅ";
         };
 
         function updateTrack(players) {
@@ -178,12 +158,22 @@
             track.innerHTML = "";
             if (!players) return;
 
-            const sortedEntries = Object.entries(players).sort((a,b) => b[1].score - a[1].score);
+            const now = Date.now();
+            const tenMinutes = 10 * 60 * 1000; // 10 minutter i millisekunder
+
+            // Sorter og filtrer ut inaktive spillere
+            const activePlayers = Object.entries(players)
+                .filter(([name, data]) => {
+                    // Hvis lastUpdated mangler eller er eldre enn 10 min, fjern dem fra banen
+                    return data.lastUpdated && (now - data.lastUpdated < tenMinutes);
+                })
+                .sort((a,b) => b[1].score - a[1].score);
             
-            sortedEntries.forEach(([name, data]) => {
+            activePlayers.forEach(([name, data]) => {
                 const lane = document.createElement("div");
                 lane.className = "lane";
 
+                // Beregn posisjon i prosent (max 92% for å ikke kjøre ut av skjermen)
                 const rawProgress = (data.score / goalPoints) * 85; 
                 const totalPos = Math.min(rawProgress, 92); 
 
@@ -194,7 +184,7 @@
                     <div class="car-container" style="left: ${totalPos}%">
                         <div class="car-wrapper">${emoji}</div>
                         <div class="driver-tag">${name}</div>
-                        <div style="font-size: 10px; font-weight:bold; color:#ccc;">P: ${data.score}</div>
+                        <div style="font-size: 10px; font-weight:bold; color:#ccc;">${data.score} P</div>
                     </div>
                 `;
                 track.appendChild(lane);
