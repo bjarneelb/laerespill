@@ -22,7 +22,6 @@ export async function generateEquationTask(level) {
         const data = await response.json();
         const text = data.candidates[0].content.parts[0].text;
         
-        // Vasker teksten uten bruk av regulære uttrykk
         const cleanText = text.split("```json").join("").split("
 ```").join("").trim();
         return JSON.parse(cleanText);
