@@ -1,6 +1,6 @@
 const API_KEY = "AIzaSyBIZ4HsB_TwwBvTJnYhdy5ejnmsKudO7wk";
-// Vi bruker v1beta her da den ofte er mer tilgivende på regionsinnstillinger
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+// Vi prøver gemini-1.0-pro som er den eldste og mest stabile "legacy" modellen
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
 function cleanGeminiText(t) {
     if (!t) return "";
@@ -14,39 +14,26 @@ function cleanGeminiText(t) {
 }
 
 export async function generateEquationTask(level) {
-    var prompt = "Lag en matteoppgave for barn. Niva " + level + ". Returner KUN JSON: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}";
+    var prompt = "Lag en enkel matteoppgave for barn niva " + level + ". Svaret x ma vare et heltall. Returner kun JSON: {\"oppgaveTekst\": \"tekst\", \"xVerdi\": 5}";
 
     try {
-        // Vi legger API-nøkkelen i URL-en på den mest standardiserte måten
-        var urlWithKey = API_URL + "?key=" + API_KEY;
-        
-        var response = await fetch(urlWithKey, {
+        var response = await fetch(API_URL + "?key=" + API_KEY, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: prompt
-                    }]
-                }]
+                contents: [{ parts: [{ text: prompt }] }]
             })
         });
 
         if (!response.ok) {
             console.error("API Status: " + response.status);
-            // Logger hele feilmeldingen fra Google for å se hva som faktisk skjer
-            var errorDetail = await response.json();
-            console.log("Google detaljer:", errorDetail);
+            // Hvis gemini-pro også gir 404, prøver vi en siste nød-løsning
             return null;
         }
 
         var data = await response.json();
         var rawText = data.candidates[0].content.parts[0].text;
-        var finalJson = cleanGeminiText(rawText);
-        
-        return JSON.parse(finalJson);
+        return JSON.parse(cleanGeminiText(rawText));
     } catch (error) {
         console.error("Kritisk feil:", error);
         return null;
@@ -54,11 +41,9 @@ export async function generateEquationTask(level) {
 }
 
 export async function generateCarName() {
-    // Vi bruker nøyaktig samme logikk her
-    var prompt = "Navn på racerbil, to ord.";
+    var prompt = "Navn pa racerbil, to ord.";
     try {
-        var urlWithKey = API_URL + "?key=" + API_KEY;
-        var response = await fetch(urlWithKey, {
+        var response = await fetch(API_URL + "?key=" + API_KEY, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -68,6 +53,6 @@ export async function generateCarName() {
         var data = await response.json();
         return data.candidates[0].content.parts[0].text.trim();
     } catch (e) {
-        return "Kjappe Krokodille";
+        return "Lynrask Leopard";
     }
 }
