@@ -3,20 +3,24 @@ const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-
 
 function cleanGeminiText(t) {
     if (!t) return "";
-    let cleaned = t;
-    // Vi bruker split/join i stedet for replace/regex for å unngå "/" feil
-    cleaned = cleaned.split("```json").join("");
-    cleaned = cleaned.split("
-```JSON").join("");
-    cleaned = cleaned.split("```").join("");
+    var cleaned = t;
+    // Vi bruker String.fromCharCode(96) for å representere backtick (`)
+    // På denne måten slipper vi å skrive tegnet i selve koden.
+    var b = String.fromCharCode(96);
+    var tag = b + b + b;
+    
+    cleaned = cleaned.split(tag + "json").join("");
+    cleaned = cleaned.split(tag + "JSON").join("");
+    cleaned = cleaned.split(tag).join("");
+    
     return cleaned.trim();
 }
 
 export async function generateEquationTask(level) {
-    const prompt = "Lag en matteoppgave i JSON-format for niva " + level + ". Svaret x ma vare et positivt heltall. Format: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}";
+    var prompt = "Lag en matteoppgave i JSON-format for niva " + level + ". Svaret x ma vare et positivt heltall. Format: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}";
 
     try {
-        const response = await fetch(API_URL + "?key=" + API_KEY, {
+        var response = await fetch(API_URL + "?key=" + API_KEY, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -25,11 +29,11 @@ export async function generateEquationTask(level) {
             })
         });
 
-        const data = await response.json();
+        var data = await response.json();
         if (!data.candidates || !data.candidates[0]) return null;
 
-        const rawText = data.candidates[0].content.parts[0].text;
-        const finalJson = cleanGeminiText(rawText);
+        var rawText = data.candidates[0].content.parts[0].text;
+        var finalJson = cleanGeminiText(rawText);
         
         return JSON.parse(finalJson);
     } catch (error) {
@@ -39,17 +43,17 @@ export async function generateEquationTask(level) {
 }
 
 export async function generateCarName() {
-    const prompt = "Lag et navn pa en racerbil (to ord pa norsk). Returner kun navnet.";
+    var prompt = "Lag et navn pa en racerbil (to ord pa norsk). Returner kun navnet.";
     
     try {
-        const response = await fetch(API_URL + "?key=" + API_KEY, {
+        var response = await fetch(API_URL + "?key=" + API_KEY, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }]
             })
         });
-        const data = await response.json();
+        var data = await response.json();
         if (!data.candidates || !data.candidates[0]) return "Raske Racer";
         
         return data.candidates[0].content.parts[0].text.trim();
