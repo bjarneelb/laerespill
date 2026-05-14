@@ -4,38 +4,69 @@
     <meta charset="UTF-8">
     <title>Smarte Revs Matteløp</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f0f0; padding: 20px; }
-        #game-container { background: white; max-width: 600px; margin: 0 auto; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .setup-section { margin-top: 50px; padding: 15px; border-top: 2px dashed #ccc; font-size: 0.9em; color: #666; }
-        input { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ddd; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
-        button:hover { background: #45a049; }
-        #question { font-size: 24px; margin: 20px 0; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #222; color: white; padding: 20px; }
+        #game-container { background: #333; max-width: 800px; margin: 0 auto; padding: 30px; border-radius: 20px; border: 4px solid #4CAF50; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        /* Banen */
+        #track { background: #555; height: 120px; position: relative; margin: 20px 0; border-radius: 10px; border-top: 4px dashed #777; border-bottom: 4px dashed #777; overflow: hidden; }
+        #finish-line { position: absolute; right: 20px; top: 0; bottom: 0; width: 10px; background: repeating-linear-gradient(0deg, #fff, #fff 10px, #000 10px, #000 20px); }
+        
+        #car { position: absolute; left: 0; top: 30px; font-size: 50px; transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3)); }
+        
+        #question-box { background: #444; padding: 20px; border-radius: 15px; margin: 20px 0; min-height: 100px; }
+        #question { font-size: 28px; color: #FFD700; margin-bottom: 15px; }
+        
+        input { padding: 12px; font-size: 20px; width: 100px; border-radius: 8px; border: none; text-align: center; }
+        button { padding: 12px 25px; font-size: 18px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #45a049; transform: scale(1.05); }
+        
+        .setup-section { margin-top: 60px; padding: 20px; background: #1a1a1a; border-radius: 10px; font-size: 0.8em; }
+        .hidden { display: none; }
+        #car-name { color: #00FF00; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
     <h1>🦊 Smarte Revs Matteløp</h1>
+    
+    <!-- Startskjerm -->
     <div id="start-screen">
-        <p>Trykk på knappen for å starte løpet!</p>
-        <button onclick="startGame()">Start Spill</button>
+        <p>Hjelp reven med å vinne løpet ved å løse matteoppgaver!</p>
+        <button onclick="startGame()">START LØPET 🏁</button>
     </div>
 
-    <div id="game-screen" style="display:none;">
-        <p id="car-name-display"></p>
-        <div id="question">Laster oppgave...</div>
-        <input type="number" id="answerInput" placeholder="Svar her">
-        <button onclick="checkAnswer()">Sjekk svar</button>
+    <!-- Spillskjerm -->
+    <div id="game-screen" class="hidden">
+        <p>Bil: <span id="car-name">Laster navn...</span></p>
+        
+        <div id="track">
+            <div id="finish-line"></div>
+            <div id="car">🏎️</div>
+        </div>
+
+        <div id="question-box">
+            <div id="question">Laster oppgave fra KI...</div>
+            <div id="input-area">
+                <input type="number" id="answerInput" placeholder="?">
+                <button onclick="checkAnswer()">SVAR</button>
+            </div>
+        </div>
+        <p id="feedback"></p>
+    </div>
+
+    <!-- Seiersskjerm -->
+    <div id="win-screen" class="hidden">
+        <h2>🎉 GRATULERER! 🎉</h2>
+        <p>Du vant løpet!</p>
+        <button onclick="location.reload()">Spill igjen</button>
     </div>
 </div>
 
-<!-- Denne seksjonen holder nøkkelen din trygg og lokalt lagret -->
 <div class="setup-section">
     <h3>⚙️ API-Innstillinger</h3>
-    <p>Lim inn din API-nøkkel her (den lagres kun i din nettleser):</p>
-    <input type="password" id="apiKeyInput" placeholder="AIzaSy...">
-    <button onclick="saveApiKey()" style="background: #2196F3;">Lagre nøkkel</button>
+    <input type="password" id="apiKeyInput" placeholder="Lim inn API-nøkkel her">
+    <button onclick="saveApiKey()" style="background: #2196F3;">Lagre Nøkkel</button>
     <p id="keyStatus"></p>
 </div>
 
@@ -43,56 +74,84 @@
     import { generateEquationTask, generateCarName } from './js/gemini-api.js';
 
     let currentX = 0;
+    let progress = 0;
+    const finishLine = 80; // Hvor mange prosent til mål
 
     window.saveApiKey = function() {
         const key = document.getElementById('apiKeyInput').value.trim();
         if (key.startsWith("AIza")) {
             localStorage.setItem("gemini_api_key", key);
-            document.getElementById('keyStatus').innerText = "✅ Nøkkel lagret!";
-            document.getElementById('keyStatus').style.color = "green";
+            document.getElementById('keyStatus').innerText = "✅ Nøkkel lagret lokalt!";
+            document.getElementById('keyStatus').style.color = "#00FF00";
         } else {
-            alert("Ugyldig nøkkel-format. Den skal starte med AIza.");
+            alert("Ugyldig nøkkel. Den må starte med AIza.");
         }
     };
 
     window.startGame = async function() {
         const key = localStorage.getItem("gemini_api_key");
         if (!key) {
-            alert("Du må lagre en API-nøkkel nederst på siden først!");
+            alert("Du må legge inn API-nøkkelen din nederst først!");
             return;
         }
 
-        document.getElementById('start-screen').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'block';
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
         
+        // KI genererer navn på bilen
         const carName = await generateCarName();
-        document.getElementById('car-name-display').innerText = "Din bil: 🏎️ " + carName;
+        document.getElementById('car-name').innerText = carName;
         
         loadNewTask();
     };
 
     async function loadNewTask() {
-        document.getElementById('question').innerText = "Henter ny oppgave...";
-        const task = await generateEquationTask(1);
+        document.getElementById('question').innerText = "🦊 Reven tenker...";
+        document.getElementById('answerInput').value = "";
+        
+        const task = await generateEquationTask(1); // Nivå 1
         
         if (task) {
             document.getElementById('question').innerText = task.oppgaveTekst;
             currentX = task.xVerdi;
         } else {
-            document.getElementById('question').innerText = "Kunne ikke hente oppgave. Sjekk nøkkelen.";
+            document.getElementById('question').innerText = "Klarte ikke å få kontakt med KI. Sjekk nøkkelen din.";
         }
     }
 
     window.checkAnswer = function() {
         const userAnswer = parseInt(document.getElementById('answerInput').value);
+        const feedback = document.getElementById('feedback');
+        
         if (userAnswer === currentX) {
-            alert("Riktig! 🎉");
-            document.getElementById('answerInput').value = "";
-            loadNewTask();
+            feedback.innerText = "Riktig! VROOOM! 💨";
+            feedback.style.color = "#00FF00";
+            moveCar();
+            if (progress < finishLine) {
+                loadNewTask();
+            }
         } else {
-            alert("Feil, prøv igjen! 🦊");
+            feedback.innerText = "Feil svar, reven må vente! 🦊";
+            feedback.style.color = "#FF4444";
         }
     };
+
+    function moveCar() {
+        progress += 20; // Bilen flytter seg 20% for hvert riktig svar
+        document.getElementById('car').style.left = progress + "%";
+        
+        if (progress >= finishLine) {
+            setTimeout(() => {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('win-screen').classList.remove('hidden');
+            }, 600);
+        }
+    }
+
+    // Lar spilleren trykke 'Enter' for å svare
+    document.getElementById('answerInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkAnswer();
+    });
 </script>
 
 </body>
