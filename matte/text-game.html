@@ -9,9 +9,9 @@
         #track { background: #444; height: 80px; position: relative; margin: 20px 0; border-radius: 5px; }
         #car { position: absolute; left: 0; top: 15px; font-size: 40px; transition: left 0.5s; }
         .hidden { display: none; }
-        input { padding: 10px; font-size: 18px; width: 80px; }
+        input { padding: 10px; font-size: 18px; width: 80px; color: black; }
         button { padding: 10px 20px; font-size: 18px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
-        .setup { margin-top: 40px; padding: 15px; background: #111; border-radius: 10px; font-size: 0.8em; }
+        .setup { margin-top: 40px; padding: 15px; background: #111; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -20,7 +20,7 @@
     <h1>🦊 Smarte Revs Matteløp</h1>
     
     <div id="start-screen">
-        <button onclick="startGame()">START SPILLET 🏁</button>
+        <button id="startBtn" onclick="startGame()">START SPILLET 🏁</button>
     </div>
 
     <div id="game-screen" class="hidden">
@@ -41,7 +41,7 @@
 <div class="setup">
     <h3>⚙️ Innstillinger</h3>
     <input type="password" id="apiKeyInput" placeholder="Lim inn API-nøkkel">
-    <button onclick="saveApiKey()">Lagre Nøkkel</button>
+    <button id="saveBtn" onclick="saveApiKey()">Lagre Nøkkel</button>
 </div>
 
 <script type="module">
@@ -50,7 +50,7 @@
     let currentX = 0;
     let progress = 0;
 
-    // Vi gjør funksjonene tilgjengelige for knappene (globale)
+    // Definer funksjonene på window-objektet så HTML-knappene finner dem
     window.saveApiKey = function() {
         const key = document.getElementById('apiKeyInput').value.trim();
         if (key.startsWith("AIza")) {
@@ -97,6 +97,8 @@
             alert("Feil! 🦊");
         }
     };
+
+    console.log("Spill-modul lastet inn suksessfullt!");
 </script>
 
 </body>
