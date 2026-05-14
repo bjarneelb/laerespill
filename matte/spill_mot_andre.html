@@ -9,6 +9,7 @@
             --math-green: #4af626;
             --accent: #f1c40f;
             --error-red: #c0392b;
+            --highlight-color: #ffffff;
         }
 
         body { 
@@ -72,10 +73,21 @@
         .item { 
             min-width: 48px; height: 48px; border-radius: 8px; color: white; 
             font-weight: bold; cursor: grab; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 3px 0 rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 3px 0 rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.1);
+            position: relative;
         }
         .box-x { background: #d35400; } .box-x-neg { background: #c0392b; }
         .val-pos { background: #2980b9; } .val-neg { background: #8e44ad; }
+
+        /* NYTT: Highlight-animasjon */
+        .highlight {
+            animation: pulse-border 4s ease-out;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 4px var(--highlight-color), 0 3px 0 rgba(0,0,0,0.4); transform: scale(1.1); }
+            100% { box-shadow: 0 0 0 0px transparent, 0 3px 0 rgba(0,0,0,0.4); transform: scale(1); }
+        }
 
         .context-menu { display: none; position: absolute; background: #333; border: 2px solid #555; color: white; border-radius: 8px; z-index: 2000; overflow: hidden; }
         .context-menu button { display: block; width: 100%; border: none; background: none; color: white; padding: 10px 20px; cursor: pointer; text-align: left; font-weight: bold; }
@@ -177,15 +189,17 @@
     <script>
         let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, winStreak = 0, activeMenuTarget = null;
         let originalTask = null;
+        let lastChangedId = null; // Holder styr på hvilken blokk som sist ble berørt
 
         function initGame() {
             sides = { left: [], right: [] };
             xValue = Math.floor(Math.random() * 7) + 2; 
             let b = Math.floor(Math.random() * 9) + 1;
             
+            lastChangedId = null; // Nullstill ved ny oppgave
             originalTask = {
-                left: [{id: 100, type: 'x', num: 1}, {id: 101, type: 'num', num: b}],
-                right: [{id: 102, type: 'num', num: xValue + b}],
+                left: [{id: idCounter++, type: 'x', num: 1}, {id: idCounter++, type: 'num', num: b}],
+                right: [{id: idCounter++, type: 'num', num: xValue + b}],
                 x: xValue
             };
             resetTask();
@@ -196,6 +210,7 @@
             sides.left = JSON.parse(JSON.stringify(originalTask.left));
             sides.right = JSON.parse(JSON.stringify(originalTask.right));
             xValue = originalTask.x;
+            lastChangedId = null;
             render();
         };
 
@@ -205,10 +220,14 @@
                 gauge.innerHTML = '';
                 sides[side].forEach(item => {
                     const div = document.createElement('div');
-                    div.className = `item ${item.type === 'x' ? (item.num < 0 ? 'box-x-neg' : 'box-x') : (item.num < 0 ? 'val-neg' : 'val-pos')}`;
+                    // Legger til 'highlight' klasse hvis id-en matcher
+                    const isHighlighted = item.id === lastChangedId ? 'highlight' : '';
+                    div.className = `item ${item.type === 'x' ? (item.num < 0 ? 'box-x-neg' : 'box-x') : (item.num < 0 ? 'val-neg' : 'val-pos')} ${isHighlighted}`;
+                    
                     div.draggable = true;
                     div.setAttribute('data-id', item.id);
                     div.innerText = (item.type === 'x') ? (item.num === 1 ? "X" : item.num === -1 ? "-X" : item.num + "X") : item.num;
+                    
                     div.addEventListener('dragstart', (e) => e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id })));
                     div.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
@@ -241,13 +260,20 @@
             const data = JSON.parse(ev.dataTransfer.getData("text"));
             const item = sides[data.side].find(i => i.id === data.id);
             if(!item) return;
+
+            lastChangedId = item.id; // Merk denne som endret
+
             const targetEl = ev.target.closest('.item');
             if (targetEl && data.side === targetSide) {
                 const targetItem = sides[targetSide].find(i => i.id === parseInt(targetEl.getAttribute('data-id')));
                 if (targetItem && targetItem.type === item.type && targetItem.id !== item.id) {
                     targetItem.num += item.num;
+                    lastChangedId = targetItem.id; // Slått sammen -> uthev mottakeren
                     sides[data.side].splice(sides[data.side].indexOf(item), 1);
-                    if (targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
+                    if (targetItem.num === 0) {
+                        sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
+                        lastChangedId = null;
+                    }
                     render(); return;
                 }
             }
@@ -267,6 +293,7 @@
         window.operate = function(t) {
             const v = parseInt(document.getElementById('opVal').value);
             if (!v) return;
+            lastChangedId = null; // Operasjoner påvirker alle, fjerner individuell highlight
             ['left', 'right'].forEach(s => {
                 sides[s].forEach(i => { if (t === 'multiply') i.num *= v; else i.num = Math.round(i.num / v); });
                 sides[s] = sides[s].filter(i => i.num !== 0);
@@ -274,13 +301,23 @@
             render();
         };
 
-        window.menuInvert = function() { if(activeMenuTarget) { activeMenuTarget.item.num *= -1; render(); } };
+        window.menuInvert = function() { 
+            if(activeMenuTarget) { 
+                activeMenuTarget.item.num *= -1; 
+                lastChangedId = activeMenuTarget.item.id; 
+                render(); 
+            } 
+        };
+        
         window.menuSplit = function() {
             if(!activeMenuTarget || Math.abs(activeMenuTarget.item.num) < 2) return;
             const i = activeMenuTarget.item, n1 = Math.floor(i.num/2), n2 = i.num - n1;
             const sideArr = sides[activeMenuTarget.side];
             sideArr.splice(sideArr.indexOf(i), 1);
-            sideArr.push({id: idCounter++, type: i.type, num: n1}, {id: idCounter++, type: i.type, num: n2});
+            // Legger til to nye med nye ID-er, uthever den ene
+            const newId = idCounter++;
+            sideArr.push({id: newId, type: i.type, num: n1}, {id: idCounter++, type: i.type, num: n2});
+            lastChangedId = newId; 
             render();
         };
 
