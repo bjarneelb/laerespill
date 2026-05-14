@@ -1,6 +1,6 @@
 const API_KEY = "AIzaSyBIZ4HsB_TwwBvTJnYhdy5ejnmsKudO7wk";
 // Vi bytter til den offisielle v1-versjonen som er mest stabil
-const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent";
 
 function cleanGeminiText(t) {
     if (!t) return "";
