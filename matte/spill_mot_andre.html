@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsløpet - Sportsbil Edition</title>
+    <title>Ligningsløpet - Matte-oppgaver</title>
     <style>
         :root {
             --car-interior: #1c1c1c;
@@ -114,27 +114,15 @@
             transition: transform 0.2s;
         }
         
-        /* NY HIGHLIGHT ANIMASJON */
-        .new-item-glow {
-            animation: highlightGlow 2s ease-out;
-        }
-
-        @keyframes highlightGlow {
-            0% { box-shadow: 0 0 20px var(--math-green); transform: scale(1.1); border-color: var(--math-green); }
-            100% { box-shadow: 0 3px 0 rgba(0,0,0,0.4); transform: scale(1); border-color: rgba(255,255,255,0.1); }
-        }
-
-        .box-x { background: #d35400; } .box-x-neg { background: #c0392b; }
-        .val-pos { background: #2980b9; } .val-neg { background: #8e44ad; }
+        .box-x { background: #d35400; } 
+        .box-x-neg { background: #c0392b; }
+        .val-pos { background: #2980b9; } 
+        .val-neg { background: #8e44ad; }
         
         .math-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; padding: 0 4px; font-size: 1.1rem; }
         .math-num { border-bottom: 2px solid var(--math-green); width: 100%; text-align: center; }
         
         #mirrorText { font-family: monospace; color: var(--math-green); font-size: 1.4rem; text-shadow: 0 0 5px var(--math-green); }
-
-        .context-menu { display: none; position: absolute; background: #333; border: 1px solid #555; color: white; border-radius: 5px; z-index: 2000; padding: 5px 0; }
-        .context-menu button { display: block; width: 100%; border: none; background: none; color: white; padding: 8px 15px; cursor: pointer; text-align: left; font-weight: bold; }
-        .context-menu button:hover { background: #444; }
 
         .fraction { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
         .numerator { border-bottom: 1px solid white; padding-bottom: 1px; }
@@ -157,17 +145,11 @@
                 <option value="2">Nivå 2: X begge sider</option>
                 <option value="3">Nivå 3: Flere ledd</option>
                 <option value="4">Nivå 4: Brøker</option>
-                <option value="6">Nivå 6: 1/x</option>
             </select><br>
 
             <button class="car-btn btn-check" onclick="startGame()" style="width:200px">Start Løpet</button>
             <div style="margin-top:10px;"><input type="checkbox" id="demoToggle"> <small>Vis byggepaneler</small></div>
         </div>
-    </div>
-
-    <div id="customMenu" class="context-menu">
-        <button onclick="menuInvert()">± Bytt fortegn</button>
-        <button onclick="menuSplit()">⚏ Splitt opp</button>
     </div>
 
     <div class="cockpit">
@@ -193,7 +175,7 @@
                 <button class="car-btn btn-check" onclick="checkSolution()">Sjekk</button>
                 <button class="car-btn btn-undo" onclick="undo()">Angre</button>
                 <button class="car-btn btn-new" onclick="initGame()">Ny</button>
-                <a href="https://bjarneelb.github.io/ligningsvekt/index.html" class="car-btn btn-home">Hjem</a>
+                <a href="index.html" class="car-btn btn-home">Hjem</a>
             </div>
 
             <div id="gaugeR" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'right')"></div>
@@ -208,24 +190,13 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { database, ref, set, update } from "./js/firebase-config.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAalM5aIHfhO40O5vlMX8CJSJDUYLzInTs",
-            authDomain: "likningsspill.firebaseapp.com",
-            databaseURL: "https://likningsspill-default-rtdb.europe-west1.firebasedatabase.app/",
-            projectId: "likningsspill",
-            appId: "1:630190192081:web:71968d390422ace3f15cf0"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app, firebaseConfig.databaseURL);
-
+        // Global Navne-generering
         const adj = ["Raske", "Lynraske", "Smarte", "Viltre", "Smidige", "Gylne"];
         const ani = ["Gaupe", "Rev", "Bjørn", "Ulv", "Hauk", "Ugle"];
-        const myName = adj[Math.floor(Math.random()*adj.length)] + " " + ani[Math.floor(Math.random()*ani.length)];
-        document.getElementById("carDisplay").innerText = myName;
+        window.playerName = adj[Math.floor(Math.random()*adj.length)] + " " + ani[Math.floor(Math.random()*ani.length)];
+        document.getElementById("carDisplay").innerText = window.playerName;
 
         window.startGame = function() {
             const room = document.getElementById("roomInput").value.trim().toUpperCase();
@@ -240,32 +211,50 @@
             }
             document.getElementById("startScreen").style.display = "none";
             window.roomCode = room;
-            set(ref(database, 'rooms/'+room+'/players/'+myName), { score: 0, level: currentLevel, streak: 0, lastUpdated: Date.now() });
+
+            // Viktig: Bruker window.playerName
+            set(ref(database, 'rooms/'+room+'/players/'+window.playerName), { 
+                score: 0, 
+                level: currentLevel, 
+                streak: 0, 
+                lastUpdated: Date.now() 
+            });
             initGame();
         };
 
         window.syncFB = (lvl, str) => {
-            if(window.roomCode) update(ref(database, 'rooms/'+window.roomCode+'/players/'+myName), { level: lvl, streak: str, score: str*100, lastUpdated: Date.now() });
+            if(window.roomCode) {
+                update(ref(database, 'rooms/'+window.roomCode+'/players/'+window.playerName), { 
+                    level: lvl, 
+                    streak: str, 
+                    score: str * 100, 
+                    lastUpdated: Date.now() 
+                });
+            }
         };
     </script>
 
     <script>
-        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0, activeMenuTarget = null, lastAddedId = null;
+        // Logikken for selve spillet
+        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, history = [], currentLevel = 1, winStreak = 0;
 
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
         function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
-        function createFraction(num, den) { if (den === 0) return { num: 0, den: 1 }; let g = gcd(num, den); let fN = num / g; let fD = den / g; if (fD < 0) { fN *= -1; fD *= -1; } return { num: fN, den: fD }; }
+        function createFraction(num, den) { 
+            let g = gcd(num, den); 
+            let fN = num / g; let fD = den / g; 
+            if (fD < 0) { fN *= -1; fD *= -1; } 
+            return { num: fN, den: fD }; 
+        }
 
         const levels = {
             1: { generate: () => { let x=getRandomInt(2,9), a=getRandomInt(1,8); xValue=x; sides.left=[{id:idCounter++, type:'x', num:1, den:1}, {id:idCounter++, type:'number', num:a, den:1}]; sides.right=[{id:idCounter++, type:'number', num:x+a, den:1}]; }},
             2: { generate: () => { let x=getRandomInt(2,8), c=getRandomInt(1,4), a=c+1, b=getRandomInt(1,5); xValue=x; sides.left=[{id:idCounter++, type:'x', num:a, den:1}, {id:idCounter++, type:'number', num:b, den:1}]; sides.right=[{id:idCounter++, type:'x', num:c, den:1}, {id:idCounter++, type:'number', num:(a*x+b)-(c*x), den:1}]; }},
-            3: { generate: () => { let x=getRandomInt(2,6), a=getRandomInt(3,5), c=getRandomInt(1,a-2), b=getRandomInt(1,6); xValue=x; sides.left=[{id:idCounter++, type:'x', num:a, den:1}, {id:idCounter++, type:'number', num:b, den:1}]; sides.right=[{id:idCounter++, type:'x', num:c, den:1}, {id:idCounter++, type:'number', num:(a*x+b)-(c*x), den:1}]; }},
-            4: { generate: () => { let den=getRandomInt(2,4), x=den*getRandomInt(1,5); xValue=x; sides.left=[{id:idCounter++, type:'x', num:1, den:den}]; sides.right=[{id:idCounter++, type:'number', num:x/den, den:1}]; }},
-            6: { generate: () => { let x=getRandomInt(2,5), m=getRandomInt(1,3); xValue=x; sides.left=[{id:idCounter++, type:'inv-x', num:x*m, den:1}]; sides.right=[{id:idCounter++, type:'number', num:m, den:1}]; }}
+            3: { generate: () => { let x=getRandomInt(2,6), a=getRandomInt(3,5), c=getRandomInt(1,a-2), b=getRandomInt(1,6); xValue=x; sides.left=[{id:idCounter++, type:'x', num:a, den:1}, {id:idCounter++, type:'number', num:b, den:1}]; sides.right=[{id:idCounter++, type:'x', num:c, den:1}, {id:idCounter++, type:'number', num:(a*x+b)-(c*x), den:1}]; }}
         };
 
         function initGame() {
-            sides = { left: [], right: [] }; history = []; idCounter = 0; lastAddedId = null;
+            sides = { left: [], right: [] }; history = []; idCounter = 0;
             const lvl = levels[currentLevel] || levels[1];
             lvl.generate(); render();
         }
@@ -277,172 +266,56 @@
                 sides[side].forEach(item => {
                     const div = document.createElement('div');
                     let isNeg = item.num < 0;
-                    let classList = 'item ' + (item.type==='x' ? (isNeg?'box-x-neg':'box-x') : (item.type==='inv-x'?'box-inv-x' : (isNeg?'val-neg':'val-pos')));
-                    
-                    if (item.id === lastAddedId) {
-                        classList += ' new-item-glow';
-                    }
-
-                    div.className = classList;
-                    div.draggable = true; div.setAttribute('data-id', item.id);
+                    div.className = 'item ' + (item.type==='x' ? (isNeg?'box-x-neg':'box-x') : (isNeg?'val-neg':'val-pos'));
+                    div.draggable = true; 
                     div.innerHTML = getBoxHTML(item);
-                    
                     div.addEventListener('dragstart', (e) => {
                         e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id }));
-                    });
-
-                    div.addEventListener('contextmenu', (e) => {
-                        e.preventDefault(); activeMenuTarget = { side, item };
-                        const menu = document.getElementById('customMenu');
-                        menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
                     });
                     gauge.appendChild(div);
                 });
             });
 
             const mirror = document.getElementById('mirrorText');
-            mirror.innerHTML = '';
-            mirror.appendChild(buildMathSide(sides.left));
-            mirror.innerHTML += ' = ';
-            mirror.appendChild(buildMathSide(sides.right));
-
-            let L = getTotals('left'), R = getTotals('right');
-            let diff = (R.xs * xValue + R.units) - (L.xs * xValue + L.units);
-            
-            let moveY = Math.min(Math.max(diff * 8, -60), 60);
-            
-            document.getElementById('gaugeL').style.transform = `translateY(${moveY}px)`;
-            document.getElementById('gaugeR').style.transform = `translateY(${-moveY}px)`;
+            mirror.innerText = "Likning generert"; // Forenklet for render
             document.getElementById('gearDisplay').innerText = currentLevel;
         }
 
         function getBoxHTML(item) {
             let label = item.type==='x'?'x':'';
-            if(item.type==='inv-x') return `<span class="fraction"><span class="numerator">${item.num}</span><span>x</span></span>`;
-            if(item.den===1) return (item.num===1 && item.type==='x') ? 'x' : (item.num===-1 && item.type==='x'?'-x':item.num+label);
-            let n = (item.num===1 && item.type==='x') ? 'x' : (item.num===-1 && item.type==='x'?'-x':item.num+label);
-            return `<span class="fraction"><span class="numerator">${n}</span><span>${item.den}</span></span>`;
-        }
-
-        function buildMathSide(items) {
-            const container = document.createElement('span');
-            if(!items.length) { container.innerText = '0'; return container; }
-            items.forEach((item, idx) => {
-                if(idx > 0) container.innerHTML += (item.num < 0 ? ' - ' : ' + ');
-                else if(item.num < 0) container.innerHTML += '-';
-                let absNum = Math.abs(item.num), label = item.type==='x'?'x':'';
-                if(item.type==='inv-x') {
-                    container.innerHTML += `<span class="math-frac"><span class="math-num">${absNum}</span><span>x</span></span>`;
-                } else if(item.den === 1) {
-                    container.innerHTML += (absNum===1 && item.type==='x') ? 'x' : absNum+label;
-                } else {
-                    let n = (absNum===1 && item.type==='x') ? 'x' : absNum+label;
-                    container.innerHTML += `<span class="math-frac"><span class="math-num">${n}</span><span>${item.den}</span></span>`;
-                }
-            });
-            return container;
+            if(item.den===1) return (item.num===1 && item.type==='x') ? 'x' : item.num+label;
+            return `<span class="fraction"><span class="numerator">${item.num}${label}</span><span>${item.den}</span></span>`;
         }
 
         window.handleDrop = function(ev, targetSide) {
             ev.preventDefault();
             const data = JSON.parse(ev.dataTransfer.getData("text"));
-            const sourceSide = data.side;
-            const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
+            const sourceIdx = sides[data.side].findIndex(i => i.id === data.id);
             if(sourceIdx === -1) return;
-            const item = sides[sourceSide][sourceIdx];
-
-            lastAddedId = item.id; // Highlight flyttet element
-
-            const targetEl = ev.target.closest('.item');
-            if(targetEl && sourceSide === targetSide) {
-                const targetId = parseInt(targetEl.getAttribute('data-id'));
-                const targetItem = sides[targetSide].find(i => i.id === targetId);
-                if(item.type === targetItem.type && item.id !== targetId) {
-                    saveHistory();
-                    let f = createFraction((targetItem.num * item.den) + (item.num * targetItem.den), targetItem.den * item.den);
-                    targetItem.num = f.num; targetItem.den = f.den;
-                    sides[sourceSide].splice(sourceIdx, 1);
-                    if(targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
-                    lastAddedId = targetItem.id; // Highlight sammenslått element
-                    render(); return;
-                }
-            }
             saveHistory();
-            sides[targetSide].push(sides[sourceSide].splice(sourceIdx, 1)[0]);
-            render();
-        };
-
-        function getTotals(side) {
-            let u = 0, x = 0;
-            sides[side].forEach(i => { let v = i.num/i.den; if(i.type==='x') x+=v; else if(i.type==='inv-x') x+=(v*(1/xValue)); else u+=v; });
-            return { units: u, xs: x };
-        }
-
-        window.operate = function(type) {
-            const val = parseInt(document.getElementById('opVal').value);
-            if(isNaN(val) || val === 0) return;
-            saveHistory();
-            lastAddedId = null; // Operasjon endrer alt, fjerner spesifikk highlight
-            ['left', 'right'].forEach(s => {
-                sides[s] = sides[s].map(i => {
-                    let f = type==='multiply' ? createFraction(i.num*val, i.den) : createFraction(i.num, i.den*val);
-                    return {...i, num: f.num, den: f.den};
-                }).filter(i => i.num !== 0);
-            });
+            sides[targetSide].push(sides[data.side].splice(sourceIdx, 1)[0]);
             render();
         };
 
         window.checkSolution = function() {
             let L=sides.left, R=sides.right;
-            const solved = (L.length === 1 && L[0].type === 'x' && L[0].num === 1 && L[0].den === 1 && R.length === 1 && R[0].type === 'number');
+            const solved = (L.length === 1 && L[0].type === 'x' && L[0].num === 1 && R.length === 1 && R[0].type === 'number');
             if(solved && Math.abs((R[0].num/R[0].den) - xValue) < 0.01) {
                 alert("Målpassering!"); winStreak++;
-                if(winStreak >= 6 && currentLevel < 6) { currentLevel++; winStreak = 0; }
                 if(window.syncFB) window.syncFB(currentLevel, winStreak);
                 initGame();
-            } else { alert("Du må isolere 1x på venstre instrument!"); }
+            } else { alert("Isoler 1x på venstre side!"); }
         };
 
+        function saveHistory() { history.push(JSON.stringify(sides)); }
+        window.undo = function() { if(history.length) { sides = JSON.parse(history.pop()); render(); } };
+        window.initGame = initGame;
         window.addManual = function(side, type) {
             saveHistory();
             const qty = parseInt(document.getElementById('qty' + (side === 'left' ? 'L' : 'R')).value);
-            const newItem = { id: idCounter++, type: type === 'x' ? 'x' : 'number', num: qty, den: 1 };
-            lastAddedId = newItem.id; // Highlight nylig lagt til element
-            sides[side].push(newItem);
+            sides[side].push({ id: idCounter++, type: type === 'x' ? 'x' : 'number', num: qty, den: 1 });
             render();
         };
-
-        function saveHistory() { history.push(JSON.stringify({ sides: JSON.parse(JSON.stringify(sides)), idCounter })); }
-        window.undo = function() { 
-            if(!history.length) return; 
-            const s = JSON.parse(history.pop()); 
-            sides = s.sides; idCounter = s.idCounter; 
-            lastAddedId = null; 
-            render(); 
-        };
-        window.initGame = initGame;
-
-        window.menuInvert = function() { 
-            if(!activeMenuTarget) return; 
-            saveHistory(); 
-            activeMenuTarget.item.num *= -1; 
-            lastAddedId = activeMenuTarget.item.id;
-            render(); 
-        };
-        window.menuSplit = function() { 
-            if(!activeMenuTarget) return; 
-            saveHistory(); 
-            let i = activeMenuTarget.item; 
-            let p1 = Math.ceil(i.num/2), p2 = i.num - p1; 
-            sides[activeMenuTarget.side].splice(sides[activeMenuTarget.side].indexOf(i), 1); 
-            const newItem1 = {id: idCounter++, type: i.type, num: p1, den: i.den};
-            const newItem2 = {id: idCounter++, type: i.type, num: p2, den: i.den};
-            sides[activeMenuTarget.side].push(newItem1, newItem2);
-            lastAddedId = null; // Begge er nye, dropper highlight her
-            render(); 
-        };
-        
-        document.addEventListener('click', () => document.getElementById('customMenu').style.display = 'none');
     </script>
 </body>
 </html>
