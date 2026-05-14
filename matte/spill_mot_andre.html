@@ -191,19 +191,65 @@
         let originalTask = null;
         let lastChangedId = null; // Holder styr på hvilken blokk som sist ble berørt
 
-        function initGame() {
-            sides = { left: [], right: [] };
-            xValue = Math.floor(Math.random() * 7) + 2; 
-            let b = Math.floor(Math.random() * 9) + 1;
-            
-            lastChangedId = null; // Nullstill ved ny oppgave
-            originalTask = {
-                left: [{id: idCounter++, type: 'x', num: 1}, {id: idCounter++, type: 'num', num: b}],
-                right: [{id: idCounter++, type: 'num', num: xValue + b}],
-                x: xValue
-            };
-            resetTask();
-        }
+function initGame() {
+    sides = { left: [], right: [] };
+    xValue = Math.floor(Math.random() * 7) + 2; // Løsningen (x)
+    lastChangedId = null;
+
+    // Bestem nivå basert på winStreak (antall rette på rad)
+    let level = 1;
+    if (winStreak >= 9) level = 4;
+    else if (winStreak >= 6) level = 3;
+    else if (winStreak >= 3) level = 2;
+
+    // Oppdater gir-displayet i midtkonsollen
+    const gearEl = document.getElementById('gearDisplay');
+    if (gearEl) gearEl.innerText = level;
+
+    if (level === 1) {
+        // Nivå 1: x + b = c
+        let b = Math.floor(Math.random() * 9) + 1;
+        originalTask = {
+            left: [{id: idCounter++, type: 'x', num: 1}, {id: idCounter++, type: 'num', num: b}],
+            right: [{id: idCounter++, type: 'num', num: xValue + b}],
+            x: xValue
+        };
+    } 
+    else if (level === 2) {
+        // Nivå 2: ax = b
+        let a = Math.floor(Math.random() * 3) + 2;
+        originalTask = {
+            left: [{id: idCounter++, type: 'x', num: a}],
+            right: [{id: idCounter++, type: 'num', num: a * xValue}],
+            x: xValue
+        };
+    }
+    else if (level === 3) {
+        // Nivå 3: ax + b = c
+        let a = Math.floor(Math.random() * 3) + 2;
+        let b = Math.floor(Math.random() * 9) + 1;
+        originalTask = {
+            left: [{id: idCounter++, type: 'x', num: a}, {id: idCounter++, type: 'num', num: b}],
+            right: [{id: idCounter++, type: 'num', num: (a * xValue) + b}],
+            x: xValue
+        };
+    }
+    else {
+        // Nivå 4: ax + b = cx + d
+        let c = Math.floor(Math.random() * 2) + 1; // x på høyre side
+        let a = c + Math.floor(Math.random() * 2) + 1; // a må være større enn c
+        let d = Math.floor(Math.random() * 5) + 1;
+        let b = (c * xValue + d) - (a * xValue); // b regnes ut så ligningen stemmer
+        
+        originalTask = {
+            left: [{id: idCounter++, type: 'x', num: a}, {id: idCounter++, type: 'num', num: b}],
+            right: [{id: idCounter++, type: 'x', num: c}, {id: idCounter++, type: 'num', num: d}],
+            x: xValue
+        };
+    }
+    
+    resetTask();
+}
 
         window.resetTask = function() {
             if(!originalTask) return;
