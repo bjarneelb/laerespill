@@ -3,113 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <title>Ligningsløpet - Tekstoppgaver</title>
-    <!-- Vi gjenbruker stilene fra det forrige dashbordet ditt her -->
     <style>
-        /* (Lim inn CSS-en fra det forrige dashbordet her for å beholde sportsbil-looken) */
-        /* Jeg legger til en spesifikk stil for tekstoppgave-displayet i bakspeilet */
-        #mirrorText { 
-            font-family: 'Segoe UI', sans-serif; 
-            color: #4af626; 
-            font-size: 1.1rem; 
-            padding: 10px;
-            text-align: center;
-            line-height: 1.3;
+        body { font-family: sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Enkelt bakspeil for tekstoppgave */
+        .rearview-mirror {
+            width: 80%; max-width: 700px; height: 120px;
+            background: #222; border: 4px solid #555; border-radius: 10px;
+            margin: 20px 0; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); padding: 15px; overflow-y: auto;
         }
-        .phase-indicator {
-            background: #f1c40f; color: #000; padding: 5px 10px;
-            border-radius: 5px; font-weight: bold; margin-bottom: 10px;
-        }
+        #mirrorText { color: #4af626; text-align: center; font-size: 1.1rem; }
+
+        .cockpit { background: #333; padding: 20px; border-radius: 20px; border: 5px solid #444; width: 90%; max-width: 1000px; }
+        .phase-indicator { background: #f1c40f; color: #000; padding: 8px; border-radius: 5px; font-weight: bold; text-align: center; margin-bottom: 15px; }
+        
+        .main-dash { display: flex; justify-content: space-around; align-items: center; gap: 20px; }
+        .gauge-pod { width: 250px; height: 250px; background: #111; border: 5px solid #666; border-radius: 15px; position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-content: flex-start; padding: 10px; }
+        
+        .center-console { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .manual-side { background: #444; padding: 10px; border-radius: 10px; text-align: center; }
+        .manual-side input { width: 50px; padding: 5px; margin-bottom: 5px; }
+        
+        button { cursor: pointer; padding: 10px; font-weight: bold; border-radius: 5px; border: none; }
+        .btn-check { background: #27ae60; color: white; padding: 15px 30px; font-size: 1.2rem; }
+        .car-btn { background: #555; color: white; }
+
+        #startScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .start-box { background: white; color: #333; padding: 40px; border-radius: 15px; text-align: center; }
+        input { padding: 10px; margin: 10px; font-size: 1rem; }
+
+        /* Elementer på vekten */
+        .item { width: 40px; height: 40px; margin: 2px; display: flex; align-items: center; justify-content: center; border-radius: 5px; font-weight: bold; }
+        .x-item { background: #e74c3c; color: white; }
+        .num-item { background: #3498db; color: white; }
     </style>
 </head>
 <body>
 
-    <div class="windshield"></div>
-    
-    <!-- Bakspeilet viser nå tekstoppgaven -->
-    <div class="rearview-mirror" style="width: 600px; height: 120px;">
-        <div id="mirrorText">Laster oppgave...</div>
-    </div>
-
     <div id="startScreen">
-        <!-- (Samme startskjerm-kode som før) -->
         <div class="start-box">
             <h1>Tekst-Løpet</h1>
-            <p>Bil: <strong id="carDisplay">...</strong></p>
-            <input type="text" id="roomInput" placeholder="ROMKODE">
-            <button onclick="startGame()">START</button>
+            <p>Din bil: <strong id="carDisplay">Genererer navn...</strong></p>
+            <input type="text" id="roomInput" placeholder="ROMKODE (f.eks. MATTE1)">
+            <br>
+            <button class="btn-check" onclick="startGame()">START RACET</button>
         </div>
+    </div>
+
+    <div class="rearview-mirror">
+        <div id="mirrorText">Trykk START for å motta din første oppgave...</div>
     </div>
 
     <div class="cockpit">
         <div id="phaseDisplay" class="phase-indicator">FASE 1: BYGG LIKNINGEN</div>
         
         <div class="main-dash">
-            <!-- Byggepanelene MÅ være synlige i dette spillet -->
-            <div id="panelL" class="manual-side" style="display: block;">
-                <strong>VENSTRE</strong>
-                <input type="number" id="qtyL" value="1">
+            <div id="panelL" class="manual-side">
+                <strong>VENSTRE</strong><br>
+                Antall: <input type="number" id="qtyL" value="1" min="1"><br>
                 <button onclick="addManual('left','x')">+ X</button>
                 <button onclick="addManual('left','num')">+ Tall</button>
             </div>
 
-            <div id="gaugeL" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'left')"></div>
+            <div id="gaugeL" class="gauge-pod"></div>
 
             <div class="center-console">
-                <div class="gear-indicator" id="gearDisplay">1</div>
-                
-                <!-- Operasjonene er deaktivert i fase 1 -->
-                <div id="opPanel" style="opacity: 0.3; pointer-events: none;">
-                    <input type="text" id="opVal" value="2" style="width:30px;">
-                    <button onclick="operate('multiply')">×</button>
-                    <button onclick="operate('divide')">÷</button>
+                <div id="opPanel" style="opacity: 0.3; pointer-events: none; text-align:center;">
+                    <strong>OPERASJONER</strong><br>
+                    Verdi: <input type="number" id="opVal" value="2" style="width:40px;"><br>
+                    <button onclick="operate('divide')">÷ Dele</button>
+                    <button onclick="operate('subtract')">- Minus</button>
                 </div>
                 
-                <button id="mainBtn" class="car-btn btn-check" onclick="checkPhase()">SJEKK MODELL</button>
-                <button class="car-btn btn-undo" onclick="undo()">ANGRE</button>
-                <a href="index.html" class="car-btn btn-home">HJEM</a>
+                <button id="mainBtn" class="btn-check" onclick="checkPhase()">SJEKK MODELL</button>
+                <button class="car-btn" onclick="resetBoard()">NULLSTILL</button>
             </div>
 
-            <div id="gaugeR" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'right')"></div>
+            <div id="gaugeR" class="gauge-pod"></div>
 
-            <div id="panelR" class="manual-side" style="display: block;">
-                <strong>HØYRE</strong>
-                <input type="number" id="qtyR" value="1">
+            <div id="panelR" class="manual-side">
+                <strong>HØYRE</strong><br>
+                Antall: <input type="number" id="qtyR" value="1" min="1"><br>
                 <button onclick="addManual('right','x')">+ X</button>
                 <button onclick="addManual('right','num')">+ Tall</button>
             </div>
         </div>
     </div>
 
-<script type="module">
-    import { database, ref, set, update } from "./js/firebase-config.js";
-    import { generateEquationTask } from "./js/gemini-api.js"; // Henter den nye funksjonen
+    <script type="module">
+        import { database, ref, set, update } from "./js/firebase-config.js";
+        import { generateEquationTask } from "./js/gemini-api.js";
 
-    let currentPhase = 1;
-    let targetEquation = null;
-    let xValue = null;
+        // Global tilstand
+        window.playerName = "";
+        let currentPhase = 1; // 1: Bygge, 2: Løse
+        let targetEquation = null;
+        let xValue = null;
+        let currentRoom = "";
 
-    window.startGame = async function() {
-        const room = document.getElementById("roomInput").value.trim().toUpperCase();
-        if(!room) return;
-        
-        document.getElementById("startScreen").style.display = "none";
-        document.getElementById("mirrorText").innerText = "KI-Lærer genererer oppgave...";
-        
-        // Hent oppgave fra Gemini (f.eks. for nivå 3)
-        const task = await generateEquationTask(3);
-        
-        if (task) {
-            document.getElementById("mirrorText").innerText = task.oppgaveTekst;
-            targetEquation = task.fasitLikning;
-            xValue = task.xVerdi;
-            currentPhase = 1;
-            console.log("Fasit hentet:", targetEquation);
-        } else {
-            document.getElementById("mirrorText").innerText = "Feil ved henting av oppgave. Prøv igjen.";
+        // 1. Generer bilnavn med en gang
+        function generateCarName() {
+            const adj = ["Raske", "Lynraske", "Smarte", "Viltre", "Smidige", "Gylne", "Tøffe"];
+            const ani = ["Gaupe", "Rev", "Bjørn", "Ulv", "Hauk", "Ugle", "Tiger"];
+            window.playerName = adj[Math.floor(Math.random()*adj.length)] + " " + ani[Math.floor(Math.random()*ani.length)];
+            document.getElementById("carDisplay").innerText = window.playerName;
         }
-    };
-    
-        // ... (Resten av funksjonene dine: render, handleDrop, getTotals, osv.)
+        generateCarName();
+
+        // 2. Start spill
+        window.startGame = async function() {
+            currentRoom = document.getElementById("roomInput").value.trim().toUpperCase();
+            if(!currentRoom) { alert("Skriv inn romkode!"); return; }
+
+            document.getElementById("startScreen").style.display = "none";
+            document.getElementById("mirrorText").innerText = "KI-Lærer genererer oppgave til " + window.playerName + "...";
+
+            // Hent oppgave fra Gemini (Nivå 3 som standard for test)
+            const task = await generateEquationTask(3);
+            
+            if(task) {
+                document.getElementById("mirrorText").innerText = task.oppgaveTekst;
+                targetEquation = task.fasitLikning;
+                xValue = task.xVerdi;
+                currentPhase = 1;
+                resetBoard();
+            } else {
+                document.getElementById("mirrorText").innerText = "Kunne ikke hente oppgave. Sjekk konsollen (F12).";
+            }
+        };
+
+        // 3. Vektsystem logikk
+        let board = { left: [], right: [] };
+
+        window.addManual = function(side, type) {
+            const qty = parseInt(document.getElementById(side === 'left' ? 'qtyL' : 'qtyR').value);
+            for(let i=0; i<qty; i++) {
+                board[side].push(type);
+            }
+            render();
+        };
+
+        window.resetBoard = function() {
+            board = { left: [], right: [] };
+            render();
+        };
+
+        function render() {
+            ['left', 'right'].forEach(side => {
+                const container = document.getElementById(side === 'left' ? 'gaugeL' : 'gaugeR');
+                container.innerHTML = "";
+                board[side].forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = `item ${item}-item`;
+                    div.innerText = item === 'x' ? 'X' : '1';
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        function getTotals(side) {
+            return {
+                xs: board[side].filter(i => i === 'x').length,
+                nums: board[side].filter(i => i === 'num').length
+            };
+        }
+
+        // 4. Sjekk fase og løsning
+        window.checkPhase = function() {
+            const L = getTotals('left');
+            const R = getTotals('right');
+
+            if (currentPhase === 1) {
+                // Sjekk modellering
+                if (L.xs === targetEquation.leftX && L.nums === targetEquation.leftNum &&
+                    R.xs === targetEquation.rightX && R.nums === targetEquation.rightNum) {
+                    
+                    alert("Riktig bygget! Nå kan du løse den.");
+                    currentPhase = 2;
+                    document.getElementById("phaseDisplay").innerText = "FASE 2: LØS LIKNINGEN";
+                    document.getElementById("opPanel").style.opacity = "1";
+                    document.getElementById("opPanel").style.pointerEvents = "auto";
+                    document.getElementById("mainBtn").innerText = "SJEKK SVAR";
+                } else {
+                    alert("Vekten stemmer ikke med teksten. Prøv igjen.");
+                }
+            } else {
+                // Sjekk om x er alene og verdien er riktig
+                if ((L.xs === 1 && L.nums === 0 && R.xs === 0 && R.nums === xValue) ||
+                    (R.xs === 1 && R.nums === 0 && L.xs === 0 && L.nums === xValue)) {
+                    
+                    alert("Gratulerer! Du fant svaret: x = " + xValue);
+                    sendScore();
+                    window.startGame(); // Start ny oppgave
+                } else {
+                    alert("Ikke helt i mål ennå. Fortsett å løse!");
+                }
+            }
+        };
+
+        // 5. Operasjoner (Fase 2)
+        window.operate = function(type) {
+            const val = parseInt(document.getElementById("opVal").value);
+            if(type === 'divide') {
+                if(board.left.length % val === 0 && board.right.length % val === 0) {
+                    // Enkel divisjon: fjern elementer slik at bare 1/val er igjen
+                    board.left = performDivide(board.left, val);
+                    board.right = performDivide(board.right, val);
+                } else {
+                    alert("Kan ikke dele jevnt!");
+                }
+            } else if (type === 'subtract') {
+                // Forenklet minus (fjerner kun tall)
+                for(let i=0; i<val; i++) {
+                    const idxL = board.left.indexOf('num');
+                    const idxR = board.right.indexOf('num');
+                    if(idxL > -1 && idxR > -1) {
+                        board.left.splice(idxL, 1);
+                        board.right.splice(idxR, 1);
+                    }
+                }
+            }
+            render();
+        };
+
+        function performDivide(arr, val) {
+            const xs = arr.filter(i => i === 'x').length / val;
+            const nums = arr.filter(i => i === 'num').length / val;
+            const newArr = [];
+            for(let i=0; i<xs; i++) newArr.push('x');
+            for(let i=0; i<nums; i++) newArr.push('num');
+            return newArr;
+        }
+
+        async function sendScore() {
+            const scoreRef = ref(database, `rooms/${currentRoom}/players/${window.playerName}`);
+            // Hent eksisterende poeng og legg til 500 for tekstoppgave
+            // (Forenklet: vi setter bare poengsummen høyere for nå)
+            update(scoreRef, { score: Date.now() % 10000 }); // Placeholder for poenglogikk
+        }
     </script>
 </body>
 </html>
