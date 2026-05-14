@@ -107,6 +107,24 @@
         window.playerName = adj[Math.floor(Math.random()*adj.length)] + " " + ani[Math.floor(Math.random()*ani.length)];
         document.getElementById("carDisplay").innerText = window.playerName;
 
+        <div style="margin: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+    <p>For å starte må du legge inn en API-nøkkel fra Google AI Studio:</p>
+    <input type="password" id="apiKeyInput" placeholder="Lim inn AIzaSy..." style="padding: 8px; width: 250px;">
+    <button onclick="saveKey()">Lagre nøkkel</button>
+</div>
+
+<script>
+function saveKey() {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (key.startsWith("AIza")) {
+        localStorage.setItem("gemini_api_key", key);
+        alert("Nøkkel lagret i nettleseren! Du kan nå starte spillet.");
+    } else {
+        alert("Dette ser ikke ut som en gyldig nøkkel.");
+    }
+}
+</script>
+        
         // 2. Start spill
         window.startGame = async function() {
             currentRoom = document.getElementById("roomInput").value.trim().toUpperCase();
