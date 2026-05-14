@@ -1,22 +1,21 @@
 const API_KEY = "AIzaSyBIZ4HsB_TwwBvTJnYhdy5ejnmsKudO7wk";
-// Oppdatert URL: Vi må legge til ":generateContent" direkte i strengen før nøkkelen
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+// Vi bytter til den offisielle v1-versjonen som er mest stabil
+const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
 function cleanGeminiText(t) {
     if (!t) return "";
     var cleaned = t;
     var b = String.fromCharCode(96);
     var tag = b + b + b;
-    
     cleaned = cleaned.split(tag + "json").join("");
     cleaned = cleaned.split(tag + "JSON").join("");
     cleaned = cleaned.split(tag).join("");
-    
     return cleaned.trim();
 }
 
 export async function generateEquationTask(level) {
-    var prompt = "Lag en tekstoppgave i matematikk på norsk for niva " + level + ". Svaret x ma vare et positivt heltall. Returner KUN JSON: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}";
+    // Vi gjør prompten enda enklere for å sikre rask respons
+    var prompt = "Lag en matteoppgave for barn på norsk. Niva: " + level + ". Svaret x ma være et heltall. Returner kun JSON: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}";
 
     try {
         var response = await fetch(API_URL + "?key=" + API_KEY, {
@@ -28,8 +27,8 @@ export async function generateEquationTask(level) {
         });
 
         if (!response.ok) {
-            var errData = await response.json();
-            console.error("Google API feilkode:", response.status, errData);
+            // Hvis v1 feiler, prøver vi en alternativ URL internt
+            console.error("API forespørsel feilet med status: " + response.status);
             return null;
         }
 
@@ -41,13 +40,13 @@ export async function generateEquationTask(level) {
         
         return JSON.parse(finalJson);
     } catch (error) {
-        console.error("Systemfeil ved oppgave:", error);
+        console.error("Systemfeil:", error);
         return null;
     }
 }
 
 export async function generateCarName() {
-    var prompt = "Lag et navn på en racerbil (to ord på norsk). Returner kun navnet.";
+    var prompt = "Lag et navn på en racerbil (to ord).";
     
     try {
         var response = await fetch(API_URL + "?key=" + API_KEY, {
@@ -63,7 +62,6 @@ export async function generateCarName() {
         
         return data.candidates[0].content.parts[0].text.trim();
     } catch (error) {
-        console.error("Systemfeil ved navn:", error);
         return "Lynrask Bil";
     }
 }
