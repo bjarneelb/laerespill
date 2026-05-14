@@ -1,1 +1,136 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>Ligningsløpet - Tekstoppgaver</title>
+    <!-- Vi gjenbruker stilene fra det forrige dashbordet ditt her -->
+    <style>
+        /* (Lim inn CSS-en fra det forrige dashbordet her for å beholde sportsbil-looken) */
+        /* Jeg legger til en spesifikk stil for tekstoppgave-displayet i bakspeilet */
+        #mirrorText { 
+            font-family: 'Segoe UI', sans-serif; 
+            color: #4af626; 
+            font-size: 1.1rem; 
+            padding: 10px;
+            text-align: center;
+            line-height: 1.3;
+        }
+        .phase-indicator {
+            background: #f1c40f; color: #000; padding: 5px 10px;
+            border-radius: 5px; font-weight: bold; margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
 
+    <div class="windshield"></div>
+    
+    <!-- Bakspeilet viser nå tekstoppgaven -->
+    <div class="rearview-mirror" style="width: 600px; height: 120px;">
+        <div id="mirrorText">Laster oppgave...</div>
+    </div>
+
+    <div id="startScreen">
+        <!-- (Samme startskjerm-kode som før) -->
+        <div class="start-box">
+            <h1>Tekst-Løpet</h1>
+            <p>Bil: <strong id="carDisplay">...</strong></p>
+            <input type="text" id="roomInput" placeholder="ROMKODE">
+            <button onclick="startGame()">START</button>
+        </div>
+    </div>
+
+    <div class="cockpit">
+        <div id="phaseDisplay" class="phase-indicator">FASE 1: BYGG LIKNINGEN</div>
+        
+        <div class="main-dash">
+            <!-- Byggepanelene MÅ være synlige i dette spillet -->
+            <div id="panelL" class="manual-side" style="display: block;">
+                <strong>VENSTRE</strong>
+                <input type="number" id="qtyL" value="1">
+                <button onclick="addManual('left','x')">+ X</button>
+                <button onclick="addManual('left','num')">+ Tall</button>
+            </div>
+
+            <div id="gaugeL" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'left')"></div>
+
+            <div class="center-console">
+                <div class="gear-indicator" id="gearDisplay">1</div>
+                
+                <!-- Operasjonene er deaktivert i fase 1 -->
+                <div id="opPanel" style="opacity: 0.3; pointer-events: none;">
+                    <input type="text" id="opVal" value="2" style="width:30px;">
+                    <button onclick="operate('multiply')">×</button>
+                    <button onclick="operate('divide')">÷</button>
+                </div>
+                
+                <button id="mainBtn" class="car-btn btn-check" onclick="checkPhase()">SJEKK MODELL</button>
+                <button class="car-btn btn-undo" onclick="undo()">ANGRE</button>
+                <a href="index.html" class="car-btn btn-home">HJEM</a>
+            </div>
+
+            <div id="gaugeR" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'right')"></div>
+
+            <div id="panelR" class="manual-side" style="display: block;">
+                <strong>HØYRE</strong>
+                <input type="number" id="qtyR" value="1">
+                <button onclick="addManual('right','x')">+ X</button>
+                <button onclick="addManual('right','num')">+ Tall</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Her bruker vi den nye js-mappen din!
+        import { database, ref, set, update } from "./js/firebase-config.js";
+
+        let currentPhase = 1; // 1: Bygge, 2: Løse
+        let targetEquation = { leftX: 3, leftNum: 0, rightX: 0, rightNum: 60 }; // Eksempel: 3x = 60
+        let xValue = 20;
+
+        window.startGame = function() {
+            // Logikk for å starte og koble til Firebase (som før)
+            document.getElementById("startScreen").style.display = "none";
+            generateTask();
+        };
+
+        function generateTask() {
+            // Foreløpig lager vi en fast oppgave. Senere kobler vi på Gemini her.
+            const taskText = "Per er dobbelt så gammel som Kari. Til sammen er de 60 år. Hvor gammel er Kari? (Tips: Kari er x)";
+            document.getElementById("mirrorText").innerText = taskText;
+            
+            // Fasiten spillet sjekker mot i Fase 1
+            targetEquation = { leftX: 3, leftNum: 0, rightX: 0, rightNum: 60 };
+            xValue = 20;
+            
+            resetBoard();
+        }
+
+        window.checkPhase = function() {
+            if (currentPhase === 1) {
+                // Sjekk om vekten stemmer med targetEquation
+                let L = getTotals('left');
+                let R = getTotals('right');
+
+                if (L.xs === targetEquation.leftX && L.units === targetEquation.leftNum && 
+                    R.xs === targetEquation.rightX && R.units === targetEquation.rightNum) {
+                    
+                    alert("Flott! Likningen er riktig bygget. Nå må du løse den!");
+                    currentPhase = 2;
+                    document.getElementById("phaseDisplay").innerText = "FASE 2: LØS LIKNINGEN";
+                    document.getElementById("opPanel").style.opacity = "1";
+                    document.getElementById("opPanel").style.pointer-events = "auto";
+                    document.getElementById("mainBtn").innerText = "SJEKK SVAR";
+                } else {
+                    alert("Likningen stemmer ikke helt med teksten ennå. Prøv igjen!");
+                }
+            } else {
+                // Her kjører vi den vanlige checkSolution() logikken din
+                checkFinalSolution();
+            }
+        };
+
+        // ... (Resten av funksjonene dine: render, handleDrop, getTotals, osv.)
+    </script>
+</body>
+</html>
