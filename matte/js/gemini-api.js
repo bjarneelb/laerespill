@@ -1,42 +1,30 @@
-// BYTT UT DENNE MED DIN NYE NØKKEL
-const API_KEY = "AIzaSyDfC_RgtMDw-t7Ihj4cf_lzSAClJq_b96M"; 
-
-const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/";
-const MODEL = "models/gemini-1.5-flash:generateContent";
-
-function cleanGeminiText(t) {
-    if (!t) return "";
-    var cleaned = t;
-    var b = String.fromCharCode(96);
-    var tag = b + b + b;
-    cleaned = cleaned.split(tag + "json").join("");
-    cleaned = cleaned.split(tag + "JSON").join("");
-    cleaned = cleaned.split(tag).join("");
-    return cleaned.trim();
-}
+const API_KEY = "AIzaSyDfC_RgtMDw-t7Ihj4cf_lzSAClJq_b96M";
+// Vi bruker v1beta og den faktiske modellen fra listen din
+const MODEL_NAME = "gemini-2.0-flash"; 
+const URL = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL_NAME + ":generateContent?key=" + API_KEY;
 
 export async function generateEquationTask(level) {
-    var fullUrl = BASE_URL + MODEL + "?key=" + API_KEY;
-    var prompt = "Lag en matteoppgave niva " + level + ". Svaret x ma vare et heltall. Returner kun JSON: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}";
-
     try {
-        var response = await fetch(fullUrl, {
+        const response = await fetch(URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
+                contents: [{ parts: [{ text: "Lag en matteoppgave niva " + level + ". Returner KUN JSON: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}" }] }]
             })
         });
 
-        if (!response.ok) {
-            var err = await response.json();
-            console.error("API Feil:", err);
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error("Google-feil:", data.error.message);
             return null;
         }
 
-        var data = await response.json();
-        var rawText = data.candidates[0].content.parts[0].text;
-        return JSON.parse(cleanGeminiText(rawText));
+        let rawText = data.candidates[0].content.parts[0].text;
+        // Renser bort markdown-formatering
+        let cleanJson = rawText.replace(/```json/g, "").replace(/
+```/g, "").trim();
+        return JSON.parse(cleanJson);
     } catch (error) {
         console.error("Systemfeil:", error);
         return null;
@@ -44,19 +32,17 @@ export async function generateEquationTask(level) {
 }
 
 export async function generateCarName() {
-    var fullUrl = BASE_URL + MODEL + "?key=" + API_KEY;
-    var prompt = "Navn pa racerbil, to ord.";
     try {
-        var response = await fetch(fullUrl, {
+        const response = await fetch(URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
+                contents: [{ parts: [{ text: "Navn på racerbil, to korte ord på norsk." }] }]
             })
         });
-        var data = await response.json();
+        const data = await response.json();
         return data.candidates[0].content.parts[0].text.trim();
     } catch (e) {
-        return "Gylne Gaupe";
+        return "Raske Rev";
     }
 }
