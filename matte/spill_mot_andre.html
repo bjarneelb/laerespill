@@ -52,28 +52,51 @@
             width: 280px; height: 280px; background: #111; border: 10px solid #444; border-radius: 50%;
             display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 8px;
             position: relative; 
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* Myk balanse-bevegelse */
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
         }
 
-        .center-console { width: 160px; display: flex; flex-direction: column; align-items: center; background: #222; padding: 15px; border-radius: 20px; box-shadow: 0 8px 0 #111; }
+        .center-console { width: 180px; display: flex; flex-direction: column; align-items: center; background: #222; padding: 15px; border-radius: 20px; box-shadow: 0 8px 0 #111; }
 
-        .car-btn { width: 100%; margin: 3px 0; padding: 10px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; color: white; text-transform: uppercase; font-size: 0.8rem; }
+        /* Digitalt instrumentpanel for poeng */
+        .score-display {
+            background: #000;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+            width: 150px;
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: inset 0 0 10px rgba(74, 246, 38, 0.2);
+        }
+
+        .my-score {
+            color: var(--math-green);
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+            text-align: center;
+        }
+
+        .top-three { font-size: 0.7rem; color: #888; }
+        .top-three-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .is-me { color: var(--accent); font-weight: bold; }
+
+        .car-btn { width: 100%; margin: 3px 0; padding: 10px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; color: white; text-transform: uppercase; font-size: 0.75rem; }
         .btn-check { background: #27ae60; }
         .btn-new { background: #2980b9; }
 
-        /* Blokker/Lignings-elementer */
         .item { 
             min-width: 50px; height: 50px; border-radius: 8px; color: white; 
             font-weight: bold; cursor: grab; display: flex; align-items: center; justify-content: center;
             box-shadow: 0 3px 0 rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
-            transition: transform 0.1s;
         }
         .box-x { background: #d35400; } .box-x-neg { background: #c0392b; }
         .val-pos { background: #2980b9; } .val-neg { background: #8e44ad; }
 
-        /* Høyreklikkmeny */
-        .context-menu { display: none; position: absolute; background: #333; border: 2px solid #555; color: white; border-radius: 8px; z-index: 2000; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .context-menu { display: none; position: absolute; background: #333; border: 2px solid #555; color: white; border-radius: 8px; z-index: 2000; overflow: hidden; }
         .context-menu button { display: block; width: 100%; border: none; background: none; color: white; padding: 10px 20px; cursor: pointer; text-align: left; font-weight: bold; }
         .context-menu button:hover { background: #444; color: var(--accent); }
     </style>
@@ -98,29 +121,30 @@
 
     <div class="cockpit">
         <div class="main-dash">
-            <!-- Venstre Instrument (Vekt-skål) -->
             <div id="gaugeL" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'left')"></div>
             
-            <!-- Midtkonsoll (Operasjoner) -->
             <div class="center-console">
                 <div style="color:var(--accent); font-size:1.5rem; font-family:monospace;" id="gearDisplay">1</div>
-                <div style="background:#111; padding:5px; border-radius:5px; margin-bottom:10px;">
+                <div style="background:#111; padding:5px; border-radius:5px; margin-bottom:5px;">
                     <input type="number" id="opVal" value="2" style="width:40px; text-align:center; background:none; color:white; border:none; font-size:1.2rem;">
                 </div>
                 <button class="car-btn btn-new" onclick="operate('multiply')">×</button>
                 <button class="car-btn btn-new" onclick="operate('divide')">÷</button>
-                <br>
-                <button class="car-btn btn-check" onclick="checkSolution()">Sjekk</button>
-                <button class="car-btn btn-new" style="background:#555;" onclick="initGame()">Ny oppgave</button>
+                <button class="car-btn btn-check" style="margin-top:5px;" onclick="checkSolution()">Sjekk</button>
+                
+                <!-- Scoreboard på dashbordet -->
+                <div class="score-display">
+                    <div class="my-score">P: <span id="personalScore">0</span></div>
+                    <div id="topThreeList" class="top-three"></div>
+                </div>
             </div>
 
-            <!-- Høyre Instrument (Vekt-skål) -->
             <div id="gaugeR" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'right')"></div>
         </div>
     </div>
 
     <script type="module">
-        import { database, ref, set, update } from "./js/firebase-config.js";
+        import { database, ref, set, update, onValue } from "./js/firebase-config.js";
 
         const adj = ["Raske", "Lynraske", "Smarte", "Viltre", "Smidige", "Gylne"];
         const ani = ["Gaupe", "Rev", "Bjørn", "Ulv", "Hauk", "Ugle"];
@@ -137,6 +161,12 @@
                 score: 0, 
                 lastUpdated: Date.now() 
             });
+
+            onValue(ref(database, 'rooms/' + room + '/players'), (snapshot) => {
+                const players = snapshot.val();
+                if (players) updateDashboard(players);
+            });
+
             initGame();
         };
 
@@ -148,6 +178,22 @@
                 });
             }
         };
+
+        function updateDashboard(players) {
+            const myData = players[window.playerName];
+            if (myData) document.getElementById("personalScore").innerText = myData.score;
+
+            const sorted = Object.entries(players)
+                .sort((a, b) => b[1].score - a[1].score)
+                .slice(0, 3);
+
+            let html = "";
+            sorted.forEach(([name, data], i) => {
+                const isMe = (name === window.playerName) ? "is-me" : "";
+                html += `<div class="top-three-row ${isMe}"><span>${i+1}.${name.split(' ')[1]}</span><span>${data.score}</span></div>`;
+            });
+            document.getElementById("topThreeList").innerHTML = html;
+        }
     </script>
 
     <script>
@@ -157,14 +203,8 @@
             sides = { left: [], right: [] };
             xValue = Math.floor(Math.random() * 7) + 2; 
             let b = Math.floor(Math.random() * 9) + 1;
-            
-            sides.left = [
-                {id: idCounter++, type: 'x', num: 1},
-                {id: idCounter++, type: 'num', num: b}
-            ];
-            sides.right = [
-                {id: idCounter++, type: 'num', num: xValue + b}
-            ];
+            sides.left = [{id: idCounter++, type: 'x', num: 1}, {id: idCounter++, type: 'num', num: b}];
+            sides.right = [{id: idCounter++, type: 'num', num: xValue + b}];
             render();
         }
 
@@ -177,113 +217,81 @@
                     div.className = `item ${item.type === 'x' ? (item.num < 0 ? 'box-x-neg' : 'box-x') : (item.num < 0 ? 'val-neg' : 'val-pos')}`;
                     div.draggable = true;
                     div.setAttribute('data-id', item.id);
-                    
-                    let label = (item.type === 'x') ? 
-                        (item.num === 1 ? "X" : item.num === -1 ? "-X" : item.num + "X") : 
-                        item.num;
-                    div.innerText = label;
-                    
+                    div.innerText = (item.type === 'x') ? (item.num === 1 ? "X" : item.num === -1 ? "-X" : item.num + "X") : item.num;
                     div.addEventListener('dragstart', (e) => e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id })));
                     div.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         activeMenuTarget = { side, item };
                         const menu = document.getElementById('customMenu');
-                        menu.style.display = 'block'; 
-                        menu.style.left = e.pageX + 'px'; 
-                        menu.style.top = e.pageY + 'px';
+                        menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
                     });
                     gauge.appendChild(div);
                 });
             });
 
-            // Balanse-logikk (Instrumentene beveger seg)
-            const getWeight = (side) => {
-                return sides[side].reduce((total, item) => total + (item.type === 'x' ? item.num * xValue : item.num), 0);
-            };
-
-            const weightL = getWeight('left');
-            const weightR = getWeight('right');
-            const diff = weightL - weightR;
+            const getWeight = (s) => sides[s].reduce((t, i) => t + (i.type === 'x' ? i.num * xValue : i.num), 0);
+            const diff = getWeight('left') - getWeight('right');
             const moveY = Math.min(Math.max(diff * 5, -50), 50);
-
             document.getElementById('gaugeL').style.transform = `translateY(${-moveY}px)`;
             document.getElementById('gaugeR').style.transform = `translateY(${moveY}px)`;
-
-            // Oppdater Bakspeil
-            document.getElementById('mirrorText').innerText = formatEquationSide(sides.left) + " = " + formatEquationSide(sides.right);
+            document.getElementById('mirrorText').innerText = formatSide(sides.left) + " = " + formatSide(sides.right);
         }
 
-        function formatEquationSide(items) {
+        function formatSide(items) {
             if (items.length === 0) return "0";
             return items.map((i, idx) => {
                 let term = (i.type === 'x') ? (i.num === 1 ? "x" : i.num === -1 ? "-x" : i.num + "x") : i.num;
-                if (idx > 0 && i.num >= 0) return "+ " + term;
-                return term;
+                return (idx > 0 && i.num >= 0) ? "+ " + term : term;
             }).join(" ");
         }
 
         window.handleDrop = function(ev, targetSide) {
             ev.preventDefault();
             const data = JSON.parse(ev.dataTransfer.getData("text"));
-            const sourceSide = data.side;
-            const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
-            const item = sides[sourceSide][sourceIdx];
-
+            const item = sides[data.side].find(i => i.id === data.id);
             const targetEl = ev.target.closest('.item');
-            if (targetEl && sourceSide === targetSide) {
-                const targetId = parseInt(targetEl.getAttribute('data-id'));
-                const targetItem = sides[targetSide].find(i => i.id === targetId);
-                
+            if (targetEl && data.side === targetSide) {
+                const targetItem = sides[targetSide].find(i => i.id === parseInt(targetEl.getAttribute('data-id')));
                 if (targetItem && targetItem.type === item.type && targetItem.id !== item.id) {
                     targetItem.num += item.num;
-                    sides[sourceSide].splice(sourceIdx, 1);
+                    sides[data.side].splice(sides[data.side].indexOf(item), 1);
                     if (targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
                     render(); return;
                 }
             }
-            
-            sides[targetSide].push(sides[sourceSide].splice(sourceIdx, 1)[0]);
+            sides[targetSide].push(sides[data.side].splice(sides[data.side].indexOf(item), 1)[0]);
             render();
         };
 
         window.checkSolution = function() {
             const L = sides.left, R = sides.right;
             if (L.length === 1 && L[0].type === 'x' && L[0].num === 1 && R.length === 1 && R[0].type === 'num' && R[0].num === xValue) {
-                alert("Målpassering! Riktig svar.");
-                winStreak++;
-                if (window.syncFB) window.syncFB(winStreak * 100);
+                alert("Riktig!"); winStreak++;
+                window.syncFB(winStreak * 100);
                 initGame();
-            } else {
-                alert("Ligningen er ikke i balanse eller x er ikke isolert!");
-            }
+            } else { alert("Ikke i mål!"); }
         };
 
-        window.operate = function(type) {
-            const val = parseInt(document.getElementById('opVal').value);
-            if (!val) return;
+        window.operate = function(t) {
+            const v = parseInt(document.getElementById('opVal').value);
+            if (!v) return;
             ['left', 'right'].forEach(s => {
-                sides[s].forEach(i => {
-                    if (type === 'multiply') i.num *= val;
-                    else i.num = Math.round(i.num / val);
-                });
+                sides[s].forEach(i => { if (t === 'multiply') i.num *= v; else i.num = Math.round(i.num / v); });
                 sides[s] = sides[s].filter(i => i.num !== 0);
             });
             render();
         };
 
         window.menuInvert = function() { if(activeMenuTarget) { activeMenuTarget.item.num *= -1; render(); } };
-        
         window.menuSplit = function() {
             if(!activeMenuTarget || Math.abs(activeMenuTarget.item.num) < 2) return;
-            const item = activeMenuTarget.item;
-            const n1 = Math.floor(item.num / 2), n2 = item.num - n1;
-            const sideArr = sides[activeMenuTarget.side];
-            sideArr.splice(sideArr.indexOf(item), 1);
-            sideArr.push({id: idCounter++, type: item.type, num: n1}, {id: idCounter++, type: item.type, num: n2});
+            const i = activeMenuTarget.item, n1 = Math.floor(i.num/2), n2 = i.num - n1;
+            sides[activeMenuTarget.side].splice(sides[activeMenuTarget.side].indexOf(i), 1);
+            sides[activeMenuTarget.side].push({id:idCounter++, type:i.type, num:n1}, {id:idCounter++, type:i.type, num:n2});
             render();
         };
 
-        document.addEventListener('click', () => { document.getElementById('customMenu').style.display = 'none'; });
+        document.addEventListener('click', () => document.getElementById('customMenu').style.display = 'none');
         window.onload = initGame;
     </script>
 </body>
