@@ -1,6 +1,8 @@
-const API_KEY = "AIzaSyDfC_RgtMDw-t7Ihj4cf_lzSAClJq_b96M";
-// Vi prøver gemini-1.0-pro som er den eldste og mest stabile "legacy" modellen
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+// BYTT UT DENNE MED DIN NYE NØKKEL
+const API_KEY = "AIzaSyDfC_RgtMDw-t7Ihj4cf_lzSAClJq_b96M"; 
+
+const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/";
+const MODEL = "models/gemini-1.5-flash:generateContent";
 
 function cleanGeminiText(t) {
     if (!t) return "";
@@ -14,10 +16,11 @@ function cleanGeminiText(t) {
 }
 
 export async function generateEquationTask(level) {
-    var prompt = "Lag en enkel matteoppgave for barn niva " + level + ". Svaret x ma vare et heltall. Returner kun JSON: {\"oppgaveTekst\": \"tekst\", \"xVerdi\": 5}";
+    var fullUrl = BASE_URL + MODEL + "?key=" + API_KEY;
+    var prompt = "Lag en matteoppgave niva " + level + ". Svaret x ma vare et heltall. Returner kun JSON: {\"oppgaveTekst\": \"...\", \"xVerdi\": 5}";
 
     try {
-        var response = await fetch(API_URL + "?key=" + API_KEY, {
+        var response = await fetch(fullUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -26,8 +29,8 @@ export async function generateEquationTask(level) {
         });
 
         if (!response.ok) {
-            console.error("API Status: " + response.status);
-            // Hvis gemini-pro også gir 404, prøver vi en siste nød-løsning
+            var err = await response.json();
+            console.error("API Feil:", err);
             return null;
         }
 
@@ -35,15 +38,16 @@ export async function generateEquationTask(level) {
         var rawText = data.candidates[0].content.parts[0].text;
         return JSON.parse(cleanGeminiText(rawText));
     } catch (error) {
-        console.error("Kritisk feil:", error);
+        console.error("Systemfeil:", error);
         return null;
     }
 }
 
 export async function generateCarName() {
+    var fullUrl = BASE_URL + MODEL + "?key=" + API_KEY;
     var prompt = "Navn pa racerbil, to ord.";
     try {
-        var response = await fetch(API_URL + "?key=" + API_KEY, {
+        var response = await fetch(fullUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -53,6 +57,6 @@ export async function generateCarName() {
         var data = await response.json();
         return data.candidates[0].content.parts[0].text.trim();
     } catch (e) {
-        return "Lynrask Leopard";
+        return "Gylne Gaupe";
     }
 }
