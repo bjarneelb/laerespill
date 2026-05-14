@@ -2,7 +2,8 @@ export async function generateEquationTask(level) {
     const apiKey = localStorage.getItem("gemini_api_key");
     if (!apiKey) return null;
 
-    const url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=)" + apiKey;
+    // VIKTIG: Ingen klammeparenteser rundt URL-en
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
 
     try {
         const response = await fetch(url, {
@@ -15,13 +16,11 @@ export async function generateEquationTask(level) {
 
         const data = await response.json();
         let text = data.candidates[0].content.parts[0].text;
-
-        // Super-trygg vasking av JSON-tekst uten bruk av "farlige" tegn
-        let clean = text.split("```json").join("").split("```").join("").trim();
-        
+        let clean = text.split("```json").join("").split("
+```").join("").trim();
         return JSON.parse(clean);
     } catch (error) {
-        console.error("Feil:", error);
+        console.error("Feil i generateEquationTask:", error);
         return null;
     }
 }
@@ -29,7 +28,9 @@ export async function generateEquationTask(level) {
 export async function generateCarName() {
     const apiKey = localStorage.getItem("gemini_api_key");
     if (!apiKey) return "Raske Racer";
-    const url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=)" + apiKey;
+
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
+
     try {
         const response = await fetch(url, {
             method: "POST",
@@ -41,6 +42,7 @@ export async function generateCarName() {
         const data = await response.json();
         return data.candidates[0].content.parts[0].text.trim();
     } catch (e) {
+        console.error("Feil i generateCarName:", e);
         return "Gylne Gaupe";
     }
 }
