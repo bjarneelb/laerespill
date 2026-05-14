@@ -1,75 +1,56 @@
-// js/gemini-api.js
-
 const API_KEY = "AIzaSyBIZ4HsB_TwwBvTJnYhdy5ejnmsKudO7wk"; 
 const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
-export async function generateEquationTask(level) {
-    const prompt = `
-        Du er en pedagogisk mattelærer-KI. 
-        Lag en tekstoppgave på norsk basert på nivå ${level}.
-        
-        Nivåbeskrivelse:
-        1: Enkel (x + a = b)
-        2: Multiplikativ (ax = b)
-        3: Sammensatt (ax + b = c)
-        4: X på begge sider (ax + b = cx + d)
-
-        Viktig: Svaret (x) må bli et positivt heltall.
-        Returner KUN JSON.
-
-        Struktur:
-        {
-            "oppgaveTekst": "Teksten her...",
-            "fasitLikning": {
-                "leftX": antall x venstre,
-                "leftNum": tall venstre,
-                "rightX": antall x høyre,
-                "rightNum": tall høyre
-            },
-            "xVerdi": løsningen
-        }
-    `;
-
+// Hjelpefunksjon for å sende forespørsler til Gemini
+async function askGemini(prompt) {
     try {
         const response = await fetch(`${API_URL}?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { 
-                    // Vi fjerner responseMimeType midlertidig for å sikre kompatibilitet
-                    // og bruker standardinnstillinger som fungerer overalt
+                generationConfig: {
                     temperature: 0.7,
-                    topP: 0.95,
-                    topK: 40,
-                    maxOutputTokens: 1024,
+                    maxOutputTokens: 1000,
                 }
             })
         });
 
         const data = await response.json();
-
-        if (data.error) {
-            console.error("API-feil fra Google:", data.error.message);
-            return null;
-        }
-
-        if (!data.candidates || !data.candidates[0]) {
-            console.error("Ingen respons fra Gemini:", data);
-            return null;
-        }
-
-        let resultText = data.candidates[0].content.parts[0].text;
+        if (data.error) throw new Error(data.error.message);
         
-        // VASKING AV SVAR: Gemini legger av og til til ```json ... 
-``` rundt koden.
-        // Vi fjerner dette for å unngå JSON-krasj.
-        resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-        
-        return JSON.parse(resultText);
-
+        let text = data.candidates[0].content.parts[0].text;
+        // Fjerner markdown-kodeblokker hvis de finnes
+        return text.replace(/```json/g, "").replace(/
+```/g, "").trim();
     } catch (error) {
-        console.error("Systemfeil ved henting av KI-oppgave:", error);
+        console.error("Gemini API feil:", error);
         return null;
     }
+}
+
+export async function generateEquationTask(level) {
+    const prompt = `
+        Lag en tekstoppgave i matematikk på norsk for nivå ${level}.
+        Nivå 1: x + a = b, Nivå 2: ax = b, Nivå 3: ax + b = c, Nivå 4: ax + b = cx + d.
+        Svaret x MÅ være et positivt heltall.
+        Returner KUN rå JSON slik:
+        {"oppgaveTekst": "tekst", "xVerdi": 5}
+    `;
+    
+    const result = await askGemini(prompt);
+    return result ? JSON.parse(result) : null;
+}
+
+export async function generateCarName() {
+    const prompt = `Lag et tøft navn på en racerbil (to ord på norsk, f.eks. 'Gylne Gaupe'). Returner kun navnet.`;
+    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+        })
+    });
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text.trim();
 }
