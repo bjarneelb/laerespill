@@ -2,7 +2,7 @@
 
 // DIN_API_NØKKEL_HER må byttes ut med nøkkelen fra https://aistudio.google.com/
 const API_KEY = "AIzaSyBIZ4HsB_TwwBvTJnYhdy5ejnmsKudO7wk"; 
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
 /**
  * Genererer en tekstoppgave basert på nivået som sendes inn.
