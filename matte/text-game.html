@@ -80,56 +80,35 @@
         </div>
     </div>
 
-    <script type="module">
-        // Her bruker vi den nye js-mappen din!
-        import { database, ref, set, update } from "./js/firebase-config.js";
+<script type="module">
+    import { database, ref, set, update } from "./js/firebase-config.js";
+    import { generateEquationTask } from "./js/gemini-api.js"; // Henter den nye funksjonen
 
-        let currentPhase = 1; // 1: Bygge, 2: Løse
-        let targetEquation = { leftX: 3, leftNum: 0, rightX: 0, rightNum: 60 }; // Eksempel: 3x = 60
-        let xValue = 20;
+    let currentPhase = 1;
+    let targetEquation = null;
+    let xValue = null;
 
-        window.startGame = function() {
-            // Logikk for å starte og koble til Firebase (som før)
-            document.getElementById("startScreen").style.display = "none";
-            generateTask();
-        };
-
-        function generateTask() {
-            // Foreløpig lager vi en fast oppgave. Senere kobler vi på Gemini her.
-            const taskText = "Per er dobbelt så gammel som Kari. Til sammen er de 60 år. Hvor gammel er Kari? (Tips: Kari er x)";
-            document.getElementById("mirrorText").innerText = taskText;
-            
-            // Fasiten spillet sjekker mot i Fase 1
-            targetEquation = { leftX: 3, leftNum: 0, rightX: 0, rightNum: 60 };
-            xValue = 20;
-            
-            resetBoard();
+    window.startGame = async function() {
+        const room = document.getElementById("roomInput").value.trim().toUpperCase();
+        if(!room) return;
+        
+        document.getElementById("startScreen").style.display = "none";
+        document.getElementById("mirrorText").innerText = "KI-Lærer genererer oppgave...";
+        
+        // Hent oppgave fra Gemini (f.eks. for nivå 3)
+        const task = await generateEquationTask(3);
+        
+        if (task) {
+            document.getElementById("mirrorText").innerText = task.oppgaveTekst;
+            targetEquation = task.fasitLikning;
+            xValue = task.xVerdi;
+            currentPhase = 1;
+            console.log("Fasit hentet:", targetEquation);
+        } else {
+            document.getElementById("mirrorText").innerText = "Feil ved henting av oppgave. Prøv igjen.";
         }
-
-        window.checkPhase = function() {
-            if (currentPhase === 1) {
-                // Sjekk om vekten stemmer med targetEquation
-                let L = getTotals('left');
-                let R = getTotals('right');
-
-                if (L.xs === targetEquation.leftX && L.units === targetEquation.leftNum && 
-                    R.xs === targetEquation.rightX && R.units === targetEquation.rightNum) {
-                    
-                    alert("Flott! Likningen er riktig bygget. Nå må du løse den!");
-                    currentPhase = 2;
-                    document.getElementById("phaseDisplay").innerText = "FASE 2: LØS LIKNINGEN";
-                    document.getElementById("opPanel").style.opacity = "1";
-                    document.getElementById("opPanel").style.pointer-events = "auto";
-                    document.getElementById("mainBtn").innerText = "SJEKK SVAR";
-                } else {
-                    alert("Likningen stemmer ikke helt med teksten ennå. Prøv igjen!");
-                }
-            } else {
-                // Her kjører vi den vanlige checkSolution() logikken din
-                checkFinalSolution();
-            }
-        };
-
+    };
+    
         // ... (Resten av funksjonene dine: render, handleDrop, getTotals, osv.)
     </script>
 </body>
