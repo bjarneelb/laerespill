@@ -1,4 +1,4 @@
-const API_KEY = "AIzaSyBIZ4HsB_TwwBvTJnYhdy5ejnmsKudO7wk";
+const API_KEY = "AIzaSyDfC_RgtMDw-t7Ihj4cf_lzSAClJq_b96M";
 // Vi prøver gemini-1.0-pro som er den eldste og mest stabile "legacy" modellen
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
