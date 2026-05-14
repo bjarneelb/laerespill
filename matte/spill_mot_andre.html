@@ -79,11 +79,7 @@
         .box-x { background: #d35400; } .box-x-neg { background: #c0392b; }
         .val-pos { background: #2980b9; } .val-neg { background: #8e44ad; }
 
-        /* NYTT: Highlight-animasjon */
-        .highlight {
-            animation: pulse-border 4s ease-out;
-        }
-
+        .highlight { animation: pulse-border 4s ease-out; }
         @keyframes pulse-border {
             0% { box-shadow: 0 0 0 4px var(--highlight-color), 0 3px 0 rgba(0,0,0,0.4); transform: scale(1.1); }
             100% { box-shadow: 0 0 0 0px transparent, 0 3px 0 rgba(0,0,0,0.4); transform: scale(1); }
@@ -189,67 +185,53 @@
     <script>
         let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, winStreak = 0, activeMenuTarget = null;
         let originalTask = null;
-        let lastChangedId = null; // Holder styr på hvilken blokk som sist ble berørt
+        let lastChangedId = null;
 
-function initGame() {
-    sides = { left: [], right: [] };
-    xValue = Math.floor(Math.random() * 7) + 2; // Løsningen (x)
-    lastChangedId = null;
+        function initGame() {
+            sides = { left: [], right: [] };
+            xValue = Math.floor(Math.random() * 7) + 2; 
+            lastChangedId = null;
 
-    // Bestem nivå basert på winStreak (antall rette på rad)
-    let level = 1;
-    if (winStreak >= 9) level = 4;
-    else if (winStreak >= 6) level = 3;
-    else if (winStreak >= 3) level = 2;
+            let level = 1;
+            if (winStreak >= 9) level = 4;
+            else if (winStreak >= 6) level = 3;
+            else if (winStreak >= 3) level = 2;
 
-    // Oppdater gir-displayet i midtkonsollen
-    const gearEl = document.getElementById('gearDisplay');
-    if (gearEl) gearEl.innerText = level;
+            document.getElementById('gearDisplay').innerText = level;
 
-    if (level === 1) {
-        // Nivå 1: x + b = c
-        let b = Math.floor(Math.random() * 9) + 1;
-        originalTask = {
-            left: [{id: idCounter++, type: 'x', num: 1}, {id: idCounter++, type: 'num', num: b}],
-            right: [{id: idCounter++, type: 'num', num: xValue + b}],
-            x: xValue
-        };
-    } 
-    else if (level === 2) {
-        // Nivå 2: ax = b
-        let a = Math.floor(Math.random() * 3) + 2;
-        originalTask = {
-            left: [{id: idCounter++, type: 'x', num: a}],
-            right: [{id: idCounter++, type: 'num', num: a * xValue}],
-            x: xValue
-        };
-    }
-    else if (level === 3) {
-        // Nivå 3: ax + b = c
-        let a = Math.floor(Math.random() * 3) + 2;
-        let b = Math.floor(Math.random() * 9) + 1;
-        originalTask = {
-            left: [{id: idCounter++, type: 'x', num: a}, {id: idCounter++, type: 'num', num: b}],
-            right: [{id: idCounter++, type: 'num', num: (a * xValue) + b}],
-            x: xValue
-        };
-    }
-    else {
-        // Nivå 4: ax + b = cx + d
-        let c = Math.floor(Math.random() * 2) + 1; // x på høyre side
-        let a = c + Math.floor(Math.random() * 2) + 1; // a må være større enn c
-        let d = Math.floor(Math.random() * 5) + 1;
-        let b = (c * xValue + d) - (a * xValue); // b regnes ut så ligningen stemmer
-        
-        originalTask = {
-            left: [{id: idCounter++, type: 'x', num: a}, {id: idCounter++, type: 'num', num: b}],
-            right: [{id: idCounter++, type: 'x', num: c}, {id: idCounter++, type: 'num', num: d}],
-            x: xValue
-        };
-    }
-    
-    resetTask();
-}
+            let lBlocks = [], rBlocks = [];
+
+            if (level === 1) {
+                let b = Math.floor(Math.random() * 9) + 1;
+                lBlocks = [{type: 'x', num: 1}, {type: 'num', num: b}];
+                rBlocks = [{type: 'num', num: xValue + b}];
+            } else if (level === 2) {
+                let a = Math.floor(Math.random() * 3) + 2;
+                lBlocks = [{type: 'x', num: a}];
+                rBlocks = [{type: 'num', num: a * xValue}];
+            } else if (level === 3) {
+                let a = Math.floor(Math.random() * 3) + 2;
+                let b = Math.floor(Math.random() * 9) + 1;
+                lBlocks = [{type: 'x', num: a}, {type: 'num', num: b}];
+                rBlocks = [{type: 'num', num: (a * xValue) + b}];
+            } else {
+                let c = Math.floor(Math.random() * 2) + 1;
+                let a = c + Math.floor(Math.random() * 2) + 1;
+                let d = Math.floor(Math.random() * 8) + 1;
+                let b = (c * xValue + d) - (a * xValue);
+                lBlocks = [{type: 'x', num: a}, {type: 'num', num: b}];
+                rBlocks = [{type: 'x', num: c}, {type: 'num', num: d}];
+            }
+
+            // FJERN BLOKKER MED VERDI 0
+            originalTask = {
+                left: lBlocks.filter(b => b.num !== 0).map(b => ({id: idCounter++, ...b})),
+                right: rBlocks.filter(b => b.num !== 0).map(b => ({id: idCounter++, ...b})),
+                x: xValue
+            };
+            
+            resetTask();
+        }
 
         window.resetTask = function() {
             if(!originalTask) return;
@@ -266,14 +248,11 @@ function initGame() {
                 gauge.innerHTML = '';
                 sides[side].forEach(item => {
                     const div = document.createElement('div');
-                    // Legger til 'highlight' klasse hvis id-en matcher
                     const isHighlighted = item.id === lastChangedId ? 'highlight' : '';
                     div.className = `item ${item.type === 'x' ? (item.num < 0 ? 'box-x-neg' : 'box-x') : (item.num < 0 ? 'val-neg' : 'val-pos')} ${isHighlighted}`;
-                    
                     div.draggable = true;
                     div.setAttribute('data-id', item.id);
                     div.innerText = (item.type === 'x') ? (item.num === 1 ? "X" : item.num === -1 ? "-X" : item.num + "X") : item.num;
-                    
                     div.addEventListener('dragstart', (e) => e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id })));
                     div.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
@@ -307,14 +286,13 @@ function initGame() {
             const item = sides[data.side].find(i => i.id === data.id);
             if(!item) return;
 
-            lastChangedId = item.id; // Merk denne som endret
-
+            lastChangedId = item.id;
             const targetEl = ev.target.closest('.item');
             if (targetEl && data.side === targetSide) {
                 const targetItem = sides[targetSide].find(i => i.id === parseInt(targetEl.getAttribute('data-id')));
                 if (targetItem && targetItem.type === item.type && targetItem.id !== item.id) {
                     targetItem.num += item.num;
-                    lastChangedId = targetItem.id; // Slått sammen -> uthev mottakeren
+                    lastChangedId = targetItem.id;
                     sides[data.side].splice(sides[data.side].indexOf(item), 1);
                     if (targetItem.num === 0) {
                         sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
@@ -331,7 +309,7 @@ function initGame() {
             const L = sides.left, R = sides.right;
             if (L.length === 1 && L[0].type === 'x' && L[0].num === 1 && R.length === 1 && R[0].type === 'num' && R[0].num === xValue) {
                 alert("Riktig!"); winStreak++;
-                if (window.syncFB) window.syncFB(winStreak * 100);
+                window.syncFB(winStreak * 100);
                 initGame();
             } else { alert("Ikke løst korrekt ennå!"); }
         };
@@ -339,7 +317,7 @@ function initGame() {
         window.operate = function(t) {
             const v = parseInt(document.getElementById('opVal').value);
             if (!v) return;
-            lastChangedId = null; // Operasjoner påvirker alle, fjerner individuell highlight
+            lastChangedId = null;
             ['left', 'right'].forEach(s => {
                 sides[s].forEach(i => { if (t === 'multiply') i.num *= v; else i.num = Math.round(i.num / v); });
                 sides[s] = sides[s].filter(i => i.num !== 0);
@@ -347,20 +325,12 @@ function initGame() {
             render();
         };
 
-        window.menuInvert = function() { 
-            if(activeMenuTarget) { 
-                activeMenuTarget.item.num *= -1; 
-                lastChangedId = activeMenuTarget.item.id; 
-                render(); 
-            } 
-        };
-        
+        window.menuInvert = function() { if(activeMenuTarget) { activeMenuTarget.item.num *= -1; lastChangedId = activeMenuTarget.item.id; render(); } };
         window.menuSplit = function() {
             if(!activeMenuTarget || Math.abs(activeMenuTarget.item.num) < 2) return;
             const i = activeMenuTarget.item, n1 = Math.floor(i.num/2), n2 = i.num - n1;
             const sideArr = sides[activeMenuTarget.side];
             sideArr.splice(sideArr.indexOf(i), 1);
-            // Legger til to nye med nye ID-er, uthever den ene
             const newId = idCounter++;
             sideArr.push({id: newId, type: i.type, num: n1}, {id: idCounter++, type: i.type, num: n2});
             lastChangedId = newId; 
