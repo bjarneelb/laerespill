@@ -2,10 +2,12 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Ligningsløpet - Full Versjon</title>
+    <title>Ligningsløpet - Spill mot andre</title>
     <style>
         :root {
             --car-interior: #1c1c1c;
+            --leather: #2c3e50;
+            --stitch: #e74c3c;
             --math-green: #4af626;
             --accent: #f1c40f;
         }
@@ -17,6 +19,7 @@
             overflow: hidden; height: 100vh;
         }
 
+        /* Bakspeilet */
         .rearview-mirror {
             position: absolute; top: 20px; width: 450px; height: 80px;
             background: #000; border: 6px solid #444; border-radius: 10px 10px 50px 50px;
@@ -25,13 +28,17 @@
             z-index: 10; border-bottom: 8px solid #222;
         }
 
+        #mirrorText { font-family: monospace; color: var(--math-green); font-size: 1.4rem; text-shadow: 0 0 5px var(--math-green); }
+
+        /* Startskjerm */
         #startScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 1000;
             display: flex; justify-content: center; align-items: center;
         }
-        .start-box { background: #fff; color: #333; padding: 40px; border-radius: 15px; text-align: center; }
+        .start-box { background: #fff; color: #333; padding: 40px; border-radius: 15px; text-align: center; border: 10px solid #444; width: 350px; }
 
+        /* Cockpit og Dashbord */
         .cockpit {
             position: absolute; bottom: 0; width: 100%; height: 75vh;
             background: var(--car-interior); border-top: 15px solid #111;
@@ -44,27 +51,31 @@
         .gauge-pod {
             width: 280px; height: 280px; background: #111; border: 10px solid #444; border-radius: 50%;
             display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 8px;
-            position: relative; transition: transform 0.6s; overflow: hidden;
+            position: relative; 
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* Myk balanse-bevegelse */
+            overflow: hidden;
         }
 
-        .center-console { width: 160px; display: flex; flex-direction: column; align-items: center; background: #222; padding: 15px; border-radius: 20px; }
+        .center-console { width: 160px; display: flex; flex-direction: column; align-items: center; background: #222; padding: 15px; border-radius: 20px; box-shadow: 0 8px 0 #111; }
 
-        .car-btn { width: 100%; margin: 3px 0; padding: 8px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        .car-btn { width: 100%; margin: 3px 0; padding: 10px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; color: white; text-transform: uppercase; font-size: 0.8rem; }
         .btn-check { background: #27ae60; }
         .btn-new { background: #2980b9; }
 
+        /* Blokker/Lignings-elementer */
         .item { 
-            min-width: 45px; height: 45px; border-radius: 6px; color: white; 
+            min-width: 50px; height: 50px; border-radius: 8px; color: white; 
             font-weight: bold; cursor: grab; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 3px 0 rgba(0,0,0,0.4);
+            box-shadow: 0 3px 0 rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.1s;
         }
         .box-x { background: #d35400; } .box-x-neg { background: #c0392b; }
         .val-pos { background: #2980b9; } .val-neg { background: #8e44ad; }
 
-        .context-menu { display: none; position: absolute; background: #333; border: 1px solid #555; color: white; border-radius: 5px; z-index: 2000; }
-        .context-menu button { display: block; width: 100%; border: none; background: none; color: white; padding: 8px 15px; cursor: pointer; text-align: left; }
-        
-        #mirrorText { font-family: monospace; color: var(--math-green); font-size: 1.4rem; }
+        /* Høyreklikkmeny */
+        .context-menu { display: none; position: absolute; background: #333; border: 2px solid #555; color: white; border-radius: 8px; z-index: 2000; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .context-menu button { display: block; width: 100%; border: none; background: none; color: white; padding: 10px 20px; cursor: pointer; text-align: left; font-weight: bold; }
+        .context-menu button:hover { background: #444; color: var(--accent); }
     </style>
 </head>
 <body>
@@ -74,28 +85,36 @@
     <div id="startScreen">
         <div class="start-box">
             <h1>Ligningsløpet</h1>
-            <p>Din bil: <strong id="carDisplay">...</strong></p>
-            <input type="text" id="roomInput" placeholder="ROMKODE"><br><br>
+            <p>Din bil: <strong id="carDisplay" style="color: #d35400;">...</strong></p>
+            <input type="text" id="roomInput" placeholder="ROMKODE" style="padding:10px; text-transform:uppercase; text-align:center; width: 80%;"><br><br>
             <button class="car-btn btn-check" onclick="startGame()">Start Løpet</button>
         </div>
     </div>
 
     <div id="customMenu" class="context-menu">
         <button onclick="menuInvert()">± Bytt fortegn</button>
-        <button onclick="menuSplit()">⚏ Splitt opp</button>
+        <button onclick="menuSplit()">⚏ Splitt blokk</button>
     </div>
 
     <div class="cockpit">
         <div class="main-dash">
+            <!-- Venstre Instrument (Vekt-skål) -->
             <div id="gaugeL" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'left')"></div>
+            
+            <!-- Midtkonsoll (Operasjoner) -->
             <div class="center-console">
-                <div style="color:var(--accent); font-size:1.5rem; margin-bottom:10px;" id="gearDisplay">1</div>
-                <input type="number" id="opVal" value="2" style="width:40px; text-align:center; margin-bottom:5px;">
+                <div style="color:var(--accent); font-size:1.5rem; font-family:monospace;" id="gearDisplay">1</div>
+                <div style="background:#111; padding:5px; border-radius:5px; margin-bottom:10px;">
+                    <input type="number" id="opVal" value="2" style="width:40px; text-align:center; background:none; color:white; border:none; font-size:1.2rem;">
+                </div>
                 <button class="car-btn btn-new" onclick="operate('multiply')">×</button>
                 <button class="car-btn btn-new" onclick="operate('divide')">÷</button>
+                <br>
                 <button class="car-btn btn-check" onclick="checkSolution()">Sjekk</button>
-                <button class="car-btn btn-new" onclick="initGame()">Ny oppgave</button>
+                <button class="car-btn btn-new" style="background:#555;" onclick="initGame()">Ny oppgave</button>
             </div>
+
+            <!-- Høyre Instrument (Vekt-skål) -->
             <div id="gaugeR" class="gauge-pod" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'right')"></div>
         </div>
     </div>
@@ -110,30 +129,42 @@
 
         window.startGame = function() {
             const room = document.getElementById("roomInput").value.trim().toUpperCase();
-            if(!room) return;
+            if(!room) { alert("Skriv inn romkode!"); return; }
             window.roomCode = room;
             document.getElementById("startScreen").style.display = "none";
-            set(ref(database, 'rooms/'+room+'/players/'+window.playerName), { score: 0, lastUpdated: Date.now() });
+            
+            set(ref(database, 'rooms/'+room+'/players/'+window.playerName), { 
+                score: 0, 
+                lastUpdated: Date.now() 
+            });
             initGame();
         };
 
         window.syncFB = (score) => {
-            if(window.roomCode) update(ref(database, 'rooms/'+window.roomCode+'/players/'+window.playerName), { score: score, lastUpdated: Date.now() });
+            if(window.roomCode) {
+                update(ref(database, 'rooms/'+window.roomCode+'/players/'+window.playerName), { 
+                    score: score, 
+                    lastUpdated: Date.now() 
+                });
+            }
         };
     </script>
 
     <script>
-        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, currentLevel = 1, winStreak = 0, activeMenuTarget = null;
+        let sides = { left: [], right: [] }, xValue = 0, idCounter = 0, winStreak = 0, activeMenuTarget = null;
 
         function initGame() {
             sides = { left: [], right: [] };
-            xValue = Math.floor(Math.random() * 8) + 2;
-            let a = Math.floor(Math.random() * 5) + 1;
-            let b = Math.floor(Math.random() * 10) + 1;
+            xValue = Math.floor(Math.random() * 7) + 2; 
+            let b = Math.floor(Math.random() * 9) + 1;
             
-            // Nivå 1: x + b = c
-            sides.left = [{id:idCounter++, type:'x', num:1}, {id:idCounter++, type:'num', num:b}];
-            sides.right = [{id:idCounter++, type:'num', num:xValue + b}];
+            sides.left = [
+                {id: idCounter++, type: 'x', num: 1},
+                {id: idCounter++, type: 'num', num: b}
+            ];
+            sides.right = [
+                {id: idCounter++, type: 'num', num: xValue + b}
+            ];
             render();
         }
 
@@ -145,87 +176,114 @@
                     const div = document.createElement('div');
                     div.className = `item ${item.type === 'x' ? (item.num < 0 ? 'box-x-neg' : 'box-x') : (item.num < 0 ? 'val-neg' : 'val-pos')}`;
                     div.draggable = true;
-                    div.innerText = (item.num === 1 && item.type === 'x') ? 'X' : (item.num === -1 && item.type === 'x') ? '-X' : item.num + (item.type === 'x' ? 'X' : '');
+                    div.setAttribute('data-id', item.id);
+                    
+                    let label = (item.type === 'x') ? 
+                        (item.num === 1 ? "X" : item.num === -1 ? "-X" : item.num + "X") : 
+                        item.num;
+                    div.innerText = label;
                     
                     div.addEventListener('dragstart', (e) => e.dataTransfer.setData("text", JSON.stringify({ side, id: item.id })));
                     div.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         activeMenuTarget = { side, item };
                         const menu = document.getElementById('customMenu');
-                        menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+                        menu.style.display = 'block'; 
+                        menu.style.left = e.pageX + 'px'; 
+                        menu.style.top = e.pageY + 'px';
                     });
                     gauge.appendChild(div);
                 });
             });
 
-            // Oppdater bakspeilet
-            document.getElementById('mirrorText').innerText = formatSide(sides.left) + " = " + formatSide(sides.right);
+            // Balanse-logikk (Instrumentene beveger seg)
+            const getWeight = (side) => {
+                return sides[side].reduce((total, item) => total + (item.type === 'x' ? item.num * xValue : item.num), 0);
+            };
+
+            const weightL = getWeight('left');
+            const weightR = getWeight('right');
+            const diff = weightL - weightR;
+            const moveY = Math.min(Math.max(diff * 5, -50), 50);
+
+            document.getElementById('gaugeL').style.transform = `translateY(${-moveY}px)`;
+            document.getElementById('gaugeR').style.transform = `translateY(${moveY}px)`;
+
+            // Oppdater Bakspeil
+            document.getElementById('mirrorText').innerText = formatEquationSide(sides.left) + " = " + formatEquationSide(sides.right);
         }
 
-        function formatSide(items) {
+        function formatEquationSide(items) {
             if (items.length === 0) return "0";
             return items.map((i, idx) => {
-                let term = (i.num === 1 && i.type === 'x') ? 'x' : (i.num === -1 && i.type === 'x') ? '-x' : i.num + (i.type === 'x' ? 'x' : '');
-                return (idx > 0 && i.num >= 0) ? "+ " + term : term;
+                let term = (i.type === 'x') ? (i.num === 1 ? "x" : i.num === -1 ? "-x" : i.num + "x") : i.num;
+                if (idx > 0 && i.num >= 0) return "+ " + term;
+                return term;
             }).join(" ");
         }
 
         window.handleDrop = function(ev, targetSide) {
             ev.preventDefault();
             const data = JSON.parse(ev.dataTransfer.getData("text"));
-            const sourceIdx = sides[data.side].findIndex(i => i.id === data.id);
-            const item = sides[data.side][sourceIdx];
+            const sourceSide = data.side;
+            const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
+            const item = sides[sourceSide][sourceIdx];
 
-            // Sjekk om vi slipper på en annen blokk for å slå sammen
             const targetEl = ev.target.closest('.item');
-            if (targetEl && data.side === targetSide) {
-                const targetId = parseInt(targetEl.getAttribute('data-id')); // Denne krever at vi setter data-id i render
-                // For enkelthets skyld i denne koden, sjekker vi type-matching:
-                const targetItem = sides[targetSide].find(i => i.type === item.type && i.id !== item.id);
-                if (targetItem) {
+            if (targetEl && sourceSide === targetSide) {
+                const targetId = parseInt(targetEl.getAttribute('data-id'));
+                const targetItem = sides[targetSide].find(i => i.id === targetId);
+                
+                if (targetItem && targetItem.type === item.type && targetItem.id !== item.id) {
                     targetItem.num += item.num;
-                    sides[data.side].splice(sourceIdx, 1);
+                    sides[sourceSide].splice(sourceIdx, 1);
                     if (targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
                     render(); return;
                 }
             }
             
-            // Vanlig flytting mellom sider
-            sides[targetSide].push(sides[data.side].splice(sourceIdx, 1)[0]);
+            sides[targetSide].push(sides[sourceSide].splice(sourceIdx, 1)[0]);
             render();
         };
 
         window.checkSolution = function() {
             const L = sides.left, R = sides.right;
             if (L.length === 1 && L[0].type === 'x' && L[0].num === 1 && R.length === 1 && R[0].type === 'num' && R[0].num === xValue) {
-                alert("Riktig!"); winStreak++;
+                alert("Målpassering! Riktig svar.");
+                winStreak++;
                 if (window.syncFB) window.syncFB(winStreak * 100);
                 initGame();
-            } else { alert("Ikke helt i mål! Isoler 1X på venstre side."); }
+            } else {
+                alert("Ligningen er ikke i balanse eller x er ikke isolert!");
+            }
         };
 
         window.operate = function(type) {
             const val = parseInt(document.getElementById('opVal').value);
+            if (!val) return;
             ['left', 'right'].forEach(s => {
                 sides[s].forEach(i => {
                     if (type === 'multiply') i.num *= val;
-                    else i.num /= val;
+                    else i.num = Math.round(i.num / val);
                 });
+                sides[s] = sides[s].filter(i => i.num !== 0);
             });
             render();
         };
 
         window.menuInvert = function() { if(activeMenuTarget) { activeMenuTarget.item.num *= -1; render(); } };
+        
         window.menuSplit = function() {
             if(!activeMenuTarget || Math.abs(activeMenuTarget.item.num) < 2) return;
-            let i = activeMenuTarget.item;
-            let n1 = Math.floor(i.num / 2), n2 = i.num - n1;
-            sides[activeMenuTarget.side].splice(sides[activeMenuTarget.side].indexOf(i), 1);
-            sides[activeMenuTarget.side].push({id:idCounter++, type:i.type, num:n1}, {id:idCounter++, type:i.type, num:n2});
+            const item = activeMenuTarget.item;
+            const n1 = Math.floor(item.num / 2), n2 = item.num - n1;
+            const sideArr = sides[activeMenuTarget.side];
+            sideArr.splice(sideArr.indexOf(item), 1);
+            sideArr.push({id: idCounter++, type: item.type, num: n1}, {id: idCounter++, type: item.type, num: n2});
             render();
         };
 
-        document.addEventListener('click', () => document.getElementById('customMenu').style.display = 'none');
+        document.addEventListener('click', () => { document.getElementById('customMenu').style.display = 'none'; });
         window.onload = initGame;
     </script>
 </body>
