@@ -1,23 +1,41 @@
 // netlify/functions/ai-proxy.js
 // Sikker proxy mellom spillet og Anthropic API.
-// API-nøkkelen er aldri synlig for elevene.
+// Maks 60 kall per minutt totalt (nok for en hel klasse).
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
+};
+
+// Enkel in-memory rate limiter
+let callTimestamps = [];
+const MAX_CALLS_PER_MINUTE = 60;
+
+function isRateLimited() {
+  const now = Date.now();
+  const oneMinuteAgo = now - 60 * 1000;
+  callTimestamps = callTimestamps.filter(t => t > oneMinuteAgo);
+  if (callTimestamps.length >= MAX_CALLS_PER_MINUTE) return true;
+  callTimestamps.push(now);
+  return false;
+}
 
 export async function handler(event) {
-  // Kun POST-forespørsler
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers: CORS_HEADERS, body: "" };
   }
 
-  // CORS-headers – tillat kall fra ditt eget domene
-  const headers = {
-    "Access-Control-Allow-Origin": "*",   // bytt til ditt domene i produksjon, f.eks. "https://mittspill.netlify.app"
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Content-Type": "application/json",
-  };
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, headers: CORS_HEADERS, body: "Method Not Allowed" };
+  }
 
-  // Håndter preflight-forespørsel fra nettleser
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers, body: "" };
+  if (isRateLimited()) {
+    return {
+      statusCode: 429,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ error: "For mange forespørsler – vent litt og prøv igjen!" }),
+    };
   }
 
   try {
@@ -28,7 +46,7 @@ export async function handler(event) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,   // satt i Netlify-dashbordet
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
@@ -40,16 +58,16 @@ export async function handler(event) {
 
     if (!response.ok) {
       const err = await response.text();
-      return { statusCode: response.status, headers, body: err };
+      return { statusCode: response.status, headers: CORS_HEADERS, body: err };
     }
 
     const data = await response.json();
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
+    return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify(data) };
 
   } catch (err) {
     return {
       statusCode: 500,
-      headers,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ error: err.message }),
     };
   }
