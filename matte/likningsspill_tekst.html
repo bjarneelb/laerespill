@@ -258,17 +258,18 @@
   </div>
 
   <div class="block-bank" id="bankPanel">
-    <div class="block-bank-label">📦 Blokker – dra dem inn på sidene</div>
+    <div class="block-bank-label" id="bankLabel">📦 Blokker – dra dem inn på sidene</div>
     <div class="bank-blocks" id="bankBlocks"></div>
   </div>
 
-  <!-- BLOCK BUILDER – vises fra nivå 5 -->
+  <!-- BLOCK BUILDER – vises automatisk på MAX_LEVEL, eller ved toggle -->
   <div class="block-builder" id="blockBuilder" style="display:none">
     <span class="builder-label">🔧 Bygg blokk</span>
     <input class="builder-input" id="builderVal" type="number" placeholder="±tall" step="1">
     <button class="builder-btn add-num" onclick="buildBlock('num')">+ Tall</button>
     <button class="builder-btn add-x"   onclick="buildBlock('x')">+ x-blokk</button>
-    <span class="builder-hint">Skriv inn et tall og legg det til som blokk på banken</span>
+    <span class="builder-hint" style="flex:1">Skriv inn et tall (positivt eller negativt) og legg det til som blokk</span>
+    <span style="font-size:0.78rem;font-weight:800;color:#059669;background:#d1fae5;padding:3px 10px;border-radius:20px">🔧 ×1.5 poeng</span>
   </div>
 
   <div class="bottom-row">
@@ -278,6 +279,7 @@
         <input class="ops-num-input" id="opVal" type="number" value="2" min="1" max="100">
         <button class="op-btn times"  onclick="operate('multiply')">× Ganger</button>
         <button class="op-btn divide" onclick="operate('divide')">÷ Del</button>
+        <button id="builderToggle" onclick="toggleBuilder()" style="margin-left:auto;padding:8px 14px;border-radius:8px;border:none;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.8rem;cursor:pointer;background:#e5e7eb;color:var(--muted);transition:background 0.2s,color 0.2s">🔧 Bygg selv: AV</button>
       </div>
       <div class="actions-row">
         <button class="action-btn btn-check" onclick="checkSolution()">✅ Sjekk svar</button>
@@ -330,7 +332,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '1.4';
+const VERSION = '1.5';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // Player name
@@ -343,9 +345,10 @@ document.getElementById('displayName').textContent = '🚗 '+window.playerName;
 const MAX_LEVEL = 7;
 const LEVEL_ICONS = ['','⭐','⭐⭐','⭐⭐⭐','🔶','🔥','💥','🧮'];
 const LEVEL_NAMES = ['','Enkel addisjon','Multiplikasjon','Blanding','Begge sider','Avansert','Ekspert','Brøk underveis'];
-const UP_THRESHOLD   = 65; // gjennomsnitt over siste 3 → nivå opp
-const DOWN_THRESHOLD = 25; // gjennomsnitt under siste 3 → nivå ned
-const WINDOW_SIZE = 3;     // antall oppgaver som vurderes
+const UP_THRESHOLD   = 65;
+const DOWN_THRESHOLD = 25;
+const WINDOW_SIZE = 3;
+const BUILDER_BONUS_MULTIPLIER = 1.2; // 20% ekstra poeng når blokkbygger er aktiv
 
 // ── STATE ──
 let sides = {left:[],right:[],bank:[]};
@@ -354,6 +357,8 @@ let activeMenuTarget = null, lastChangedId = null, originalTask = null;
 let timerInterval = null, timerSeconds = 0, maxSeconds = 90;
 let currentScore = 0, totalCorrect = 0;
 let recentScores = [];
+let builderActive = false;        // blokkbygger på/av
+let builderBlocks = [];           // blokker eleven har bygget selv (bevares ved nullstill)
 
 const icons = ['🐱','🐶','🦊','🐻','🐼','🦁','🐸','🐧','🦋','⚽','🎮','🍕','🚂','✈️','🌈','🎯'];
 
@@ -362,8 +367,37 @@ function updateLevelUI() {
   const txt = LEVEL_ICONS[currentLevel]+' Nivå '+currentLevel;
   document.getElementById('headerLevel').textContent = txt;
   document.getElementById('levelBadge').textContent  = 'Nivå '+currentLevel+' – '+LEVEL_NAMES[currentLevel];
-  document.getElementById('blockBuilder').style.display = currentLevel >= 5 ? 'flex' : 'none';
+  // Slå på blokkbygger automatisk når MAX_LEVEL nås
+  if (currentLevel >= MAX_LEVEL && !builderActive) setBuilderActive(true);
+  updateBuilderUI();
 }
+
+function setBuilderActive(on) {
+  builderActive = on;
+  updateBuilderUI();
+}
+
+function updateBuilderUI() {
+  const panel  = document.getElementById('blockBuilder');
+  const toggle = document.getElementById('builderToggle');
+  panel.style.display = builderActive ? 'flex' : 'none';
+  if (toggle) {
+    toggle.textContent  = builderActive ? '🔧 Bygg selv: PÅ' : '🔧 Bygg selv: AV';
+    toggle.style.background = builderActive ? 'var(--accent)' : '#e5e7eb';
+    toggle.style.color      = builderActive ? 'white' : 'var(--muted)';
+  }
+  // Oppdater bankens label
+  const bankLabel = document.getElementById('bankLabel');
+  if (bankLabel) bankLabel.textContent = builderActive
+    ? '🔧 Bygg blokkene dine nedenfor og dra dem inn'
+    : '📦 Blokker – dra dem inn på sidene';
+}
+
+window.toggleBuilder = function() {
+  setBuilderActive(!builderActive);
+  // Ikke nullstill oppgaven – bare vis/skjul byggepanelet
+  renderAll();
+};
 
 function updateProgressBar() {
   const avg = recentScores.length ? recentScores.reduce((a,b)=>a+b,0)/recentScores.length : 50;
@@ -558,8 +592,17 @@ function applyTask(task) {
 
 window.resetTask = function() {
   if (!originalTask) return;
-  sides.bank = JSON.parse(JSON.stringify(originalTask.bank));
-  sides.left = []; sides.right = [];
+  // Flytt alle blokker fra venstre/høyre tilbake til banken
+  // I builder-modus: behold egenbygde blokker i banken, legg originalblokker tilbake
+  if (builderActive) {
+    // Alle blokker (original + egenbygde) samles i banken
+    const fromSides = [...sides.left, ...sides.right];
+    sides.bank = [...sides.bank, ...fromSides];
+    sides.left = []; sides.right = [];
+  } else {
+    sides.bank = JSON.parse(JSON.stringify(originalTask.bank));
+    sides.left = []; sides.right = [];
+  }
   xValue = originalTask.x; lastChangedId = null;
   renderAll();
 };
@@ -568,8 +611,10 @@ window.resetTask = function() {
 window.buildBlock = function(type) {
   const val = parseInt(document.getElementById('builderVal').value);
   if (!val || val===0 || isNaN(val)) { showToast('Skriv inn et tall som ikke er 0!','error'); return; }
-  const nb = {id:idCounter++,type,num:val};
-  sides.bank.push(nb); lastChangedId = nb.id;
+  const nb = {id:idCounter++, type, num:val, userBuilt:true};
+  sides.bank.push(nb);
+  builderBlocks.push(nb.id); // hold styr på egenbygde blokker
+  lastChangedId = nb.id;
   document.getElementById('builderVal').value = '';
   renderAll();
 };
@@ -655,18 +700,34 @@ window.operate = function(t) {
 
 // ── CHECK SOLUTION ──
 window.checkSolution = function() {
-  const L=sides.left,R=sides.right;
-  const ok=L.length===1&&L[0].type==='x'&&L[0].num===1&&R.length===1&&R[0].type==='num'&&R[0].num===xValue&&sides.bank.length===0;
+  const L=sides.left, R=sides.right;
+
+  // Godkjenn begge retninger: x=tall eller tall=x
+  // Venstre: én x-blokk (num=1), Høyre: ett tall (num=xValue)
+  const xLeft  = L.length===1 && L[0].type==='x'   && L[0].num===1
+              && R.length===1 && R[0].type==='num'  && R[0].num===xValue;
+  // Høyre: ett tall (num=xValue), Venstre: én x-blokk (num=1)
+  const xRight = R.length===1 && R[0].type==='x'   && R[0].num===1
+              && L.length===1 && L[0].type==='num'  && L[0].num===xValue;
+
+  const ok = xLeft || xRight;
+
   if(ok){
     clearTimer();
     totalCorrect++;
-    const bonus=Math.max(10,Math.round((timerSeconds/maxSeconds)*100));
-    currentScore+=bonus;
-    document.getElementById('streakCount').textContent=totalCorrect;
+    let bonus = Math.max(10, Math.round((timerSeconds/maxSeconds)*100));
+    if (builderActive) bonus = Math.round(bonus * BUILDER_BONUS_MULTIPLIER);
+    currentScore += bonus;
+    document.getElementById('streakCount').textContent = totalCorrect;
     if(typeof syncScore==='function') syncScore(currentScore);
     adjustLevel(bonus);
-    showToast('🎉 Riktig! +'+bonus+' poeng!','success');
-    setTimeout(()=>initGame(),1800);
+    const msg = builderActive
+      ? '🎉 Riktig! +'+bonus+' poeng (🔧 ×1.5 bonus!)'
+      : '🎉 Riktig! +'+bonus+' poeng!';
+    showToast(msg,'success');
+    // Nullstill egenbygde blokker til neste oppgave
+    builderBlocks = [];
+    setTimeout(()=>initGame(),1900);
   } else {
     adjustLevel(0);
     showToast('❌ Ikke løst ennå – prøv igjen!','error');
