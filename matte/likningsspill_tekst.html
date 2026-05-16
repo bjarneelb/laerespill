@@ -68,6 +68,12 @@
     font-weight: 800;
     font-size: 0.9rem;
   }
+  .version-tag {
+    font-size: 0.7rem;
+    opacity: 0.55;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
 
   /* ── START SCREEN ── */
   #startScreen {
@@ -81,15 +87,19 @@
   .start-card {
     background: white;
     border-radius: 28px;
-    padding: 48px 40px;
-    width: 380px;
+    padding: 40px;
+    width: 400px;
     text-align: center;
     box-shadow: 0 24px 64px rgba(0,0,0,0.3);
   }
-  .start-car { font-size: 4rem; margin-bottom: 8px; }
-  .start-card h1 { font-size: 2rem; font-weight: 900; color: var(--accent); margin-bottom: 6px; }
-  .start-card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
-  .start-name { font-weight: 800; font-size: 1.1rem; color: var(--accent2); background: #fdf2f8; border-radius: 10px; padding: 8px 16px; display: inline-block; margin-bottom: 20px; }
+  .start-car { font-size: 3.5rem; margin-bottom: 6px; }
+  .start-card h1 { font-size: 1.9rem; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
+  .start-card > p { color: var(--muted); font-size: 0.95rem; margin-bottom: 16px; }
+  .start-name {
+    font-weight: 800; font-size: 1rem; color: var(--accent2);
+    background: #fdf2f8; border-radius: 10px; padding: 7px 14px;
+    display: inline-block; margin-bottom: 16px;
+  }
   .start-input {
     width: 100%;
     padding: 12px 16px;
@@ -105,6 +115,49 @@
     outline: none;
   }
   .start-input:focus { border-color: var(--accent); }
+
+  /* ── LEVEL SELECTOR ── */
+  .level-selector-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-align: left;
+    margin-bottom: 8px;
+  }
+  .level-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .level-selector label { flex: 1; cursor: pointer; }
+  .level-selector input[type="radio"] { display: none; }
+  .level-radio-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: #f9fafb;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--muted);
+    transition: all 0.15s;
+    line-height: 1.3;
+    gap: 2px;
+  }
+  .level-radio-btn .lvl-icon { font-size: 1.1rem; }
+  .level-selector input[type="radio"]:checked + .level-radio-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 4px 12px rgba(91,79,207,0.35);
+    transform: translateY(-2px);
+  }
+
   .btn-start {
     width: 100%;
     padding: 14px;
@@ -120,6 +173,12 @@
   }
   .btn-start:hover { background: #4338ca; transform: translateY(-1px); }
   .btn-start:active { transform: translateY(0); }
+  .start-version {
+    margin-top: 12px;
+    font-size: 0.72rem;
+    color: #9ca3af;
+    font-weight: 600;
+  }
 
   /* ── MAIN LAYOUT ── */
   .main {
@@ -465,8 +524,35 @@
     <h1>Likningsbyggeren</h1>
     <p>Løs tekstoppgaver – bygg likninger – vinn løpet!</p>
     <div class="start-name" id="displayName">...</div>
+
     <input class="start-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
+
+    <div class="level-selector-label">Velg startnivå</div>
+    <div class="level-selector">
+      <label>
+        <input type="radio" name="startLevel" value="0" checked>
+        <div class="level-radio-btn"><span class="lvl-icon">🎲</span>Auto</div>
+      </label>
+      <label>
+        <input type="radio" name="startLevel" value="1">
+        <div class="level-radio-btn"><span class="lvl-icon">⭐</span>Nivå 1</div>
+      </label>
+      <label>
+        <input type="radio" name="startLevel" value="2">
+        <div class="level-radio-btn"><span class="lvl-icon">⭐⭐</span>Nivå 2</div>
+      </label>
+      <label>
+        <input type="radio" name="startLevel" value="3">
+        <div class="level-radio-btn"><span class="lvl-icon">⭐⭐⭐</span>Nivå 3</div>
+      </label>
+      <label>
+        <input type="radio" name="startLevel" value="4">
+        <div class="level-radio-btn"><span class="lvl-icon">🔥</span>Nivå 4</div>
+      </label>
+    </div>
+
     <button class="btn-start" onclick="startGame()">Start motoren! 🚦</button>
+    <div class="start-version">v<span class="version-num"></span></div>
   </div>
 </div>
 
@@ -474,6 +560,7 @@
 <div class="header">
   <div class="header-title">🏎️ Likningsbyggeren</div>
   <div class="header-right">
+    <span class="version-tag">v<span class="version-num"></span></span>
     <span class="player-badge" id="headerName">–</span>
     <span class="streak-badge">🔥 <span id="streakCount">0</span></span>
   </div>
@@ -502,19 +589,19 @@
 
   <!-- SCALES -->
   <div class="scales-area">
-    <div class="scale-panel" id="scaleL" ondragover="ev.preventDefault()" ondrop="handleDrop(event,'left')">
+    <div class="scale-panel" id="scaleL">
       <div class="scale-label">Venstre side</div>
       <div class="blocks-container" id="blocksL"></div>
     </div>
     <div class="scale-eq-sign">=</div>
-    <div class="scale-panel" id="scaleR" ondragover="ev.preventDefault()" ondrop="handleDrop(event,'right')">
+    <div class="scale-panel" id="scaleR">
       <div class="scale-label">Høyre side</div>
       <div class="blocks-container" id="blocksR"></div>
     </div>
   </div>
 
   <!-- BLOCK BANK -->
-  <div class="block-bank" id="bankPanel" ondragover="event.preventDefault()" ondrop="handleDrop(event,'bank')">
+  <div class="block-bank" id="bankPanel">
     <div class="block-bank-label">📦 Blokker – dra dem inn på sidene</div>
     <div class="bank-blocks" id="bankBlocks"></div>
   </div>
@@ -605,6 +692,11 @@
 
 <!-- MAIN GAME SCRIPT -->
 <script>
+// ─── VERSION ───
+// Øk dette tallet ved hver oppdatering av spillkoden
+const VERSION = '1.3';
+document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
+
 // ─── PLAYER NAME ───
 const adj = ['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flinke'];
 const ani = ['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger'];
@@ -618,6 +710,7 @@ let activeMenuTarget = null, lastChangedId = null;
 let originalTask = null;
 let timerInterval = null, timerSeconds = 0, maxSeconds = 90;
 let currentScore = 0;
+let forcedLevel = 0; // 0 = auto
 
 const icons = ['🐱','🐶','🦊','🐻','🐼','🦁','🐸','🐧','🦋','⚽','🎮','🍕','🚂','✈️','🌈','🎯'];
 
@@ -631,7 +724,11 @@ async function initGame() {
   document.getElementById('storyText').innerHTML = '<span class="loading-text">Henter oppgave fra KI... 🤖</span>';
   document.getElementById('storyHint').textContent = '';
 
-  const level = winStreak >= 9 ? 4 : winStreak >= 6 ? 3 : winStreak >= 3 ? 2 : 1;
+  // Bruk valgt nivå hvis satt, ellers auto basert på streak
+  const level = forcedLevel > 0
+    ? forcedLevel
+    : (winStreak >= 9 ? 4 : winStreak >= 6 ? 3 : winStreak >= 3 ? 2 : 1);
+
   document.getElementById('levelBadge').textContent = 'Nivå ' + level;
   document.getElementById('storyIcon').textContent = icons[Math.floor(Math.random()*icons.length)];
 
@@ -717,8 +814,8 @@ function generateFallback(level) {
     2: () => {
       const a = Math.floor(Math.random()*3)+2;
       return {
-        story: `${a} like bøker koster til sammen ${a*xValue} kr. Hva koster én bok?`,
-        hint: 'La x = prisen på én bok',
+        story: `${a} like esker veier til sammen ${a*xValue} kg. Hva veier én eske?`,
+        hint: 'La x = vekten til én eske',
         equation: {
           left: [{type:'x',num:a}],
           right: [{type:'num',num:a*xValue}],
@@ -730,8 +827,8 @@ function generateFallback(level) {
       const a = Math.floor(Math.random()*3)+2;
       const b = Math.floor(Math.random()*8)+2;
       return {
-        story: `${a} barn og ${b} voksne er ${a*xValue+b} personer til sammen. Hvor mange er barn?`,
-        hint: 'La x = antall barn',
+        story: `En voksenbillett koster ${a} ganger så mye som en barnebillett pluss ${b} kr. Voksenbilletten koster ${a*xValue+b} kr. Hva koster barnebilletten?`,
+        hint: 'La x = prisen på barnebillett',
         equation: {
           left: [{type:'x',num:a},{type:'num',num:b}],
           right: [{type:'num',num:a*xValue+b}],
@@ -745,7 +842,7 @@ function generateFallback(level) {
       const d = Math.floor(Math.random()*8)+2;
       const b = (c*xValue+d)-(a*xValue);
       return {
-        story: `Per sparer ${a}x + ${b} kr, Lise sparer ${c}x + ${d} kr. Etter x uker har de like mye. Finn x.`,
+        story: `Per sparer ${a} kr i uka og har ${b} kr fra før. Lise sparer ${c} kr i uka og har ${d} kr fra før. Etter hvor mange uker har de like mye?`,
         hint: 'La x = antall uker',
         equation: {
           left: [{type:'x',num:a},{type:'num',num:b}],
@@ -764,7 +861,6 @@ function applyTask(task) {
   document.getElementById('storyText').textContent = task.story;
   document.getElementById('storyHint').textContent = '💡 ' + task.hint;
 
-  // All blocks go to the bank initially
   const allBlocks = [
     ...task.equation.left.filter(b => b.num !== 0),
     ...task.equation.right.filter(b => b.num !== 0)
@@ -878,7 +974,6 @@ window.handleDrop = function(ev, targetSide) {
   if (itemIdx === -1) return;
   const item = srcArr[itemIdx];
 
-  // Try to merge with same-type block on same side (not bank)
   if (targetSide !== 'bank' && data.side === targetSide) {
     const targetEl = ev.target.closest('.block');
     if (targetEl) {
@@ -898,7 +993,6 @@ window.handleDrop = function(ev, targetSide) {
     }
   }
 
-  // Move block
   lastChangedId = item.id;
   sides[targetSide].push(srcArr.splice(itemIdx, 1)[0]);
   renderAll();
@@ -992,9 +1086,16 @@ function showToast(msg, type) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-// ─── STARTUP (no Firebase – demo mode) ───
+// ─── STARTUP ───
 window.addEventListener('load', () => {
-  // Show game immediately if no Firebase setup
+  // Les valgt nivå fra startsiden
+  document.querySelectorAll('input[name="startLevel"]').forEach(r => {
+    r.addEventListener('change', () => {
+      forcedLevel = parseInt(r.value);
+    });
+  });
+
+  // Fallback startGame hvis Firebase ikke er tilgjengelig
   if (!window._fbReady) {
     window.startGame = function() {
       const room = document.getElementById('roomInput').value.trim().toUpperCase();
