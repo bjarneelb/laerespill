@@ -611,10 +611,6 @@ const ani = ['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger'];
 window.playerName = adj[Math.floor(Math.random()*adj.length)] + ' ' + ani[Math.floor(Math.random()*ani.length)];
 document.getElementById('displayName').textContent = '🚗 ' + window.playerName;
 
-// ─── ANTHROPIC API KEY ───
-// Set your API key here (or fetch from your own backend)
-const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY';
-
 // ─── STATE ───
 let sides = { left: [], right: [], bank: [] };
 let xValue = 0, idCounter = 0, winStreak = 0;
@@ -681,19 +677,10 @@ Regler for equation:
 - Nivå ${level} spesifikt: ${level===4 ? 'BRUK x-blokker på BEGGE sider' : 'Bruk KUN x-blokker på VENSTRE side'}
 - Tall-blokker med num=0 er IKKE tillatt`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/.netlify/functions/ai-proxy', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 600,
-      messages: [{ role: 'user', content: prompt }]
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
   });
 
   if (!res.ok) throw new Error('API feil: ' + res.status);
