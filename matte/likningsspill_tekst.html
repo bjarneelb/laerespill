@@ -17,7 +17,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
 
-  /* HEADER */
+  /* ── HEADER ── */
   .header { width: 100%; background: var(--accent); color: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(91,79,207,0.25); }
   .header-title { font-size: 1.4rem; font-weight: 900; }
   .header-right { display: flex; align-items: center; gap: 10px; }
@@ -25,8 +25,10 @@
   .streak-badge { background: var(--yellow); color: #713f12; border-radius: 20px; padding: 5px 14px; font-weight: 800; font-size: 0.9rem; }
   .version-tag { font-size: 0.7rem; opacity: 0.55; font-weight: 600; }
   .level-indicator { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 14px; font-weight: 800; font-size: 0.85rem; transition: background 0.4s; }
+  .speed-badge { background: rgba(0,245,212,0.2); border: 1px solid rgba(0,245,212,0.4); border-radius: 20px; padding: 4px 12px; font-weight: 800; font-size: 0.8rem; color: #a7f3d0; display: none; }
+  .mode-badge { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 4px 12px; font-weight: 700; font-size: 0.78rem; }
 
-  /* LEVEL CHANGE OVERLAY */
+  /* ── LEVEL CHANGE OVERLAY ── */
   #levelOverlay { position: fixed; inset: 0; z-index: 900; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
   #levelOverlay.show { opacity: 1; }
   .level-popup { background: white; border-radius: 24px; padding: 32px 48px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.25); transform: scale(0.8); transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); }
@@ -37,28 +39,92 @@
   .level-popup.up h2 { color: var(--green); }
   .level-popup.down h2 { color: var(--red); }
 
-  /* START SCREEN */
+  /* ── INCIDENT OVERLAY ── */
+  #incidentOverlay {
+    position: fixed; inset: 0; z-index: 800;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  #incidentOverlay.show { opacity: 1; pointer-events: all; }
+  .incident-card {
+    background: white; border-radius: 28px;
+    padding: 32px 40px; width: 480px; text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    transform: scale(0.85);
+    transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  #incidentOverlay.show .incident-card { transform: scale(1); }
+  .incident-anim { width: 180px; height: 140px; margin: 0 auto 16px; position: relative; }
+  .incident-title { font-size: 1.6rem; font-weight: 900; margin-bottom: 6px; }
+  .incident-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5; }
+  .incident-countdown { font-size: 2.5rem; font-weight: 900; color: var(--accent); margin-bottom: 8px; }
+  .incident-task-wrap { background: #f5f3ff; border-radius: 16px; padding: 16px; margin-top: 8px; }
+  .incident-task-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 8px; }
+  .incident-task-text { font-size: 1rem; font-weight: 700; line-height: 1.5; margin-bottom: 10px; }
+  .incident-eq { font-size: 1.2rem; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
+  .incident-input { width: 100%; padding: 10px 14px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 700; text-align: center; outline: none; }
+  .incident-input:focus { border-color: var(--accent); }
+  .incident-remaining { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+  .btn-incident-check { width: 100%; margin-top: 10px; padding: 11px; background: var(--green); color: white; border: none; border-radius: 10px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 1rem; cursor: pointer; }
+
+  /* SVG ANIMATIONS */
+  @keyframes carSpin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+  @keyframes carWobble { 0%,100%{transform:translateX(0) rotate(0deg)} 25%{transform:translateX(-8px) rotate(-8deg)} 75%{transform:translateX(8px) rotate(8deg)} }
+  @keyframes tireBounce { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(0.4) translateY(8px)} }
+  @keyframes crashShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-12px) rotate(-15deg)} 40%{transform:translateX(10px) rotate(10deg)} 60%{transform:translateX(-8px) rotate(-8deg)} 80%{transform:translateX(6px) rotate(5deg)} }
+  @keyframes starPop { 0%{opacity:1;transform:scale(0)} 50%{opacity:1;transform:scale(1.3)} 100%{opacity:0;transform:scale(1) translateY(-20px)} }
+  .anim-spin { animation: carSpin 0.7s linear infinite; transform-origin: center; }
+  .anim-wobble { animation: carWobble 0.5s ease-in-out infinite; }
+  .anim-crash { animation: crashShake 0.4s ease-in-out infinite; }
+  .anim-tire { animation: tireBounce 1s ease-in-out infinite; }
+  .anim-star { animation: starPop 0.8s ease-out forwards; }
+
+  /* ── START SCREEN ── */
   #startScreen { position: fixed; inset: 0; background: linear-gradient(135deg,#4338ca,#7c3aed 60%,#e84393); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-  .start-card { background: white; border-radius: 28px; padding: 36px 40px; width: 440px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
-  .start-car { font-size: 3rem; margin-bottom: 4px; }
-  .start-card h1 { font-size: 1.8rem; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
-  .start-card > p { color: var(--muted); font-size: 0.9rem; margin-bottom: 14px; }
-  .start-name { font-weight: 800; font-size: 1rem; color: var(--accent2); background: #fdf2f8; border-radius: 10px; padding: 7px 14px; display: inline-block; margin-bottom: 14px; }
-  .start-input { width: 100%; padding: 11px 16px; border: 2px solid var(--border); border-radius: 12px; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px; outline: none; }
+  .start-card { background: white; border-radius: 28px; padding: 32px 36px; width: 480px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+  .start-car { font-size: 2.8rem; margin-bottom: 4px; }
+  .start-card h1 { font-size: 1.7rem; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
+  .start-card > p { color: var(--muted); font-size: 0.88rem; margin-bottom: 14px; }
+  .start-name { font-weight: 800; font-size: 0.95rem; color: var(--accent2); background: #fdf2f8; border-radius: 10px; padding: 6px 14px; display: inline-block; margin-bottom: 14px; }
+
+  /* MODE SELECTOR */
+  .mode-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mode-btn { flex: 1; padding: 12px 8px; border-radius: 12px; border: 2px solid var(--border); background: #f9fafb; cursor: pointer; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.8rem; color: var(--muted); transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .mode-btn .mode-icon { font-size: 1.5rem; }
+  .mode-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 14px rgba(91,79,207,0.4); transform: translateY(-2px); }
+
+  /* MODE OPTIONS (room + timer) */
+  .mode-options { background: #f5f3ff; border-radius: 12px; padding: 14px; margin-bottom: 14px; display: none; flex-direction: column; gap: 10px; }
+  .mode-options.visible { display: flex; }
+  .opt-row { display: flex; align-items: center; gap: 10px; }
+  .opt-label { font-size: 0.78rem; font-weight: 800; color: var(--muted); white-space: nowrap; }
+  .start-input { flex: 1; padding: 9px 14px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 0.95rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 2px; outline: none; }
   .start-input:focus { border-color: var(--accent); }
+  .start-num { width: 70px; padding: 9px 10px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 0.95rem; font-weight: 700; text-align: center; outline: none; }
+  .start-num:focus { border-color: var(--accent); }
+
   .level-selector-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-align: left; margin-bottom: 6px; }
   .level-selector { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
-  .level-selector label { flex: 1; min-width: 42px; cursor: pointer; }
+  .level-selector label { flex: 1; min-width: 40px; cursor: pointer; }
   .level-selector input[type="radio"] { display: none; }
-  .level-radio-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 3px; border-radius: 10px; border: 2px solid var(--border); background: #f9fafb; font-size: 0.62rem; font-weight: 800; color: var(--muted); transition: all 0.15s; gap: 2px; }
-  .level-radio-btn .lvl-icon { font-size: 0.95rem; }
+  .level-radio-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px 2px; border-radius: 9px; border: 2px solid var(--border); background: #f9fafb; font-size: 0.6rem; font-weight: 800; color: var(--muted); transition: all 0.15s; gap: 1px; }
+  .level-radio-btn .lvl-icon { font-size: 0.9rem; }
   .level-selector input[type="radio"]:checked + .level-radio-btn { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 12px rgba(91,79,207,0.35); transform: translateY(-2px); }
   .btn-start { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Nunito',sans-serif; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: transform 0.1s, background 0.15s; }
   .btn-start:hover { background: #4338ca; transform: translateY(-1px); }
   .start-version { margin-top: 10px; font-size: 0.72rem; color: #9ca3af; font-weight: 600; }
 
-  /* MAIN */
+  /* ── MAIN ── */
   .main { width: 100%; max-width: 920px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* COUNTDOWN BANNER (tidsutfordring) */
+  #countdownBanner { display: none; background: var(--accent); color: white; border-radius: var(--r); padding: 10px 20px; display: none; align-items: center; justify-content: space-between; box-shadow: var(--shadow); }
+  #countdownBanner.visible { display: flex; }
+  .countdown-time { font-size: 1.6rem; font-weight: 900; font-family: monospace; }
+  .countdown-time.urgent { color: var(--yellow); animation: pulse 0.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
   /* STORY CARD */
   .story-card { background: white; border-radius: var(--r); padding: 18px 22px; border: 2px solid var(--border); box-shadow: var(--shadow); display: flex; gap: 14px; align-items: flex-start; }
@@ -66,8 +132,8 @@
   .story-text h2 { font-size: 1rem; font-weight: 800; color: var(--accent); margin-bottom: 5px; }
   .story-text p { font-size: 1.02rem; line-height: 1.6; }
   .story-hint { font-size: 0.83rem; color: var(--muted); margin-top: 6px; font-style: italic; }
-  .loading-text { color: var(--muted); font-style: italic; animation: pulse 1.2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .loading-text { color: var(--muted); font-style: italic; animation: loadpulse 1.2s infinite; }
+  @keyframes loadpulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .timer-bar-wrap { height: 5px; background: #e5e7eb; border-radius: 3px; overflow: hidden; margin-top: 8px; }
   .timer-bar { height: 100%; background: linear-gradient(90deg,var(--green),var(--yellow),var(--red)); border-radius: 3px; transition: width 0.5s linear; }
   .level-badge { display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg,var(--accent),var(--accent2)); color: white; border-radius: 20px; padding: 3px 12px; font-weight: 800; font-size: 0.82rem; }
@@ -167,6 +233,17 @@
     .scales-area { flex-direction: column; }
     .scale-eq-sign { padding: 8px 0; width: 100%; text-align: center; }
   }
+
+  /* TIME UP OVERLAY */
+  #timeUpOverlay { position: fixed; inset: 0; z-index: 950; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; flex-direction: column; }
+  #timeUpOverlay.show { display: flex; }
+  .timeup-card { background: white; border-radius: 28px; padding: 48px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.4); animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  .timeup-icon { font-size: 4rem; margin-bottom: 12px; }
+  .timeup-title { font-size: 2rem; font-weight: 900; color: var(--accent); margin-bottom: 8px; }
+  .timeup-score { font-size: 3rem; font-weight: 900; color: var(--green); margin-bottom: 6px; }
+  .timeup-sub { color: var(--muted); font-size: 1rem; margin-bottom: 24px; }
+  .btn-again { padding: 13px 32px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 1rem; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -182,6 +259,43 @@
   </div>
 </div>
 
+<!-- INCIDENT OVERLAY -->
+<div id="incidentOverlay">
+  <div class="incident-card">
+    <div class="incident-anim" id="incidentAnim"></div>
+    <div class="incident-title" id="incidentTitle">💥 Du krasjet!</div>
+    <div class="incident-sub" id="incidentSub">Løs oppgaven for å komme tilbake i løpet</div>
+
+    <!-- Nedtelling (kun for utforkjøring) -->
+    <div id="incidentCountdown" style="display:none">
+      <div class="incident-countdown" id="countdownNum">6</div>
+      <div style="color:var(--muted);font-size:0.9rem">sekunder til du kjører igjen</div>
+    </div>
+
+    <!-- Straffeoppgave -->
+    <div class="incident-task-wrap" id="incidentTaskWrap" style="display:none">
+      <div class="incident-task-title" id="incidentTaskTitle">Løs likningen for å kjøre videre</div>
+      <div class="incident-task-text" id="incidentTaskText"></div>
+      <div class="incident-eq" id="incidentEq"></div>
+      <input class="incident-input" id="incidentAnswer" type="number" placeholder="x = ?">
+      <div class="incident-remaining" id="incidentRemaining"></div>
+      <button class="btn-incident-check" onclick="checkIncidentAnswer()">✅ Svar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TIME UP OVERLAY -->
+<div id="timeUpOverlay">
+  <div class="timeup-card">
+    <div class="timeup-icon">⏱️</div>
+    <div class="timeup-title">Tiden er ute!</div>
+    <div class="timeup-score" id="timeupScore">0</div>
+    <div class="timeup-sub">poeng på <span id="timeupMinutes">3</span> minutter</div>
+    <button class="btn-again" onclick="location.reload()">🔄 Spill igjen</button>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
 <div class="ctx-menu" id="ctxMenu">
   <button onclick="ctxInvert()">± Bytt fortegn</button>
   <button onclick="ctxSplit()">⚏ Splitt blokk</button>
@@ -192,20 +306,57 @@
   <div class="start-card">
     <div class="start-car">🏎️</div>
     <h1>Likningsbyggeren</h1>
-    <p>Løs tekstoppgaver – bygg likninger – vinn løpet!</p>
+    <p>Velg spillmodus og start motoren!</p>
     <div class="start-name" id="displayName">...</div>
-    <input class="start-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
+
+    <!-- MODE SELECTOR -->
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="solo" onclick="selectMode('solo')">
+        <span class="mode-icon">🧑</span>Enkeltspiller
+      </button>
+      <button class="mode-btn" data-mode="race" onclick="selectMode('race')">
+        <span class="mode-icon">🏎️</span>Med bilbane
+      </button>
+      <button class="mode-btn" data-mode="timed" onclick="selectMode('timed')">
+        <span class="mode-icon">⏱️</span>Tidsutfordring
+      </button>
+    </div>
+
+    <!-- SOLO: ingen ekstra valg -->
+    <div class="mode-options" id="opts-solo"></div>
+
+    <!-- RACE: romkode -->
+    <div class="mode-options" id="opts-race">
+      <div class="opt-row">
+        <span class="opt-label">Romkode:</span>
+        <input class="start-input" id="roomInputRace" placeholder="ROMKODE" maxlength="8">
+      </div>
+    </div>
+
+    <!-- TIMED: romkode + tid -->
+    <div class="mode-options" id="opts-timed">
+      <div class="opt-row">
+        <span class="opt-label">Romkode:</span>
+        <input class="start-input" id="roomInputTimed" placeholder="ROMKODE" maxlength="8">
+      </div>
+      <div class="opt-row">
+        <span class="opt-label">Tid (min):</span>
+        <input class="start-num" id="timedMinutes" type="number" value="3" min="1" max="30">
+      </div>
+    </div>
+
     <div class="level-selector-label">Velg startnivå</div>
     <div class="level-selector">
       <label><input type="radio" name="startLevel" value="0" checked><div class="level-radio-btn"><span class="lvl-icon">🎲</span>Auto</div></label>
-      <label><input type="radio" name="startLevel" value="1"><div class="level-radio-btn"><span class="lvl-icon">1️⃣</span>Niv 1</div></label>
-      <label><input type="radio" name="startLevel" value="2"><div class="level-radio-btn"><span class="lvl-icon">2️⃣</span>Niv 2</div></label>
-      <label><input type="radio" name="startLevel" value="3"><div class="level-radio-btn"><span class="lvl-icon">3️⃣</span>Niv 3</div></label>
-      <label><input type="radio" name="startLevel" value="4"><div class="level-radio-btn"><span class="lvl-icon">4️⃣</span>Niv 4</div></label>
-      <label><input type="radio" name="startLevel" value="5"><div class="level-radio-btn"><span class="lvl-icon">5️⃣</span>Niv 5</div></label>
-      <label><input type="radio" name="startLevel" value="6"><div class="level-radio-btn"><span class="lvl-icon">6️⃣</span>Niv 6</div></label>
-      <label><input type="radio" name="startLevel" value="7"><div class="level-radio-btn"><span class="lvl-icon">🔥</span>Niv 7</div></label>
+      <label><input type="radio" name="startLevel" value="1"><div class="level-radio-btn"><span class="lvl-icon">1️⃣</span>N1</div></label>
+      <label><input type="radio" name="startLevel" value="2"><div class="level-radio-btn"><span class="lvl-icon">2️⃣</span>N2</div></label>
+      <label><input type="radio" name="startLevel" value="3"><div class="level-radio-btn"><span class="lvl-icon">3️⃣</span>N3</div></label>
+      <label><input type="radio" name="startLevel" value="4"><div class="level-radio-btn"><span class="lvl-icon">4️⃣</span>N4</div></label>
+      <label><input type="radio" name="startLevel" value="5"><div class="level-radio-btn"><span class="lvl-icon">5️⃣</span>N5</div></label>
+      <label><input type="radio" name="startLevel" value="6"><div class="level-radio-btn"><span class="lvl-icon">6️⃣</span>N6</div></label>
+      <label><input type="radio" name="startLevel" value="7"><div class="level-radio-btn"><span class="lvl-icon">🔥</span>N7</div></label>
     </div>
+
     <button class="btn-start" onclick="startGame()">Start motoren! 🚦</button>
     <div class="start-version">v<span class="version-num"></span></div>
   </div>
@@ -216,7 +367,9 @@
   <div class="header-title">🏎️ Likningsbyggeren</div>
   <div class="header-right">
     <span class="version-tag">v<span class="version-num"></span></span>
+    <span class="mode-badge" id="modeBadge">–</span>
     <div class="level-indicator" id="headerLevel">⭐ Nivå 1</div>
+    <div class="speed-badge" id="speedBadge">⚡ 0</div>
     <span class="player-badge" id="headerName">–</span>
     <span class="streak-badge">✅ <span id="streakCount">0</span></span>
   </div>
@@ -224,6 +377,13 @@
 
 <!-- MAIN -->
 <div class="main">
+
+  <!-- COUNTDOWN BANNER -->
+  <div id="countdownBanner">
+    <span style="font-weight:800">⏱️ Tid igjen:</span>
+    <span class="countdown-time" id="countdownTime">3:00</span>
+    <span style="font-weight:700;font-size:0.85rem">Flest poeng vinner!</span>
+  </div>
 
   <div class="story-card">
     <div class="story-icon" id="storyIcon">🤔</div>
@@ -262,7 +422,6 @@
     <div class="bank-blocks" id="bankBlocks"></div>
   </div>
 
-  <!-- BLOCK BUILDER – vises automatisk på MAX_LEVEL, eller ved toggle -->
   <div class="block-builder" id="blockBuilder" style="display:none">
     <span class="builder-label">🔧 Bygg blokk</span>
     <input class="builder-input" id="builderVal" type="number" placeholder="±tall" step="1">
@@ -288,8 +447,8 @@
       </div>
     </div>
     <div class="score-card">
-      <div class="score-title">🏆 Toppliste</div>
-      <div id="scoreList"><div style="color:var(--muted);font-size:0.85rem">Venter på spillere...</div></div>
+      <div class="score-title" id="scoreTitle">🏆 Poeng</div>
+      <div id="scoreList"><div style="color:var(--muted);font-size:0.85rem">–</div></div>
     </div>
   </div>
 
@@ -302,20 +461,21 @@
   window._db = database; window._ref = ref;
   window._set = set; window._update = update; window._onValue = onValue;
 
-  window._fbStartGame = function() {
-    const room = document.getElementById('roomInput').value.trim().toUpperCase();
-    if (!room) { alert('Skriv inn romkode!'); return; }
-    window.roomCode = room;
-    document.getElementById('startScreen').style.display = 'none';
-    document.getElementById('headerName').textContent = window.playerName;
+  window._fbInit = function(room) {
     _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
     _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateScoreboard(snap.val()); });
-    _startSession();
   };
 
-  window.syncScore = function(score) {
+  window.syncScore = function(score, extra) {
     if (!window.roomCode) return;
-    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),{score,lastUpdated:Date.now()});
+    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),
+      {score, lastUpdated:Date.now(), ...(extra||{})});
+  };
+
+  window.syncIncident = function(type) {
+    if (!window.roomCode) return;
+    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),
+      {incident: type, incidentAt: Date.now()});
   };
 
   function updateScoreboard(players) {
@@ -332,10 +492,10 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '1.5';
+const VERSION = '1.6';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
-// Player name
+// ── PLAYER NAME ──
 const adj = ['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flinke'];
 const ani = ['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger'];
 window.playerName = adj[Math.floor(Math.random()*adj.length)]+' '+ani[Math.floor(Math.random()*ani.length)];
@@ -347,8 +507,13 @@ const LEVEL_ICONS = ['','⭐','⭐⭐','⭐⭐⭐','🔶','🔥','💥','🧮'];
 const LEVEL_NAMES = ['','Enkel addisjon','Multiplikasjon','Blanding','Begge sider','Avansert','Ekspert','Brøk underveis'];
 const UP_THRESHOLD   = 65;
 const DOWN_THRESHOLD = 25;
-const WINDOW_SIZE = 3;
-const BUILDER_BONUS_MULTIPLIER = 1.2; // 20% ekstra poeng når blokkbygger er aktiv
+const WINDOW_SIZE    = 3;
+const BUILDER_BONUS_MULTIPLIER = 1.2;
+
+// Incident probability per correct answer (based on score rate 0–100)
+// These fire AFTER a correct answer in race mode
+const INCIDENT_BASE = 0.08;   // 8% base chance after each correct answer
+const INCIDENT_MAX  = 0.28;   // 28% at max speed
 
 // ── STATE ──
 let sides = {left:[],right:[],bank:[]};
@@ -357,54 +522,67 @@ let activeMenuTarget = null, lastChangedId = null, originalTask = null;
 let timerInterval = null, timerSeconds = 0, maxSeconds = 90;
 let currentScore = 0, totalCorrect = 0;
 let recentScores = [];
-let builderActive = false;        // blokkbygger på/av
-let builderBlocks = [];           // blokker eleven har bygget selv (bevares ved nullstill)
+let builderActive = false, builderBlocks = [];
+let gameMode = 'solo';       // 'solo' | 'race' | 'timed'
+let timedMinutes = 3;
+let timedSecondsLeft = 0;
+let timedInterval = null;
+let speedRate = 0;           // poengrate for fartvisning
+let lastScoreTime = Date.now();
+let lastScoreValue = 0;
+
+// Incident state
+let incidentActive = false;
+let incidentType   = null;   // 'slide' | 'flat' | 'crash'
+let incidentTasksLeft = 0;
+let incidentTask   = null;
+let incidentCountdownInterval = null;
 
 const icons = ['🐱','🐶','🦊','🐻','🐼','🦁','🐸','🐧','🦋','⚽','🎮','🍕','🚂','✈️','🌈','🎯'];
 
+// ── MODE SELECTION ──
+window.selectMode = function(mode) {
+  gameMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode===mode));
+  ['solo','race','timed'].forEach(m => {
+    const el = document.getElementById('opts-'+m);
+    if (el) el.classList.toggle('visible', m===mode && m!=='solo');
+  });
+};
+selectMode('solo');
+
 // ── LEVEL UI ──
 function updateLevelUI() {
-  const txt = LEVEL_ICONS[currentLevel]+' Nivå '+currentLevel;
-  document.getElementById('headerLevel').textContent = txt;
+  document.getElementById('headerLevel').textContent = LEVEL_ICONS[currentLevel]+' Nivå '+currentLevel;
   document.getElementById('levelBadge').textContent  = 'Nivå '+currentLevel+' – '+LEVEL_NAMES[currentLevel];
-  // Slå på blokkbygger automatisk når MAX_LEVEL nås
   if (currentLevel >= MAX_LEVEL && !builderActive) setBuilderActive(true);
   updateBuilderUI();
 }
 
-function setBuilderActive(on) {
-  builderActive = on;
-  updateBuilderUI();
-}
+function setBuilderActive(on) { builderActive = on; updateBuilderUI(); }
 
 function updateBuilderUI() {
   const panel  = document.getElementById('blockBuilder');
   const toggle = document.getElementById('builderToggle');
   panel.style.display = builderActive ? 'flex' : 'none';
   if (toggle) {
-    toggle.textContent  = builderActive ? '🔧 Bygg selv: PÅ' : '🔧 Bygg selv: AV';
-    toggle.style.background = builderActive ? 'var(--accent)' : '#e5e7eb';
-    toggle.style.color      = builderActive ? 'white' : 'var(--muted)';
+    toggle.textContent       = builderActive ? '🔧 Bygg selv: PÅ' : '🔧 Bygg selv: AV';
+    toggle.style.background  = builderActive ? 'var(--accent)' : '#e5e7eb';
+    toggle.style.color       = builderActive ? 'white' : 'var(--muted)';
   }
-  // Oppdater bankens label
-  const bankLabel = document.getElementById('bankLabel');
-  if (bankLabel) bankLabel.textContent = builderActive
-    ? '🔧 Bygg blokkene dine nedenfor og dra dem inn'
-    : '📦 Blokker – dra dem inn på sidene';
+  const lbl = document.getElementById('bankLabel');
+  if (lbl) lbl.textContent = builderActive ? '🔧 Bygg blokkene dine nedenfor og dra dem inn' : '📦 Blokker – dra dem inn på sidene';
 }
 
-window.toggleBuilder = function() {
-  setBuilderActive(!builderActive);
-  // Ikke nullstill oppgaven – bare vis/skjul byggepanelet
-  renderAll();
-};
+window.toggleBuilder = function() { setBuilderActive(!builderActive); renderAll(); };
 
+// ── PROGRESS BAR ──
 function updateProgressBar() {
   const avg = recentScores.length ? recentScores.reduce((a,b)=>a+b,0)/recentScores.length : 50;
   const pct = Math.min(100, Math.max(0, ((avg-DOWN_THRESHOLD)/(UP_THRESHOLD-DOWN_THRESHOLD))*100));
   const fill = document.getElementById('progressFill');
   fill.style.width = pct+'%';
-  fill.style.background = pct > 66 ? 'var(--green)' : pct > 33 ? 'var(--yellow)' : 'var(--red)';
+  fill.style.background = pct>66 ? 'var(--green)' : pct>33 ? 'var(--yellow)' : 'var(--red)';
   const n = recentScores.length;
   document.getElementById('progressInfo').textContent =
     n < WINDOW_SIZE ? `${n}/${WINDOW_SIZE} oppgaver` :
@@ -412,16 +590,17 @@ function updateProgressBar() {
     avg <= DOWN_THRESHOLD ? '💪 Øver videre...' : '👍 På rett spor';
 }
 
+// ── LEVEL CHANGE ──
 function showLevelChange(direction, newLevel) {
   const overlay = document.getElementById('levelOverlay');
   const popup   = document.getElementById('levelPopup');
-  if (direction === 'up') {
-    popup.className = 'level-popup up';
+  if (direction==='up') {
+    popup.className='level-popup up';
     document.getElementById('popupIcon').textContent  = '🚀';
     document.getElementById('popupTitle').textContent = 'Nivå opp!';
     document.getElementById('popupSub').textContent   = 'Du er nå på '+LEVEL_NAMES[newLevel]+' (nivå '+newLevel+')';
   } else {
-    popup.className = 'level-popup down';
+    popup.className='level-popup down';
     document.getElementById('popupIcon').textContent  = '💪';
     document.getElementById('popupTitle').textContent = 'Øv litt mer!';
     document.getElementById('popupSub').textContent   = 'Tilbake til nivå '+newLevel+' – du klarer det!';
@@ -435,21 +614,220 @@ function adjustLevel(bonusScore) {
   if (recentScores.length > WINDOW_SIZE) recentScores.shift();
   updateProgressBar();
   if (recentScores.length < WINDOW_SIZE) return;
-
   const avg = recentScores.reduce((a,b)=>a+b,0)/recentScores.length;
-  const oldLevel = currentLevel;
-
-  if (avg >= UP_THRESHOLD && currentLevel < MAX_LEVEL) {
-    currentLevel++; recentScores = [];
-    showLevelChange('up', currentLevel);
-  } else if (avg <= DOWN_THRESHOLD && currentLevel > 1) {
-    currentLevel--; recentScores = [];
-    showLevelChange('down', currentLevel);
-  }
-  if (currentLevel !== oldLevel) updateLevelUI();
+  const old = currentLevel;
+  if (avg>=UP_THRESHOLD && currentLevel<MAX_LEVEL) { currentLevel++; recentScores=[]; showLevelChange('up',currentLevel); }
+  else if (avg<=DOWN_THRESHOLD && currentLevel>1)  { currentLevel--; recentScores=[]; showLevelChange('down',currentLevel); }
+  if (currentLevel!==old) updateLevelUI();
 }
 
-// ── LEVEL TEMPLATES ──
+// ── SPEED DISPLAY ──
+function updateSpeedDisplay() {
+  if (gameMode !== 'race') return;
+  const now = Date.now();
+  const dt  = (now - lastScoreTime) / 1000;
+  if (dt > 0 && dt < 120) {
+    const rate = (currentScore - lastScoreValue) / dt;
+    speedRate  = Math.max(0, Math.round(rate * 10));
+  }
+  const badge = document.getElementById('speedBadge');
+  badge.style.display = 'flex';
+  badge.textContent = '⚡ '+speedRate;
+}
+
+// ── TIMED MODE ──
+function startTimedCountdown() {
+  timedSecondsLeft = timedMinutes * 60;
+  const banner = document.getElementById('countdownBanner');
+  banner.classList.add('visible');
+  document.getElementById('timeupMinutes').textContent = timedMinutes;
+  updateTimedDisplay();
+  timedInterval = setInterval(() => {
+    timedSecondsLeft--;
+    updateTimedDisplay();
+    if (timedSecondsLeft <= 0) {
+      clearInterval(timedInterval);
+      endTimedGame();
+    }
+  }, 1000);
+}
+
+function updateTimedDisplay() {
+  const m = Math.floor(timedSecondsLeft/60);
+  const s = timedSecondsLeft % 60;
+  const el = document.getElementById('countdownTime');
+  el.textContent = m+':'+(s<10?'0':'')+s;
+  el.className = 'countdown-time'+(timedSecondsLeft<=30?' urgent':'');
+}
+
+function endTimedGame() {
+  clearTimer();
+  document.getElementById('timeupScore').textContent = currentScore;
+  document.getElementById('timeUpOverlay').classList.add('show');
+}
+
+// ── INCIDENT SYSTEM ──
+const INCIDENT_TYPES_DEF = {
+  slide: { emoji:'🌀', title:'🌀 Du skled ut!', sub:'Hold deg fast – du er tilbake om et øyeblikk.', tasks:0, duration:6000 },
+  flat:  { emoji:'🔧', title:'🔧 Punktering!',  sub:'Løs én oppgave for å fikse dekket og kjøre videre.', tasks:1 },
+  crash: { emoji:'💥', title:'💥 Du krasjet!',  sub:'Løs to oppgaver for å komme tilbake i løpet.', tasks:2 },
+};
+
+function triggerIncident(type) {
+  if (incidentActive) return;
+  incidentActive   = true;
+  incidentType     = type;
+  const def        = INCIDENT_TYPES_DEF[type];
+  incidentTasksLeft = def.tasks;
+
+  // Sync to Firebase so bilbane sees it
+  if (typeof syncIncident==='function') syncIncident(type);
+
+  // Set up overlay
+  document.getElementById('incidentTitle').textContent = def.title;
+  document.getElementById('incidentSub').textContent   = def.sub;
+  drawIncidentAnim(type);
+
+  const cdEl   = document.getElementById('incidentCountdown');
+  const taskEl = document.getElementById('incidentTaskWrap');
+
+  if (type === 'slide') {
+    cdEl.style.display   = 'block';
+    taskEl.style.display = 'none';
+    let secs = Math.round(def.duration/1000);
+    document.getElementById('countdownNum').textContent = secs;
+    incidentCountdownInterval = setInterval(()=>{
+      secs--;
+      document.getElementById('countdownNum').textContent = secs;
+      if (secs<=0) {
+        clearInterval(incidentCountdownInterval);
+        closeIncident();
+      }
+    },1000);
+  } else {
+    cdEl.style.display   = 'none';
+    taskEl.style.display = 'block';
+    loadIncidentTask();
+  }
+
+  document.getElementById('incidentOverlay').classList.add('show');
+}
+
+function drawIncidentAnim(type) {
+  const container = document.getElementById('incidentAnim');
+  if (type==='slide') {
+    container.innerHTML = `
+      <svg viewBox="0 0 180 140" width="180" height="140">
+        <g class="anim-spin" style="transform-origin:90px 70px">
+          <rect x="72" y="48" width="36" height="52" rx="8" fill="#5b4fcf"/>
+          <rect x="72" y="52" width="36" height="14" rx="3" fill="rgba(150,220,255,0.6)"/>
+          <rect x="60" y="60" width="10" height="16" rx="3" fill="#222"/>
+          <rect x="110" y="60" width="10" height="16" rx="3" fill="#222"/>
+          <rect x="60" y="84" width="10" height="16" rx="3" fill="#222"/>
+          <rect x="110" y="84" width="10" height="16" rx="3" fill="#222"/>
+        </g>
+        <text x="90" y="130" text-anchor="middle" font-size="18" fill="#5b4fcf" font-weight="800">SKRENS!</text>
+      </svg>`;
+  } else if (type==='flat') {
+    container.innerHTML = `
+      <svg viewBox="0 0 180 140" width="180" height="140">
+        <rect x="72" y="30" width="36" height="52" rx="8" fill="#5b4fcf"/>
+        <rect x="72" y="34" width="36" height="14" rx="3" fill="rgba(150,220,255,0.6)"/>
+        <rect x="60" y="42" width="10" height="16" rx="3" fill="#222"/>
+        <rect x="110" y="42" width="10" height="16" rx="3" fill="#222"/>
+        <!-- Flat tires -->
+        <g class="anim-tire">
+          <ellipse cx="65" cy="92" rx="10" ry="4" fill="#222"/>
+          <ellipse cx="115" cy="92" rx="10" ry="4" fill="#222"/>
+        </g>
+        <text x="90" y="120" text-anchor="middle" font-size="13" fill="#b45309" font-weight="800">PUNKTERT!</text>
+        <text x="90" y="136" text-anchor="middle" font-size="11" fill="#6b7280">Løs 1 oppgave</text>
+      </svg>`;
+  } else {
+    container.innerHTML = `
+      <svg viewBox="0 0 180 140" width="180" height="140">
+        <!-- Barrier -->
+        <rect x="0" y="55" width="55" height="16" rx="4" fill="#e63946"/>
+        <rect x="10" y="55" width="10" height="16" fill="#f1faee" opacity="0.7"/>
+        <rect x="30" y="55" width="10" height="16" fill="#f1faee" opacity="0.7"/>
+        <!-- Car crashed -->
+        <g class="anim-crash" style="transform-origin:90px 63px">
+          <rect x="65" y="36" width="36" height="52" rx="8" fill="#5b4fcf"/>
+          <rect x="65" y="40" width="36" height="14" rx="3" fill="rgba(150,220,255,0.5)"/>
+          <rect x="55" y="48" width="10" height="16" rx="3" fill="#222"/>
+          <rect x="101" y="48" width="10" height="16" rx="3" fill="#222"/>
+          <rect x="55" y="72" width="10" height="16" rx="3" fill="#222"/>
+          <rect x="101" y="72" width="10" height="16" rx="3" fill="#222"/>
+        </g>
+        <!-- Stars -->
+        <text x="130" y="40" font-size="20" class="anim-star" style="animation-delay:0s">⭐</text>
+        <text x="145" y="60" font-size="16" class="anim-star" style="animation-delay:0.2s">✨</text>
+        <text x="125" y="65" font-size="14" class="anim-star" style="animation-delay:0.4s">💫</text>
+        <text x="90" y="120" text-anchor="middle" font-size="13" fill="#e63946" font-weight="800">KRASJ!</text>
+        <text x="90" y="136" text-anchor="middle" font-size="11" fill="#6b7280">Løs 2 oppgaver</text>
+      </svg>`;
+  }
+}
+
+async function loadIncidentTask() {
+  document.getElementById('incidentTaskText').textContent = 'Henter oppgave…';
+  document.getElementById('incidentEq').textContent = '';
+  document.getElementById('incidentAnswer').value = '';
+  document.getElementById('incidentRemaining').textContent =
+    incidentTasksLeft > 1 ? `${incidentTasksLeft} oppgaver igjen` : '1 oppgave igjen';
+  document.getElementById('incidentTaskTitle').textContent =
+    incidentType==='crash' ? '💥 Krasj-oppgave – løs for å kjøre videre' : '🔧 Punktering – løs for å bytte dekk';
+
+  try {
+    incidentTask = await fetchAITask(Math.min(currentLevel, 3)); // enklere oppgave som straff
+    document.getElementById('incidentTaskText').textContent = incidentTask.story;
+    document.getElementById('incidentEq').textContent = '💡 '+incidentTask.hint;
+  } catch(e) {
+    incidentTask = generateFallback(Math.min(currentLevel, 2));
+    document.getElementById('incidentTaskText').textContent = incidentTask.story;
+    document.getElementById('incidentEq').textContent = '💡 '+incidentTask.hint;
+  }
+}
+
+window.checkIncidentAnswer = function() {
+  const ans = parseInt(document.getElementById('incidentAnswer').value);
+  if (isNaN(ans)) { showToast('Skriv inn et svar!','error'); return; }
+  if (ans === incidentTask.equation.xValue) {
+    incidentTasksLeft--;
+    if (incidentTasksLeft <= 0) {
+      closeIncident();
+      showToast('✅ Bra! Du er tilbake i løpet!','success');
+    } else {
+      showToast('✅ Riktig! Én oppgave til…','success');
+      loadIncidentTask();
+    }
+  } else {
+    showToast('❌ Feil svar – prøv igjen!','error');
+    document.getElementById('incidentAnswer').value = '';
+  }
+};
+
+function closeIncident() {
+  incidentActive = false; incidentType = null; incidentTask = null;
+  clearInterval(incidentCountdownInterval);
+  document.getElementById('incidentOverlay').classList.remove('show');
+}
+
+function maybeIncident(scoreRate) {
+  if (gameMode !== 'race') return;
+  if (incidentActive) return;
+  // Probability scales with speed rate
+  const rate = Math.min(scoreRate/100, 1);
+  const prob = INCIDENT_BASE + rate*(INCIDENT_MAX-INCIDENT_BASE);
+  if (Math.random() < prob) {
+    const r = Math.random();
+    if (r < 0.5)      triggerIncident('slide');
+    else if (r < 0.8) triggerIncident('flat');
+    else              triggerIncident('crash');
+  }
+}
+
+// ── TEMPLATES ──
 const templates = {
   1: [
     'x + b = c. Eks: Kari har 5 kr mer enn Ola. Til sammen har de 17 kr. Finn Olas beløp.',
@@ -491,13 +869,13 @@ const templates = {
 
 function pickTemplate(level) {
   const pool = [];
-  if (level === 1) return templates[1][Math.floor(Math.random()*templates[1].length)];
-  if (level >= 2) pool.push(...templates[2]);
-  if (level >= 3) pool.push(...templates[3]);
-  if (level >= 4) pool.push(...templates[4]);
-  if (level >= 5) pool.push(...templates[5]);
-  if (level >= 6) pool.push(...templates[6]);
-  if (level === 7) return templates[7][Math.floor(Math.random()*templates[7].length)];
+  if (level===1) return templates[1][Math.floor(Math.random()*templates[1].length)];
+  if (level>=2) pool.push(...templates[2]);
+  if (level>=3) pool.push(...templates[3]);
+  if (level>=4) pool.push(...templates[4]);
+  if (level>=5) pool.push(...templates[5]);
+  if (level>=6) pool.push(...templates[6]);
+  if (level===7) return templates[7][Math.floor(Math.random()*templates[7].length)];
   return pool[Math.floor(Math.random()*pool.length)];
 }
 
@@ -516,7 +894,7 @@ async function initGame() {
     const task = await fetchAITask(currentLevel);
     applyTask(task);
   } catch(e) {
-    console.warn('AI feilet, bruker fallback:', e);
+    console.warn('AI feilet:', e);
     applyTask(generateFallback(currentLevel));
   }
   startTimer();
@@ -526,7 +904,7 @@ window.initGame = initGame;
 // ── FETCH AI TASK ──
 async function fetchAITask(level) {
   const template = pickTemplate(level);
-  const xSideRule = level >= 4
+  const xSideRule = level>=4
     ? 'BRUK x-blokker på BEGGE sider av likningen.'
     : 'Bruk x-blokker KUN på VENSTRE side.';
 
@@ -543,7 +921,7 @@ KRITISKE REGLER:
 6. ${xSideRule}
 7. Ingen blokker med num = 0.
 
-Svar KUN med gyldig JSON (ingen markdown, ingen tekst utenfor JSON):
+Svar KUN med gyldig JSON (ingen markdown):
 {
   "story": "Oppgavetekst (maks 3 setninger)",
   "hint": "La x = [hva x betyr i oppgaven]",
@@ -567,12 +945,12 @@ Svar KUN med gyldig JSON (ingen markdown, ingen tekst utenfor JSON):
 // ── FALLBACK ──
 function generateFallback(level) {
   xValue = Math.floor(Math.random()*7)+3;
-  const lv = Math.min(level, 4);
+  const lv = Math.min(level,4);
   const fbs = {
     1:()=>{ const b=Math.floor(Math.random()*8)+2; return {story:`Kari er ${b} år eldre enn Ola. Til sammen er de ${xValue*2+b} år. Hvor gammel er Ola?`,hint:'La x = Olas alder',equation:{left:[{type:'x',num:1},{type:'num',num:b},{type:'x',num:1}],right:[{type:'num',num:xValue*2+b}],xValue}}; },
     2:()=>{ const a=Math.floor(Math.random()*3)+2; return {story:`${a} like esker veier ${a*xValue} kg. Hva veier én eske?`,hint:'La x = vekten til én eske',equation:{left:[{type:'x',num:a}],right:[{type:'num',num:a*xValue}],xValue}}; },
-    3:()=>{ const a=Math.floor(Math.random()*3)+2,b=Math.floor(Math.random()*8)+2; return {story:`Voksenbillett koster ${a} ganger barnebilletten pluss ${b} kr. Voksenbilletten er ${a*xValue+b} kr. Hva koster barnebilletten?`,hint:'La x = barnebillett',equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'num',num:a*xValue+b}],xValue}}; },
-    4:()=>{ const c=Math.floor(Math.random()*2)+1,a=c+Math.floor(Math.random()*2)+1,d=Math.floor(Math.random()*8)+2,b=(c*xValue+d)-(a*xValue); return {story:`Per sparer ${a} kr/uke og har ${b} kr. Lise sparer ${c} kr/uke og har ${d} kr. Etter x uker er de like rike. Finn x.`,hint:'La x = antall uker',equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'x',num:c},{type:'num',num:d}],xValue}}; },
+    3:()=>{ const a=Math.floor(Math.random()*3)+2,b=Math.floor(Math.random()*8)+2; return {story:`Voksenbillett koster ${a} ganger barnebilletten pluss ${b} kr. Voksenbilletten er ${a*xValue+b} kr.`,hint:'La x = barnebillett',equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'num',num:a*xValue+b}],xValue}}; },
+    4:()=>{ const c=1,a=c+2,d=Math.floor(Math.random()*8)+2,b=(c*xValue+d)-(a*xValue); return {story:`Per sparer ${a} kr/uke og har ${b} kr. Lise sparer ${c} kr/uke og har ${d} kr. Etter x uker er de like rike.`,hint:'La x = antall uker',equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'x',num:c},{type:'num',num:d}],xValue}}; },
   };
   return fbs[lv]();
 }
@@ -592,31 +970,24 @@ function applyTask(task) {
 
 window.resetTask = function() {
   if (!originalTask) return;
-  // Flytt alle blokker fra venstre/høyre tilbake til banken
-  // I builder-modus: behold egenbygde blokker i banken, legg originalblokker tilbake
   if (builderActive) {
-    // Alle blokker (original + egenbygde) samles i banken
-    const fromSides = [...sides.left, ...sides.right];
-    sides.bank = [...sides.bank, ...fromSides];
-    sides.left = []; sides.right = [];
+    const fromSides = [...sides.left,...sides.right];
+    sides.bank = [...sides.bank,...fromSides];
+    sides.left=[]; sides.right=[];
   } else {
-    sides.bank = JSON.parse(JSON.stringify(originalTask.bank));
-    sides.left = []; sides.right = [];
+    sides.bank=JSON.parse(JSON.stringify(originalTask.bank));
+    sides.left=[]; sides.right=[];
   }
-  xValue = originalTask.x; lastChangedId = null;
-  renderAll();
+  xValue=originalTask.x; lastChangedId=null; renderAll();
 };
 
 // ── BLOCK BUILDER ──
 window.buildBlock = function(type) {
-  const val = parseInt(document.getElementById('builderVal').value);
-  if (!val || val===0 || isNaN(val)) { showToast('Skriv inn et tall som ikke er 0!','error'); return; }
-  const nb = {id:idCounter++, type, num:val, userBuilt:true};
-  sides.bank.push(nb);
-  builderBlocks.push(nb.id); // hold styr på egenbygde blokker
-  lastChangedId = nb.id;
-  document.getElementById('builderVal').value = '';
-  renderAll();
+  const val=parseInt(document.getElementById('builderVal').value);
+  if(!val||val===0||isNaN(val)){showToast('Skriv inn et tall som ikke er 0!','error');return;}
+  const nb={id:idCounter++,type,num:val,userBuilt:true};
+  sides.bank.push(nb); builderBlocks.push(nb.id); lastChangedId=nb.id;
+  document.getElementById('builderVal').value=''; renderAll();
 };
 
 // ── RENDER ──
@@ -624,23 +995,21 @@ function renderAll() {
   renderSide('left',  document.getElementById('blocksL'));
   renderSide('right', document.getElementById('blocksR'));
   renderSide('bank',  document.getElementById('bankBlocks'));
-  updateEquationDisplay();
-  updateScaleTilt();
+  updateEquationDisplay(); updateScaleTilt();
 }
 
-function renderSide(side, container) {
-  container.innerHTML = '';
-  sides[side].forEach(item => {
-    const div = document.createElement('div');
-    const tc = item.type==='x'?(item.num<0?'type-x-neg':'type-x'):(item.num<0?'type-num-neg':'type-num');
-    div.className = `block ${tc}${item.id===lastChangedId?' just-changed':''}`;
-    div.draggable = true;
-    div.setAttribute('data-id', item.id);
-    div.setAttribute('data-side', side);
-    div.textContent = item.type==='x'?(item.num===1?'x':item.num===-1?'-x':item.num+'x'):String(item.num);
-    div.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text',JSON.stringify({side,id:item.id})); setTimeout(()=>div.classList.add('dragging'),0); });
+function renderSide(side,container) {
+  container.innerHTML='';
+  sides[side].forEach(item=>{
+    const div=document.createElement('div');
+    const tc=item.type==='x'?(item.num<0?'type-x-neg':'type-x'):(item.num<0?'type-num-neg':'type-num');
+    div.className=`block ${tc}${item.id===lastChangedId?' just-changed':''}`;
+    div.draggable=true;
+    div.setAttribute('data-id',item.id); div.setAttribute('data-side',side);
+    div.textContent=item.type==='x'?(item.num===1?'x':item.num===-1?'-x':item.num+'x'):String(item.num);
+    div.addEventListener('dragstart',e=>{e.dataTransfer.setData('text',JSON.stringify({side,id:item.id}));setTimeout(()=>div.classList.add('dragging'),0);});
     div.addEventListener('dragend',()=>div.classList.remove('dragging'));
-    div.addEventListener('contextmenu',e=>{ e.preventDefault(); activeMenuTarget={side,item}; const m=document.getElementById('ctxMenu'); m.style.display='block'; m.style.left=e.clientX+'px'; m.style.top=e.clientY+'px'; });
+    div.addEventListener('contextmenu',e=>{e.preventDefault();activeMenuTarget={side,item};const m=document.getElementById('ctxMenu');m.style.display='block';m.style.left=e.clientX+'px';m.style.top=e.clientY+'px';});
     container.appendChild(div);
   });
 }
@@ -651,8 +1020,8 @@ function updateEquationDisplay() {
 }
 
 function formatSide(items) {
-  if (!items.length) return '–';
-  return items.map((i,idx)=>{ const t=i.type==='x'?(i.num===1?'x':i.num===-1?'-x':i.num+'x'):String(i.num); return (idx>0&&i.num>=0)?'+ '+t:t; }).join(' ');
+  if(!items.length) return '–';
+  return items.map((i,idx)=>{const t=i.type==='x'?(i.num===1?'x':i.num===-1?'-x':i.num+'x'):String(i.num);return(idx>0&&i.num>=0)?'+ '+t:t;}).join(' ');
 }
 
 function updateScaleTilt() {
@@ -664,70 +1033,65 @@ function updateScaleTilt() {
 
 // ── DRAG & DROP ──
 ['scaleL','scaleR','bankPanel'].forEach((id,idx)=>{
-  const sideMap=['left','right','bank'], el=document.getElementById(id);
-  el.addEventListener('dragover',e=>{ e.preventDefault(); el.classList.add('drag-over'); });
+  const sideMap=['left','right','bank'],el=document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
   el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
-  el.addEventListener('drop',e=>{ e.preventDefault(); el.classList.remove('drag-over'); handleDrop(e,sideMap[idx]); });
+  el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('drag-over');handleDrop(e,sideMap[idx]);});
 });
 
-window.handleDrop = function(ev,targetSide) {
-  let data; try{data=JSON.parse(ev.dataTransfer.getData('text'));}catch{return;}
-  const srcArr=sides[data.side], itemIdx=srcArr.findIndex(i=>i.id===data.id);
-  if(itemIdx===-1) return;
+window.handleDrop=function(ev,targetSide){
+  let data;try{data=JSON.parse(ev.dataTransfer.getData('text'));}catch{return;}
+  const srcArr=sides[data.side],itemIdx=srcArr.findIndex(i=>i.id===data.id);
+  if(itemIdx===-1)return;
   const item=srcArr[itemIdx];
   if(targetSide!=='bank'&&data.side===targetSide){
     const targetEl=ev.target.closest('.block');
     if(targetEl){
       const tItem=sides[targetSide].find(i=>i.id===parseInt(targetEl.getAttribute('data-id')));
       if(tItem&&tItem.type===item.type&&tItem.id!==item.id){
-        tItem.num+=item.num; lastChangedId=tItem.id; srcArr.splice(itemIdx,1);
+        tItem.num+=item.num;lastChangedId=tItem.id;srcArr.splice(itemIdx,1);
         if(tItem.num===0){sides[targetSide].splice(sides[targetSide].indexOf(tItem),1);lastChangedId=null;}
-        renderAll(); return;
+        renderAll();return;
       }
     }
   }
-  lastChangedId=item.id; sides[targetSide].push(srcArr.splice(itemIdx,1)[0]); renderAll();
+  lastChangedId=item.id;sides[targetSide].push(srcArr.splice(itemIdx,1)[0]);renderAll();
 };
 
 // ── OPERATIONS ──
-window.operate = function(t) {
+window.operate=function(t){
   const v=parseInt(document.getElementById('opVal').value);
-  if(!v||v<=0) return;
+  if(!v||v<=0)return;
   lastChangedId=null;
-  ['left','right'].forEach(s=>{ sides[s].forEach(i=>{ i.num=t==='multiply'?i.num*v:Math.round(i.num/v); }); sides[s]=sides[s].filter(i=>i.num!==0); });
+  ['left','right'].forEach(s=>{sides[s].forEach(i=>{i.num=t==='multiply'?i.num*v:Math.round(i.num/v);});sides[s]=sides[s].filter(i=>i.num!==0);});
   renderAll();
 };
 
 // ── CHECK SOLUTION ──
-window.checkSolution = function() {
-  const L=sides.left, R=sides.right;
-
-  // Godkjenn begge retninger: x=tall eller tall=x
-  // Venstre: én x-blokk (num=1), Høyre: ett tall (num=xValue)
-  const xLeft  = L.length===1 && L[0].type==='x'   && L[0].num===1
-              && R.length===1 && R[0].type==='num'  && R[0].num===xValue;
-  // Høyre: ett tall (num=xValue), Venstre: én x-blokk (num=1)
-  const xRight = R.length===1 && R[0].type==='x'   && R[0].num===1
-              && L.length===1 && L[0].type==='num'  && L[0].num===xValue;
-
-  const ok = xLeft || xRight;
-
-  if(ok){
+window.checkSolution=function(){
+  const L=sides.left,R=sides.right;
+  const xLeft  = L.length===1&&L[0].type==='x'&&L[0].num===1&&R.length===1&&R[0].type==='num'&&R[0].num===xValue;
+  const xRight = R.length===1&&R[0].type==='x'&&R[0].num===1&&L.length===1&&L[0].type==='num'&&L[0].num===xValue;
+  if(xLeft||xRight){
     clearTimer();
     totalCorrect++;
-    let bonus = Math.max(10, Math.round((timerSeconds/maxSeconds)*100));
-    if (builderActive) bonus = Math.round(bonus * BUILDER_BONUS_MULTIPLIER);
-    currentScore += bonus;
-    document.getElementById('streakCount').textContent = totalCorrect;
+    let bonus=Math.max(10,Math.round((timerSeconds/maxSeconds)*100));
+    if(builderActive) bonus=Math.round(bonus*BUILDER_BONUS_MULTIPLIER);
+    currentScore+=bonus;
+    // Update speed tracking
+    const now=Date.now();
+    const dt=(now-lastScoreTime)/1000;
+    if(dt>0&&dt<120) speedRate=Math.max(0,Math.round((bonus/dt)*10));
+    lastScoreTime=now; lastScoreValue=currentScore;
+    document.getElementById('streakCount').textContent=totalCorrect;
     if(typeof syncScore==='function') syncScore(currentScore);
+    updateSpeedDisplay();
     adjustLevel(bonus);
-    const msg = builderActive
-      ? '🎉 Riktig! +'+bonus+' poeng (🔧 ×1.5 bonus!)'
-      : '🎉 Riktig! +'+bonus+' poeng!';
+    const msg=builderActive?'🎉 Riktig! +'+bonus+' poeng (🔧 ×1.2 bonus!)':'🎉 Riktig! +'+bonus+' poeng!';
     showToast(msg,'success');
-    // Nullstill egenbygde blokker til neste oppgave
-    builderBlocks = [];
-    setTimeout(()=>initGame(),1900);
+    builderBlocks=[];
+    // Maybe trigger incident (race mode only)
+    setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) initGame(); },incidentActive?0:1600);
   } else {
     adjustLevel(0);
     showToast('❌ Ikke løst ennå – prøv igjen!','error');
@@ -739,52 +1103,94 @@ window.ctxInvert=function(){if(!activeMenuTarget)return;activeMenuTarget.item.nu
 window.ctxSplit=function(){
   if(!activeMenuTarget||Math.abs(activeMenuTarget.item.num)<2)return;
   const i=activeMenuTarget.item,n1=Math.floor(i.num/2),n2=i.num-n1;
-  const arr=sides[activeMenuTarget.side]; arr.splice(arr.indexOf(i),1);
-  const nid=idCounter++; arr.push({id:nid,type:i.type,num:n1},{id:idCounter++,type:i.type,num:n2});
-  lastChangedId=nid; renderAll();
+  const arr=sides[activeMenuTarget.side];arr.splice(arr.indexOf(i),1);
+  const nid=idCounter++;arr.push({id:nid,type:i.type,num:n1},{id:idCounter++,type:i.type,num:n2});
+  lastChangedId=nid;renderAll();
 };
 document.addEventListener('click',()=>document.getElementById('ctxMenu').style.display='none');
 
 // ── TIMER ──
 function startTimer(){
-  timerSeconds=maxSeconds; updateTimerBar();
-  timerInterval=setInterval(()=>{ timerSeconds=Math.max(0,timerSeconds-1); updateTimerBar(); if(timerSeconds===0){clearTimer();adjustLevel(0);showToast('⏱️ Tiden er ute!','error');} },1000);
+  timerSeconds=maxSeconds;updateTimerBar();
+  timerInterval=setInterval(()=>{
+    timerSeconds=Math.max(0,timerSeconds-1);updateTimerBar();
+    if(timerSeconds===0){clearTimer();adjustLevel(0);showToast('⏱️ Tiden er ute på denne oppgaven!','error');setTimeout(()=>initGame(),1200);}
+  },1000);
 }
 function clearTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}}
 function updateTimerBar(){document.getElementById('timerBar').style.width=(timerSeconds/maxSeconds*100)+'%';}
 
 // ── TOAST ──
 function showToast(msg,type){
-  const t=document.getElementById('toast'); t.textContent=msg; t.className='feedback-toast '+type;
-  void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200);
+  const t=document.getElementById('toast');t.textContent=msg;t.className='feedback-toast '+type;
+  void t.offsetWidth;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);
 }
 
-// ── SESSION START (called by both Firebase and fallback) ──
+// ── SCOREBOARD (solo/timed) ──
+function updateSoloScore() {
+  document.getElementById('scoreList').innerHTML =
+    `<div style="font-size:2rem;font-weight:900;color:var(--accent);text-align:center">${currentScore}</div>
+     <div style="color:var(--muted);font-size:0.82rem;text-align:center;margin-top:4px">${totalCorrect} riktige svar</div>`;
+}
+
+// ── STARTUP ──
 window._startSession = function() {
-  currentLevel = startLevel > 0 ? startLevel : 1;
-  recentScores = [];
-  updateProgressBar();
+  currentLevel = startLevel>0 ? startLevel : 1;
+  recentScores=[]; currentScore=0; totalCorrect=0; speedRate=0;
+  lastScoreTime=Date.now(); lastScoreValue=0;
+  updateProgressBar(); updateLevelUI();
+
+  // Mode-specific setup
+  const modeBadge = document.getElementById('modeBadge');
+  if (gameMode==='solo') {
+    modeBadge.textContent='🧑 Enkeltspiller';
+    document.getElementById('scoreTitle').textContent='🏆 Poeng';
+    document.getElementById('scoreList').innerHTML='<div style="font-size:2rem;font-weight:900;color:var(--accent);text-align:center">0</div>';
+    // Override syncScore for solo: just update display
+    window.syncScore = (s)=>{ updateSoloScore(); };
+  } else if (gameMode==='race') {
+    modeBadge.textContent='🏎️ Med bilbane';
+    document.getElementById('scoreTitle').textContent='🏆 Toppliste';
+    document.getElementById('speedBadge').style.display='flex';
+  } else if (gameMode==='timed') {
+    modeBadge.textContent='⏱️ Tidsutfordring';
+    document.getElementById('scoreTitle').textContent='🏆 Toppliste';
+    startTimedCountdown();
+    // syncScore is handled by Firebase module
+  }
   initGame();
 };
 
-// ── STARTUP ──
 window.addEventListener('load',()=>{
-  document.querySelectorAll('input[name="startLevel"]').forEach(r=>{ r.addEventListener('change',()=>{ startLevel=parseInt(r.value); }); });
+  document.querySelectorAll('input[name="startLevel"]').forEach(r=>{
+    r.addEventListener('change',()=>{ startLevel=parseInt(r.value); });
+  });
 
-  // Fallback startGame (uten Firebase)
-  if(!window._fbReady){
-    window.startGame=function(){
-      const room=document.getElementById('roomInput').value.trim().toUpperCase();
-      if(!room){alert('Skriv inn romkode!');return;}
-      window.roomCode=room;
-      document.getElementById('startScreen').style.display='none';
-      document.getElementById('headerName').textContent=window.playerName;
+  window.startGame=function(){
+    // Get room code based on mode
+    let room='';
+    if(gameMode==='race') room=document.getElementById('roomInputRace').value.trim().toUpperCase();
+    if(gameMode==='timed'){
+      room=document.getElementById('roomInputTimed').value.trim().toUpperCase();
+      timedMinutes=parseInt(document.getElementById('timedMinutes').value)||3;
+    }
+
+    window.roomCode = room||null;
+    document.getElementById('startScreen').style.display='none';
+    document.getElementById('headerName').textContent=window.playerName;
+
+    if(room && window._fbReady){
+      window._fbInit(room);
+    } else if(gameMode==='solo'){
+      window.syncScore=(s)=>updateSoloScore();
+      window.syncIncident=()=>{};
+    } else {
+      // No room code for multiplayer modes
       window.syncScore=()=>{};
-      window._startSession();
-    };
-  } else {
-    window.startGame = window._fbStartGame;
-  }
+      window.syncIncident=()=>{};
+    }
+    window._startSession();
+  };
 });
 </script>
 </body>
