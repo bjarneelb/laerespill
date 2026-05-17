@@ -290,71 +290,84 @@ let winnerDeclared = false;
 let lastScores = {};    // for å beregne poengrate
 let animFrame = null;
 
-// Track path — Silverstone-inspirert med Bezier-kurver
-// Hvert punkt har: ankerpunkt (x,y) og to kontrollpunkter (cp1, cp2)
-// for smooth cubic Bezier mellom punkter
-const TRACK_NODES_NORM = [
-  // START/MÅL — Hangar Straight (lang rettstrekning øverst)
-  { x:0.28, y:0.10, cp1:{x:0.20,y:0.10}, cp2:{x:0.15,y:0.10} },
-  // Vale — venstre inn i Club-sving
-  { x:0.10, y:0.14, cp1:{x:0.10,y:0.10}, cp2:{x:0.08,y:0.16} },
-  // Club — langsom hairpin venstre
-  { x:0.08, y:0.28, cp1:{x:0.07,y:0.22}, cp2:{x:0.07,y:0.34} },
-  // Abbey — ut av Club, begynner å gå mot høyre
-  { x:0.13, y:0.42, cp1:{x:0.08,y:0.38}, cp2:{x:0.10,y:0.44} },
-  // Farm Curve — bred høyresving
-  { x:0.22, y:0.52, cp1:{x:0.15,y:0.48}, cp2:{x:0.18,y:0.54} },
-  // Village — rettstrekning nedover
-  { x:0.28, y:0.66, cp1:{x:0.26,y:0.58}, cp2:{x:0.27,y:0.63} },
-  // The Loop — tett høyresving
-  { x:0.38, y:0.76, cp1:{x:0.29,y:0.72}, cp2:{x:0.33,y:0.78} },
-  // Aintree — ut av The Loop, nedover
-  { x:0.50, y:0.88, cp1:{x:0.43,y:0.78}, cp2:{x:0.46,y:0.86} },
-  // Stowe — lang buet høyresving
-  { x:0.65, y:0.92, cp1:{x:0.56,y:0.92}, cp2:{x:0.60,y:0.93} },
-  // Vale (Stowe exit)
-  { x:0.78, y:0.86, cp1:{x:0.72,y:0.93}, cp2:{x:0.77,y:0.90} },
-  // Chapel — rask høyresving opp
-  { x:0.88, y:0.72, cp1:{x:0.82,y:0.82}, cp2:{x:0.88,y:0.78} },
-  // Hangar Straight høyre side — lang rettstrekning ned
-  { x:0.90, y:0.55, cp1:{x:0.89,y:0.65}, cp2:{x:0.90,y:0.60} },
-  // Stowe (upper) — tett høyresving
-  { x:0.88, y:0.40, cp1:{x:0.90,y:0.48}, cp2:{x:0.90,y:0.44} },
-  // Becketts — rask S-sving (del 1: venstre)
-  { x:0.80, y:0.30, cp1:{x:0.87,y:0.35}, cp2:{x:0.84,y:0.30} },
-  // Maggotts — S-sving (del 2: høyre)
-  { x:0.72, y:0.22, cp1:{x:0.76,y:0.28}, cp2:{x:0.75,y:0.22} },
-  // Chapel (upper) — rask S-sving (del 3: venstre)
-  { x:0.63, y:0.16, cp1:{x:0.68,y:0.22}, cp2:{x:0.66,y:0.16} },
-  // Copse — tett høyresving inn på Hangar Straight
-  { x:0.52, y:0.10, cp1:{x:0.58,y:0.14}, cp2:{x:0.56,y:0.10} },
-  // Tilbake til START
-  { x:0.28, y:0.10, cp1:{x:0.44,y:0.08}, cp2:{x:0.36,y:0.09} },
+// ── TRACK — Silverstone-inspirert, Catmull-Rom spline ──
+// Bare ankerpunkter (normalisert 0-1). Catmull-Rom beregner kurver automatisk.
+const TRACK_CTRL = [
+  // Hangar Straight — lang rettstrekning øverst
+  {x:0.30,y:0.08}, {x:0.45,y:0.07}, {x:0.60,y:0.07},
+  // Copse — tett høyresving øverst høyre
+  {x:0.72,y:0.09}, {x:0.80,y:0.13}, {x:0.83,y:0.20},
+  // Maggotts — venstresving
+  {x:0.80,y:0.27}, {x:0.74,y:0.30},
+  // Becketts — S-sving (høyre)
+  {x:0.78,y:0.35}, {x:0.84,y:0.40},
+  // Chapel — venstresving ut på Hangar-retning
+  {x:0.82,y:0.47}, {x:0.76,y:0.52},
+  // Hangar Straight høyre side ned
+  {x:0.88,y:0.58}, {x:0.90,y:0.66},
+  // Stowe — tett høyresving
+  {x:0.88,y:0.76}, {x:0.82,y:0.82},
+  // Vale — bred buet sving nedre høyre
+  {x:0.72,y:0.88}, {x:0.60,y:0.92},
+  // Club — langsom sving nedre venstre
+  {x:0.46,y:0.93}, {x:0.34,y:0.90},
+  // Abbey — venstresving
+  {x:0.22,y:0.83}, {x:0.14,y:0.74},
+  // Farm Curve — bred sving venstre side
+  {x:0.10,y:0.62}, {x:0.10,y:0.50},
+  // Village — rettstrekning opp venstre
+  {x:0.12,y:0.38}, {x:0.16,y:0.26},
+  // The Loop — hairpin venstre øvre
+  {x:0.14,y:0.17}, {x:0.20,y:0.11},
+  // Tilbake til start
+  {x:0.28,y:0.08},
 ];
 
-// Flatten Bezier til diskrete punkter for arc-length og bilposisjon
-let trackPoints  = [];
-let trackLengths = [];
+let trackPoints  = [];   // flattede Catmull-Rom punkter (piksel)
+let trackLengths = [];   // kumulativ burlengde
 let totalTrackLength = 0;
-const TRACK_WIDTH  = 54;
-const BEZIER_STEPS = 30; // punkter per segment
+const TRACK_WIDTH   = 54;
+const SPLINE_STEPS  = 20; // punkter per segment — jevn kurve
+
+// ── CATMULL-ROM HELPERS ──
+function catmullRomPoint(p0,p1,p2,p3,t) {
+  const t2=t*t, t3=t2*t;
+  return {
+    x: 0.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+    y: 0.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3),
+  };
+}
+
+function buildCatmullRom(ctrlPx) {
+  // Lukket spline: dupliser første/siste punkter for å wrappe
+  const n = ctrlPx.length - 1; // siste punkt = første (lukket)
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const p0 = ctrlPx[(i-1+n)%n];
+    const p1 = ctrlPx[i];
+    const p2 = ctrlPx[(i+1)%n];
+    const p3 = ctrlPx[(i+2)%n];
+    for (let s = 0; s < SPLINE_STEPS; s++) {
+      pts.push(catmullRomPoint(p0,p1,p2,p3, s/SPLINE_STEPS));
+    }
+  }
+  pts.push({...pts[0]}); // lukk løkken
+  return pts;
+}
 
 // ── CANVAS SETUP ──
 const canvas = document.getElementById('trackCanvas');
 const ctx = canvas.getContext('2d');
 
-// roundRect polyfill for eldre nettlesere
+// roundRect polyfill
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
-    r = Math.min(r, w/2, h/2);
-    this.beginPath();
-    this.moveTo(x+r,y);
-    this.lineTo(x+w-r,y); this.arcTo(x+w,y,x+w,y+r,r);
+    r=Math.min(r,w/2,h/2); this.beginPath();
+    this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.arcTo(x+w,y,x+w,y+r,r);
     this.lineTo(x+w,y+h-r); this.arcTo(x+w,y+h,x+w-r,y+h,r);
     this.lineTo(x+r,y+h); this.arcTo(x,y+h,x,y+h-r,r);
     this.lineTo(x,y+r); this.arcTo(x,y,x+r,y,r);
-    this.closePath();
-    return this;
+    this.closePath(); return this;
   };
 }
 
@@ -366,258 +379,199 @@ function resizeCanvas() {
 }
 
 function buildTrack() {
-  const W = canvas.width, H = canvas.height;
-  const mx = W*0.05, my = H*0.05;
-  const pw = W-mx*2, ph = H-my*2;
+  const W=canvas.width, H=canvas.height;
+  const mx=W*0.06, my=H*0.06, pw=W-mx*2, ph=H-my*2;
 
-  // Scale normalized nodes to canvas pixels
-  const nodes = TRACK_NODES_NORM.map(n => ({
-    x:  mx+n.x*pw,  y:  my+n.y*ph,
-    cp1:{ x:mx+n.cp1.x*pw, y:my+n.cp1.y*ph },
-    cp2:{ x:mx+n.cp2.x*pw, y:my+n.cp2.y*ph },
-  }));
+  // Skaler kontrollpunkter til piksel
+  const ctrlPx = TRACK_CTRL.map(p=>({x:mx+p.x*pw, y:my+p.y*ph}));
 
-  // Flatten each cubic Bezier segment into discrete points
-  trackPoints = [];
-  for (let i = 0; i < nodes.length-1; i++) {
-    const p0 = nodes[i], p3 = nodes[i+1];
-    // Use p0.cp2 as cp1 of this segment, p3.cp1 as cp2
-    const cp1 = p0.cp2, cp2 = p3.cp1;
-    for (let s = 0; s < BEZIER_STEPS; s++) {
-      const t  = s/BEZIER_STEPS;
-      const mt = 1-t;
-      trackPoints.push({
-        x: mt*mt*mt*p0.x + 3*mt*mt*t*cp1.x + 3*mt*t*t*cp2.x + t*t*t*p3.x,
-        y: mt*mt*mt*p0.y + 3*mt*mt*t*cp1.y + 3*mt*t*t*cp2.y + t*t*t*p3.y,
-      });
-    }
-  }
-  // Close the loop
-  trackPoints.push({...trackPoints[0]});
+  // Bygg Catmull-Rom spline
+  trackPoints = buildCatmullRom(ctrlPx);
 
-  // Cumulative arc lengths
+  // Kumulativ burlengde
   trackLengths = [0];
-  for (let i = 1; i < trackPoints.length; i++) {
-    const dx = trackPoints[i].x-trackPoints[i-1].x;
-    const dy = trackPoints[i].y-trackPoints[i-1].y;
+  for (let i=1; i<trackPoints.length; i++) {
+    const dx=trackPoints[i].x-trackPoints[i-1].x;
+    const dy=trackPoints[i].y-trackPoints[i-1].y;
     trackLengths.push(trackLengths[i-1]+Math.sqrt(dx*dx+dy*dy));
   }
   totalTrackLength = trackLengths[trackLengths.length-1];
 }
 
-// ── INTERPOLATE POSITION ON TRACK ──
+// ── INTERPOLER POSISJON PÅ BANEN ──
 function getPosOnTrack(dist) {
-  // dist is cumulative distance, wraps around
-  const d = ((dist % totalTrackLength) + totalTrackLength) % totalTrackLength;
-  // Find segment
-  let seg = 0;
-  for (let i = 1; i < trackLengths.length; i++) {
-    if (trackLengths[i] >= d) { seg = i-1; break; }
+  const d=((dist%totalTrackLength)+totalTrackLength)%totalTrackLength;
+  let seg=0;
+  for (let i=1; i<trackLengths.length; i++) {
+    if (trackLengths[i]>=d) { seg=i-1; break; }
   }
-  const segLen = trackLengths[seg+1] - trackLengths[seg];
-  const t = segLen > 0 ? (d - trackLengths[seg]) / segLen : 0;
-  const p0 = trackPoints[seg], p1 = trackPoints[seg+1] || trackPoints[0];
+  const segLen=trackLengths[seg+1]-trackLengths[seg];
+  const t=segLen>0?(d-trackLengths[seg])/segLen:0;
+  const p0=trackPoints[seg], p1=trackPoints[Math.min(seg+1,trackPoints.length-1)];
+  // Look-ahead for angle (smoother)
+  const pa=trackPoints[Math.min(seg+3,trackPoints.length-1)];
   return {
-    x: p0.x + (p1.x-p0.x)*t,
-    y: p0.y + (p1.y-p0.y)*t,
-    angle: Math.atan2(p1.y-p0.y, p1.x-p0.x)
+    x: p0.x+(p1.x-p0.x)*t,
+    y: p0.y+(p1.y-p0.y)*t,
+    angle: Math.atan2(pa.y-p0.y, pa.x-p0.x),
   };
 }
 
-// ── DRAW TRACK ──
+// ── TEGN BANEN ──
 function drawTrack() {
-  const W = canvas.width, H = canvas.height;
+  const W=canvas.width, H=canvas.height;
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#0a0a1a'); sky.addColorStop(1,'#1a2a1a');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
 
-  // Sky/background
-  const sky = ctx.createLinearGradient(0,0,0,H);
-  sky.addColorStop(0,'#0a0a1a');
-  sky.addColorStop(1,'#1a2a1a');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0,0,W,H);
-
-  // Draw grass area (fill outside track)
   drawGrass();
 
-  // Track shadow
+  // Skygge under banen
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.6)';
-  ctx.shadowBlur = 18;
-  drawTrackPath(TRACK_WIDTH+8, '#111');
+  ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=20;
+  drawSplinePath(TRACK_WIDTH+10,'#111');
   ctx.restore();
 
-  // Track surface
-  drawTrackPath(TRACK_WIDTH, '#2a2a2a');
+  // Asfalt
+  drawSplinePath(TRACK_WIDTH,'#2d2d2d');
 
-  // Track markings — stille midtstrek
-  ctx.save();
-  ctx.setLineDash([18,14]);
-  drawTrackPath(1, 'rgba(255,255,255,0.25)');
-  ctx.setLineDash([]);
-  ctx.restore();
+  // Kurban (fargestriper ytterst)
+  drawSplinePath(TRACK_WIDTH+2,'transparent', true);
 
-  // Outer barrier (red/white)
-  drawBarrier(TRACK_WIDTH + 6);
+  // Midtstrek — stille stiplet linje
+  ctx.save(); ctx.setLineDash([16,12]);
+  drawSplinePath(1,'rgba(255,255,255,0.22)');
+  ctx.setLineDash([]); ctx.restore();
 
-  // Inner barrier
-  drawBarrier(-(TRACK_WIDTH + 6));
+  // Barriere ytre og indre
+  drawBarrier(TRACK_WIDTH+5, true);
+  drawBarrier(TRACK_WIDTH+5, false);
 
-  // Finish line
   drawFinishLine();
-
-  // Decorations
   drawDecorations();
 }
 
-function drawTrackPath(width, color) {
-  const W = canvas.width, H = canvas.height;
-  const mx = W*0.05, my = H*0.05, pw = W-mx*2, ph = H-my*2;
-  const nodes = TRACK_NODES_NORM.map(n=>({
-    x:mx+n.x*pw, y:my+n.y*ph,
-    cp1:{x:mx+n.cp1.x*pw,y:my+n.cp1.y*ph},
-    cp2:{x:mx+n.cp2.x*pw,y:my+n.cp2.y*ph},
-  }));
+// Tegn selve spline-kurven som en stroke
+function drawSplinePath(width, color, kerb=false) {
+  if (!trackPoints.length) return;
   ctx.beginPath();
-  ctx.moveTo(nodes[0].x, nodes[0].y);
-  for (let i = 0; i < nodes.length-1; i++) {
-    ctx.bezierCurveTo(nodes[i].cp2.x,nodes[i].cp2.y, nodes[i+1].cp1.x,nodes[i+1].cp1.y, nodes[i+1].x,nodes[i+1].y);
+  ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
+  for (let i=1; i<trackPoints.length; i++) {
+    ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
   }
   ctx.closePath();
-  ctx.lineWidth   = width;
-  ctx.strokeStyle = color;
-  ctx.stroke();
+  ctx.lineWidth=width; ctx.strokeStyle=color;
+  if (!kerb) ctx.stroke();
 }
 
 function drawGrass() {
-  const W = canvas.width, H = canvas.height;
-  const mx = W*0.05, my = H*0.05, pw = W-mx*2, ph = H-my*2;
-  const nodes = TRACK_NODES_NORM.map(n=>({
-    x:mx+n.x*pw, y:my+n.y*ph,
-    cp1:{x:mx+n.cp1.x*pw,y:my+n.cp1.y*ph},
-    cp2:{x:mx+n.cp2.x*pw,y:my+n.cp2.y*ph},
-  }));
-
+  if (!trackPoints.length) return;
+  const W=canvas.width, H=canvas.height;
   ctx.save();
-  // Full canvas rect, then cut out track shape (evenodd)
   ctx.beginPath();
   ctx.rect(0,0,W,H);
-  ctx.moveTo(nodes[0].x,nodes[0].y);
-  for (let i = 0; i < nodes.length-1; i++) {
-    ctx.bezierCurveTo(nodes[i].cp2.x,nodes[i].cp2.y, nodes[i+1].cp1.x,nodes[i+1].cp1.y, nodes[i+1].x,nodes[i+1].y);
-  }
+  ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
+  for (let i=1; i<trackPoints.length; i++) ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
   ctx.closePath();
-  const grd = ctx.createLinearGradient(0,0,W,H);
+  const grd=ctx.createLinearGradient(0,0,W,H);
   grd.addColorStop(0,'#2a5225'); grd.addColorStop(1,'#1e3d1a');
-  ctx.fillStyle = grd;
-  ctx.fill('evenodd');
-
-  // Grass texture dots
-  ctx.globalAlpha = 0.15;
-  for (let i = 0; i < 120; i++) {
-    const x = (Math.sin(i*137.5)*0.5+0.5)*W;
-    const y = (Math.cos(i*97.3)*0.5+0.5)*H;
-    ctx.fillStyle = i%2===0 ? '#4a8a40' : '#1a3a16';
-    ctx.fillRect(x,y,3,3);
+  ctx.fillStyle=grd; ctx.fill('evenodd');
+  // Tekstur
+  ctx.globalAlpha=0.12;
+  for (let i=0; i<140; i++) {
+    ctx.fillStyle=i%2===0?'#4a8a40':'#1a3a16';
+    ctx.fillRect((Math.sin(i*137.5)*0.5+0.5)*W, (Math.cos(i*97.3)*0.5+0.5)*H, 3, 3);
   }
-  ctx.globalAlpha = 1;
-  ctx.restore();
+  ctx.globalAlpha=1; ctx.restore();
 }
 
-function drawBarrier(offset) {
+// Barriere: tegn røde/hvite segmenter langs spline med normalvektor
+function drawBarrier(halfWidth, outer) {
+  if (!trackPoints.length) return;
   ctx.save();
-  const segLen = 16;
-  for (let i = 0; i < trackPoints.length-1; i++) {
-    const p0 = trackPoints[i], p1 = trackPoints[i+1];
-    const angle = Math.atan2(p1.y-p0.y, p1.x-p0.x);
-    const perp  = angle + Math.PI/2;
-    const segs  = Math.ceil(Math.hypot(p1.x-p0.x,p1.y-p0.y)/segLen);
-    for (let s = 0; s < segs; s++) {
-      const t  = s/segs, t2 = (s+1)/segs;
-      const px = p0.x+(p1.x-p0.x)*t  + Math.cos(perp)*offset;
-      const py = p0.y+(p1.y-p0.y)*t  + Math.sin(perp)*offset;
-      const qx = p0.x+(p1.x-p0.x)*t2 + Math.cos(perp)*offset;
-      const qy = p0.y+(p1.y-p0.y)*t2 + Math.sin(perp)*offset;
-      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(qx,qy);
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = (i+s)%2===0 ? '#e63946' : '#f1faee';
-      ctx.stroke();
-    }
+  const step = 3; // hvert N-te punkt
+  for (let i=0; i<trackPoints.length-step; i+=step) {
+    const p0=trackPoints[i], p1=trackPoints[i+step]||trackPoints[i];
+    const angle=Math.atan2(p1.y-p0.y, p1.x-p0.x);
+    const perp=angle+Math.PI/2;
+    const sign=outer?1:-1;
+    const ox=Math.cos(perp)*halfWidth*sign;
+    const oy=Math.sin(perp)*halfWidth*sign;
+    const nx=Math.cos(perp)*(halfWidth+step*0.6)*sign;
+    const ny=Math.sin(perp)*(halfWidth+step*0.6)*sign;
+    ctx.beginPath();
+    ctx.moveTo(p0.x+ox, p0.y+oy);
+    ctx.lineTo(p1.x+nx, p1.y+ny);
+    ctx.lineWidth=4;
+    // Rutemønster rødt/hvitt
+    ctx.strokeStyle=Math.floor(i/step)%2===0?'#e63946':'#f1faee';
+    ctx.stroke();
   }
   ctx.restore();
 }
 
 function drawFinishLine() {
-  const p0 = trackPoints[0], p1 = trackPoints[1];
-  const angle = Math.atan2(p1.y-p0.y, p1.x-p0.x);
-  const perp  = angle + Math.PI/2;
-  const squares = 8;
+  if (trackPoints.length<4) return;
+  const p0=trackPoints[0], p1=trackPoints[4];
+  const angle=Math.atan2(p1.y-p0.y, p1.x-p0.x);
+  const perp=angle+Math.PI/2;
   ctx.save();
-  for (let i = -squares/2; i < squares/2; i++) {
-    for (let row = 0; row < 2; row++) {
-      const ox = Math.cos(perp)*(i/squares*TRACK_WIDTH*2) + Math.cos(angle)*row*7;
-      const oy = Math.sin(perp)*(i/squares*TRACK_WIDTH*2) + Math.sin(angle)*row*7;
-      ctx.fillStyle = (i+row)%2===0 ? 'white' : 'black';
-      ctx.save();
-      ctx.translate(p0.x+ox, p0.y+oy);
-      ctx.rotate(angle);
-      ctx.fillRect(-3,-3,7,7);
+  const sqSize=7, cols=Math.round(TRACK_WIDTH*2/sqSize);
+  for (let col=0; col<cols; col++) {
+    for (let row=0; row<2; row++) {
+      const off=(col-cols/2)*sqSize;
+      const ox=Math.cos(perp)*off+Math.cos(angle)*row*sqSize;
+      const oy=Math.sin(perp)*off+Math.sin(angle)*row*sqSize;
+      ctx.fillStyle=(col+row)%2===0?'white':'black';
+      ctx.save(); ctx.translate(p0.x+ox, p0.y+oy); ctx.rotate(angle);
+      ctx.fillRect(-sqSize/2,-sqSize/2,sqSize,sqSize);
       ctx.restore();
     }
   }
-  // Finish text
-  ctx.font = 'bold 11px Nunito';
-  ctx.fillStyle = '#ffd60a';
-  ctx.textAlign = 'center';
-  ctx.fillText('START/MÅL', p0.x + Math.cos(perp)*-60, p0.y + Math.sin(perp)*-60);
+  ctx.font='bold 12px Nunito'; ctx.fillStyle='#ffd60a';
+  ctx.textAlign='center';
+  const lx=p0.x+Math.cos(perp)*(-(TRACK_WIDTH+22));
+  const ly=p0.y+Math.sin(perp)*(-(TRACK_WIDTH+22));
+  ctx.fillText('START/MÅL',lx,ly);
   ctx.restore();
 }
 
 function drawDecorations() {
-  // Trees at random but stable positions along the outer edge
-  const treeSeeds = [0.08,0.18,0.32,0.52,0.65,0.78,0.88];
+  if (!trackPoints.length) return;
   ctx.save();
-  treeSeeds.forEach((t,i) => {
-    const idx = Math.floor(t*(trackPoints.length-1));
-    const p = trackPoints[idx];
-    if (!p) return;
-    const angle  = Math.atan2(
-      (trackPoints[idx+1]||trackPoints[0]).y - p.y,
-      (trackPoints[idx+1]||trackPoints[0]).x - p.x
-    ) + Math.PI/2;
-    const ox = Math.cos(angle)*(TRACK_WIDTH+28);
-    const oy = Math.sin(angle)*(TRACK_WIDTH+28);
-    const tx = p.x+ox, ty = p.y+oy;
-    // Tree trunk
-    ctx.fillStyle = '#5c3317';
-    ctx.fillRect(tx-3,ty,6,10);
-    // Tree crown
-    ctx.fillStyle = i%2===0 ? '#2d6a26' : '#3a8a32';
-    ctx.beginPath(); ctx.arc(tx,ty,12,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#4aaa3a';
-    ctx.beginPath(); ctx.arc(tx-3,ty-4,8,0,Math.PI*2); ctx.fill();
+  // Trær på stabile posisjoner langs ytre kant
+  const treePositions=[0.06,0.14,0.28,0.44,0.58,0.70,0.82,0.92];
+  treePositions.forEach((frac,i)=>{
+    const idx=Math.floor(frac*trackPoints.length);
+    const p=trackPoints[idx];
+    const pn=trackPoints[Math.min(idx+4,trackPoints.length-1)];
+    if(!p||!pn) return;
+    const angle=Math.atan2(pn.y-p.y,pn.x-p.x)+Math.PI/2;
+    const dist=TRACK_WIDTH+26;
+    const tx=p.x+Math.cos(angle)*dist, ty=p.y+Math.sin(angle)*dist;
+    ctx.fillStyle='#5c3317'; ctx.fillRect(tx-3,ty+8,6,12);
+    ctx.fillStyle=i%2===0?'#2d6a26':'#3a8a32';
+    ctx.beginPath(); ctx.arc(tx,ty+6,13,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#4aaa3a';
+    ctx.beginPath(); ctx.arc(tx-3,ty,9,0,Math.PI*2); ctx.fill();
   });
 
-  // Crowd dots along outer edge
-  ctx.globalAlpha = 0.5;
-  const crowdColors = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c','#9b59b6'];
-  for (let i = 0; i < 80; i++) {
-    const t  = i/80;
-    const idx = Math.floor(t*(trackPoints.length-1));
-    const p  = trackPoints[idx];
-    if (!p) continue;
-    const ang = Math.atan2(
-      (trackPoints[idx+1]||trackPoints[0]).y-p.y,
-      (trackPoints[idx+1]||trackPoints[0]).x-p.x
-    ) + Math.PI/2;
-    const dist = TRACK_WIDTH + 18 + (i%3)*8;
-    const jx = Math.cos(ang)*dist + (Math.sin(i*7.3)*4);
-    const jy = Math.sin(ang)*dist + (Math.cos(i*5.1)*4);
-    ctx.fillStyle = crowdColors[i%crowdColors.length];
-    ctx.beginPath();
-    ctx.arc(p.x+jx, p.y+jy, 3.5, 0, Math.PI*2);
-    ctx.fill();
+  // Publikum langs ytre kant
+  const crowdColors=['#e63946','#457b9d','#f1c40f','#2ecc71','#9b59b6','#e67e22'];
+  ctx.globalAlpha=0.55;
+  for (let i=0; i<100; i++) {
+    const idx=Math.floor((i/100)*trackPoints.length);
+    const p=trackPoints[idx];
+    const pn=trackPoints[Math.min(idx+4,trackPoints.length-1)];
+    if(!p||!pn) continue;
+    const angle=Math.atan2(pn.y-p.y,pn.x-p.x)+Math.PI/2;
+    const d=TRACK_WIDTH+18+(i%4)*7;
+    const jx=Math.cos(angle)*d+Math.sin(i*7.3)*3;
+    const jy=Math.sin(angle)*d+Math.cos(i*5.1)*3;
+    ctx.fillStyle=crowdColors[i%crowdColors.length];
+    ctx.beginPath(); ctx.arc(p.x+jx,p.y+jy,3.5,0,Math.PI*2); ctx.fill();
   }
-  ctx.globalAlpha = 1;
-  ctx.restore();
+  ctx.globalAlpha=1; ctx.restore();
 }
 
 // ── DRAW CARS ──
