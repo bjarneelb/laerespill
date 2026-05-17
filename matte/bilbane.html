@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Likningsløpet – Bilbane</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --asphalt: #1a1a2e;
+    --asphalt2: #16213e;
+    --track: #2d2d2d;
+    --track-line: #f5f5f5;
+    --grass: #2d5a27;
+    --grass2: #3a7a32;
+    --barrier: #e63946;
+    --barrier2: #f1faee;
+    --gold: #ffd60a;
+    --silver: #c0c0c0;
+    --bronze: #cd7f32;
+    --accent: #e63946;
+    --neon: #00f5d4;
+    --text: #f1faee;
+    --muted: #8d99ae;
+    --panel: rgba(22,33,62,0.92);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--asphalt);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  /* ── HEADER BAR ── */
+  .topbar {
+    background: linear-gradient(90deg, #0d0d1a, #1a1a2e, #0d0d1a);
+    border-bottom: 3px solid var(--accent);
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 100; flex-shrink: 0;
+  }
+  .topbar-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.6rem; letter-spacing: 2px; color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,214,10,0.5);
+  }
+  .topbar-center { display: flex; align-items: center; gap: 20px; }
+  .lap-goal {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem; color: var(--neon); letter-spacing: 1px;
+  }
+  .room-badge {
+    background: var(--accent); color: white;
+    border-radius: 6px; padding: 4px 12px;
+    font-weight: 800; font-size: 0.85rem; letter-spacing: 2px;
+  }
+  .player-count { color: var(--muted); font-size: 0.85rem; font-weight: 700; }
+
+  /* ── MAIN AREA ── */
+  .main-area {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* ── SIDE PANELS ── */
+  .side-panel {
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    padding: 14px 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+  }
+  .side-panel.right { border-right: none; border-left: 1px solid rgba(255,255,255,0.05); }
+  .panel-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 0.85rem; letter-spacing: 2px;
+    color: var(--gold); text-transform: uppercase;
+    border-bottom: 1px solid rgba(255,214,10,0.2);
+    padding-bottom: 6px; margin-bottom: 2px;
+  }
+
+  /* LEADERBOARD ENTRIES */
+  .lb-entry {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    transition: background 0.3s;
+    font-size: 0.82rem;
+  }
+  .lb-entry.is-leader { background: rgba(255,214,10,0.12); }
+  .lb-pos { font-family: 'Black Han Sans', sans-serif; font-size: 0.9rem; width: 22px; text-align: center; }
+  .lb-car { font-size: 1rem; }
+  .lb-name { flex: 1; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lb-laps { font-weight: 800; color: var(--neon); font-size: 0.85rem; white-space: nowrap; }
+  .lb-incident { font-size: 0.75rem; margin-left: 2px; }
+
+  /* SPEED LIST */
+  .speed-entry {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    font-size: 0.82rem;
+  }
+  .speed-bar-wrap { flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; }
+  .speed-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg,var(--neon),var(--gold)); transition: width 0.8s; }
+  .speed-val { font-weight: 800; color: var(--gold); font-size: 0.8rem; width: 36px; text-align: right; }
+
+  /* ── TRACK CANVAS ── */
+  #trackCanvas {
+    width: 100%; height: 100%;
+    display: block;
+  }
+
+  /* ── INCIDENT FEED ── */
+  .incident-feed {
+    position: absolute;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    pointer-events: none; z-index: 50;
+    width: 500px;
+  }
+  .incident-toast {
+    background: rgba(10,10,20,0.92);
+    border: 2px solid var(--accent);
+    border-radius: 30px;
+    padding: 7px 20px;
+    font-weight: 800; font-size: 0.9rem;
+    animation: incidentIn 0.4s cubic-bezier(.34,1.56,.64,1), incidentOut 0.4s ease-in 2.6s forwards;
+    white-space: nowrap;
+  }
+  @keyframes incidentIn  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes incidentOut { to{opacity:0;transform:translateY(-12px)} }
+
+  /* ── SETUP OVERLAY ── */
+  #setupOverlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: linear-gradient(135deg,#0d0d1a,#1a1a2e);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .setup-card {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,214,10,0.3);
+    border-radius: 24px; padding: 48px 56px;
+    text-align: center; width: 440px;
+    box-shadow: 0 0 60px rgba(255,214,10,0.1);
+  }
+  .setup-icon { font-size: 4rem; margin-bottom: 12px; }
+  .setup-card h1 { font-family: 'Black Han Sans', sans-serif; font-size: 2.2rem; color: var(--gold); letter-spacing: 2px; margin-bottom: 6px; }
+  .setup-card p { color: var(--muted); margin-bottom: 24px; }
+  .setup-input {
+    width: 100%; padding: 12px 16px; border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07);
+    color: white; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 700;
+    text-align: center; text-transform: uppercase; letter-spacing: 2px;
+    outline: none; margin-bottom: 12px;
+  }
+  .setup-input:focus { border-color: var(--gold); }
+  .setup-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .setup-label { color: var(--muted); font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+  .setup-num { width: 70px; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07); color: white; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 800; text-align: center; outline: none; }
+  .setup-num:focus { border-color: var(--gold); }
+  .btn-launch {
+    width: 100%; padding: 14px; background: var(--gold); color: #0d0d1a;
+    border: none; border-radius: 12px; font-family: 'Black Han Sans',sans-serif;
+    font-size: 1.1rem; letter-spacing: 2px; cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 24px rgba(255,214,10,0.4);
+  }
+  .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(255,214,10,0.6); }
+
+  /* ── WINNER OVERLAY ── */
+  #winnerOverlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  #winnerOverlay.show { display: flex; }
+  .winner-card {
+    text-align: center;
+    animation: winnerPop 0.6s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes winnerPop { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+  .winner-trophy { font-size: 6rem; margin-bottom: 12px; }
+  .winner-title { font-family: 'Black Han Sans', sans-serif; font-size: 3rem; color: var(--gold); letter-spacing: 3px; margin-bottom: 8px; }
+  .winner-name  { font-family: 'Black Han Sans', sans-serif; font-size: 2rem; color: white; margin-bottom: 24px; }
+  .btn-restart { padding: 14px 36px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Black Han Sans',sans-serif; font-size: 1.1rem; letter-spacing: 2px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div id="setupOverlay">
+  <div class="setup-card">
+    <div class="setup-icon">🏁</div>
+    <h1>LIGNINGSLØPET</h1>
+    <p>Koble til rommet og still inn løpet</p>
+    <input class="setup-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
+    <div class="setup-row">
+      <span class="setup-label">Antall runder:</span>
+      <input class="setup-num" id="lapGoal" type="number" value="5" min="1" max="20">
+    </div>
+    <button class="btn-launch" onclick="launchRace()">🚦 START LØPET</button>
+  </div>
+</div>
+
+<!-- WINNER OVERLAY -->
+<div id="winnerOverlay">
+  <div class="winner-card">
+    <div class="winner-trophy">🏆</div>
+    <div class="winner-title">VINNER!</div>
+    <div class="winner-name" id="winnerName">–</div>
+    <button class="btn-restart" onclick="location.reload()">🔄 Nytt løp</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="topbar">
+  <div class="topbar-title">🏎️ LIKNINGSLØPET</div>
+  <div class="topbar-center">
+    <span class="lap-goal">MÅL: <span id="lapGoalDisplay">5</span> RUNDER</span>
+    <span class="room-badge" id="roomDisplay">–</span>
+    <span class="player-count"><span id="playerCount">0</span> kjørere</span>
+  </div>
+  <div style="font-size:0.8rem;color:var(--muted)">Ligningsbyggeren v1.5</div>
+</div>
+
+<!-- MAIN -->
+<div class="main-area">
+
+  <!-- LEFT: LEADERBOARD -->
+  <div class="side-panel">
+    <div class="panel-title">🏆 Ledere</div>
+    <div id="leaderList"></div>
+    <div class="panel-title" style="margin-top:8px">⚡ Raskest nå</div>
+    <div id="speedList"></div>
+  </div>
+
+  <!-- CENTER: TRACK -->
+  <div style="position:relative;overflow:hidden">
+    <canvas id="trackCanvas"></canvas>
+    <div class="incident-feed" id="incidentFeed"></div>
+  </div>
+
+  <!-- RIGHT: FULL STANDINGS -->
+  <div class="side-panel right">
+    <div class="panel-title">📋 Alle kjørere</div>
+    <div id="standingsList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex:1"></div>
+  </div>
+
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, onValue } from "./js/firebase-config.js";
+  window._db = database; window._ref = ref; window._onValue = onValue;
+  window._fbReady = true;
+</script>
+
+<script>
+// ── CONSTANTS ──
+const CAR_EMOJIS = ['🔴','🔵','🟡','🟢','🟠','🟣','⚪','🟤',
+                    '🚗','🏎️','🚙','🚕','🚓','🚑','🚒','🛻',
+                    '🔺','🔷','🟥','🟦','🟨','🟩','🟧','🟪'];
+const INCIDENT_TYPES = [
+  { emoji:'💥', label:'krasjet', duration:4000 },
+  { emoji:'🔧', label:'punkterte', duration:3500 },
+  { emoji:'🌀', label:'skled ut', duration:3000 },
+];
+const BASE_RISK    = 0.003; // 0.3% per sekund ved lav fart
+const MAX_RISK     = 0.025; // 2.5% per sekund ved maks fart
+const INCIDENT_COOLDOWN = 15000; // min 15 sek mellom hendelser per bil
+
+// ── STATE ──
+let players = {};       // { name: { score, lastUpdated, laps, dist, speed, incident, car, color } }
+let lapGoal = 5;
+let raceStarted = false;
+let roomCode = '';
+let winnerDeclared = false;
+let lastScores = {};    // for å beregne poengrate
+let animFrame = null;
+
+// Track path (normalized 0-1, scaled to canvas)
+// Definerer banen som en serie kontrollpunkter — uregelmessig oval
+const TRACK_PATH_NORM = [
+  {x:0.50,y:0.08},{x:0.70,y:0.07},{x:0.82,y:0.10},{x:0.90,y:0.18},
+  {x:0.93,y:0.30},{x:0.91,y:0.45},{x:0.85,y:0.58},{x:0.80,y:0.68},
+  {x:0.82,y:0.78},{x:0.80,y:0.88},{x:0.70,y:0.93},{x:0.55,y:0.95},
+  {x:0.40,y:0.94},{x:0.28,y:0.90},{x:0.20,y:0.82},{x:0.15,y:0.70},
+  {x:0.13,y:0.58},{x:0.14,y:0.45},{x:0.16,y:0.32},{x:0.20,y:0.20},
+  {x:0.28,y:0.12},{x:0.38,y:0.08},{x:0.50,y:0.08}
+];
+
+let trackPoints = []; // scaled to canvas px
+let trackLengths = []; // cumulative arc lengths
+let totalTrackLength = 0;
+const TRACK_WIDTH = 52;
+
+// ── CANVAS SETUP ──
+const canvas = document.getElementById('trackCanvas');
+const ctx = canvas.getContext('2d');
+
+// roundRect polyfill for eldre nettlesere
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+    r = Math.min(r, w/2, h/2);
+    this.beginPath();
+    this.moveTo(x+r,y);
+    this.lineTo(x+w-r,y); this.arcTo(x+w,y,x+w,y+r,r);
+    this.lineTo(x+w,y+h-r); this.arcTo(x+w,y+h,x+w-r,y+h,r);
+    this.lineTo(x+r,y+h); this.arcTo(x,y+h,x,y+h-r,r);
+    this.lineTo(x,y+r); this.arcTo(x,y,x+r,y,r);
+    this.closePath();
+    return this;
+  };
+}
+
+function resizeCanvas() {
+  const parent = canvas.parentElement;
+  canvas.width  = parent.clientWidth;
+  canvas.height = parent.clientHeight;
+  buildTrack();
+}
+
+function buildTrack() {
+  const W = canvas.width, H = canvas.height;
+  // Scale normalized points to canvas, keeping some margin
+  const mx = W * 0.06, my = H * 0.06;
+  const pw = W - mx*2, ph = H - my*2;
+  trackPoints = TRACK_PATH_NORM.map(p => ({x: mx + p.x*pw, y: my + p.y*ph}));
+
+  // Compute cumulative arc lengths
+  trackLengths = [0];
+  for (let i = 1; i < trackPoints.length; i++) {
+    const dx = trackPoints[i].x - trackPoints[i-1].x;
+    const dy = trackPoints[i].y - trackPoints[i-1].y;
+    trackLengths.push(trackLengths[i-1] + Math.sqrt(dx*dx+dy*dy));
+  }
+  totalTrackLength = trackLengths[trackLengths.length-1];
+}
+
+// ── INTERPOLATE POSITION ON TRACK ──
+function getPosOnTrack(dist) {
+  // dist is cumulative distance, wraps around
+  const d = ((dist % totalTrackLength) + totalTrackLength) % totalTrackLength;
+  // Find segment
+  let seg = 0;
+  for (let i = 1; i < trackLengths.length; i++) {
+    if (trackLengths[i] >= d) { seg = i-1; break; }
+  }
+  const segLen = trackLengths[seg+1] - trackLengths[seg];
+  const t = segLen > 0 ? (d - trackLengths[seg]) / segLen : 0;
+  const p0 = trackPoints[seg], p1 = trackPoints[seg+1] || trackPoints[0];
+  return {
+    x: p0.x + (p1.x-p0.x)*t,
+    y: p0.y + (p1.y-p0.y)*t,
+    angle: Math.atan2(p1.y-p0.y, p1.x-p0.x)
+  };
+}
+
+// ── DRAW TRACK ──
+function drawTrack() {
+  const W = canvas.width, H = canvas.height;
+
+  // Sky/background
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#0a0a1a');
+  sky.addColorStop(1,'#1a2a1a');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,W,H);
+
+  // Draw grass area (fill outside track)
+  drawGrass();
+
+  // Track shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 18;
+  drawTrackPath(TRACK_WIDTH+8, '#111');
+  ctx.restore();
+
+  // Track surface
+  drawTrackPath(TRACK_WIDTH, '#2a2a2a');
+
+  // Track markings (dashed center line)
+  ctx.save();
+  ctx.setLineDash([18,14]);
+  ctx.lineDashOffset = (Date.now()/40) % 32; // animert midtlinje
+  drawTrackPath(1, 'rgba(255,255,255,0.25)', false);
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Outer barrier (red/white)
+  drawBarrier(TRACK_WIDTH + 6);
+
+  // Inner barrier
+  drawBarrier(-(TRACK_WIDTH + 6));
+
+  // Finish line
+  drawFinishLine();
+
+  // Decorations
+  drawDecorations();
+}
+
+function drawTrackPath(width, color, fill=false) {
+  ctx.beginPath();
+  ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
+  for (let i = 1; i < trackPoints.length; i++) {
+    ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+  }
+  ctx.closePath();
+  ctx.lineWidth = width;
+  ctx.strokeStyle = color;
+  if (fill) { ctx.fillStyle = color; ctx.fill(); }
+  else ctx.stroke();
+}
+
+function drawGrass() {
+  // Outer grass
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0,0,canvas.width,canvas.height);
+  // Clip the track path out
+  ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
+  for (let i = 1; i < trackPoints.length; i++) ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+  ctx.closePath();
+  const grd = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+  grd.addColorStop(0,'#2a5225'); grd.addColorStop(1,'#1e3d1a');
+  ctx.fillStyle = grd;
+  ctx.fill('evenodd');
+  ctx.restore();
+
+  // Grass texture dots
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  for (let i = 0; i < 120; i++) {
+    const x = (Math.sin(i*137.5)*0.5+0.5)*canvas.width;
+    const y = (Math.cos(i*97.3)*0.5+0.5)*canvas.height;
+    ctx.fillStyle = i%2===0 ? '#4a8a40' : '#1a3a16';
+    ctx.fillRect(x,y,3,3);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawBarrier(offset) {
+  ctx.save();
+  const segLen = 16;
+  for (let i = 0; i < trackPoints.length-1; i++) {
+    const p0 = trackPoints[i], p1 = trackPoints[i+1];
+    const angle = Math.atan2(p1.y-p0.y, p1.x-p0.x);
+    const perp  = angle + Math.PI/2;
+    const segs  = Math.ceil(Math.hypot(p1.x-p0.x,p1.y-p0.y)/segLen);
+    for (let s = 0; s < segs; s++) {
+      const t  = s/segs, t2 = (s+1)/segs;
+      const px = p0.x+(p1.x-p0.x)*t  + Math.cos(perp)*offset;
+      const py = p0.y+(p1.y-p0.y)*t  + Math.sin(perp)*offset;
+      const qx = p0.x+(p1.x-p0.x)*t2 + Math.cos(perp)*offset;
+      const qy = p0.y+(p1.y-p0.y)*t2 + Math.sin(perp)*offset;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(qx,qy);
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = (i+s)%2===0 ? '#e63946' : '#f1faee';
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawFinishLine() {
+  const p0 = trackPoints[0], p1 = trackPoints[1];
+  const angle = Math.atan2(p1.y-p0.y, p1.x-p0.x);
+  const perp  = angle + Math.PI/2;
+  const squares = 8;
+  ctx.save();
+  for (let i = -squares/2; i < squares/2; i++) {
+    for (let row = 0; row < 2; row++) {
+      const ox = Math.cos(perp)*(i/squares*TRACK_WIDTH*2) + Math.cos(angle)*row*7;
+      const oy = Math.sin(perp)*(i/squares*TRACK_WIDTH*2) + Math.sin(angle)*row*7;
+      ctx.fillStyle = (i+row)%2===0 ? 'white' : 'black';
+      ctx.save();
+      ctx.translate(p0.x+ox, p0.y+oy);
+      ctx.rotate(angle);
+      ctx.fillRect(-3,-3,7,7);
+      ctx.restore();
+    }
+  }
+  // Finish text
+  ctx.font = 'bold 11px Nunito';
+  ctx.fillStyle = '#ffd60a';
+  ctx.textAlign = 'center';
+  ctx.fillText('START/MÅL', p0.x + Math.cos(perp)*-60, p0.y + Math.sin(perp)*-60);
+  ctx.restore();
+}
+
+function drawDecorations() {
+  // Trees at random but stable positions along the outer edge
+  const treeSeeds = [0.08,0.18,0.32,0.52,0.65,0.78,0.88];
+  ctx.save();
+  treeSeeds.forEach((t,i) => {
+    const idx = Math.floor(t*(trackPoints.length-1));
+    const p = trackPoints[idx];
+    if (!p) return;
+    const angle  = Math.atan2(
+      (trackPoints[idx+1]||trackPoints[0]).y - p.y,
+      (trackPoints[idx+1]||trackPoints[0]).x - p.x
+    ) + Math.PI/2;
+    const ox = Math.cos(angle)*(TRACK_WIDTH+28);
+    const oy = Math.sin(angle)*(TRACK_WIDTH+28);
+    const tx = p.x+ox, ty = p.y+oy;
+    // Tree trunk
+    ctx.fillStyle = '#5c3317';
+    ctx.fillRect(tx-3,ty,6,10);
+    // Tree crown
+    ctx.fillStyle = i%2===0 ? '#2d6a26' : '#3a8a32';
+    ctx.beginPath(); ctx.arc(tx,ty,12,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#4aaa3a';
+    ctx.beginPath(); ctx.arc(tx-3,ty-4,8,0,Math.PI*2); ctx.fill();
+  });
+
+  // Crowd dots along outer edge
+  ctx.globalAlpha = 0.5;
+  const crowdColors = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c','#9b59b6'];
+  for (let i = 0; i < 80; i++) {
+    const t  = i/80;
+    const idx = Math.floor(t*(trackPoints.length-1));
+    const p  = trackPoints[idx];
+    if (!p) continue;
+    const ang = Math.atan2(
+      (trackPoints[idx+1]||trackPoints[0]).y-p.y,
+      (trackPoints[idx+1]||trackPoints[0]).x-p.x
+    ) + Math.PI/2;
+    const dist = TRACK_WIDTH + 18 + (i%3)*8;
+    const jx = Math.cos(ang)*dist + (Math.sin(i*7.3)*4);
+    const jy = Math.sin(ang)*dist + (Math.cos(i*5.1)*4);
+    ctx.fillStyle = crowdColors[i%crowdColors.length];
+    ctx.beginPath();
+    ctx.arc(p.x+jx, p.y+jy, 3.5, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// ── DRAW CARS ──
+function drawCars() {
+  const names = Object.keys(players);
+  names.forEach((name, idx) => {
+    const p = players[name];
+    if (p.dist === undefined) return;
+
+    const pos = getPosOnTrack(p.dist);
+
+    // Incident effect: wobble
+    let drawX = pos.x, drawY = pos.y;
+    if (p.incident) {
+      drawX += (Math.random()-0.5)*8;
+      drawY += (Math.random()-0.5)*8;
+    }
+
+    ctx.save();
+    ctx.translate(drawX, drawY);
+    ctx.rotate(pos.angle + Math.PI/2);
+
+    // Glow for leading car
+    if (idx === 0 || p.laps === Math.max(...names.map(n=>players[n].laps||0))) {
+      ctx.shadowColor = '#ffd60a';
+      ctx.shadowBlur = 18;
+    }
+
+    // Car body
+    const carW = 14, carH = 22;
+    ctx.fillStyle = p.color || '#e63946';
+    ctx.beginPath();
+    ctx.roundRect(-carW/2, -carH/2, carW, carH, 4);
+    ctx.fill();
+
+    // Windshield
+    ctx.fillStyle = 'rgba(150,220,255,0.6)';
+    ctx.fillRect(-carW/2+2, -carH/2+3, carW-4, 6);
+
+    // Wheels
+    ctx.fillStyle = '#111';
+    [[-carW/2-2,-carH/4],[carW/2-2,-carH/4],[-carW/2-2,carH/4],[carW/2-2,carH/4]].forEach(([wx,wy])=>{
+      ctx.fillRect(wx, wy-3, 4, 6);
+    });
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Name label
+    ctx.save();
+    ctx.font = 'bold 10px Nunito';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'white';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(name.split(' ')[1] || name, drawX, drawY - 18);
+    ctx.restore();
+
+    // Incident emoji
+    if (p.incident) {
+      ctx.save();
+      ctx.font = '18px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.incident.emoji, drawX, drawY - 32);
+      ctx.restore();
+    }
+  });
+}
+
+// ── MAIN RENDER LOOP ──
+let lastTime = 0;
+function gameLoop(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.1); // delta seconds, max 100ms
+  lastTime = ts;
+
+  if (raceStarted) {
+    updateCars(dt);
+    drawTrack();
+    drawCars();
+    updateSidePanels();
+    checkWinner();
+  }
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ── UPDATE CAR POSITIONS ──
+function updateCars(dt) {
+  const now = Date.now();
+  Object.keys(players).forEach(name => {
+    const p = players[name];
+    if (!p) return;
+
+    // Glir jevnt mot targetSpeed (akselerasjon/bremsing)
+    const target = p.targetSpeed || 0;
+    const diff   = target - (p.speed || 0);
+    // Akselererer raskt (0.5s til full fart), bremser litt tregere (1.5s)
+    const lerpRate = diff > 0 ? 2.0 : 0.7;
+    p.speed = (p.speed || 0) + diff * Math.min(lerpRate * dt, 1);
+
+    // Pikselhastighet: 20–140 px/s
+    let px = 20 + p.speed * 1.2;
+
+    // Incident: stopp bilen
+    if (p.incident) {
+      if (now > p.incident.endsAt) { p.incident = null; }
+      else { px = 0; }
+    } else {
+      // Tilfeldig hendelse basert på fart
+      const risk = BASE_RISK + (p.speed/100) * (MAX_RISK - BASE_RISK);
+      const cooldownOk = !p.lastIncident || (now - p.lastIncident > INCIDENT_COOLDOWN);
+      if (cooldownOk && Math.random() < risk * dt) {
+        const type = INCIDENT_TYPES[Math.floor(Math.random()*INCIDENT_TYPES.length)];
+        p.incident = { emoji: type.emoji, endsAt: now + type.duration };
+        p.lastIncident = now;
+        showIncident(name, type);
+      }
+    }
+
+    // Flytt langs banen
+    const prevDist = p.dist || 0;
+    p.dist = prevDist + px * dt;
+
+    // Tell runder
+    const prevLap = Math.floor(prevDist / totalTrackLength);
+    const currLap = Math.floor(p.dist  / totalTrackLength);
+    if (currLap > prevLap) p.laps = (p.laps || 0) + 1;
+  });
+}
+
+// ── SIDE PANELS ──
+function updateSidePanels() {
+  const names = Object.keys(players);
+  if (!names.length) return;
+
+  // Sort by laps desc then dist desc
+  const sorted = [...names].sort((a,b) => {
+    const la = players[a].laps||0, lb = players[b].laps||0;
+    if (lb !== la) return lb-la;
+    return (players[b].dist||0)-(players[a].dist||0);
+  });
+
+  // Top 5 leaders
+  const leaderEl = document.getElementById('leaderList');
+  leaderEl.innerHTML = '';
+  sorted.slice(0,5).forEach((name,i) => {
+    const p = players[name];
+    const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+    const inc = p.incident ? p.incident.emoji : '';
+    leaderEl.innerHTML += `
+      <div class="lb-entry ${i===0?'is-leader':''}">
+        <span class="lb-pos">${medals[i]}</span>
+        <span class="lb-car" style="color:${p.color}">■</span>
+        <span class="lb-name">${name.split(' ')[1]||name}</span>
+        <span class="lb-laps">${p.laps||0}r</span>
+        <span class="lb-incident">${inc}</span>
+      </div>`;
+  });
+
+  // Speed list: top 5 by current speed
+  const bySpeed = [...names].sort((a,b)=>(players[b].speed||0)-(players[a].speed||0));
+  const maxSpd  = players[bySpeed[0]]?.speed || 1;
+  const speedEl = document.getElementById('speedList');
+  speedEl.innerHTML = '';
+  bySpeed.slice(0,5).forEach(name => {
+    const p = players[name];
+    const spd = p.speed || 0;
+    const pct = Math.round((spd/Math.max(maxSpd,1))*100);
+    speedEl.innerHTML += `
+      <div class="speed-entry">
+        <span style="font-size:0.8rem;font-weight:700;color:${p.color};width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name.split(' ')[1]||name}</span>
+        <div class="speed-bar-wrap"><div class="speed-bar" style="width:${pct}%"></div></div>
+        <span class="speed-val">${Math.round(spd)}</span>
+      </div>`;
+  });
+
+  // Full standings (right panel)
+  const standEl = document.getElementById('standingsList');
+  standEl.innerHTML = '';
+  sorted.forEach((name,i) => {
+    const p = players[name];
+    const inc = p.incident ? p.incident.emoji : '';
+    standEl.innerHTML += `
+      <div class="lb-entry">
+        <span class="lb-pos" style="font-size:0.75rem;color:var(--muted)">${i+1}</span>
+        <span style="color:${p.color};font-size:0.85rem">■</span>
+        <span class="lb-name" style="font-size:0.78rem">${name.split(' ')[1]||name}</span>
+        <span class="lb-laps" style="font-size:0.78rem">${p.laps||0}r</span>
+        <span class="lb-incident">${inc}</span>
+      </div>`;
+  });
+
+  // Player/lap counts
+  document.getElementById('playerCount').textContent = names.length;
+}
+
+// ── INCIDENTS ──
+function showIncident(name, type) {
+  const feed = document.getElementById('incidentFeed');
+  const toast = document.createElement('div');
+  toast.className = 'incident-toast';
+  const short = name.split(' ')[1] || name;
+  toast.innerHTML = `${type.emoji} <strong>${short}</strong> ${type.label}!`;
+  feed.appendChild(toast);
+  setTimeout(()=>{ if(toast.parentNode) toast.parentNode.removeChild(toast); }, 3200);
+}
+
+// ── WINNER CHECK ──
+function checkWinner() {
+  if (winnerDeclared) return;
+  const winner = Object.entries(players).find(([,p])=>(p.laps||0)>=lapGoal);
+  if (winner) {
+    winnerDeclared = true;
+    const name = winner[0];
+    document.getElementById('winnerName').textContent = name.split(' ')[1]||name;
+    document.getElementById('winnerOverlay').classList.add('show');
+  }
+}
+
+// ── FIREBASE SYNC ──
+function startFirebaseSync(room) {
+  if (!window._fbReady) return;
+
+  const COLORS = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c',
+                  '#9b59b6','#1abc9c','#e67e22','#3498db','#e91e63',
+                  '#00bcd4','#8bc34a','#ff5722','#607d8b','#795548',
+                  '#ff9800','#673ab7','#009688','#f44336','#2196f3'];
+
+  window._onValue(window._ref(window._db, 'rooms/'+room+'/players'), snap => {
+    const data = snap.val();
+    if (!data) return;
+    const now = Date.now();
+
+    Object.entries(data).forEach(([name, info]) => {
+      if (!players[name]) {
+        const idx = Object.keys(players).length;
+        players[name] = {
+          laps: 0,
+          dist: 0,           // alle starter på startstreken
+          targetSpeed: 0,    // ønsket fart basert på poengrate
+          speed: 0,          // faktisk nåværende fart (glir mot targetSpeed)
+          color: COLORS[idx % COLORS.length],
+          incident: null,
+          lastIncident: 0,
+          lastScore: info.score || 0,
+          lastScoreTime: now,
+          peakSpeed: 0,      // høyeste registrerte targetSpeed for denne spilleren
+        };
+        lastScores[name] = { score: info.score||0, time: now };
+      }
+
+      const p = players[name];
+      const prev = lastScores[name];
+      const newScore = info.score || 0;
+      const scoreDiff = newScore - (prev?.score || 0);
+      const rawTime   = info.lastUpdated || now;
+      const timeDiff  = rawTime - (prev?.time || rawTime);
+
+      if (scoreDiff > 0 && timeDiff > 0) {
+        // Poengrate: poeng per sekund → skaler til targetSpeed 0–100
+        // 10 p/s ≈ full fart (100). Smooth: ta 70% av ny rate + 30% av gammel
+        const rate = scoreDiff / (timeDiff / 1000);
+        const newTarget = Math.min(rate * 10, 100);
+        p.targetSpeed = p.targetSpeed * 0.3 + newTarget * 0.7;
+        p.peakSpeed   = Math.max(p.peakSpeed, p.targetSpeed);
+        p.lastScoreTime = now;
+      }
+
+      lastScores[name] = { score: newScore, time: rawTime };
+    });
+  });
+}
+
+// ── SPEED DECAY (kjøres hvert sekund uavhengig av Firebase) ──
+function applySpeedDecay() {
+  const now = Date.now();
+  const HOLD_MS   =  5000; // 0–5 sek: full fart
+  const DECAY_MS  = 30000; // 5–30 sek: bremser lineært ned til 20%
+  const MIN_PCT   =  0.20; // 20% av toppfart
+  const STOP_MS   = 60000; // 60 sek: full stopp
+
+  Object.keys(players).forEach(name => {
+    const p = players[name];
+    if (!p) return;
+    const idle = now - (p.lastScoreTime || now);
+
+    let decayFactor;
+    if (idle < HOLD_MS) {
+      decayFactor = 1.0;
+    } else if (idle < HOLD_MS + DECAY_MS) {
+      // Lineær nedbremsing fra 100% til MIN_PCT over DECAY_MS
+      const t = (idle - HOLD_MS) / DECAY_MS; // 0→1
+      decayFactor = 1.0 - t * (1.0 - MIN_PCT);
+    } else if (idle < STOP_MS) {
+      decayFactor = MIN_PCT;
+    } else {
+      decayFactor = 0;
+    }
+
+    p.targetSpeed = (p.peakSpeed || 50) * decayFactor;
+  });
+}
+setInterval(applySpeedDecay, 1000);
+
+// ── DEMO MODE (ingen Firebase) ──
+function startDemo() {
+  const demoNames = ['Raske Gaupe','Lynraske Rev','Smarte Bjørn','Ville Ulv','Modige Hauk',
+                     'Gylne Ugle','Flinke Løve','Smidige Tiger'];
+  const colors = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c','#9b59b6','#1abc9c','#e67e22'];
+  demoNames.forEach((name,i) => {
+    players[name] = { laps:0, dist:i*(totalTrackLength/demoNames.length), speed:20+Math.random()*60, color:colors[i], incident:null, lastIncident:0 };
+  });
+  // Simulate score updates
+  setInterval(() => {
+    Object.keys(players).forEach(name => {
+      players[name].speed = Math.max(10, Math.min(100, (players[name].speed||30) + (Math.random()-0.4)*15));
+    });
+  }, 3000);
+}
+
+// ── LAUNCH RACE ──
+window.launchRace = function() {
+  const room = document.getElementById('roomInput').value.trim().toUpperCase();
+  lapGoal = parseInt(document.getElementById('lapGoal').value) || 5;
+
+  document.getElementById('lapGoalDisplay').textContent = lapGoal;
+  document.getElementById('roomDisplay').textContent = room || 'DEMO';
+  document.getElementById('setupOverlay').style.display = 'none';
+
+  roomCode = room;
+  window.roomCode = room;
+  raceStarted = true;
+
+  if (room && window._fbReady) {
+    startFirebaseSync(room);
+  } else {
+    startDemo();
+  }
+};
+
+// ── STARTUP ──
+window.addEventListener('load', () => {
+  resizeCanvas();
+  window.addEventListener('resize', () => { resizeCanvas(); });
+  requestAnimationFrame(gameLoop);
+});
+</script>
+</body>
+</html>
