@@ -290,21 +290,54 @@ let winnerDeclared = false;
 let lastScores = {};    // for å beregne poengrate
 let animFrame = null;
 
-// Track path (normalized 0-1, scaled to canvas)
-// Definerer banen som en serie kontrollpunkter — uregelmessig oval
-const TRACK_PATH_NORM = [
-  {x:0.50,y:0.08},{x:0.70,y:0.07},{x:0.82,y:0.10},{x:0.90,y:0.18},
-  {x:0.93,y:0.30},{x:0.91,y:0.45},{x:0.85,y:0.58},{x:0.80,y:0.68},
-  {x:0.82,y:0.78},{x:0.80,y:0.88},{x:0.70,y:0.93},{x:0.55,y:0.95},
-  {x:0.40,y:0.94},{x:0.28,y:0.90},{x:0.20,y:0.82},{x:0.15,y:0.70},
-  {x:0.13,y:0.58},{x:0.14,y:0.45},{x:0.16,y:0.32},{x:0.20,y:0.20},
-  {x:0.28,y:0.12},{x:0.38,y:0.08},{x:0.50,y:0.08}
+// Track path — Silverstone-inspirert med Bezier-kurver
+// Hvert punkt har: ankerpunkt (x,y) og to kontrollpunkter (cp1, cp2)
+// for smooth cubic Bezier mellom punkter
+const TRACK_NODES_NORM = [
+  // START/MÅL — Hangar Straight (lang rettstrekning øverst)
+  { x:0.28, y:0.10, cp1:{x:0.20,y:0.10}, cp2:{x:0.15,y:0.10} },
+  // Vale — venstre inn i Club-sving
+  { x:0.10, y:0.14, cp1:{x:0.10,y:0.10}, cp2:{x:0.08,y:0.16} },
+  // Club — langsom hairpin venstre
+  { x:0.08, y:0.28, cp1:{x:0.07,y:0.22}, cp2:{x:0.07,y:0.34} },
+  // Abbey — ut av Club, begynner å gå mot høyre
+  { x:0.13, y:0.42, cp1:{x:0.08,y:0.38}, cp2:{x:0.10,y:0.44} },
+  // Farm Curve — bred høyresving
+  { x:0.22, y:0.52, cp1:{x:0.15,y:0.48}, cp2:{x:0.18,y:0.54} },
+  // Village — rettstrekning nedover
+  { x:0.28, y:0.66, cp1:{x:0.26,y:0.58}, cp2:{x:0.27,y:0.63} },
+  // The Loop — tett høyresving
+  { x:0.38, y:0.76, cp1:{x:0.29,y:0.72}, cp2:{x:0.33,y:0.78} },
+  // Aintree — ut av The Loop, nedover
+  { x:0.50, y:0.88, cp1:{x:0.43,y:0.78}, cp2:{x:0.46,y:0.86} },
+  // Stowe — lang buet høyresving
+  { x:0.65, y:0.92, cp1:{x:0.56,y:0.92}, cp2:{x:0.60,y:0.93} },
+  // Vale (Stowe exit)
+  { x:0.78, y:0.86, cp1:{x:0.72,y:0.93}, cp2:{x:0.77,y:0.90} },
+  // Chapel — rask høyresving opp
+  { x:0.88, y:0.72, cp1:{x:0.82,y:0.82}, cp2:{x:0.88,y:0.78} },
+  // Hangar Straight høyre side — lang rettstrekning ned
+  { x:0.90, y:0.55, cp1:{x:0.89,y:0.65}, cp2:{x:0.90,y:0.60} },
+  // Stowe (upper) — tett høyresving
+  { x:0.88, y:0.40, cp1:{x:0.90,y:0.48}, cp2:{x:0.90,y:0.44} },
+  // Becketts — rask S-sving (del 1: venstre)
+  { x:0.80, y:0.30, cp1:{x:0.87,y:0.35}, cp2:{x:0.84,y:0.30} },
+  // Maggotts — S-sving (del 2: høyre)
+  { x:0.72, y:0.22, cp1:{x:0.76,y:0.28}, cp2:{x:0.75,y:0.22} },
+  // Chapel (upper) — rask S-sving (del 3: venstre)
+  { x:0.63, y:0.16, cp1:{x:0.68,y:0.22}, cp2:{x:0.66,y:0.16} },
+  // Copse — tett høyresving inn på Hangar Straight
+  { x:0.52, y:0.10, cp1:{x:0.58,y:0.14}, cp2:{x:0.56,y:0.10} },
+  // Tilbake til START
+  { x:0.28, y:0.10, cp1:{x:0.44,y:0.08}, cp2:{x:0.36,y:0.09} },
 ];
 
-let trackPoints = []; // scaled to canvas px
-let trackLengths = []; // cumulative arc lengths
+// Flatten Bezier til diskrete punkter for arc-length og bilposisjon
+let trackPoints  = [];
+let trackLengths = [];
 let totalTrackLength = 0;
-const TRACK_WIDTH = 52;
+const TRACK_WIDTH  = 54;
+const BEZIER_STEPS = 30; // punkter per segment
 
 // ── CANVAS SETUP ──
 const canvas = document.getElementById('trackCanvas');
@@ -334,17 +367,40 @@ function resizeCanvas() {
 
 function buildTrack() {
   const W = canvas.width, H = canvas.height;
-  // Scale normalized points to canvas, keeping some margin
-  const mx = W * 0.06, my = H * 0.06;
-  const pw = W - mx*2, ph = H - my*2;
-  trackPoints = TRACK_PATH_NORM.map(p => ({x: mx + p.x*pw, y: my + p.y*ph}));
+  const mx = W*0.05, my = H*0.05;
+  const pw = W-mx*2, ph = H-my*2;
 
-  // Compute cumulative arc lengths
+  // Scale normalized nodes to canvas pixels
+  const nodes = TRACK_NODES_NORM.map(n => ({
+    x:  mx+n.x*pw,  y:  my+n.y*ph,
+    cp1:{ x:mx+n.cp1.x*pw, y:my+n.cp1.y*ph },
+    cp2:{ x:mx+n.cp2.x*pw, y:my+n.cp2.y*ph },
+  }));
+
+  // Flatten each cubic Bezier segment into discrete points
+  trackPoints = [];
+  for (let i = 0; i < nodes.length-1; i++) {
+    const p0 = nodes[i], p3 = nodes[i+1];
+    // Use p0.cp2 as cp1 of this segment, p3.cp1 as cp2
+    const cp1 = p0.cp2, cp2 = p3.cp1;
+    for (let s = 0; s < BEZIER_STEPS; s++) {
+      const t  = s/BEZIER_STEPS;
+      const mt = 1-t;
+      trackPoints.push({
+        x: mt*mt*mt*p0.x + 3*mt*mt*t*cp1.x + 3*mt*t*t*cp2.x + t*t*t*p3.x,
+        y: mt*mt*mt*p0.y + 3*mt*mt*t*cp1.y + 3*mt*t*t*cp2.y + t*t*t*p3.y,
+      });
+    }
+  }
+  // Close the loop
+  trackPoints.push({...trackPoints[0]});
+
+  // Cumulative arc lengths
   trackLengths = [0];
   for (let i = 1; i < trackPoints.length; i++) {
-    const dx = trackPoints[i].x - trackPoints[i-1].x;
-    const dy = trackPoints[i].y - trackPoints[i-1].y;
-    trackLengths.push(trackLengths[i-1] + Math.sqrt(dx*dx+dy*dy));
+    const dx = trackPoints[i].x-trackPoints[i-1].x;
+    const dy = trackPoints[i].y-trackPoints[i-1].y;
+    trackLengths.push(trackLengths[i-1]+Math.sqrt(dx*dx+dy*dy));
   }
   totalTrackLength = trackLengths[trackLengths.length-1];
 }
@@ -392,11 +448,10 @@ function drawTrack() {
   // Track surface
   drawTrackPath(TRACK_WIDTH, '#2a2a2a');
 
-  // Track markings (dashed center line)
+  // Track markings — stille midtstrek
   ctx.save();
   ctx.setLineDash([18,14]);
-  ctx.lineDashOffset = (Date.now()/40) % 32; // animert midtlinje
-  drawTrackPath(1, 'rgba(255,255,255,0.25)', false);
+  drawTrackPath(1, 'rgba(255,255,255,0.25)');
   ctx.setLineDash([]);
   ctx.restore();
 
@@ -413,40 +468,53 @@ function drawTrack() {
   drawDecorations();
 }
 
-function drawTrackPath(width, color, fill=false) {
+function drawTrackPath(width, color) {
+  const W = canvas.width, H = canvas.height;
+  const mx = W*0.05, my = H*0.05, pw = W-mx*2, ph = H-my*2;
+  const nodes = TRACK_NODES_NORM.map(n=>({
+    x:mx+n.x*pw, y:my+n.y*ph,
+    cp1:{x:mx+n.cp1.x*pw,y:my+n.cp1.y*ph},
+    cp2:{x:mx+n.cp2.x*pw,y:my+n.cp2.y*ph},
+  }));
   ctx.beginPath();
-  ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
-  for (let i = 1; i < trackPoints.length; i++) {
-    ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+  ctx.moveTo(nodes[0].x, nodes[0].y);
+  for (let i = 0; i < nodes.length-1; i++) {
+    ctx.bezierCurveTo(nodes[i].cp2.x,nodes[i].cp2.y, nodes[i+1].cp1.x,nodes[i+1].cp1.y, nodes[i+1].x,nodes[i+1].y);
   }
   ctx.closePath();
-  ctx.lineWidth = width;
+  ctx.lineWidth   = width;
   ctx.strokeStyle = color;
-  if (fill) { ctx.fillStyle = color; ctx.fill(); }
-  else ctx.stroke();
+  ctx.stroke();
 }
 
 function drawGrass() {
-  // Outer grass
+  const W = canvas.width, H = canvas.height;
+  const mx = W*0.05, my = H*0.05, pw = W-mx*2, ph = H-my*2;
+  const nodes = TRACK_NODES_NORM.map(n=>({
+    x:mx+n.x*pw, y:my+n.y*ph,
+    cp1:{x:mx+n.cp1.x*pw,y:my+n.cp1.y*ph},
+    cp2:{x:mx+n.cp2.x*pw,y:my+n.cp2.y*ph},
+  }));
+
   ctx.save();
+  // Full canvas rect, then cut out track shape (evenodd)
   ctx.beginPath();
-  ctx.rect(0,0,canvas.width,canvas.height);
-  // Clip the track path out
-  ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
-  for (let i = 1; i < trackPoints.length; i++) ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+  ctx.rect(0,0,W,H);
+  ctx.moveTo(nodes[0].x,nodes[0].y);
+  for (let i = 0; i < nodes.length-1; i++) {
+    ctx.bezierCurveTo(nodes[i].cp2.x,nodes[i].cp2.y, nodes[i+1].cp1.x,nodes[i+1].cp1.y, nodes[i+1].x,nodes[i+1].y);
+  }
   ctx.closePath();
-  const grd = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+  const grd = ctx.createLinearGradient(0,0,W,H);
   grd.addColorStop(0,'#2a5225'); grd.addColorStop(1,'#1e3d1a');
   ctx.fillStyle = grd;
   ctx.fill('evenodd');
-  ctx.restore();
 
   // Grass texture dots
-  ctx.save();
   ctx.globalAlpha = 0.15;
   for (let i = 0; i < 120; i++) {
-    const x = (Math.sin(i*137.5)*0.5+0.5)*canvas.width;
-    const y = (Math.cos(i*97.3)*0.5+0.5)*canvas.height;
+    const x = (Math.sin(i*137.5)*0.5+0.5)*W;
+    const y = (Math.cos(i*97.3)*0.5+0.5)*H;
     ctx.fillStyle = i%2===0 ? '#4a8a40' : '#1a3a16';
     ctx.fillRect(x,y,3,3);
   }
