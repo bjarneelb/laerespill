@@ -1,100 +1,299 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interaktiv Ligningsvekt - Hovedmeny</title>
-    <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            background: #f0f2f5; 
-            margin: 0; 
-            color: #333;
-        }
-        .menu-container {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-        }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 2.2rem;
-        }
-        p {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.1rem;
-        }
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .menu-btn {
-            display: block;
-            padding: 18px 25px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .menu-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-        .btn-demo {
-            background: #34495e;
-        }
-        .btn-demo:hover {
-            background: #2c3e50;
-        }
-        .btn-game {
-            background: #27ae60;
-        }
-        .btn-game:hover {
-            background: #219150;
-        }
-        .footer {
-            margin-top: 40px;
-            font-size: 0.85rem;
-            color: #999;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Likningsspill – Hovedmeny</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff;
+    --accent: #5b4fcf;
+    --accent2: #e84393;
+    --text: #1e1b4b;
+    --muted: #6b7280;
+    --border: #d0d8f0;
+    --shadow: 0 4px 24px rgba(91,79,207,0.10);
+    --r: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── HEADER ── */
+  .hero {
+    width: 100%;
+    background: linear-gradient(135deg, #4338ca, #7c3aed 60%, #e84393);
+    color: white;
+    text-align: center;
+    padding: 52px 24px 44px;
+  }
+  .hero-icon { font-size: 3.5rem; margin-bottom: 10px; }
+  .hero h1 {
+    font-size: 2.2rem; font-weight: 900;
+    letter-spacing: -0.5px; margin-bottom: 8px;
+  }
+  .hero p {
+    font-size: 1rem; opacity: 0.85;
+    max-width: 480px; margin: 0 auto; line-height: 1.6;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    width: 100%;
+    max-width: 860px;
+    padding: 36px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* ── SECTION ── */
+  .section-title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── CARD GRID ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── GAME CARD ── */
+  .card {
+    background: white;
+    border-radius: var(--r);
+    border: 2px solid var(--border);
+    padding: 24px 22px 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    text-decoration: none;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--card-color, var(--accent));
+    border-radius: var(--r) var(--r) 0 0;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(91,79,207,0.18);
+    border-color: var(--card-color, var(--accent));
+  }
+  .card:active { transform: translateY(-1px); }
+
+  .card-icon { font-size: 2.2rem; }
+  .card-title { font-size: 1.05rem; font-weight: 900; }
+  .card-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; flex: 1; }
+  .card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #f0f4ff;
+    color: var(--accent);
+    width: fit-content;
+  }
+  .card-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--card-color, var(--accent));
+    color: white;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 0.88rem;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: filter 0.15s;
+  }
+  .card-btn:hover { filter: brightness(0.9); }
+
+  /* Fargevarianter */
+  .c-purple { --card-color: #5b4fcf; }
+  .c-pink    { --card-color: #e84393; }
+  .c-green   { --card-color: #16a34a; }
+  .c-orange  { --card-color: #ea580c; }
+  .c-blue    { --card-color: #2563eb; }
+  .c-teal    { --card-color: #0891b2; }
+  .c-gold    { --card-color: #d97706; }
+
+  .c-purple .card-tag { background:#f5f3ff; color:#5b4fcf; }
+  .c-pink   .card-tag { background:#fdf2f8; color:#e84393; }
+  .c-green  .card-tag { background:#f0fdf4; color:#16a34a; }
+  .c-orange .card-tag { background:#fff7ed; color:#ea580c; }
+  .c-blue   .card-tag { background:#eff6ff; color:#2563eb; }
+  .c-teal   .card-tag { background:#f0f9ff; color:#0891b2; }
+  .c-gold   .card-tag { background:#fffbeb; color:#d97706; }
+
+  /* Kommer snart */
+  .card.soon {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .soon-badge {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: #f1f5f9;
+    color: var(--muted);
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    margin-top: auto;
+  }
+
+  @media (max-width: 540px) {
+    .hero h1 { font-size: 1.6rem; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
 
-    <div class="menu-container">
-        <h1>Interaktiv Ligningsvekt</h1>
-        <p>Velg modusen du vil bruke i dag:</p>
-        
-        <div class="button-group">
-            <!-- Lenke til utforskingsmodusen -->
-            <a href="demo.html" class="menu-btn btn-demo">🔍 Gå til Demo / Fri utforsking</a>
-            
-            <!-- Lenke til spillmodusen -->
-            <a href="spill.html" class="menu-btn btn-game">🎮 Start Ligningsspillet</a>
+<div class="hero">
+  <div class="hero-icon">🏎️</div>
+  <h1>Likningsspill</h1>
+  <p>Velg et spill eller en bane — løs likninger, bygg forståelse, konkurrer mot klassen!</p>
+</div>
 
-            <!-- Lenke til spillmodusen -->
-            <a href="spill_mot_andre.html" class="menu-btn btn-game">🎮 Spill mot andre</a>
-        </div>
-        
-        <div class="footer">
-            Utviklet for visuell forståelse av algebra og ligninger.
-        </div>
+<div class="main">
+
+  <!-- SPILL -->
+  <div>
+    <div class="section-title">🎮 Spill</div>
+    <div class="card-grid">
+
+      <!-- Likningsspill tekst (KI) -->
+      <a class="card c-purple" href="likningsspill_tekst.html">
+        <div class="card-icon">🤖</div>
+        <div class="card-title">Likningsbyggeren</div>
+        <div class="card-desc">Løs tekstoppgaver laget av KI. Dra blokker, bygg likninger og løs dem steg for steg. 7 nivåer med automatisk progresjon.</div>
+        <div class="card-tag">⭐ Anbefalt</div>
+        <div class="card-btn">Spill nå →</div>
+      </a>
+
+      <!-- Ligningsvekt demo -->
+      <a class="card c-blue" href="demo.html">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Ligningsvekt – Demo</div>
+        <div class="card-desc">Utforsk likninger fritt med den visuelle vekten. Perfekt for introduksjon og demonstrasjon i klasserommet.</div>
+        <div class="card-tag">🔍 Utforsking</div>
+        <div class="card-btn">Åpne →</div>
+      </a>
+
+      <!-- Ligningsspill original -->
+      <a class="card c-teal" href="spill.html">
+        <div class="card-icon">🎯</div>
+        <div class="card-title">Ligningsspillet</div>
+        <div class="card-desc">Det originale likningsspillet med vektgrensesnitt. Løs likninger ved å flytte blokker og holde vekten i balanse.</div>
+        <div class="card-tag">🎮 Klassisk</div>
+        <div class="card-btn">Spill →</div>
+      </a>
+
+      <!-- Spill mot andre (original) -->
+      <a class="card c-green" href="spill_mot_andre.html">
+        <div class="card-icon">👥</div>
+        <div class="card-title">Spill mot andre</div>
+        <div class="card-desc">Det originale flerspillerspillet. Koble til med romkode og konkurrér mot medelever i sanntid.</div>
+        <div class="card-tag">🏆 Flerspiller</div>
+        <div class="card-btn">Spill →</div>
+      </a>
+
+      <!-- Likningssett (kommer) -->
+      <div class="card c-pink soon">
+        <div class="soon-badge">Kommer snart</div>
+        <div class="card-icon">🔢</div>
+        <div class="card-title">Likningssett</div>
+        <div class="card-desc">Løs likninger med to ukjente. Innsetting og addisjonsmetoden med tekstoppgaver og KI-genererte oppgaver.</div>
+        <div class="card-tag">✨ Nytt</div>
+        <div class="card-btn">Kommer snart</div>
+      </div>
+
     </div>
+  </div>
+
+  <!-- BANER -->
+  <div>
+    <div class="section-title">🏁 Baner – for storskjerm i klasserommet</div>
+    <div class="card-grid">
+
+      <!-- Bilbane -->
+      <a class="card c-orange" href="bilbane.html">
+        <div class="card-icon">🏎️</div>
+        <div class="card-title">Bilbanen</div>
+        <div class="card-desc">Silverstone-inspirert bilbane der elevenes poengrate styrer farten. Hendelser, krasj og publikum. Vis på storskjerm!</div>
+        <div class="card-tag">📺 Storskjerm</div>
+        <div class="card-btn">Åpne bane →</div>
+      </a>
+
+      <!-- Lineær bane (kommer) -->
+      <div class="card c-gold soon">
+        <div class="soon-badge">Kommer snart</div>
+        <div class="card-icon">➡️</div>
+        <div class="card-title">Fremdriftsbanen</div>
+        <div class="card-desc">Enkel lineær bane fra venstre til høyre. Sett et poengtmål og se hvem som når det først. Fungerer med alle spill.</div>
+        <div class="card-tag">🎯 Enkelt</div>
+        <div class="card-btn">Kommer snart</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Likningsspill — utviklet for visuell forståelse av algebra · v1.7
+</footer>
 
 </body>
 </html>
