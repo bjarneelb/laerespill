@@ -510,7 +510,7 @@ window.selectEquation=function(eq){
     document.getElementById('eqDisplay'+secondEq).className='equation-row-display';
     document.getElementById('eqBadge'+secondEq).textContent='Neste steg';
     document.getElementById('eqBadge'+secondEq).className='eq-badge pending';
-    document.getElementById('systemTitle').textContent='📋 Likning '+toRoman(eq)+' er valgt – isoler x eller y';
+    guide('Likning '+toRoman(eq)+' er valgt – isoler x eller y');
     loadIntoSolver(eq);
     updateStepDots(1);
     document.getElementById('solverTitle').textContent='🔧 Likning '+toRoman(eq)+' – isoler x eller y';
@@ -666,7 +666,8 @@ window.makeBlock=function(){
     document.getElementById('solverTitle').textContent='🔧 Klikk på likning '+toRoman(secondEq)+' over for å starte';
     document.getElementById('solverEqDisplay').textContent='–';
     renderSolver(); renderBank();
-    showToast('📦 Innsettingsblokk laget! Klikk på likning '+toRoman(secondEq),'success');
+    showToast('📦 Innsettingsblokk laget!','success');
+    guide('Klikk på likning '+toRoman(secondEq)+' over for å fortsette');
 
   } else if(step===2){
     const v=otherVar(isolatedVar), found=checkPureNum(v); if(found===null) return;
@@ -681,7 +682,8 @@ window.makeBlock=function(){
     document.getElementById('solverTitle').textContent='🔧 Klikk på en likning over for å starte';
     document.getElementById('solverEqDisplay').textContent='–';
     renderSolver(); renderBank();
-    showToast('📦 '+knownVar+' = '+knownVal+' lagt i banken! Velg en likning','success');
+    showToast('📦 '+knownVar+' = '+knownVal+' lagt i banken!','success');
+    guide('Velg en likning og sett inn');
 
   } else if(step===3){
     const found=checkPureNum(isolatedVar); if(found===null) return;
@@ -743,7 +745,8 @@ function doSubstitute(item){
   arr.splice(idx,1,parenBlock);
   lastChangedId=parenBlock.id;
   renderSolver();
-  showToast('✅ Satt inn som '+label+' – høyreklikk for å løse opp','success');
+  showToast('✅ Satt inn som '+label,'success');
+  guide('Høyreklikk på blokken for å løse opp parentesen');
 }
 
 function expandParen(item){
@@ -852,7 +855,9 @@ function startTimed(){ timedSecondsLeft=timedMinutes*60; document.getElementById
 function updTimed(){ const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60; const el=document.getElementById('countdownTime'); el.textContent=m+':'+(s<10?'0':'')+s; el.className='countdown-time'+(timedSecondsLeft<=30?' urgent':''); }
 
 // ── TOAST ──
-function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='feedback-toast '+type; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='feedback-toast '+type; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+
+function guide(msg){ if(currentLevel<=1) showToast(msg,'success'); }
 
 // ── START GAME ──
 window.startGame=function(){
