@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Likningssett – To ukjente</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff;
+    --border: #d0d8f0;
+    --accent: #5b4fcf;
+    --accent2: #e84393;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --teal: #0891b2;
+    --text: #1e1b4b;
+    --muted: #6b7280;
+    --x-color: #7c3aed;
+    --x-neg: #be185d;
+    --y-color: #0891b2;
+    --y-neg: #b45309;
+    --num-pos: #1d4ed8;
+    --num-neg: #92400e;
+    --sub-color: #059669;   /* innsettingsblokk */
+    --shadow: 0 4px 24px rgba(91,79,207,0.10);
+    --r: 16px; --r-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+  /* ── HEADER ── */
+  .header { width: 100%; background: var(--accent); color: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(91,79,207,0.25); flex-shrink: 0; }
+  .header-title { font-size: 1.3rem; font-weight: 900; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .player-badge { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 5px 14px; font-weight: 700; font-size: 0.82rem; }
+  .mode-badge { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 4px 12px; font-weight: 700; font-size: 0.78rem; }
+  .version-tag { font-size: 0.7rem; opacity: 0.55; font-weight: 600; }
+  .streak-badge { background: var(--yellow); color: #713f12; border-radius: 20px; padding: 5px 14px; font-weight: 800; font-size: 0.88rem; }
+
+  /* ── START SCREEN ── */
+  #startScreen { position: fixed; inset: 0; background: linear-gradient(135deg,#4338ca,#7c3aed 60%,#e84393); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .start-card { background: white; border-radius: 28px; padding: 36px 40px; width: 460px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+  .start-icon { font-size: 2.8rem; margin-bottom: 6px; }
+  .start-card h1 { font-size: 1.7rem; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
+  .start-card > p { color: var(--muted); font-size: 0.88rem; margin-bottom: 16px; }
+  .start-name { font-weight: 800; font-size: 0.95rem; color: var(--accent2); background: #fdf2f8; border-radius: 10px; padding: 6px 14px; display: inline-block; margin-bottom: 16px; }
+
+  /* MODE SELECTOR */
+  .mode-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mode-btn { flex: 1; padding: 12px 6px; border-radius: 12px; border: 2px solid var(--border); background: #f9fafb; cursor: pointer; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.78rem; color: var(--muted); transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .mode-btn .mode-icon { font-size: 1.4rem; }
+  .mode-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 14px rgba(91,79,207,0.4); transform: translateY(-2px); }
+
+  /* MODE OPTIONS */
+  .mode-options { background: #f5f3ff; border-radius: 12px; padding: 14px; margin-bottom: 14px; display: none; flex-direction: column; gap: 10px; }
+  .mode-options.visible { display: flex; }
+  .opt-row { display: flex; align-items: center; gap: 10px; }
+  .opt-label { font-size: 0.78rem; font-weight: 800; color: var(--muted); white-space: nowrap; }
+  .start-input { flex: 1; padding: 9px 14px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 0.95rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 2px; outline: none; background: white; }
+  .start-input:focus { border-color: var(--accent); }
+  .start-num { width: 70px; padding: 9px 10px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 0.95rem; font-weight: 700; text-align: center; outline: none; background: white; }
+  .start-num:focus { border-color: var(--accent); }
+
+  .btn-start { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Nunito',sans-serif; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: transform 0.1s, background 0.15s; margin-top: 4px; }
+  .btn-start:hover { background: #4338ca; transform: translateY(-1px); }
+  .start-version { margin-top: 10px; font-size: 0.72rem; color: #9ca3af; font-weight: 600; }
+
+  /* ── MAIN ── */
+  .main { width: 100%; max-width: 900px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── COUNTDOWN BANNER ── */
+  #countdownBanner { display: none; background: var(--accent); color: white; border-radius: var(--r); padding: 10px 20px; align-items: center; justify-content: space-between; box-shadow: var(--shadow); }
+  #countdownBanner.visible { display: flex; }
+  .countdown-time { font-size: 1.5rem; font-weight: 900; font-family: monospace; }
+  .countdown-time.urgent { color: var(--yellow); animation: urgentPulse 0.5s infinite; }
+  @keyframes urgentPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* ── EQUATION SYSTEM DISPLAY ── */
+  .system-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 18px 22px; box-shadow: var(--shadow); }
+  .system-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .equation-row-display { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: background 0.15s, border-color 0.15s; border: 2px solid transparent; }
+  .equation-row-display:last-child { margin-bottom: 0; }
+  .equation-row-display:hover { background: #f5f3ff; }
+  .equation-row-display.active { background: #f5f3ff; border-color: var(--accent); }
+  .equation-row-display.solved { background: #f0fdf4; border-color: var(--green); }
+  .eq-numeral { font-family: serif; font-size: 1.1rem; font-weight: 900; color: var(--accent); width: 24px; flex-shrink: 0; }
+  .eq-text { font-size: 1.1rem; font-weight: 800; font-family: monospace; flex: 1; }
+  .eq-badge { font-size: 0.72rem; font-weight: 800; padding: 2px 10px; border-radius: 20px; flex-shrink: 0; }
+  .eq-badge.solved { background: #d1fae5; color: #065f46; }
+  .eq-badge.active { background: #ede9fe; color: var(--accent); }
+  .eq-badge.pending { background: #f3f4f6; color: var(--muted); }
+
+  /* ── STEP INDICATOR ── */
+  .step-indicator { display: flex; gap: 8px; align-items: center; }
+  .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0; }
+  .step-dot.done { background: var(--green); color: white; }
+  .step-dot.current { background: var(--accent); color: white; }
+  .step-dot.future { background: #e5e7eb; color: var(--muted); }
+  .step-line { flex: 1; height: 2px; background: #e5e7eb; }
+  .step-line.done { background: var(--green); }
+
+  /* ── SOLVER ── */
+  .solver-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 18px 22px; box-shadow: var(--shadow); }
+  .solver-title { font-size: 0.85rem; font-weight: 800; color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .solver-eq-display { text-align: center; font-size: 1.3rem; font-weight: 900; font-family: monospace; color: var(--accent); padding: 8px 0; min-height: 40px; }
+  .solver-eq-sep { color: var(--muted); }
+
+  /* SCALES */
+  .scales-area { display: flex; align-items: flex-start; gap: 14px; margin: 10px 0; }
+  .scale-panel { flex: 1; background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 14px; min-height: 120px; transition: transform 0.5s cubic-bezier(.4,0,.2,1), border-color 0.3s; }
+  .scale-panel.drag-over { border-color: var(--accent); background: #f5f3ff; }
+  .scale-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .blocks-container { display: flex; flex-wrap: wrap; gap: 7px; min-height: 60px; align-content: flex-start; }
+  .scale-eq-sign { display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; color: var(--muted); padding: 40px 0; flex-shrink: 0; width: 28px; }
+
+  /* ── BLOCKS ── */
+  .block { padding: 8px 12px; border-radius: var(--r-sm); font-weight: 800; font-size: 0.9rem; cursor: grab; user-select: none; transition: transform 0.15s, box-shadow 0.15s; color: white; display: flex; align-items: center; justify-content: center; min-width: 44px; text-align: center; }
+  .block:active { cursor: grabbing; transform: scale(1.08); }
+  .block.type-x      { background: var(--x-color); }
+  .block.type-x-neg  { background: var(--x-neg); }
+  .block.type-y      { background: var(--y-color); }
+  .block.type-y-neg  { background: var(--y-neg); }
+  .block.type-num    { background: var(--num-pos); }
+  .block.type-num-neg{ background: var(--num-neg); }
+  .block.type-sub    { background: var(--sub-color); font-size: 0.78rem; min-width: 80px; }
+  .block.dragging    { opacity: 0.4; }
+  .block.just-changed { animation: pop 0.4s ease-out; }
+  @keyframes pop { 0%{transform:scale(1.2);box-shadow:0 0 0 4px rgba(91,79,207,0.4)} 100%{transform:scale(1);box-shadow:none} }
+
+  /* ── BANK ── */
+  .block-bank { background: white; border-radius: var(--r); border: 2px dashed var(--border); padding: 14px; box-shadow: var(--shadow); }
+  .bank-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .bank-blocks { display: flex; flex-wrap: wrap; gap: 7px; min-height: 48px; }
+
+  /* ── OPS PANEL ── */
+  .ops-panel { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 18px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ops-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); flex-shrink: 0; }
+  .ops-num { width: 58px; padding: 7px 10px; border: 2px solid var(--border); border-radius: 8px; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 700; text-align: center; outline: none; }
+  .ops-num:focus { border-color: var(--accent); }
+  .op-btn { padding: 7px 16px; border-radius: 8px; border: none; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: filter 0.1s; }
+  .op-btn:hover { filter: brightness(0.93); }
+  .op-btn.times  { background: #ede9fe; color: var(--x-color); }
+  .op-btn.divide { background: #dbeafe; color: var(--num-pos); }
+
+  /* ── ACTION BUTTONS ── */
+  .actions-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .action-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: transform 0.1s, filter 0.1s; min-width: 80px; }
+  .action-btn:hover { filter: brightness(0.93); transform: translateY(-1px); }
+  .action-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; }
+  .btn-check  { background: var(--green); color: white; }
+  .btn-reset  { background: #fef3c7; color: #92400e; }
+  .btn-sub    { background: #d1fae5; color: #065f46; border: 2px solid #6ee7b7; }
+  .btn-sub.ready { background: #059669; color: white; border-color: #059669; animation: subtlePulse 2s infinite; }
+  @keyframes subtlePulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 0 4px rgba(5,150,105,0.25)} }
+
+  /* ── FINAL ANSWER ── */
+  .final-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 20px 24px; box-shadow: var(--shadow); }
+  .final-title { font-size: 0.85rem; font-weight: 800; color: var(--accent); margin-bottom: 14px; }
+  .final-inputs { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .final-field { display: flex; align-items: center; gap: 8px; }
+  .final-label { font-size: 1.1rem; font-weight: 900; font-family: monospace; color: var(--accent); }
+  .final-input { width: 80px; padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 1.1rem; font-weight: 800; text-align: center; outline: none; }
+  .final-input:focus { border-color: var(--accent); }
+  .final-input.correct { border-color: var(--green); background: #f0fdf4; }
+  .final-input.wrong   { border-color: var(--red); background: #fef2f2; }
+  .btn-final-check { padding: 11px 24px; background: var(--green); color: white; border: none; border-radius: 12px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.95rem; cursor: pointer; }
+
+  /* ── SCORE CARD ── */
+  .score-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 14px 18px; box-shadow: var(--shadow); }
+  .score-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .score-entry { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.88rem; font-weight: 700; }
+  .score-entry:last-child { border-bottom: none; }
+  .score-entry.is-me { color: var(--accent); }
+  .score-entry .pts { background: #f0f4ff; color: var(--accent); border-radius: 20px; padding: 2px 10px; font-size: 0.78rem; }
+  .score-entry.is-me .pts { background: var(--accent); color: white; }
+
+  /* ── TOAST ── */
+  .feedback-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px); padding: 12px 24px; border-radius: 50px; font-weight: 800; font-size: 1rem; color: white; z-index: 500; transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; }
+  .feedback-toast.show { transform: translateX(-50%) translateY(0); }
+  .feedback-toast.success { background: var(--green); }
+  .feedback-toast.error   { background: var(--red); }
+
+  /* ── CONTEXT MENU ── */
+  .ctx-menu { display: none; position: fixed; background: white; border: 2px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 2000; overflow: hidden; min-width: 200px; }
+  .ctx-menu button { display: block; width: 100%; border: none; background: none; font-family: 'Nunito',sans-serif; font-size: 0.9rem; font-weight: 700; padding: 9px 18px; cursor: pointer; text-align: left; color: var(--text); }
+  .ctx-menu button:hover { background: #f5f3ff; color: var(--accent); }
+  .ctx-menu .ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+  .ctx-sub-options { padding: 4px 8px; display: flex; flex-direction: column; gap: 4px; }
+  .ctx-sub-btn { display: block; width: 100%; border: none; background: #f0fdf4; border-radius: 8px; font-family: 'Nunito',sans-serif; font-size: 0.82rem; font-weight: 800; padding: 6px 12px; cursor: pointer; text-align: left; color: #065f46; }
+  .ctx-sub-btn:hover { background: #d1fae5; }
+
+  /* ── BOTTOM ROW ── */
+  .bottom-row { display: grid; grid-template-columns: 1fr 210px; gap: 14px; align-items: start; }
+  @media (max-width: 640px) {
+    .bottom-row { grid-template-columns: 1fr; }
+    .scales-area { flex-direction: column; }
+    .scale-eq-sign { padding: 8px 0; width: 100%; text-align: center; }
+  }
+
+  /* ── TIME UP ── */
+  #timeUpOverlay { position: fixed; inset: 0; z-index: 950; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; }
+  #timeUpOverlay.show { display: flex; }
+  .timeup-card { background: white; border-radius: 28px; padding: 48px; text-align: center; animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  .timeup-card .icon { font-size: 3.5rem; margin-bottom: 10px; }
+  .timeup-card h2 { font-size: 1.8rem; font-weight: 900; color: var(--accent); margin-bottom: 8px; }
+  .timeup-card .score { font-size: 2.5rem; font-weight: 900; color: var(--green); margin-bottom: 6px; }
+  .timeup-card p { color: var(--muted); margin-bottom: 24px; }
+  .btn-again { padding: 13px 32px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 1rem; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="feedback-toast" id="toast"></div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctxMenu">
+  <button onclick="ctxInvert()">± Bytt fortegn</button>
+  <button onclick="ctxSplit()">⚏ Splitt blokk</button>
+  <div class="ctx-sep" id="ctxSubSep" style="display:none"></div>
+  <div class="ctx-sub-options" id="ctxSubOptions"></div>
+</div>
+
+<!-- TIME UP -->
+<div id="timeUpOverlay">
+  <div class="timeup-card">
+    <div class="icon">⏱️</div>
+    <h2>Tiden er ute!</h2>
+    <div class="score" id="timeupScore">0</div>
+    <p>poeng på <span id="timeupMinutes">3</span> minutter</p>
+    <button class="btn-again" onclick="location.reload()">🔄 Spill igjen</button>
+  </div>
+</div>
+
+<!-- START SCREEN -->
+<div id="startScreen">
+  <div class="start-card">
+    <div class="start-icon">🔢</div>
+    <h1>Likningssett</h1>
+    <p>Løs likninger med to ukjente ved hjelp av innsettingsmetoden</p>
+    <div class="start-name" id="displayName">...</div>
+
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">
+        <span class="mode-icon">🧘</span>Øvemodus
+      </button>
+      <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')">
+        <span class="mode-icon">⏱️</span>Enkeltspiller
+      </button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">
+        <span class="mode-icon">🏎️</span>Flerspiller
+      </button>
+    </div>
+
+    <div class="mode-options" id="opts-solo">
+      <div class="opt-row">
+        <span class="opt-label">Tid (min):</span>
+        <input class="start-num" id="timedMinutes" type="number" value="5" min="1" max="30">
+      </div>
+    </div>
+
+    <div class="mode-options" id="opts-multi">
+      <div class="opt-row">
+        <span class="opt-label">Romkode:</span>
+        <input class="start-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
+      </div>
+    </div>
+
+    <button class="btn-start" onclick="startGame()">Start! 🚀</button>
+    <div class="start-version">v<span class="version-num"></span></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">🔢 Likningssett</div>
+  <div class="header-right">
+    <span class="version-tag">v<span class="version-num"></span></span>
+    <span class="mode-badge" id="modeBadge">–</span>
+    <span class="player-badge" id="headerName">–</span>
+    <span class="streak-badge">✅ <span id="solvedCount">0</span></span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- COUNTDOWN -->
+  <div id="countdownBanner">
+    <span style="font-weight:800">⏱️ Tid igjen:</span>
+    <span class="countdown-time" id="countdownTime">5:00</span>
+    <span style="font-weight:700;font-size:0.85rem">Flest poeng vinner!</span>
+  </div>
+
+  <!-- STEP INDICATOR -->
+  <div style="background:white;border-radius:var(--r);border:2px solid var(--border);padding:14px 20px;box-shadow:var(--shadow)">
+    <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px">Fremgang</div>
+    <div class="step-indicator" id="stepIndicator">
+      <div class="step-dot current" id="step1dot">1</div>
+      <div class="step-line" id="step1line"></div>
+      <div class="step-dot future" id="step2dot">2</div>
+      <div class="step-line" id="step2line"></div>
+      <div class="step-dot future" id="step3dot">3</div>
+      <div class="step-line" id="step3line"></div>
+      <div class="step-dot future" id="step4dot">4</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.7rem;font-weight:700;color:var(--muted)">
+      <span>Velg likning</span>
+      <span>Isoler variabel</span>
+      <span>Sett inn</span>
+      <span>Finn svar</span>
+    </div>
+  </div>
+
+  <!-- EQUATION SYSTEM -->
+  <div class="system-card">
+    <div class="system-title">📋 Likningssett – velg hvilken likning du vil starte med</div>
+    <div class="equation-row-display" id="eqDisplay1" onclick="selectEquation(1)">
+      <span class="eq-numeral">I</span>
+      <span class="eq-text" id="eqText1">–</span>
+      <span class="eq-badge pending" id="eqBadge1">Velg</span>
+    </div>
+    <div class="equation-row-display" id="eqDisplay2" onclick="selectEquation(2)">
+      <span class="eq-numeral">II</span>
+      <span class="eq-text" id="eqText2">–</span>
+      <span class="eq-badge pending" id="eqBadge2">Velg</span>
+    </div>
+  </div>
+
+  <!-- SOLVER -->
+  <div class="solver-card" id="solverCard">
+    <div class="solver-title">
+      <span id="solverTitle">🔧 Løs likningen</span>
+    </div>
+    <div class="solver-eq-display" id="solverEqDisplay">–</div>
+    <div class="scales-area">
+      <div class="scale-panel" id="scaleL">
+        <div class="scale-label">Venstre side</div>
+        <div class="blocks-container" id="blocksL"></div>
+      </div>
+      <div class="scale-eq-sign">=</div>
+      <div class="scale-panel" id="scaleR">
+        <div class="scale-label">Høyre side</div>
+        <div class="blocks-container" id="blocksR"></div>
+      </div>
+    </div>
+
+    <div class="ops-panel">
+      <span class="ops-label">Begge sider:</span>
+      <input class="ops-num" id="opVal" type="number" value="2" min="1" max="100">
+      <button class="op-btn times"  onclick="operate('multiply')">× Ganger</button>
+      <button class="op-btn divide" onclick="operate('divide')">÷ Del</button>
+    </div>
+
+    <div class="actions-row" style="margin-top:10px">
+      <button class="action-btn btn-sub" id="subBtn" onclick="makeSubBlock()" disabled>
+        📦 Lag innsettingsblokk
+      </button>
+      <button class="action-btn btn-reset" onclick="resetSolver()">↺ Nullstill</button>
+    </div>
+  </div>
+
+  <!-- BANK -->
+  <div class="block-bank" id="bankPanel">
+    <div class="bank-label" id="bankLabel">📦 Innsettingsblokker og mellomresultater</div>
+    <div class="bank-blocks" id="bankBlocks"></div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <!-- FINAL ANSWER -->
+      <div class="final-card" id="finalCard" style="display:none">
+        <div class="final-title">🎯 Sett inn svarene dine</div>
+        <div class="final-inputs">
+          <div class="final-field">
+            <span class="final-label">x =</span>
+            <input class="final-input" id="finalX" type="number" placeholder="?">
+          </div>
+          <div class="final-field">
+            <span class="final-label">y =</span>
+            <input class="final-input" id="finalY" type="number" placeholder="?">
+          </div>
+          <button class="btn-final-check" onclick="checkFinalAnswer()">✅ Sjekk svar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCOREBOARD -->
+    <div class="score-card">
+      <div class="score-title" id="scoreTitle">🏆 Poeng</div>
+      <div id="scoreList"><div style="color:var(--muted);font-size:0.85rem">–</div></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, set, update, onValue } from "./js/firebase-config.js";
+  window._fbReady = true;
+  window._db = database; window._ref = ref;
+  window._set = set; window._update = update; window._onValue = onValue;
+
+  window._fbInit = function(room) {
+    _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
+    _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateScoreboard(snap.val()); });
+  };
+  window.syncScore = function(score) {
+    if (!window.roomCode) return;
+    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),{score,lastUpdated:Date.now()});
+  };
+  window.addEventListener('beforeunload', ()=>{
+    if(window.roomCode&&window._fbReady&&window._set&&window._ref&&window._db)
+      window._set(window._ref(window._db,'rooms/'+window.roomCode+'/players/'+window.playerName),null);
+  });
+  function updateScoreboard(players) {
+    const sorted = Object.entries(players).sort((a,b)=>b[1].score-a[1].score).slice(0,6);
+    let html='';
+    sorted.forEach(([name,data],i)=>{
+      const isMe=name===window.playerName;
+      const medals=['🥇','🥈','🥉'];
+      html+=`<div class="score-entry ${isMe?'is-me':''}">
+        <span style="color:var(--muted);width:20px">${medals[i]||i+1+'.'}</span>
+        <span style="flex:1;padding:0 6px">${name}</span>
+        <span class="pts">${data.score}p</span>
+      </div>`;
+    });
+    document.getElementById('scoreList').innerHTML=html||'<div style="color:var(--muted);font-size:0.85rem">Ingen ennå</div>';
+  }
+</script>
+
+<!-- MAIN SCRIPT -->
+<script>
+const VERSION = '1.0';
+document.querySelectorAll('.version-num').forEach(el=>el.textContent=VERSION);
+
+// ── PLAYER NAME ──
+const adj=['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flinke','Dristige','Skarpe'];
+const ani=['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger','Ørn','Gepard','Panter','Falken'];
+const _used=new Set();
+function genName(){
+  const pool=[];adj.forEach(a=>ani.forEach(b=>pool.push(a+' '+b)));
+  const avail=pool.filter(n=>!_used.has(n));
+  const name=avail.length?avail[Math.floor(Math.random()*avail.length)]:pool[Math.floor(Math.random()*pool.length)];
+  _used.add(name);return name;
+}
+window.playerName=genName();
+document.getElementById('displayName').textContent='🚗 '+window.playerName;
+
+// ── MODE ──
+let gameMode='practice', timedMinutes=5, timedSecondsLeft=0, timedInterval=null;
+
+window.selectMode=function(mode){
+  gameMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  document.getElementById('opts-solo').classList.toggle('visible',mode==='solo');
+  document.getElementById('opts-multi').classList.toggle('visible',mode==='multi');
+};
+
+// ── STATE ──
+let idCounter=0, currentScore=0, totalSolved=0;
+
+// Likningssett-state
+let system = null;       // { eq1, eq2, xVal, yVal }
+let step = 0;            // 0=velg, 1=løs første, 2=løs andre, 3=ferdig
+let firstEq = 0;         // hvilken likning løses først (1 eller 2)
+let secondEq = 0;
+let isolatedVar = '';    // 'x' eller 'y'
+let isolatedExpr = null; // blokkene som utgjør høyresiden etter isolering
+let subBlock = null;     // innsettingsblokken i banken
+let knownVar = '';       // variabelen vi kjenner verdien til etter steg 2
+let knownVal = 0;
+
+// Solver state
+let sides={left:[],right:[]};
+let lastChangedId=null, activeMenuTarget=null;
+let solverOriginal=null; // for reset
+
+// ── SAMPLE EQUATION SETS ──
+// Format: { eq1: [{type,num},...], eq2: [...], xVal, yVal }
+const SYSTEMS = [
+  // Nivå 1 — enkle koeffisienter
+  { label:'2x + y = 7, x + y = 4', xVal:3, yVal:1,
+    eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}],
+    eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:4}] },
+  { label:'x + 2y = 8, x - y = 2', xVal:4, yVal:2,
+    eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}],
+    eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:2}] },
+  { label:'3x + y = 10, x + y = 6', xVal:2, yVal:4,
+    eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:10}],
+    eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}] },
+  { label:'x + y = 5, 2x - y = 1', xVal:2, yVal:3,
+    eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}],
+    eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:1}] },
+  // Nivå 2 — litt vanskeligere
+  { label:'2x + 3y = 12, x + y = 5', xVal:3, yVal:2,
+    eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:12}],
+    eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}] },
+  { label:'3x - y = 5, x + 2y = 8', xVal:2, yVal:1,
+    eq1:[{t:'x',n:3},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:5}],
+    eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}] },
+  { label:'x + 3y = 9, 2x - y = 4', xVal:3, yVal:2,
+    eq1:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:9}],
+    eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:4}] },
+  { label:'4x + y = 14, 2x - y = 4', xVal:3, yVal:2,
+    eq1:[{t:'x',n:4},{t:'y',n:1},{t:'=',n:0},{t:'num',n:14}],
+    eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:4}] },
+];
+
+// ── INIT GAME ──
+function initGame() {
+  step=0; firstEq=0; secondEq=0; isolatedVar=''; isolatedExpr=null;
+  subBlock=null; knownVar=''; knownVal=0;
+  sides={left:[],right:[]}; lastChangedId=null;
+
+  // Velg tilfeldig system
+  system=SYSTEMS[Math.floor(Math.random()*SYSTEMS.length)];
+
+  // Vis likningene
+  document.getElementById('eqText1').textContent=formatEqLine(system.eq1);
+  document.getElementById('eqText2').textContent=formatEqLine(system.eq2);
+  ['eqDisplay1','eqDisplay2'].forEach(id=>document.getElementById(id).className='equation-row-display');
+  document.getElementById('eqBadge1').textContent='Velg';
+  document.getElementById('eqBadge1').className='eq-badge pending';
+  document.getElementById('eqBadge2').textContent='Velg';
+  document.getElementById('eqBadge2').className='eq-badge pending';
+
+  // Solver tom
+  renderSolver();
+  renderBank();
+  updateSubBtn();
+  updateStepIndicator(0);
+  document.getElementById('finalCard').style.display='none';
+  document.getElementById('solverCard').style.display='block';
+  document.getElementById('solverTitle').textContent='🔧 Velg en likning å starte med';
+  document.getElementById('solverEqDisplay').textContent='–';
+}
+window.initGame=initGame;
+
+// ── FORMAT EQUATION LINE ──
+function formatEqLine(eq) {
+  let left='', right='';
+  let onRight=false;
+  eq.forEach((t,i)=>{
+    if(t.t==='='){onRight=true;return;}
+    const term = formatTerm(t.t,t.n,onRight ? right==='' : left==='');
+    if(onRight) right+=(right&&t.n>=0?'+ ':'')+term;
+    else left+=(left&&t.n>=0?'+ ':'')+term;
+  });
+  return left+' = '+right;
+}
+
+function formatTerm(type, num, isFirst) {
+  if(type==='num') return String(num);
+  const sign = num<0 ? '-' : '';
+  const abs  = Math.abs(num);
+  const coef = abs===1 ? '' : String(abs);
+  if(type==='x') return sign+coef+'x';
+  if(type==='y') return sign+coef+'y';
+  return '';
+}
+
+// ── SELECT EQUATION ──
+window.selectEquation=function(eq) {
+  if(step>0) return; // allerede valgt
+  firstEq=eq; secondEq=eq===1?2:1;
+  step=1;
+
+  // Marker valgt likning
+  document.getElementById('eqDisplay'+eq).className='equation-row-display active';
+  document.getElementById('eqBadge'+eq).textContent='Løser nå';
+  document.getElementById('eqBadge'+eq).className='eq-badge active';
+  document.getElementById('eqDisplay'+secondEq).className='equation-row-display';
+  document.getElementById('eqBadge'+secondEq).textContent='Neste steg';
+  document.getElementById('eqBadge'+secondEq).className='eq-badge pending';
+
+  // Last inn blokker for valgt likning
+  loadEquationIntoSolver(eq);
+  updateStepIndicator(1);
+  document.getElementById('solverTitle').textContent='🔧 Likning '+toRoman(eq)+' – isoler x eller y';
+};
+
+function toRoman(n) { return n===1?'I':'II'; }
+
+// ── LOAD EQUATION INTO SOLVER ──
+function loadEquationIntoSolver(eqNum, substituteVar, substituteBlocks) {
+  const eq = eqNum===1 ? system.eq1 : system.eq2;
+  sides={left:[],right:[]};
+  let onRight=false;
+
+  eq.forEach(t=>{
+    if(t.t==='='){onRight=true;return;}
+    if(t.n===0) return;
+
+    // Erstatt variabel med innsettingsblokker
+    if(substituteVar && t.t===substituteVar && substituteBlocks) {
+      // Skaler innsettingsblokkene med koeffisienten
+      const coef = t.n;
+      substituteBlocks.forEach(sb=>{
+        const newBlock={id:idCounter++,type:sb.type,num:sb.num*coef};
+        if(onRight) sides.right.push(newBlock);
+        else sides.left.push(newBlock);
+      });
+    } else {
+      const block={id:idCounter++,type:t.t,num:t.n};
+      if(onRight) sides.right.push(block);
+      else sides.left.push(block);
+    }
+  });
+
+  solverOriginal={
+    left:JSON.parse(JSON.stringify(sides.left)),
+    right:JSON.parse(JSON.stringify(sides.right)),
+  };
+  lastChangedId=null;
+  renderSolver(); updateSubBtn();
+}
+
+// ── RENDER SOLVER ──
+function renderSolver() {
+  renderSide('left',document.getElementById('blocksL'));
+  renderSide('right',document.getElementById('blocksR'));
+  updateSolverDisplay();
+  updateScaleTilt();
+}
+
+function renderSide(side, container) {
+  container.innerHTML='';
+  sides[side].forEach(item=>{
+    const div=document.createElement('div');
+    div.className=`block ${blockClass(item)}${item.id===lastChangedId?' just-changed':''}`;
+    div.draggable=true;
+    div.setAttribute('data-id',item.id);
+    div.setAttribute('data-side',side);
+    div.textContent=blockLabel(item);
+    div.addEventListener('dragstart',e=>{
+      e.dataTransfer.setData('text',JSON.stringify({side,id:item.id}));
+      setTimeout(()=>div.classList.add('dragging'),0);
+    });
+    div.addEventListener('dragend',()=>div.classList.remove('dragging'));
+    div.addEventListener('contextmenu',e=>{
+      e.preventDefault();
+      activeMenuTarget={side,item};
+      showCtxMenu(e.clientX,e.clientY,item);
+    });
+    container.appendChild(div);
+  });
+}
+
+function blockClass(item) {
+  if(item.type==='sub') return 'type-sub';
+  if(item.type==='x')   return item.num<0?'type-x-neg':'type-x';
+  if(item.type==='y')   return item.num<0?'type-y-neg':'type-y';
+  return item.num<0?'type-num-neg':'type-num';
+}
+
+function blockLabel(item) {
+  if(item.type==='sub') return item.label||'?';
+  if(item.type==='x') return item.num===1?'x':item.num===-1?'-x':item.num+'x';
+  if(item.type==='y') return item.num===1?'y':item.num===-1?'-y':item.num+'y';
+  return String(item.num);
+}
+
+function updateSolverDisplay() {
+  document.getElementById('solverEqDisplay').textContent=
+    formatSide(sides.left)+' = '+formatSide(sides.right);
+}
+
+function formatSide(items) {
+  if(!items.length) return '0';
+  return items.map((i,idx)=>{
+    const t=blockLabel(i);
+    return (idx>0&&i.num>=0)?'+ '+t:t;
+  }).join(' ');
+}
+
+function updateScaleTilt() {
+  const val=s=>sides[s].reduce((t,i)=>{
+    if(i.type==='sub') return t; // ukjent verdi
+    const xv=system?system.xVal:0, yv=system?system.yVal:0;
+    if(i.type==='x') return t+i.num*xv;
+    if(i.type==='y') return t+i.num*yv;
+    return t+i.num;
+  },0);
+  const diff=val('left')-val('right');
+  const tilt=Math.min(Math.max(diff*3,-35),35);
+  document.getElementById('scaleL').style.transform=`translateY(${-tilt}px)`;
+  document.getElementById('scaleR').style.transform=`translateY(${tilt}px)`;
+}
+
+// ── RENDER BANK ──
+function renderBank() {
+  const container=document.getElementById('bankBlocks');
+  container.innerHTML='';
+  if(subBlock) {
+    const div=document.createElement('div');
+    div.className='block type-sub';
+    div.draggable=false; // bank-blokker dras ikke, brukes via høyreklikk
+    div.textContent=subBlock.label;
+    container.appendChild(div);
+  }
+  // Vis kjent variabel om vi har den
+  if(knownVar && step>=2) {
+    const div=document.createElement('div');
+    div.className='block type-sub';
+    div.style.background='#5b4fcf';
+    div.textContent=knownVar+' = '+knownVal;
+    container.appendChild(div);
+  }
+}
+
+// ── UPDATE SUBSTITUTE BUTTON ──
+function updateSubBtn() {
+  const btn=document.getElementById('subBtn');
+  if(step!==1 && step!==2) { btn.disabled=true; btn.className='action-btn btn-sub'; return; }
+
+  // Sjekk om x eller y er isolert
+  const isolated = checkIsolated();
+  if(isolated) {
+    btn.disabled=false;
+    btn.className='action-btn btn-sub ready';
+    btn.textContent='📦 Lag innsettingsblokk for '+isolated.var;
+  } else {
+    btn.disabled=true;
+    btn.className='action-btn btn-sub';
+    btn.textContent='📦 Lag innsettingsblokk';
+  }
+}
+
+function checkIsolated() {
+  // Sjekk alle fire tilfeller: x/y alene på venstre eller høyre side
+  const L=sides.left, R=sides.right;
+  const isOnlyVar=(arr,v)=>arr.length===1&&arr[0].type===v&&arr[0].num===1;
+  const hasNoVar=(arr,v)=>!arr.some(i=>i.type===v);
+  const noX=v=>v!=='x'; // ingen x i motsidesiden
+  const noY=v=>v!=='y';
+
+  for(const v of ['x','y']) {
+    // v alene på venstre, andre siden har ikke v
+    if(isOnlyVar(L,v)&&hasNoVar(R,v)) return {var:v,exprSide:'right',expr:R};
+    // v alene på høyre, andre siden har ikke v
+    if(isOnlyVar(R,v)&&hasNoVar(L,v)) return {var:v,exprSide:'left',expr:L};
+  }
+  return null;
+}
+
+// ── MAKE SUBSTITUTION BLOCK ──
+window.makeSubBlock=function() {
+  const isolated=checkIsolated();
+  if(!isolated) return;
+
+  isolatedVar=isolated.var;
+  isolatedExpr=JSON.parse(JSON.stringify(isolated.expr));
+
+  // Bygg label: "x = 2y + 3"
+  const exprStr=isolated.expr.map((i,idx)=>{
+    const t=blockLabel(i);
+    return (idx>0&&i.num>=0)?'+ '+t:t;
+  }).join(' ');
+  const label=isolated.var+' = '+exprStr;
+
+  subBlock={label, var:isolated.var, expr:isolatedExpr};
+  renderBank();
+
+  // Gå til steg 2
+  if(step===1) {
+    step=2;
+    updateStepIndicator(2);
+    document.getElementById('eqDisplay'+firstEq).className='equation-row-display solved';
+    document.getElementById('eqBadge'+firstEq).textContent='Løst ✓';
+    document.getElementById('eqBadge'+firstEq).className='eq-badge solved';
+    document.getElementById('eqDisplay'+secondEq).className='equation-row-display active';
+    document.getElementById('eqBadge'+secondEq).textContent='Løser nå';
+    document.getElementById('eqBadge'+secondEq).className='eq-badge active';
+
+    // Last inn andre likning, erstatt isolatedVar med innsettingsblokk
+    loadEquationIntoSolver(secondEq, isolatedVar, isolatedExpr);
+    document.getElementById('solverTitle').textContent='🔧 Likning '+toRoman(secondEq)+' – sett inn og løs for '+otherVar(isolatedVar);
+    showToast('📦 Innsettingsblokk laget! Nå: løs likning '+toRoman(secondEq),'success');
+  }
+  updateSubBtn();
+};
+
+function otherVar(v) { return v==='x'?'y':'x'; }
+
+// ── CONTEXT MENU ──
+function showCtxMenu(x, y, item) {
+  const menu=document.getElementById('ctxMenu');
+  const sep=document.getElementById('ctxSubSep');
+  const subOpts=document.getElementById('ctxSubOptions');
+  subOpts.innerHTML='';
+  sep.style.display='none';
+
+  // Vis innsettingsalternativ om vi har en subBlock og blokken er av riktig type
+  if(subBlock && item.type===subBlock.var && step===2) {
+    sep.style.display='block';
+    const btn=document.createElement('button');
+    btn.className='ctx-sub-btn';
+    btn.textContent='↩ Sett inn: '+subBlock.label;
+    btn.onclick=()=>{ doSubstitute(item); document.getElementById('ctxMenu').style.display='none'; };
+    subOpts.appendChild(btn);
+  }
+
+  // Vis "kjent verdi"-innsetting i steg 3
+  if(knownVar && item.type===knownVar && step===3) {
+    sep.style.display='block';
+    const btn=document.createElement('button');
+    btn.className='ctx-sub-btn';
+    btn.textContent='↩ Sett inn: '+knownVar+' = '+knownVal;
+    btn.onclick=()=>{ doKnownSubstitute(item); document.getElementById('ctxMenu').style.display='none'; };
+    subOpts.appendChild(btn);
+  }
+
+  menu.style.display='block';
+  menu.style.left=x+'px';
+  menu.style.top=y+'px';
+}
+
+function doSubstitute(item) {
+  // Erstatt denne blokken med innsettingsutrykket
+  const side=activeMenuTarget.side;
+  const arr=sides[side];
+  const idx=arr.findIndex(i=>i.id===item.id);
+  if(idx===-1) return;
+  const coef=item.num; // koeffisienten foran variabelen
+  const newBlocks=isolatedExpr.map(b=>({id:idCounter++,type:b.type,num:b.num*coef}));
+  arr.splice(idx,1,...newBlocks);
+  lastChangedId=newBlocks[0]?.id;
+  renderSolver(); updateSubBtn();
+  showToast('✅ '+subBlock.label+' satt inn!','success');
+}
+
+function doKnownSubstitute(item) {
+  const side=activeMenuTarget.side;
+  const arr=sides[side];
+  const idx=arr.findIndex(i=>i.id===item.id);
+  if(idx===-1) return;
+  const newNum=item.num*knownVal;
+  arr.splice(idx,1,{id:idCounter++,type:'num',num:newNum});
+  lastChangedId=arr[idx]?.id;
+  renderSolver(); updateSubBtn();
+  showToast('✅ '+knownVar+' = '+knownVal+' satt inn!','success');
+}
+
+window.ctxInvert=function(){
+  if(!activeMenuTarget)return;
+  activeMenuTarget.item.num*=-1;
+  lastChangedId=activeMenuTarget.item.id;
+  renderSolver(); updateSubBtn();
+};
+window.ctxSplit=function(){
+  if(!activeMenuTarget||Math.abs(activeMenuTarget.item.num)<2)return;
+  const i=activeMenuTarget.item,n1=Math.floor(i.num/2),n2=i.num-n1;
+  const arr=sides[activeMenuTarget.side];arr.splice(arr.indexOf(i),1);
+  const nid=idCounter++;
+  arr.push({id:nid,type:i.type,num:n1},{id:idCounter++,type:i.type,num:n2});
+  lastChangedId=nid; renderSolver(); updateSubBtn();
+};
+document.addEventListener('click',()=>document.getElementById('ctxMenu').style.display='none');
+
+// ── DRAG & DROP ──
+['scaleL','scaleR'].forEach((id,idx)=>{
+  const sideMap=['left','right'],el=document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
+  el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+  el.addEventListener('drop',e=>{
+    e.preventDefault();el.classList.remove('drag-over');
+    let data;try{data=JSON.parse(e.dataTransfer.getData('text'));}catch{return;}
+    const srcArr=sides[data.side];
+    const itemIdx=srcArr.findIndex(i=>i.id===data.id);
+    if(itemIdx===-1)return;
+    const item=srcArr[itemIdx];
+    const targetSide=sideMap[idx];
+    // Merge like typer
+    if(data.side===targetSide){
+      const targetEl=e.target.closest('.block');
+      if(targetEl){
+        const tItem=sides[targetSide].find(i=>i.id===parseInt(targetEl.getAttribute('data-id')));
+        if(tItem&&tItem.type===item.type&&tItem.id!==item.id){
+          tItem.num+=item.num;lastChangedId=tItem.id;srcArr.splice(itemIdx,1);
+          if(tItem.num===0){sides[targetSide].splice(sides[targetSide].indexOf(tItem),1);lastChangedId=null;}
+          renderSolver();updateSubBtn();return;
+        }
+      }
+    }
+    lastChangedId=item.id;sides[targetSide].push(srcArr.splice(itemIdx,1)[0]);
+    renderSolver();updateSubBtn();
+  });
+});
+
+// ── OPERATIONS ──
+window.operate=function(t){
+  const v=parseInt(document.getElementById('opVal').value);
+  if(!v||v<=0)return;
+  lastChangedId=null;
+  ['left','right'].forEach(s=>{
+    sides[s].forEach(i=>{if(i.type!=='sub')i.num=t==='multiply'?i.num*v:Math.round(i.num/v);});
+    sides[s]=sides[s].filter(i=>i.num!==0||i.type==='sub');
+  });
+  renderSolver(); updateSubBtn();
+};
+
+// ── RESET SOLVER ──
+window.resetSolver=function(){
+  if(!solverOriginal)return;
+  sides={
+    left:JSON.parse(JSON.stringify(solverOriginal.left)),
+    right:JSON.parse(JSON.stringify(solverOriginal.right)),
+  };
+  lastChangedId=null; renderSolver(); updateSubBtn();
+};
+
+// ── CHECK ISOLATED (steg 2 → steg 3) ──
+// Etter steg 2 sjekker vi om eleven har fått et rent tall for den andre variabelen
+function checkForNumber() {
+  if(step!==2) return;
+  const L=sides.left, R=sides.right;
+  const v=otherVar(isolatedVar);
+
+  // v alene på én side, bare tall på den andre
+  const isOnlyVar=(arr)=>arr.length===1&&arr[0].type===v&&arr[0].num===1;
+  const isOnlyNum=(arr)=>arr.length===1&&arr[0].type==='num';
+
+  let foundVal=null;
+  if(isOnlyVar(L)&&isOnlyNum(R)) foundVal=R[0].num;
+  if(isOnlyVar(R)&&isOnlyNum(L)) foundVal=L[0].num;
+
+  if(foundVal!==null) {
+    knownVar=v; knownVal=foundVal;
+    step=3;
+    updateStepIndicator(3);
+    renderBank();
+    document.getElementById('eqDisplay'+secondEq).className='equation-row-display solved';
+    document.getElementById('eqBadge'+secondEq).textContent='Løst ✓';
+    document.getElementById('eqBadge'+secondEq).className='eq-badge solved';
+
+    // Last inn første likning igjen
+    loadEquationIntoSolver(firstEq);
+    document.getElementById('solverTitle').textContent=
+      '🔧 Likning '+toRoman(firstEq)+' – sett inn '+knownVar+' = '+knownVal+' og finn '+isolatedVar;
+    showToast('🎉 '+knownVar+' = '+knownVal+'! Nå: finn '+isolatedVar,'success');
+    updateSubBtn();
+  }
+}
+
+// Sjekk etter hvert render i steg 2
+const _origRender=renderSolver;
+// Override renderSolver til å sjekke etter steg 2
+function renderSolverWithCheck() {
+  renderSide('left',document.getElementById('blocksL'));
+  renderSide('right',document.getElementById('blocksR'));
+  updateSolverDisplay();
+  updateScaleTilt();
+  updateSubBtn();
+  if(step===2) checkForNumber();
+  // Steg 3: sjekk om variabelen er isolert som rent tall
+  if(step===3) checkForFinalVar();
+}
+// Bruk den utvidede versjonen
+function renderSolver() { renderSolverWithCheck(); }
+
+function checkForFinalVar() {
+  const L=sides.left, R=sides.right;
+  const v=isolatedVar;
+  const isOnlyVar=(arr)=>arr.length===1&&arr[0].type===v&&arr[0].num===1;
+  const isOnlyNum=(arr)=>arr.length===1&&arr[0].type==='num';
+
+  let foundVal=null;
+  if(isOnlyVar(L)&&isOnlyNum(R)) foundVal=R[0].num;
+  if(isOnlyVar(R)&&isOnlyNum(L)) foundVal=L[0].num;
+
+  if(foundVal!==null) {
+    step=4;
+    updateStepIndicator(4);
+    document.getElementById('finalCard').style.display='block';
+    document.getElementById('solverCard').style.display='none';
+    showToast('🎉 '+isolatedVar+' = '+foundVal+'! Sett inn svarene','success');
+  }
+}
+
+// ── FINAL ANSWER ──
+window.checkFinalAnswer=function(){
+  const xInput=parseInt(document.getElementById('finalX').value);
+  const yInput=parseInt(document.getElementById('finalY').value);
+  const xCorrect=xInput===system.xVal;
+  const yCorrect=yInput===system.yVal;
+
+  document.getElementById('finalX').className='final-input'+(xCorrect?' correct':' wrong');
+  document.getElementById('finalY').className='final-input'+(yCorrect?' correct':' wrong');
+
+  if(xCorrect&&yCorrect){
+    totalSolved++;
+    document.getElementById('solvedCount').textContent=totalSolved;
+    const bonus = gameMode==='practice' ? 0 : Math.max(50, 200 - (Date.now()-taskStartTime)/1000*2);
+    currentScore+=Math.round(bonus);
+    if(typeof syncScore==='function'&&gameMode!=='practice') syncScore(currentScore);
+    updateSoloScore();
+    showToast('🎉 Riktig! x='+system.xVal+', y='+system.yVal+(bonus>0?' (+'+Math.round(bonus)+' p)':''),'success');
+    setTimeout(()=>initGame(),2000);
+  } else {
+    showToast('❌ Ikke helt riktig – prøv igjen!','error');
+  }
+};
+
+// ── STEP INDICATOR ──
+function updateStepIndicator(currentStep) {
+  for(let i=1;i<=4;i++){
+    const dot=document.getElementById('step'+i+'dot');
+    if(i<currentStep) dot.className='step-dot done';
+    else if(i===currentStep) dot.className='step-dot current';
+    else dot.className='step-dot future';
+    if(i<4){
+      const line=document.getElementById('step'+i+'line');
+      line.className='step-line'+(i<currentStep?' done':'');
+    }
+  }
+}
+
+// ── SCORE ──
+function updateSoloScore(){
+  if(gameMode==='practice'){
+    document.getElementById('scoreList').innerHTML=
+      `<div style="text-align:center;color:var(--muted);font-size:0.85rem">Øvemodus<br>Ingen poeng</div>`;
+    return;
+  }
+  document.getElementById('scoreList').innerHTML=
+    `<div style="font-size:2rem;font-weight:900;color:var(--accent);text-align:center">${currentScore}</div>
+     <div style="color:var(--muted);font-size:0.82rem;text-align:center;margin-top:4px">${totalSolved} løste sett</div>`;
+}
+
+// ── TIMED MODE ──
+let taskStartTime=Date.now();
+function startTimedCountdown(){
+  timedSecondsLeft=timedMinutes*60;
+  const banner=document.getElementById('countdownBanner');
+  banner.classList.add('visible');
+  document.getElementById('timeupMinutes').textContent=timedMinutes;
+  updateTimedDisplay();
+  timedInterval=setInterval(()=>{
+    timedSecondsLeft--;updateTimedDisplay();
+    if(timedSecondsLeft<=0){clearInterval(timedInterval);endTimedGame();}
+  },1000);
+}
+function updateTimedDisplay(){
+  const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60;
+  const el=document.getElementById('countdownTime');
+  el.textContent=m+':'+(s<10?'0':'')+s;
+  el.className='countdown-time'+(timedSecondsLeft<=30?' urgent':'');
+}
+function endTimedGame(){
+  document.getElementById('timeupScore').textContent=currentScore;
+  document.getElementById('timeUpOverlay').classList.add('show');
+}
+
+// ── TOAST ──
+function showToast(msg,type){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='feedback-toast '+type;
+  void t.offsetWidth;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ── START GAME ──
+window.startGame=function(){
+  let room='';
+  if(gameMode==='multi') room=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(gameMode==='solo') timedMinutes=parseInt(document.getElementById('timedMinutes').value)||5;
+
+  window.roomCode=room||null;
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('headerName').textContent=window.playerName;
+
+  const modeLabels={practice:'🧘 Øvemodus',solo:'⏱️ Enkeltspiller',multi:'🏎️ Flerspiller'};
+  document.getElementById('modeBadge').textContent=modeLabels[gameMode];
+
+  if(room&&window._fbReady){
+    window._fbInit(room);
+    document.getElementById('scoreTitle').textContent='🏆 Toppliste';
+  } else {
+    window.syncScore=()=>{};
+    document.getElementById('scoreTitle').textContent='🏆 Poeng';
+    updateSoloScore();
+  }
+
+  if(gameMode==='solo') startTimedCountdown();
+
+  taskStartTime=Date.now();
+  initGame();
+};
+</script>
+</body>
+</html>
