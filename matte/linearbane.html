@@ -3,297 +3,581 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Likningsspill – Hovedmeny</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<title>Fremdriftsbanen – Likningsspill</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f0f4ff;
-    --accent: #5b4fcf;
-    --accent2: #e84393;
-    --text: #1e1b4b;
-    --muted: #6b7280;
-    --border: #d0d8f0;
-    --shadow: 0 4px 24px rgba(91,79,207,0.10);
-    --r: 18px;
+    --bg: #0d1117;
+    --track-bg: #161b22;
+    --track-line: #21262d;
+    --border: #30363d;
+    --accent: #ffd60a;
+    --accent2: #e63946;
+    --green: #3fb950;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --panel: #161b22;
+    --r: 12px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Nunito', sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: #0d1117;
+    border-bottom: 2px solid var(--accent);
+    padding: 10px 28px;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 20px;
   }
-
-  /* ── HEADER ── */
-  .hero {
-    width: 100%;
-    background: linear-gradient(135deg, #4338ca, #7c3aed 60%, #e84393);
-    color: white;
-    text-align: center;
-    padding: 52px 24px 44px;
-  }
-  .hero-icon { font-size: 3.5rem; margin-bottom: 10px; }
-  .hero h1 {
-    font-size: 2.2rem; font-weight: 900;
-    letter-spacing: -0.5px; margin-bottom: 8px;
-  }
-  .hero p {
-    font-size: 1rem; opacity: 0.85;
-    max-width: 480px; margin: 0 auto; line-height: 1.6;
-  }
-
-  /* ── MAIN ── */
-  .main {
-    width: 100%;
-    max-width: 860px;
-    padding: 36px 20px 48px;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-  }
-
-  /* ── SECTION ── */
-  .section-title {
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
+  .topbar-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.5rem;
+    color: var(--accent);
     letter-spacing: 2px;
-    color: var(--muted);
-    margin-bottom: 14px;
+    text-shadow: 0 0 16px rgba(255,214,10,0.4);
+    white-space: nowrap;
+  }
+  .topbar-center {
     display: flex;
     align-items: center;
-    gap: 8px;
-  }
-  .section-title::after {
-    content: '';
+    gap: 20px;
     flex: 1;
-    height: 1px;
-    background: var(--border);
+    justify-content: center;
+  }
+  .goal-badge {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+  .room-badge {
+    background: var(--accent2);
+    color: white;
+    border-radius: 6px;
+    padding: 3px 12px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+  }
+  .player-count {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
   }
 
-  /* ── CARD GRID ── */
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
-  }
-
-  /* ── GAME CARD ── */
-  .card {
-    background: white;
-    border-radius: var(--r);
-    border: 2px solid var(--border);
-    padding: 24px 22px 20px;
-    box-shadow: var(--shadow);
+  /* ── RACE AREA ── */
+  .race-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 24px 24px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
-    text-decoration: none;
-    color: var(--text);
-    position: relative;
-    overflow: hidden;
   }
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 4px;
-    background: var(--card-color, var(--accent));
-    border-radius: var(--r) var(--r) 0 0;
-  }
-  .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 32px rgba(91,79,207,0.18);
-    border-color: var(--card-color, var(--accent));
-  }
-  .card:active { transform: translateY(-1px); }
+  .race-area::-webkit-scrollbar { width: 6px; }
+  .race-area::-webkit-scrollbar-track { background: var(--bg); }
+  .race-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  .card-icon { font-size: 2.2rem; }
-  .card-title { font-size: 1.05rem; font-weight: 900; }
-  .card-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; flex: 1; }
-  .card-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.72rem;
-    font-weight: 800;
-    padding: 3px 10px;
-    border-radius: 20px;
-    background: #f0f4ff;
-    color: var(--accent);
-    width: fit-content;
-  }
-  .card-btn {
+  /* ── TRACK ROW ── */
+  .track-row {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 16px;
-    background: var(--card-color, var(--accent));
-    color: white;
-    border-radius: 10px;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 800;
-    font-size: 0.88rem;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-    transition: filter 0.15s;
-  }
-  .card-btn:hover { filter: brightness(0.9); }
-
-  /* Fargevarianter */
-  .c-purple { --card-color: #5b4fcf; }
-  .c-pink    { --card-color: #e84393; }
-  .c-green   { --card-color: #16a34a; }
-  .c-orange  { --card-color: #ea580c; }
-  .c-blue    { --card-color: #2563eb; }
-  .c-teal    { --card-color: #0891b2; }
-  .c-gold    { --card-color: #d97706; }
-
-  .c-purple .card-tag { background:#f5f3ff; color:#5b4fcf; }
-  .c-pink   .card-tag { background:#fdf2f8; color:#e84393; }
-  .c-green  .card-tag { background:#f0fdf4; color:#16a34a; }
-  .c-orange .card-tag { background:#fff7ed; color:#ea580c; }
-  .c-blue   .card-tag { background:#eff6ff; color:#2563eb; }
-  .c-teal   .card-tag { background:#f0f9ff; color:#0891b2; }
-  .c-gold   .card-tag { background:#fffbeb; color:#d97706; }
-
-  /* Kommer snart */
-  .card.soon {
-    opacity: 0.6;
-    pointer-events: none;
-  }
-  .soon-badge {
-    position: absolute;
-    top: 14px; right: 14px;
-    background: #f1f5f9;
-    color: var(--muted);
-    font-size: 0.65rem;
-    font-weight: 800;
-    padding: 2px 8px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    gap: 12px;
+    height: 52px;
+    position: relative;
   }
 
-  /* ── FOOTER ── */
-  footer {
-    color: var(--muted);
-    font-size: 0.8rem;
+  /* Position number */
+  .row-pos {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem;
+    width: 28px;
     text-align: center;
-    padding: 24px;
-    border-top: 1px solid var(--border);
-    width: 100%;
-    margin-top: auto;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .row-pos.p1 { color: #ffd60a; }
+  .row-pos.p2 { color: #c0c0c0; }
+  .row-pos.p3 { color: #cd7f32; }
+
+  /* Name */
+  .row-name {
+    width: 130px;
+    font-weight: 800;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    color: var(--text);
+  }
+  .row-name.is-leader { color: var(--accent); }
+
+  /* Track */
+  .row-track {
+    flex: 1;
+    height: 36px;
+    background: var(--track-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: visible;
   }
 
-  @media (max-width: 540px) {
-    .hero h1 { font-size: 1.6rem; }
-    .card-grid { grid-template-columns: 1fr; }
+  /* Track surface lines */
+  .row-track::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 1px;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 18px,
+      rgba(255,255,255,0.06) 18px,
+      rgba(255,255,255,0.06) 19px
+    );
+    transform: translateY(-50%);
+  }
+
+  /* Progress fill */
+  .row-fill {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, rgba(91,79,207,0.3), rgba(91,79,207,0.15));
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    position: absolute;
+    top: 0; left: 0;
+    min-width: 0;
+  }
+
+  /* Car emoji */
+  .row-car {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    transition: left 0.8s cubic-bezier(.4,0,.2,1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    z-index: 2;
+    white-space: nowrap;
+  }
+  .row-car.winner-bounce {
+    animation: winBounce 0.4s ease-in-out infinite alternate;
+  }
+  @keyframes winBounce {
+    from { transform: translateY(-60%); }
+    to   { transform: translateY(-40%); }
+  }
+
+  /* Goal line */
+  .goal-line {
+    position: absolute;
+    right: 0; top: -6px; bottom: -6px;
+    width: 4px;
+    background: repeating-linear-gradient(
+      180deg,
+      white 0px, white 5px,
+      black 5px, black 10px
+    );
+    border-radius: 2px;
+    z-index: 1;
+  }
+
+  /* Score */
+  .row-score {
+    width: 56px;
+    text-align: right;
+    font-weight: 800;
+    font-size: 0.82rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    font-family: monospace;
+  }
+
+  /* ── SETUP OVERLAY ── */
+  #setupOverlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: linear-gradient(135deg, #0d1117, #161b22);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .setup-card {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,214,10,0.25);
+    border-radius: 24px;
+    padding: 48px 52px;
+    text-align: center;
+    width: 420px;
+    box-shadow: 0 0 60px rgba(255,214,10,0.08);
+  }
+  .setup-icon { font-size: 3.5rem; margin-bottom: 12px; }
+  .setup-card h1 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 2rem; color: var(--accent);
+    letter-spacing: 2px; margin-bottom: 6px;
+  }
+  .setup-card p { color: var(--muted); margin-bottom: 28px; font-size: 0.95rem; }
+  .setup-field {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 16px; text-align: left;
+  }
+  .setup-label {
+    font-size: 0.75rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .setup-input {
+    width: 100%; padding: 11px 16px;
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06);
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    text-align: center; text-transform: uppercase;
+    letter-spacing: 2px; outline: none;
+  }
+  .setup-input.num { letter-spacing: 0; }
+  .setup-input:focus { border-color: var(--accent); }
+  .btn-launch {
+    width: 100%; margin-top: 8px;
+    padding: 14px;
+    background: var(--accent); color: #0d1117;
+    border: none; border-radius: 12px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.05rem; letter-spacing: 2px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 24px rgba(255,214,10,0.3);
+  }
+  .btn-launch:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 36px rgba(255,214,10,0.5);
+  }
+
+  /* ── WINNER OVERLAY ── */
+  #winnerOverlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  #winnerOverlay.show { display: flex; }
+  .winner-card {
+    text-align: center;
+    animation: popIn 0.6s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn { from{transform:scale(0.6);opacity:0} to{transform:scale(1);opacity:1} }
+  .winner-trophy { font-size: 5rem; margin-bottom: 10px; }
+  .winner-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 2.8rem; color: var(--accent);
+    letter-spacing: 3px; margin-bottom: 8px;
+  }
+  .winner-name {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 2rem; color: white; margin-bottom: 6px;
+  }
+  .winner-score {
+    font-size: 1.1rem; color: var(--green); font-weight: 800;
+    margin-bottom: 28px;
+  }
+  .btn-restart {
+    padding: 13px 36px;
+    background: var(--accent2); color: white;
+    border: none; border-radius: 12px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem; letter-spacing: 2px; cursor: pointer;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--muted); gap: 12px;
+    font-size: 1rem; font-weight: 700;
+  }
+  .empty-state .big { font-size: 3rem; }
+
+  /* ── CONFETTI ── */
+  .confetti-piece {
+    position: fixed;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+    z-index: 400;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
   }
 </style>
 </head>
 <body>
 
-<div class="hero">
-  <div class="hero-icon">🏎️</div>
-  <h1>Likningsspill</h1>
-  <p>Velg et spill eller en bane — løs likninger, bygg forståelse, konkurrer mot klassen!</p>
+<!-- SETUP OVERLAY -->
+<div id="setupOverlay">
+  <div class="setup-card">
+    <div class="setup-icon">➡️</div>
+    <h1>FREMDRIFTSBANEN</h1>
+    <p>Koble til rommet og sett poengmål</p>
+
+    <div class="setup-field">
+      <div class="setup-label">Romkode</div>
+      <input class="setup-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
+    </div>
+    <div class="setup-field">
+      <div class="setup-label">Poengmål</div>
+      <input class="setup-input num" id="goalInput" type="number" value="300" min="50" max="9999" placeholder="300">
+    </div>
+    <button class="btn-launch" onclick="launchRace()">🚦 START</button>
+  </div>
 </div>
 
-<div class="main">
-
-  <!-- SPILL -->
-  <div>
-    <div class="section-title">🎮 Spill</div>
-    <div class="card-grid">
-
-      <!-- Likningsspill tekst (KI) -->
-      <a class="card c-purple" href="likningsspill_tekst.html">
-        <div class="card-icon">🤖</div>
-        <div class="card-title">Likningsbyggeren</div>
-        <div class="card-desc">Løs tekstoppgaver laget av KI. Dra blokker, bygg likninger og løs dem steg for steg. 7 nivåer med automatisk progresjon.</div>
-        <div class="card-tag">⭐ Anbefalt</div>
-        <div class="card-btn">Spill nå →</div>
-      </a>
-
-      <!-- Ligningsvekt demo -->
-      <a class="card c-blue" href="demo.html">
-        <div class="card-icon">⚖️</div>
-        <div class="card-title">Ligningsvekt – Demo</div>
-        <div class="card-desc">Utforsk likninger fritt med den visuelle vekten. Perfekt for introduksjon og demonstrasjon i klasserommet.</div>
-        <div class="card-tag">🔍 Utforsking</div>
-        <div class="card-btn">Åpne →</div>
-      </a>
-
-      <!-- Ligningsspill original -->
-      <a class="card c-teal" href="spill.html">
-        <div class="card-icon">🎯</div>
-        <div class="card-title">Ligningsspillet</div>
-        <div class="card-desc">Det originale likningsspillet med vektgrensesnitt. Løs likninger ved å flytte blokker og holde vekten i balanse.</div>
-        <div class="card-tag">🎮 Klassisk</div>
-        <div class="card-btn">Spill →</div>
-      </a>
-
-      <!-- Spill mot andre (original) -->
-      <a class="card c-green" href="spill_mot_andre.html">
-        <div class="card-icon">👥</div>
-        <div class="card-title">Spill mot andre</div>
-        <div class="card-desc">Det originale flerspillerspillet. Koble til med romkode og konkurrér mot medelever i sanntid.</div>
-        <div class="card-tag">🏆 Flerspiller</div>
-        <div class="card-btn">Spill →</div>
-      </a>
-
-      <!-- Likningssett (kommer) -->
-      <div class="card c-pink soon">
-        <div class="soon-badge">Kommer snart</div>
-        <div class="card-icon">🔢</div>
-        <div class="card-title">Likningssett</div>
-        <div class="card-desc">Løs likninger med to ukjente. Innsetting og addisjonsmetoden med tekstoppgaver og KI-genererte oppgaver.</div>
-        <div class="card-tag">✨ Nytt</div>
-        <div class="card-btn">Kommer snart</div>
-      </div>
-
-    </div>
+<!-- WINNER OVERLAY -->
+<div id="winnerOverlay">
+  <div class="winner-card">
+    <div class="winner-trophy">🏆</div>
+    <div class="winner-title">VINNER!</div>
+    <div class="winner-name" id="winnerName">–</div>
+    <div class="winner-score" id="winnerScore">0 poeng</div>
+    <button class="btn-restart" onclick="location.reload()">🔄 Nytt løp</button>
   </div>
-
-  <!-- BANER -->
-  <div>
-    <div class="section-title">🏁 Baner – for storskjerm i klasserommet</div>
-    <div class="card-grid">
-
-      <!-- Bilbane -->
-      <a class="card c-orange" href="bilbane.html">
-        <div class="card-icon">🏎️</div>
-        <div class="card-title">Bilbanen</div>
-        <div class="card-desc">Silverstone-inspirert bilbane der elevenes poengrate styrer farten. Hendelser, krasj og publikum. Vis på storskjerm!</div>
-        <div class="card-tag">📺 Storskjerm</div>
-        <div class="card-btn">Åpne bane →</div>
-      </a>
-
-      <!-- Lineær bane (kommer) -->
-      <div class="card c-gold soon">
-        <div class="soon-badge">Kommer snart</div>
-        <div class="card-icon">➡️</div>
-        <div class="card-title">Fremdriftsbanen</div>
-        <div class="card-desc">Enkel lineær bane fra venstre til høyre. Sett et poengtmål og se hvem som når det først. Fungerer med alle spill.</div>
-        <div class="card-tag">🎯 Enkelt</div>
-        <div class="card-btn">Kommer snart</div>
-      </div>
-
-    </div>
-  </div>
-
 </div>
 
-<footer>
-  Likningsspill — utviklet for visuell forståelse av algebra · v1.7
-</footer>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-title">➡️ FREMDRIFTSBANEN</div>
+  <div class="topbar-center">
+    <span class="goal-badge">MÅL: <span id="goalDisplay">300</span> POENG</span>
+    <span class="room-badge" id="roomDisplay">–</span>
+    <span class="player-count"><span id="playerCount">0</span> spillere</span>
+  </div>
+  <div style="font-size:0.78rem;color:var(--muted)">Likningsspill v1.7</div>
+</div>
 
+<!-- RACE AREA -->
+<div class="race-area" id="raceArea">
+  <div class="empty-state" id="emptyState">
+    <span class="big">⏳</span>
+    <span>Venter på spillere...</span>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, onValue, remove } from "./js/firebase-config.js";
+  window._db = database;
+  window._ref = ref;
+  window._onValue = onValue;
+  window._remove = remove;
+  window._fbReady = true;
+</script>
+
+<script>
+// ── STATE ──
+let goalScore   = 300;
+let roomCode    = '';
+let players     = {};   // { name: { score, lastUpdated } }
+let winnerDeclared = false;
+const MAX_INACTIVE_MS = 6 * 60 * 1000; // 6 minutter
+
+const CAR_EMOJIS = ['🔴','🔵','🟡','🟢','🟠','🟣','⚪','🟤',
+                    '🚗','🏎️','🚙','🚕','🚓','🚑','🚒','🛻',
+                    '🔺','🔷','🟥','🟦','🟨','🟩','🟧','🟪',
+                    '❤️','💙','💛','💚','🧡','💜'];
+
+const COLORS = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c',
+                '#9b59b6','#1abc9c','#e67e22','#3498db','#e91e63',
+                '#00bcd4','#8bc34a','#ff5722','#607d8b','#795548',
+                '#ff9800','#673ab7','#009688','#f44336','#2196f3',
+                '#4caf50','#ffeb3b','#ff5252','#40c4ff','#69f0ae',
+                '#ffd740','#ff6d00','#651fff','#00b0ff','#1de9b6'];
+
+// Tildel stabil bil og farge per spiller
+const playerMeta = {}; // { name: { car, color, idx } }
+let playerIdx = 0;
+
+function getPlayerMeta(name) {
+  if (!playerMeta[name]) {
+    playerMeta[name] = {
+      car:   CAR_EMOJIS[playerIdx % CAR_EMOJIS.length],
+      color: COLORS[playerIdx % COLORS.length],
+      idx:   playerIdx,
+    };
+    playerIdx++;
+  }
+  return playerMeta[name];
+}
+
+// ── RENDER ──
+function render() {
+  const now = Date.now();
+  const area = document.getElementById('raceArea');
+
+  // Filtrer bort inaktive
+  const active = Object.entries(players)
+    .filter(([,p]) => !p.lastUpdated || (now - p.lastUpdated) < MAX_INACTIVE_MS)
+    .sort((a,b) => (b[1].score||0) - (a[1].score||0));
+
+  document.getElementById('playerCount').textContent = active.length;
+
+  if (!active.length) {
+    area.innerHTML = '<div class="empty-state" id="emptyState"><span class="big">⏳</span><span>Venter på spillere...</span></div>';
+    return;
+  }
+
+  // Bygg rader
+  area.innerHTML = '';
+  active.forEach(([name, data], i) => {
+    const score = data.score || 0;
+    const pct   = Math.min((score / goalScore) * 100, 100);
+    const meta  = getPlayerMeta(name);
+    const isLeader = i === 0;
+    const medals = ['🥇','🥈','🥉'];
+    const pos = medals[i] || (i+1)+'.';
+    const posClass = i===0?'p1':i===1?'p2':i===2?'p3':'';
+    const won = score >= goalScore;
+
+    const row = document.createElement('div');
+    row.className = 'track-row';
+    row.setAttribute('data-name', name);
+    row.innerHTML = `
+      <div class="row-pos ${posClass}">${pos}</div>
+      <div class="row-name ${isLeader?'is-leader':''}">${name}</div>
+      <div class="row-track">
+        <div class="row-fill" style="width:${pct}%"></div>
+        <div class="row-car ${won?'winner-bounce':''}"
+             style="left:calc(${pct}% - 12px)">
+          ${meta.car}
+        </div>
+        <div class="goal-line"></div>
+      </div>
+      <div class="row-score" style="color:${meta.color}">${score}</div>
+    `;
+    area.appendChild(row);
+
+    // Sjekk vinner
+    if (won && !winnerDeclared) {
+      winnerDeclared = true;
+      setTimeout(() => showWinner(name, score), 600);
+    }
+  });
+}
+
+// ── WINNER ──
+function showWinner(name, score) {
+  document.getElementById('winnerName').textContent = name;
+  document.getElementById('winnerScore').textContent = score + ' poeng';
+  document.getElementById('winnerOverlay').classList.add('show');
+  launchConfetti();
+}
+
+function launchConfetti() {
+  const colors = ['#ffd60a','#e63946','#2ecc71','#3498db','#9b59b6','#e67e22'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = Math.random()*100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random()*colors.length)];
+      el.style.animationDuration = (1.5 + Math.random()*2) + 's';
+      el.style.animationDelay = '0s';
+      el.style.width = el.style.height = (6+Math.random()*8)+'px';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }, i * 30);
+  }
+}
+
+// ── FIREBASE ──
+function startFirebaseSync(room) {
+  if (!window._fbReady) return;
+
+  window._onValue(window._ref(window._db, 'rooms/'+room+'/players'), snap => {
+    const data = snap.val();
+    if (!data) { players = {}; render(); return; }
+
+    const now = Date.now();
+    // Oppdater lokalt
+    players = {};
+    Object.entries(data).forEach(([name, info]) => {
+      // Hopp over inaktive
+      if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS) return;
+      players[name] = info;
+    });
+
+    render();
+
+    // Rydd inaktive fra Firebase
+    Object.entries(data).forEach(([name, info]) => {
+      if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS) {
+        window._remove(window._ref(window._db,'rooms/'+room+'/players/'+name));
+      }
+    });
+  });
+
+  // Periodevis rydding hvert minutt
+  setInterval(() => {
+    if (!players) return;
+    const now = Date.now();
+    Object.keys(players).forEach(name => {
+      const p = players[name];
+      if (p.lastUpdated && (now - p.lastUpdated) > MAX_INACTIVE_MS) {
+        window._remove(window._ref(window._db,'rooms/'+roomCode+'/players/'+name));
+      }
+    });
+  }, 60000);
+}
+
+// Demo-modus uten Firebase
+function startDemo() {
+  const names = ['Raske Gaupe','Lynraske Rev','Smarte Bjørn','Ville Ulv',
+                 'Modige Hauk','Gylne Ugle','Flinke Løve','Smidige Tiger'];
+  names.forEach(name => { players[name] = { score: Math.floor(Math.random()*goalScore*0.7), lastUpdated: Date.now() }; });
+  render();
+  setInterval(() => {
+    Object.keys(players).forEach(name => {
+      players[name].score = Math.min(goalScore+50, players[name].score + Math.floor(Math.random()*18));
+      players[name].lastUpdated = Date.now();
+    });
+    render();
+  }, 2000);
+}
+
+// ── LAUNCH ──
+window.launchRace = function() {
+  const room = document.getElementById('roomInput').value.trim().toUpperCase();
+  goalScore  = parseInt(document.getElementById('goalInput').value) || 300;
+
+  document.getElementById('goalDisplay').textContent = goalScore;
+  document.getElementById('roomDisplay').textContent = room || 'DEMO';
+  document.getElementById('setupOverlay').style.display = 'none';
+
+  roomCode = room;
+
+  if (room && window._fbReady) {
+    startFirebaseSync(room);
+  } else {
+    startDemo();
+  }
+};
+</script>
 </body>
 </html>
