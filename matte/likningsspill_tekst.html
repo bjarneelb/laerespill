@@ -492,13 +492,25 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '1.6';
+const VERSION = '1.7';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
-const adj = ['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flinke'];
-const ani = ['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger'];
-window.playerName = adj[Math.floor(Math.random()*adj.length)]+' '+ani[Math.floor(Math.random()*ani.length)];
+const adj = ['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flinke','Dristige','Skarpe'];
+const ani = ['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger','Ørn','Gepard','Panter','Falken'];
+// Unngå gjentakelser i samme økt ved å trekke uten tilbakelegging
+const _usedNames = new Set();
+function _genName() {
+  const pool = [];
+  adj.forEach(a => ani.forEach(b => pool.push(a+' '+b)));
+  const available = pool.filter(n => !_usedNames.has(n));
+  const name = available.length
+    ? available[Math.floor(Math.random()*available.length)]
+    : pool[Math.floor(Math.random()*pool.length)]; // fallback om alle er brukt
+  _usedNames.add(name);
+  return name;
+}
+window.playerName = _genName();
 document.getElementById('displayName').textContent = '🚗 '+window.playerName;
 
 // ── CONSTANTS ──
@@ -523,20 +535,21 @@ let timerInterval = null, timerSeconds = 0, maxSeconds = 90;
 let currentScore = 0, totalCorrect = 0;
 let recentScores = [];
 let builderActive = false, builderBlocks = [];
-let gameMode = 'solo';       // 'solo' | 'race' | 'timed'
+let gameMode = 'solo';
 let timedMinutes = 3;
 let timedSecondsLeft = 0;
 let timedInterval = null;
-let speedRate = 0;           // poengrate for fartvisning
+let speedRate = 0;
 let lastScoreTime = Date.now();
 let lastScoreValue = 0;
-
-// Incident state
-let incidentActive = false;
-let incidentType   = null;   // 'slide' | 'flat' | 'crash'
-let incidentTasksLeft = 0;
-let incidentTask   = null;
+let incidentActive = false, incidentType = null;
+let incidentTasksLeft = 0, incidentTask = null;
 let incidentCountdownInterval = null;
+
+// Sporing av handlinger (mot juks)
+let hasMovedBlock   = false;  // dra blokk til side
+let hasOperated     = false;  // brukt gange/dele
+let hasBuiltBlock   = false;  // bygget blokk selv
 
 const icons = ['🐱','🐶','🦊','🐻','🐼','🦁','🐸','🐧','🦋','⚽','🎮','🍕','🚂','✈️','🌈','🎯'];
 
@@ -965,6 +978,8 @@ function applyTask(task) {
     ...task.equation.right.filter(b=>b.num!==0)
   ].map(b=>({id:idCounter++,type:b.type,num:b.num}));
   originalTask = {bank:JSON.parse(JSON.stringify(allBlocks)),left:[],right:[],x:xValue};
+  // Nullstill handlingssporing
+  hasMovedBlock=false; hasOperated=false; hasBuiltBlock=false;
   resetTask();
 }
 
@@ -987,6 +1002,7 @@ window.buildBlock = function(type) {
   if(!val||val===0||isNaN(val)){showToast('Skriv inn et tall som ikke er 0!','error');return;}
   const nb={id:idCounter++,type,num:val,userBuilt:true};
   sides.bank.push(nb); builderBlocks.push(nb.id); lastChangedId=nb.id;
+  hasBuiltBlock=true;
   document.getElementById('builderVal').value=''; renderAll();
 };
 
@@ -1055,20 +1071,28 @@ window.handleDrop=function(ev,targetSide){
       }
     }
   }
-  lastChangedId=item.id;sides[targetSide].push(srcArr.splice(itemIdx,1)[0]);renderAll();
+  lastChangedId=item.id; sides[targetSide].push(srcArr.splice(itemIdx,1)[0]);
+  if (targetSide !== 'bank') hasMovedBlock = true;
+  renderAll();
 };
 
 // ── OPERATIONS ──
 window.operate=function(t){
   const v=parseInt(document.getElementById('opVal').value);
   if(!v||v<=0)return;
-  lastChangedId=null;
+  lastChangedId=null; hasOperated=true;
   ['left','right'].forEach(s=>{sides[s].forEach(i=>{i.num=t==='multiply'?i.num*v:Math.round(i.num/v);});sides[s]=sides[s].filter(i=>i.num!==0);});
   renderAll();
 };
 
 // ── CHECK SOLUTION ──
 window.checkSolution=function(){
+  // Krev at eleven har gjort minst én handling
+  if (!hasMovedBlock && !hasOperated && !hasBuiltBlock) {
+    showToast('🤔 Du må bygge og løse likningen først!','error');
+    return;
+  }
+
   const L=sides.left,R=sides.right;
   const xLeft  = L.length===1&&L[0].type==='x'&&L[0].num===1&&R.length===1&&R[0].type==='num'&&R[0].num===xValue;
   const xRight = R.length===1&&R[0].type==='x'&&R[0].num===1&&L.length===1&&L[0].type==='num'&&L[0].num===xValue;
@@ -1078,7 +1102,6 @@ window.checkSolution=function(){
     let bonus=Math.max(10,Math.round((timerSeconds/maxSeconds)*100));
     if(builderActive) bonus=Math.round(bonus*BUILDER_BONUS_MULTIPLIER);
     currentScore+=bonus;
-    // Update speed tracking
     const now=Date.now();
     const dt=(now-lastScoreTime)/1000;
     if(dt>0&&dt<120) speedRate=Math.max(0,Math.round((bonus/dt)*10));
@@ -1090,7 +1113,7 @@ window.checkSolution=function(){
     const msg=builderActive?'🎉 Riktig! +'+bonus+' poeng (🔧 ×1.2 bonus!)':'🎉 Riktig! +'+bonus+' poeng!';
     showToast(msg,'success');
     builderBlocks=[];
-    // Maybe trigger incident (race mode only)
+    hasMovedBlock=false; hasOperated=false; hasBuiltBlock=false;
     setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) initGame(); },incidentActive?0:1600);
   } else {
     adjustLevel(0);
@@ -1166,8 +1189,14 @@ window.addEventListener('load',()=>{
     r.addEventListener('change',()=>{ startLevel=parseInt(r.value); });
   });
 
+  // Slett spillers Firebase-post når de forlater siden
+  window.addEventListener('beforeunload', ()=>{
+    if (window.roomCode && window._fbReady && window._set && window._ref && window._db) {
+      window._set(window._ref(window._db,'rooms/'+window.roomCode+'/players/'+window.playerName), null);
+    }
+  });
+
   window.startGame=function(){
-    // Get room code based on mode
     let room='';
     if(gameMode==='race') room=document.getElementById('roomInputRace').value.trim().toUpperCase();
     if(gameMode==='timed'){
@@ -1185,7 +1214,6 @@ window.addEventListener('load',()=>{
       window.syncScore=(s)=>updateSoloScore();
       window.syncIncident=()=>{};
     } else {
-      // No room code for multiplayer modes
       window.syncScore=()=>{};
       window.syncIncident=()=>{};
     }
