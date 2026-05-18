@@ -291,37 +291,55 @@ let winnerDeclared = false;
 let lastScores = {};    // for å beregne poengrate
 let animFrame = null;
 
-// ── TRACK — Silverstone-inspirert, Catmull-Rom spline ──
-// Bare ankerpunkter (normalisert 0-1). Catmull-Rom beregner kurver automatisk.
+// ── TRACK — Silverstone GP-layout, Catmull-Rom spline ──
+// Punkter er normalisert 0-1, i kjøreretning (med klokken)
+// Basert på faktisk Silverstone GP-layout sett ovenfra
 const TRACK_CTRL = [
-  // Hangar Straight — lang rettstrekning øverst
-  {x:0.30,y:0.08}, {x:0.45,y:0.07}, {x:0.60,y:0.07},
-  // Copse — tett høyresving øverst høyre
-  {x:0.72,y:0.09}, {x:0.80,y:0.13}, {x:0.83,y:0.20},
-  // Maggotts — venstresving
-  {x:0.80,y:0.27}, {x:0.74,y:0.30},
-  // Becketts — S-sving (høyre)
-  {x:0.78,y:0.35}, {x:0.84,y:0.40},
-  // Chapel — venstresving ut på Hangar-retning
-  {x:0.82,y:0.47}, {x:0.76,y:0.52},
-  // Hangar Straight høyre side ned
-  {x:0.88,y:0.58}, {x:0.90,y:0.66},
+  // START/MÅL — midten øverst, Hangar Straight går mot høyre
+  {x:0.42,y:0.12},
+  {x:0.52,y:0.12},
+  {x:0.62,y:0.12},
+  // Copse — rask høyresving øverst høyre
+  {x:0.74,y:0.13},
+  {x:0.82,y:0.18},
+  {x:0.84,y:0.26},
+  // Maggotts — venstresving (bilen svinger venstre)
+  {x:0.80,y:0.32},
+  {x:0.74,y:0.34},
+  // Becketts — høyresving (S-sving del 2)
+  {x:0.77,y:0.38},
+  {x:0.82,y:0.42},
+  // Chapel — venstresving og ut på Hangar Straight igjen
+  {x:0.80,y:0.47},
+  {x:0.74,y:0.50},
+  // Hangar Straight — lang rettstrekning nedover høyre side
+  {x:0.86,y:0.52},
+  {x:0.88,y:0.60},
+  {x:0.88,y:0.68},
   // Stowe — tett høyresving
-  {x:0.88,y:0.76}, {x:0.82,y:0.82},
-  // Vale — bred buet sving nedre høyre
-  {x:0.72,y:0.88}, {x:0.60,y:0.92},
-  // Club — langsom sving nedre venstre
-  {x:0.46,y:0.93}, {x:0.34,y:0.90},
-  // Abbey — venstresving
-  {x:0.22,y:0.83}, {x:0.14,y:0.74},
-  // Farm Curve — bred sving venstre side
-  {x:0.10,y:0.62}, {x:0.10,y:0.50},
-  // Village — rettstrekning opp venstre
-  {x:0.12,y:0.38}, {x:0.16,y:0.26},
-  // The Loop — hairpin venstre øvre
-  {x:0.14,y:0.17}, {x:0.20,y:0.11},
+  {x:0.86,y:0.76},
+  {x:0.80,y:0.80},
+  // Vale/Club — bred buet sving mot bunnen
+  {x:0.70,y:0.86},
+  {x:0.58,y:0.90},
+  {x:0.46,y:0.91},
+  // Luffield — langsom hairpin venstre nede
+  {x:0.32,y:0.88},
+  {x:0.22,y:0.82},
+  {x:0.18,y:0.74},
+  // Woodcote — lang buet sving opp venstre side
+  {x:0.14,y:0.64},
+  {x:0.12,y:0.54},
+  {x:0.13,y:0.44},
+  // Abbey — venstresving oppe til venstre
+  {x:0.16,y:0.34},
+  {x:0.20,y:0.26},
+  // Farm/Village — rettstrekning og svinger opp mot start
+  {x:0.18,y:0.18},
+  {x:0.24,y:0.13},
+  {x:0.32,y:0.12},
   // Tilbake til start
-  {x:0.28,y:0.08},
+  {x:0.42,y:0.12},
 ];
 
 let trackPoints  = [];   // flattede Catmull-Rom punkter (piksel)
@@ -466,20 +484,22 @@ function drawSplinePath(width, color) {
 function buildOffsetPath(offset) {
   if (!trackPoints.length) return [];
   const pts = [];
-  const n = trackPoints.length - 1; // siste = første
+  const n = trackPoints.length - 1;
+
   for (let i = 0; i < n; i++) {
-    // Normalvektor: bruk naboer for jevnere retning
-    const prev = trackPoints[(i - 1 + n) % n];
-    const next = trackPoints[(i + 1) % n];
-    const dx = next.x - prev.x;
-    const dy = next.y - prev.y;
+    // Bruk bredere vindu (±6 punkter) for jevn normalvektor uten kryss
+    const W = 6;
+    let dx = 0, dy = 0;
+    for (let w = 1; w <= W; w++) {
+      const a = trackPoints[(i - w + n) % n];
+      const b = trackPoints[(i + w) % n];
+      dx += b.x - a.x;
+      dy += b.y - a.y;
+    }
     const len = Math.sqrt(dx*dx + dy*dy) || 1;
-    // Normalvektor (90 grader rotert)
-    const nx = -dy / len;
-    const ny =  dx / len;
     pts.push({
-      x: trackPoints[i].x + nx * offset,
-      y: trackPoints[i].y + ny * offset,
+      x: trackPoints[i].x + (-dy / len) * offset,
+      y: trackPoints[i].y + ( dx / len) * offset,
     });
   }
   pts.push({...pts[0]});
@@ -710,8 +730,8 @@ function updateCars(dt) {
     const lerpRate = diff > 0 ? 2.0 : 0.7;
     p.speed = (p.speed || 0) + diff * Math.min(lerpRate * dt, 1);
 
-    // Pikselhastighet: 20–140 px/s
-    let px = 20 + p.speed * 1.2;
+    // Pikselhastighet: 0–140 px/s, ingen minimumsfart
+    let px = p.speed * 1.4;
 
     // Incident: stopp bilen
     if (p.incident) {
@@ -929,7 +949,7 @@ function applySpeedDecay() {
       decayFactor = 0;
     }
 
-    p.targetSpeed = (p.peakSpeed || 50) * decayFactor;
+    p.targetSpeed = (p.peakSpeed || 0) * decayFactor;
   });
 }
 setInterval(applySpeedDecay, 1000);
