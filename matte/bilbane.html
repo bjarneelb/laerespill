@@ -262,8 +262,9 @@
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, onValue } from "./js/firebase-config.js";
-  window._db = database; window._ref = ref; window._onValue = onValue;
+  import { database, ref, set, onValue } from "./js/firebase-config.js";
+  window._db = database; window._ref = ref;
+  window._set = set; window._onValue = onValue;
   window._fbReady = true;
 </script>
 
@@ -890,17 +891,17 @@ function startFirebaseSync(room) {
   // Rydd opp i Firebase hvert minutt
   setInterval(() => {
     if (!window._fbReady || !room) return;
-    window._onValue(window._ref(window._db, 'rooms/'+room+'/players'), snap => {
-      const data = snap.val(); if (!data) return;
-      const now = Date.now();
-      Object.entries(data).forEach(([name, info]) => {
-        if (info.lastUpdated && (now - info.lastUpdated) > 6*60*1000) {
-          window._ref && window._set &&
-            window._set(window._ref(window._db,'rooms/'+room+'/players/'+name), null);
-        }
-      });
-    }, { onlyOnce: true });
+    const now = Date.now();
+    Object.keys(players).forEach(name => {
+      const p = players[name];
+      if (p.lastUpdated && (now - p.lastUpdated) > 6*60*1000) {
+        window._set(window._ref(window._db,'rooms/'+room+'/players/'+name), null);
+        delete players[name];
+        delete lastScores[name];
+      }
+    });
   }, 60000);
+} // end startFirebaseSync
 
 // ── SPEED DECAY (kjøres hvert sekund uavhengig av Firebase) ──
 function applySpeedDecay() {
