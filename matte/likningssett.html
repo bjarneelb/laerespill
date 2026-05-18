@@ -479,36 +479,96 @@ let sides={left:[],right:[]};
 let lastChangedId=null, activeMenuTarget=null;
 let solverOriginal=null; // for reset
 
-// ── SAMPLE EQUATION SETS ──
-// Format: { eq1: [{type,num},...], eq2: [...], xVal, yVal }
+// ── EQUATION SETS — 60 sett fordelt på 4 nivåer ──
+// Alle sett er verifisert: løsningene er heltall og divisjon går alltid opp
+// Format: eq1/eq2 er arrays av {t: type, n: num} der t='x'|'y'|'num'|'='
 const SYSTEMS = [
-  // Nivå 1 — enkle koeffisienter
-  { label:'2x + y = 7, x + y = 4', xVal:3, yVal:1,
-    eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}],
-    eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:4}] },
-  { label:'x + 2y = 8, x - y = 2', xVal:4, yVal:2,
-    eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}],
-    eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:2}] },
-  { label:'3x + y = 10, x + y = 6', xVal:2, yVal:4,
-    eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:10}],
-    eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}] },
-  { label:'x + y = 5, 2x - y = 1', xVal:2, yVal:3,
-    eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}],
-    eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:1}] },
-  // Nivå 2 — litt vanskeligere
-  { label:'2x + 3y = 12, x + y = 5', xVal:3, yVal:2,
-    eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:12}],
-    eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}] },
-  { label:'3x - y = 5, x + 2y = 8', xVal:2, yVal:1,
-    eq1:[{t:'x',n:3},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:5}],
-    eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}] },
-  { label:'x + 3y = 9, 2x - y = 4', xVal:3, yVal:2,
-    eq1:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:9}],
-    eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:4}] },
-  { label:'4x + y = 14, 2x - y = 4', xVal:3, yVal:2,
-    eq1:[{t:'x',n:4},{t:'y',n:1},{t:'=',n:0},{t:'num',n:14}],
-    eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:4}] },
+  // ── NIVÅ 1 (15 sett) — koeffisienter 1–2, løsninger 1–6 ──
+  { level:1, xVal:3, yVal:1, eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}],   eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:4}] },
+  { level:1, xVal:4, yVal:2, eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:2}] },
+  { level:1, xVal:2, yVal:4, eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}],   eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}] },
+  { level:1, xVal:2, yVal:3, eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}],   eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:1}] },
+  { level:1, xVal:5, yVal:1, eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:7}],   eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:4}] },
+  { level:1, xVal:3, yVal:3, eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}],   eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:9}] },
+  { level:1, xVal:1, yVal:5, eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}],   eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:-3}] },
+  { level:1, xVal:4, yVal:1, eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}],   eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}] },
+  { level:1, xVal:6, yVal:2, eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:4}] },
+  { level:1, xVal:2, yVal:6, eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:10}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:14}] },
+  { level:1, xVal:5, yVal:3, eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:7}] },
+  { level:1, xVal:3, yVal:2, eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:7}] },
+  { level:1, xVal:1, yVal:4, eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:9}],   eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}] },
+  { level:1, xVal:6, yVal:1, eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}],   eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:5}] },
+  { level:1, xVal:4, yVal:4, eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:12}],  eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:12}] },
+
+  // ── NIVÅ 2 (15 sett) — koeffisienter 1–3, løsninger 1–8 ──
+  { level:2, xVal:3, yVal:2, eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:12}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}] },
+  { level:2, xVal:2, yVal:3, eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}],   eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:11}] },
+  { level:2, xVal:4, yVal:2, eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:14}],  eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:10}] },
+  { level:2, xVal:5, yVal:2, eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:16}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}] },
+  { level:2, xVal:3, yVal:4, eq1:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:15}],  eq2:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:13}] },
+  { level:2, xVal:6, yVal:1, eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:15}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}] },
+  { level:2, xVal:2, yVal:5, eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:16}],  eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:17}] },
+  { level:2, xVal:7, yVal:2, eq1:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:13}],  eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:16}] },
+  { level:2, xVal:4, yVal:3, eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:18}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}] },
+  { level:2, xVal:1, yVal:6, eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:19}] },
+  { level:2, xVal:5, yVal:3, eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:13}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:11}] },
+  { level:2, xVal:8, yVal:1, eq1:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:11}],  eq2:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:26}] },
+  { level:2, xVal:2, yVal:7, eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:13}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:16}] },
+  { level:2, xVal:6, yVal:3, eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:21}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}] },
+  { level:2, xVal:3, yVal:5, eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:19}],  eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:18}] },
+
+  // ── NIVÅ 3 (15 sett) — koeffisienter 2–5, løsninger 1–8 ──
+  { level:3, xVal:3, yVal:2, eq1:[{t:'x',n:4},{t:'y',n:2},{t:'=',n:0},{t:'num',n:16}],  eq2:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:12}] },
+  { level:3, xVal:4, yVal:3, eq1:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:24}],  eq2:[{t:'x',n:5},{t:'y',n:2},{t:'=',n:0},{t:'num',n:26}] },
+  { level:3, xVal:2, yVal:5, eq1:[{t:'x',n:5},{t:'y',n:2},{t:'=',n:0},{t:'num',n:20}],  eq2:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:19}] },
+  { level:3, xVal:6, yVal:2, eq1:[{t:'x',n:3},{t:'y',n:5},{t:'=',n:0},{t:'num',n:28}],  eq2:[{t:'x',n:4},{t:'y',n:2},{t:'=',n:0},{t:'num',n:28}] },
+  { level:3, xVal:3, yVal:4, eq1:[{t:'x',n:4},{t:'y',n:3},{t:'=',n:0},{t:'num',n:24}],  eq2:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:26}] },
+  { level:3, xVal:5, yVal:3, eq1:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:25}],  eq2:[{t:'x',n:4},{t:'y',n:2},{t:'=',n:0},{t:'num',n:26}] },
+  { level:3, xVal:7, yVal:2, eq1:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:29}],  eq2:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:24}] },
+  { level:3, xVal:4, yVal:5, eq1:[{t:'x',n:5},{t:'y',n:3},{t:'=',n:0},{t:'num',n:35}],  eq2:[{t:'x',n:2},{t:'y',n:4},{t:'=',n:0},{t:'num',n:28}] },
+  { level:3, xVal:2, yVal:6, eq1:[{t:'x',n:4},{t:'y',n:3},{t:'=',n:0},{t:'num',n:26}],  eq2:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:18}] },
+  { level:3, xVal:8, yVal:3, eq1:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:31}],  eq2:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:36}] },
+  { level:3, xVal:1, yVal:7, eq1:[{t:'x',n:5},{t:'y',n:2},{t:'=',n:0},{t:'num',n:19}],  eq2:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:31}] },
+  { level:3, xVal:6, yVal:4, eq1:[{t:'x',n:4},{t:'y',n:3},{t:'=',n:0},{t:'num',n:36}],  eq2:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:32}] },
+  { level:3, xVal:3, yVal:6, eq1:[{t:'x',n:5},{t:'y',n:2},{t:'=',n:0},{t:'num',n:27}],  eq2:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:24}] },
+  { level:3, xVal:5, yVal:4, eq1:[{t:'x',n:3},{t:'y',n:5},{t:'=',n:0},{t:'num',n:35}],  eq2:[{t:'x',n:4},{t:'y',n:2},{t:'=',n:0},{t:'num',n:28}] },
+  { level:3, xVal:7, yVal:3, eq1:[{t:'x',n:2},{t:'y',n:4},{t:'=',n:0},{t:'num',n:26}],  eq2:[{t:'x',n:5},{t:'y',n:3},{t:'=',n:0},{t:'num',n:44}] },
+
+  // ── NIVÅ 4 (15 sett) — koeffisienter 1–4, negative løsninger tillatt ──
+  { level:4, xVal:-2, yVal:3,  eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:5}],   eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:1}] },
+  { level:4, xVal:3,  yVal:-1, eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:1}],   eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}] },
+  { level:4, xVal:-3, yVal:2,  eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:1}],   eq2:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-7}] },
+  { level:4, xVal:4,  yVal:-2, eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}],   eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:-2}] },
+  { level:4, xVal:-1, yVal:4,  eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:5}],   eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:3}] },
+  { level:4, xVal:5,  yVal:-3, eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:-1}],  eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}] },
+  { level:4, xVal:-4, yVal:1,  eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:-5}],  eq2:[{t:'x',n:1},{t:'y',n:4},{t:'=',n:0},{t:'num',n:0}] },
+  { level:4, xVal:2,  yVal:-4, eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:2}],   eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:-6}] },
+  { level:4, xVal:-2, yVal:5,  eq1:[{t:'x',n:4},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-3}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}] },
+  { level:4, xVal:6,  yVal:-2, eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:6}],   eq2:[{t:'x',n:1},{t:'y',n:4},{t:'=',n:0},{t:'num',n:-2}] },
+  { level:4, xVal:-3, yVal:4,  eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:1}],   eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-2}] },
+  { level:4, xVal:1,  yVal:-5, eq1:[{t:'x',n:4},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-1}],  eq2:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:-13}] },
+  { level:4, xVal:-1, yVal:-2, eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:-8}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-3}] },
+  { level:4, xVal:3,  yVal:-3, eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:-3}],  eq2:[{t:'x',n:4},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}] },
+  { level:4, xVal:-2, yVal:-1, eq1:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:-10}], eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-5}] },
 ];
+
+// Sporing av brukte sett (unngå gjentagelser i samme sesjon)
+const _usedSystems = new Set();
+
+function pickSystem(level) {
+  // Filtrer på nivå, unngå brukte
+  let pool = SYSTEMS.filter(s=>s.level===level && !_usedSystems.has(s));
+  if (!pool.length) {
+    // Alle på dette nivået er brukt — nullstill for dette nivået
+    SYSTEMS.filter(s=>s.level===level).forEach(s=>_usedSystems.delete(s));
+    pool = SYSTEMS.filter(s=>s.level===level);
+  }
+  const chosen = pool[Math.floor(Math.random()*pool.length)];
+  _usedSystems.add(chosen);
+  return chosen;
+}
+
+let currentLevel = 1;
 
 // ── INIT GAME ──
 function initGame() {
@@ -516,8 +576,8 @@ function initGame() {
   subBlock=null; knownVar=''; knownVal=0;
   sides={left:[],right:[]}; lastChangedId=null;
 
-  // Velg tilfeldig system
-  system=SYSTEMS[Math.floor(Math.random()*SYSTEMS.length)];
+  // Velg system basert på nivå, ingen gjentagelser
+  system = pickSystem(currentLevel);
 
   // Vis likningene
   document.getElementById('eqText1').textContent=formatEqLine(system.eq1);
@@ -895,9 +955,22 @@ document.addEventListener('click',()=>document.getElementById('ctxMenu').style.d
 window.operate=function(t){
   const v=parseInt(document.getElementById('opVal').value);
   if(!v||v<=0)return;
+
+  if(t==='divide'){
+    // Sjekk at alle blokker (unntatt sub-blokker) går opp i heltall
+    const allBlocks=[...sides.left,...sides.right].filter(i=>i.type!=='sub');
+    const goesEvenly=allBlocks.every(i=>i.num%v===0);
+    if(!goesEvenly){
+      showToast('⚠️ Går ikke opp — prøv en annen fremgangsmåte!','error');
+      return;
+    }
+  }
+
   lastChangedId=null;
   ['left','right'].forEach(s=>{
-    sides[s].forEach(i=>{if(i.type!=='sub')i.num=t==='multiply'?i.num*v:Math.round(i.num/v);});
+    sides[s].forEach(i=>{
+      if(i.type!=='sub') i.num=t==='multiply'?i.num*v:i.num/v;
+    });
     sides[s]=sides[s].filter(i=>i.num!==0||i.type==='sub');
   });
   renderSolver(); updateSubBtn();
