@@ -426,7 +426,7 @@ function drawTrack() {
 
   drawGrass();
 
-  // Skygge under banen
+  // Skygge
   ctx.save();
   ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=20;
   drawSplinePath(TRACK_WIDTH+10,'#111');
@@ -435,24 +435,21 @@ function drawTrack() {
   // Asfalt
   drawSplinePath(TRACK_WIDTH,'#2d2d2d');
 
-  // Kurban (fargestriper ytterst)
-  drawSplinePath(TRACK_WIDTH+2,'transparent', true);
-
   // Midtstrek — stille stiplet linje
   ctx.save(); ctx.setLineDash([16,12]);
   drawSplinePath(1,'rgba(255,255,255,0.22)');
   ctx.setLineDash([]); ctx.restore();
 
-  // Barriere ytre og indre
-  drawBarrier(TRACK_WIDTH+5, true);
-  drawBarrier(TRACK_WIDTH+5, false);
+  // Barrierer (offset-sti)
+  drawBarrier( TRACK_WIDTH * 0.92);   // ytre
+  drawBarrier(-TRACK_WIDTH * 0.92);   // indre
 
   drawFinishLine();
   drawDecorations();
 }
 
 // Tegn selve spline-kurven som en stroke
-function drawSplinePath(width, color, kerb=false) {
+function drawSplinePath(width, color) {
   if (!trackPoints.length) return;
   ctx.beginPath();
   ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
@@ -461,7 +458,31 @@ function drawSplinePath(width, color, kerb=false) {
   }
   ctx.closePath();
   ctx.lineWidth=width; ctx.strokeStyle=color;
-  if (!kerb) ctx.stroke();
+  ctx.stroke();
+}
+
+// Bygg en offset-sti langs trackPoints (positiv = ytre, negativ = indre)
+function buildOffsetPath(offset) {
+  if (!trackPoints.length) return [];
+  const pts = [];
+  const n = trackPoints.length - 1; // siste = første
+  for (let i = 0; i < n; i++) {
+    // Normalvektor: bruk naboer for jevnere retning
+    const prev = trackPoints[(i - 1 + n) % n];
+    const next = trackPoints[(i + 1) % n];
+    const dx = next.x - prev.x;
+    const dy = next.y - prev.y;
+    const len = Math.sqrt(dx*dx + dy*dy) || 1;
+    // Normalvektor (90 grader rotert)
+    const nx = -dy / len;
+    const ny =  dx / len;
+    pts.push({
+      x: trackPoints[i].x + nx * offset,
+      y: trackPoints[i].y + ny * offset,
+    });
+  }
+  pts.push({...pts[0]});
+  return pts;
 }
 
 function drawGrass() {
@@ -476,7 +497,6 @@ function drawGrass() {
   const grd=ctx.createLinearGradient(0,0,W,H);
   grd.addColorStop(0,'#2a5225'); grd.addColorStop(1,'#1e3d1a');
   ctx.fillStyle=grd; ctx.fill('evenodd');
-  // Tekstur
   ctx.globalAlpha=0.12;
   for (let i=0; i<140; i++) {
     ctx.fillStyle=i%2===0?'#4a8a40':'#1a3a16';
@@ -485,91 +505,108 @@ function drawGrass() {
   ctx.globalAlpha=1; ctx.restore();
 }
 
-// Barriere: tegn røde/hvite segmenter langs spline med normalvektor
-function drawBarrier(halfWidth, outer) {
+// Barriere: tegn sammenhengende offset-sti med rutemønster
+function drawBarrier(offset) {
   if (!trackPoints.length) return;
+  const pts = buildOffsetPath(offset);
+  if (!pts.length) return;
+
+  // Tegn hele stien i én operasjon per farge (annenhvert segment)
+  const segmentLen = 14; // piksler per rute
+  let accumulated = 0;
+  let colorIdx = 0;
+
   ctx.save();
-  const step = 3; // hvert N-te punkt
-  for (let i=0; i<trackPoints.length-step; i+=step) {
-    const p0=trackPoints[i], p1=trackPoints[i+step]||trackPoints[i];
-    const angle=Math.atan2(p1.y-p0.y, p1.x-p0.x);
-    const perp=angle+Math.PI/2;
-    const sign=outer?1:-1;
-    const ox=Math.cos(perp)*halfWidth*sign;
-    const oy=Math.sin(perp)*halfWidth*sign;
-    const nx=Math.cos(perp)*(halfWidth+step*0.6)*sign;
-    const ny=Math.sin(perp)*(halfWidth+step*0.6)*sign;
-    ctx.beginPath();
-    ctx.moveTo(p0.x+ox, p0.y+oy);
-    ctx.lineTo(p1.x+nx, p1.y+ny);
-    ctx.lineWidth=4;
-    // Rutemønster rødt/hvitt
-    ctx.strokeStyle=Math.floor(i/step)%2===0?'#e63946':'#f1faee';
-    ctx.stroke();
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'butt';
+
+  for (let i = 0; i < pts.length - 1; i++) {
+    const dx = pts[i+1].x - pts[i].x;
+    const dy = pts[i+1].y - pts[i].y;
+    const segDist = Math.sqrt(dx*dx + dy*dy);
+    let remaining = segDist;
+    let t = 0;
+
+    while (remaining > 0) {
+      const available = segmentLen - (accumulated % segmentLen);
+      const draw = Math.min(available, remaining);
+      const t2 = t + draw / segDist;
+
+      const x1 = pts[i].x + (pts[i+1].x - pts[i].x) * t;
+      const y1 = pts[i].y + (pts[i+1].y - pts[i].y) * t;
+      const x2 = pts[i].x + (pts[i+1].x - pts[i].x) * t2;
+      const y2 = pts[i].y + (pts[i+1].y - pts[i].y) * t2;
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.strokeStyle = Math.floor(accumulated / segmentLen) % 2 === 0 ? '#e63946' : '#f1faee';
+      ctx.stroke();
+
+      accumulated += draw;
+      remaining -= draw;
+      t = t2;
+    }
   }
   ctx.restore();
 }
 
 function drawFinishLine() {
   if (trackPoints.length<4) return;
-  const p0=trackPoints[0], p1=trackPoints[4];
-  const angle=Math.atan2(p1.y-p0.y, p1.x-p0.x);
-  const perp=angle+Math.PI/2;
+  // Bruk offset-sti for å finne bredden på startstreken
+  const outer = buildOffsetPath( TRACK_WIDTH * 0.9);
+  const inner = buildOffsetPath(-TRACK_WIDTH * 0.9);
+  if (!outer.length || !inner.length) return;
+
+  const po = outer[0], pi = inner[0];
+  const angle = Math.atan2(po.y - pi.y, po.x - pi.x);
+  const totalW = Math.hypot(po.x-pi.x, po.y-pi.y);
+  const sqSize = 7;
+  const cols = Math.round(totalW / sqSize);
+
   ctx.save();
-  const sqSize=7, cols=Math.round(TRACK_WIDTH*2/sqSize);
-  for (let col=0; col<cols; col++) {
-    for (let row=0; row<2; row++) {
-      const off=(col-cols/2)*sqSize;
-      const ox=Math.cos(perp)*off+Math.cos(angle)*row*sqSize;
-      const oy=Math.sin(perp)*off+Math.sin(angle)*row*sqSize;
-      ctx.fillStyle=(col+row)%2===0?'white':'black';
-      ctx.save(); ctx.translate(p0.x+ox, p0.y+oy); ctx.rotate(angle);
+  for (let col = 0; col < cols; col++) {
+    for (let row = 0; row < 2; row++) {
+      const frac = col / cols;
+      const x = pi.x + (po.x-pi.x)*frac + Math.cos(angle-Math.PI/2)*row*sqSize;
+      const y = pi.y + (po.y-pi.y)*frac + Math.sin(angle-Math.PI/2)*row*sqSize;
+      ctx.fillStyle = (col+row)%2===0 ? 'white' : 'black';
+      ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
       ctx.fillRect(-sqSize/2,-sqSize/2,sqSize,sqSize);
       ctx.restore();
     }
   }
-  ctx.font='bold 12px Nunito'; ctx.fillStyle='#ffd60a';
-  ctx.textAlign='center';
-  const lx=p0.x+Math.cos(perp)*(-(TRACK_WIDTH+22));
-  const ly=p0.y+Math.sin(perp)*(-(TRACK_WIDTH+22));
-  ctx.fillText('START/MÅL',lx,ly);
+  // Label
+  ctx.font='bold 12px Nunito'; ctx.fillStyle='#ffd60a'; ctx.textAlign='center';
+  const midX=(po.x+pi.x)/2, midY=(po.y+pi.y)/2;
+  const perpX=Math.cos(angle-Math.PI/2)*28, perpY=Math.sin(angle-Math.PI/2)*28;
+  ctx.fillText('START/MÅL', midX-perpX, midY-perpY-6);
   ctx.restore();
 }
 
 function drawDecorations() {
   if (!trackPoints.length) return;
+  const outerPts = buildOffsetPath(TRACK_WIDTH + 22);
   ctx.save();
-  // Trær på stabile posisjoner langs ytre kant
-  const treePositions=[0.06,0.14,0.28,0.44,0.58,0.70,0.82,0.92];
+  const treePositions=[0.05,0.13,0.25,0.38,0.50,0.63,0.75,0.88];
   treePositions.forEach((frac,i)=>{
-    const idx=Math.floor(frac*trackPoints.length);
-    const p=trackPoints[idx];
-    const pn=trackPoints[Math.min(idx+4,trackPoints.length-1)];
-    if(!p||!pn) return;
-    const angle=Math.atan2(pn.y-p.y,pn.x-p.x)+Math.PI/2;
-    const dist=TRACK_WIDTH+26;
-    const tx=p.x+Math.cos(angle)*dist, ty=p.y+Math.sin(angle)*dist;
-    ctx.fillStyle='#5c3317'; ctx.fillRect(tx-3,ty+8,6,12);
+    const idx=Math.floor(frac*outerPts.length);
+    const p=outerPts[idx]; if(!p) return;
+    ctx.fillStyle='#5c3317'; ctx.fillRect(p.x-3,p.y+8,6,12);
     ctx.fillStyle=i%2===0?'#2d6a26':'#3a8a32';
-    ctx.beginPath(); ctx.arc(tx,ty+6,13,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x,p.y+6,13,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#4aaa3a';
-    ctx.beginPath(); ctx.arc(tx-3,ty,9,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x-3,p.y,9,0,Math.PI*2); ctx.fill();
   });
 
-  // Publikum langs ytre kant
   const crowdColors=['#e63946','#457b9d','#f1c40f','#2ecc71','#9b59b6','#e67e22'];
   ctx.globalAlpha=0.55;
-  for (let i=0; i<100; i++) {
-    const idx=Math.floor((i/100)*trackPoints.length);
-    const p=trackPoints[idx];
-    const pn=trackPoints[Math.min(idx+4,trackPoints.length-1)];
-    if(!p||!pn) continue;
-    const angle=Math.atan2(pn.y-p.y,pn.x-p.x)+Math.PI/2;
-    const d=TRACK_WIDTH+18+(i%4)*7;
-    const jx=Math.cos(angle)*d+Math.sin(i*7.3)*3;
-    const jy=Math.sin(angle)*d+Math.cos(i*5.1)*3;
+  for (let i=0; i<120; i++) {
+    const idx=Math.floor((i/120)*outerPts.length);
+    const p=outerPts[idx]; if(!p) continue;
+    const jx=Math.sin(i*7.3)*5, jy=Math.cos(i*5.1)*5;
     ctx.fillStyle=crowdColors[i%crowdColors.length];
-    ctx.beginPath(); ctx.arc(p.x+jx,p.y+jy,3.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x+jx+(i%3)*6,p.y+jy,3.5,0,Math.PI*2); ctx.fill();
   }
   ctx.globalAlpha=1; ctx.restore();
 }
@@ -620,14 +657,14 @@ function drawCars() {
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // Name label
+    // Name label — vis fullt navn
     ctx.save();
     ctx.font = 'bold 10px Nunito';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'white';
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
     ctx.shadowBlur = 4;
-    ctx.fillText(name.split(' ')[1] || name, drawX, drawY - 18);
+    ctx.fillText(name, drawX, drawY - 18);
     ctx.restore();
 
     // Incident emoji
@@ -725,7 +762,7 @@ function updateSidePanels() {
       <div class="lb-entry ${i===0?'is-leader':''}">
         <span class="lb-pos">${medals[i]}</span>
         <span class="lb-car" style="color:${p.color}">■</span>
-        <span class="lb-name">${name.split(' ')[1]||name}</span>
+        <span class="lb-name">${name}</span>
         <span class="lb-laps">${p.laps||0}r</span>
         <span class="lb-incident">${inc}</span>
       </div>`;
@@ -742,7 +779,7 @@ function updateSidePanels() {
     const pct = Math.round((spd/Math.max(maxSpd,1))*100);
     speedEl.innerHTML += `
       <div class="speed-entry">
-        <span style="font-size:0.8rem;font-weight:700;color:${p.color};width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name.split(' ')[1]||name}</span>
+        <span style="font-size:0.8rem;font-weight:700;color:${p.color};width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
         <div class="speed-bar-wrap"><div class="speed-bar" style="width:${pct}%"></div></div>
         <span class="speed-val">${Math.round(spd)}</span>
       </div>`;
@@ -758,7 +795,7 @@ function updateSidePanels() {
       <div class="lb-entry">
         <span class="lb-pos" style="font-size:0.75rem;color:var(--muted)">${i+1}</span>
         <span style="color:${p.color};font-size:0.85rem">■</span>
-        <span class="lb-name" style="font-size:0.78rem">${name.split(' ')[1]||name}</span>
+        <span class="lb-name" style="font-size:0.78rem">${name}</span>
         <span class="lb-laps" style="font-size:0.78rem">${p.laps||0}r</span>
         <span class="lb-incident">${inc}</span>
       </div>`;
@@ -773,8 +810,7 @@ function showIncident(name, type) {
   const feed = document.getElementById('incidentFeed');
   const toast = document.createElement('div');
   toast.className = 'incident-toast';
-  const short = name.split(' ')[1] || name;
-  toast.innerHTML = `${type.emoji} <strong>${short}</strong> ${type.label}!`;
+  toast.innerHTML = `${type.emoji} <strong>${name}</strong> ${type.label}!`;
   feed.appendChild(toast);
   setTimeout(()=>{ if(toast.parentNode) toast.parentNode.removeChild(toast); }, 3200);
 }
@@ -786,7 +822,7 @@ function checkWinner() {
   if (winner) {
     winnerDeclared = true;
     const name = winner[0];
-    document.getElementById('winnerName').textContent = name.split(' ')[1]||name;
+    document.getElementById('winnerName').textContent = name;
     document.getElementById('winnerOverlay').classList.add('show');
   }
 }
@@ -804,21 +840,21 @@ function startFirebaseSync(room) {
     const data = snap.val();
     if (!data) return;
     const now = Date.now();
+    const MAX_INACTIVE_MS = 6 * 60 * 1000; // 6 minutter
 
     Object.entries(data).forEach(([name, info]) => {
+      // Hopp over inaktive spillere
+      if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS) return;
+
       if (!players[name]) {
         const idx = Object.keys(players).length;
         players[name] = {
-          laps: 0,
-          dist: 0,           // alle starter på startstreken
-          targetSpeed: 0,    // ønsket fart basert på poengrate
-          speed: 0,          // faktisk nåværende fart (glir mot targetSpeed)
+          laps: 0, dist: 0,
+          targetSpeed: 0, speed: 0,
           color: COLORS[idx % COLORS.length],
-          incident: null,
-          lastIncident: 0,
+          incident: null, lastIncident: 0,
           lastScore: info.score || 0,
-          lastScoreTime: now,
-          peakSpeed: 0,      // høyeste registrerte targetSpeed for denne spilleren
+          lastScoreTime: now, peakSpeed: 0,
         };
         lastScores[name] = { score: info.score||0, time: now };
       }
@@ -831,8 +867,6 @@ function startFirebaseSync(room) {
       const timeDiff  = rawTime - (prev?.time || rawTime);
 
       if (scoreDiff > 0 && timeDiff > 0) {
-        // Poengrate: poeng per sekund → skaler til targetSpeed 0–100
-        // 10 p/s ≈ full fart (100). Smooth: ta 70% av ny rate + 30% av gammel
         const rate = scoreDiff / (timeDiff / 1000);
         const newTarget = Math.min(rate * 10, 100);
         p.targetSpeed = p.targetSpeed * 0.3 + newTarget * 0.7;
@@ -842,8 +876,31 @@ function startFirebaseSync(room) {
 
       lastScores[name] = { score: newScore, time: rawTime };
     });
+
+    // Fjern lokalt spillere som er blitt inaktive i Firebase
+    Object.keys(players).forEach(name => {
+      const info = data[name];
+      if (!info || (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS)) {
+        delete players[name];
+        delete lastScores[name];
+      }
+    });
   });
-}
+
+  // Rydd opp i Firebase hvert minutt
+  setInterval(() => {
+    if (!window._fbReady || !room) return;
+    window._onValue(window._ref(window._db, 'rooms/'+room+'/players'), snap => {
+      const data = snap.val(); if (!data) return;
+      const now = Date.now();
+      Object.entries(data).forEach(([name, info]) => {
+        if (info.lastUpdated && (now - info.lastUpdated) > 6*60*1000) {
+          window._ref && window._set &&
+            window._set(window._ref(window._db,'rooms/'+room+'/players/'+name), null);
+        }
+      });
+    }, { onlyOnce: true });
+  }, 60000);
 
 // ── SPEED DECAY (kjøres hvert sekund uavhengig av Firebase) ──
 function applySpeedDecay() {
