@@ -10,7 +10,7 @@
     --bg: #f0f4ff; --border: #d0d8f0; --accent: #5b4fcf; --accent2: #e84393;
     --green: #22c55e; --red: #ef4444; --yellow: #eab308; --text: #1e1b4b; --muted: #6b7280;
     --x-color: #7c3aed; --x-neg: #be185d; --y-color: #0891b2; --y-neg: #b45309;
-    --num-pos: #1d4ed8; --num-neg: #92400e; --sub-color: #059669;
+    --num-pos: #1d4ed8; --num-neg: #92400e; --sub-color: #059669; --paren-color: #d97706;
     --shadow: 0 4px 24px rgba(91,79,207,0.10); --r: 16px; --r-sm: 10px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -102,6 +102,7 @@
   .block.type-num    { background:var(--num-pos); }
   .block.type-num-neg{ background:var(--num-neg); }
   .block.type-sub    { background:var(--sub-color); font-size:0.78rem; min-width:80px; }
+  .block.type-paren  { background:var(--paren-color); font-size:0.82rem; min-width:80px; border:2px solid #fbbf24; }
   .block.dragging    { opacity:0.4; }
   .block.just-changed { animation:pop 0.4s ease-out; }
   @keyframes pop { 0%{transform:scale(1.2);box-shadow:0 0 0 4px rgba(91,79,207,0.4)} 100%{transform:scale(1);box-shadow:none} }
@@ -355,7 +356,7 @@
 </script>
 
 <script>
-const VERSION='1.1';
+const VERSION='1.2';
 document.querySelectorAll('.version-num').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -571,13 +572,15 @@ function renderSide(side,container){
 }
 
 function bClass(i){
-  if(i.type==='sub') return 'type-sub';
-  if(i.type==='x')   return i.num<0?'type-x-neg':'type-x';
-  if(i.type==='y')   return i.num<0?'type-y-neg':'type-y';
+  if(i.type==='sub')   return 'type-sub';
+  if(i.type==='paren') return 'type-paren';
+  if(i.type==='x')     return i.num<0?'type-x-neg':'type-x';
+  if(i.type==='y')     return i.num<0?'type-y-neg':'type-y';
   return i.num<0?'type-num-neg':'type-num';
 }
 function bLabel(i){
-  if(i.type==='sub') return i.label||'?';
+  if(i.type==='sub')   return i.label||'?';
+  if(i.type==='paren') return i.label||'?';
   if(i.type==='x'||i.type==='y') return i.num===1?i.type:i.num===-1?'-'+i.type:i.num+i.type;
   return String(i.num);
 }
@@ -587,10 +590,10 @@ function updateSolverDisplay(){
 }
 function fmtSide(items){
   if(!items.length) return '0';
-  return items.map((i,idx)=>{ const t=bLabel(i); return (idx>0&&i.num>=0)?'+ '+t:t; }).join(' ');
+  return items.map((i,idx)=>{ const t=bLabel(i); return (idx>0&&(i.type==='paren'||i.num>=0))?'+ '+t:t; }).join(' ');
 }
 function updateScaleTilt(){
-  const val=s=>sides[s].reduce((t,i)=>{ if(i.type==='sub') return t; const xv=system?system.xVal:0,yv=system?system.yVal:0; if(i.type==='x') return t+i.num*xv; if(i.type==='y') return t+i.num*yv; return t+i.num; },0);
+  const val=s=>sides[s].reduce((t,i)=>{ if(i.type==='sub'||i.type==='paren') return t; const xv=system?system.xVal:0,yv=system?system.yVal:0; if(i.type==='x') return t+i.num*xv; if(i.type==='y') return t+i.num*yv; return t+i.num; },0);
   const tilt=Math.min(Math.max((val('left')-val('right'))*3,-35),35);
   document.getElementById('scaleL').style.transform=`translateY(${-tilt}px)`;
   document.getElementById('scaleR').style.transform=`translateY(${tilt}px)`;
@@ -695,6 +698,17 @@ window.makeBlock=function(){
 function showCtxMenu(x,y,item){
   const menu=document.getElementById('ctxMenu'), sep=document.getElementById('ctxSubSep'), opts=document.getElementById('ctxSubOptions');
   opts.innerHTML=''; sep.style.display='none';
+
+  // Løs opp parentes
+  if(item.type==='paren'){
+    sep.style.display='block';
+    const btn=document.createElement('button'); btn.className='ctx-sub-btn';
+    btn.style.background='#fff7ed'; btn.style.color='#92400e';
+    btn.textContent='✖️ Løs opp: '+item.label;
+    btn.onclick=()=>{ expandParen(item); document.getElementById('ctxMenu').style.display='none'; };
+    opts.appendChild(btn);
+  }
+
   // Innsetting i steg 2: erstatt isolatedVar
   if(subBlock&&item.type===subBlock.var&&step===2){
     sep.style.display='block';
@@ -703,6 +717,7 @@ function showCtxMenu(x,y,item){
     btn.onclick=()=>{ doSubstitute(item); document.getElementById('ctxMenu').style.display='none'; };
     opts.appendChild(btn);
   }
+
   // Innsetting i steg 3: erstatt knownVar
   if(knownVar&&knownVal!==null&&item.type===knownVar&&step===3){
     sep.style.display='block';
@@ -711,6 +726,7 @@ function showCtxMenu(x,y,item){
     btn.onclick=()=>{ doKnownSub(item); document.getElementById('ctxMenu').style.display='none'; };
     opts.appendChild(btn);
   }
+
   menu.style.display='block'; menu.style.left=x+'px'; menu.style.top=y+'px';
 }
 
@@ -718,10 +734,25 @@ function doSubstitute(item){
   const side=activeMenuTarget.side, arr=sides[side];
   const idx=arr.findIndex(i=>i.id===item.id); if(idx===-1) return;
   const coef=item.num;
-  const newBlocks=isolatedExpr.map(b=>({id:idCounter++,type:b.type,num:b.num*coef}));
+  const exprStr=isolatedExpr.map((b,i)=>{ const t=bLabel(b); return (i>0&&b.num>=0)?'+ '+t:t; }).join(' ');
+  let label;
+  if(coef===1)       label='('+exprStr+')';
+  else if(coef===-1) label='-('+exprStr+')';
+  else               label=coef+'('+exprStr+')';
+  const parenBlock={id:idCounter++,type:'paren',label,coef,expr:JSON.parse(JSON.stringify(isolatedExpr))};
+  arr.splice(idx,1,parenBlock);
+  lastChangedId=parenBlock.id;
+  renderSolver();
+  showToast('✅ Satt inn som '+label+' – høyreklikk for å løse opp','success');
+}
+
+function expandParen(item){
+  const side=activeMenuTarget.side, arr=sides[side];
+  const idx=arr.findIndex(i=>i.id===item.id); if(idx===-1) return;
+  const newBlocks=item.expr.map(b=>({id:idCounter++,type:b.type,num:b.num*item.coef})).filter(b=>b.num!==0);
   arr.splice(idx,1,...newBlocks);
-  lastChangedId=newBlocks[0]?.id;
-  renderSolver(); showToast('✅ '+subBlock.label+' satt inn!','success');
+  lastChangedId=newBlocks[0]?.id||null;
+  renderSolver(); showToast('✅ Parentes løst opp!','success');
 }
 
 function doKnownSub(item){
