@@ -593,7 +593,24 @@ function fmtSide(items){
   return items.map((i,idx)=>{ const t=bLabel(i); return (idx>0&&(i.type==='paren'||i.num>=0))?'+ '+t:t; }).join(' ');
 }
 function updateScaleTilt(){
-  const val=s=>sides[s].reduce((t,i)=>{ if(i.type==='sub'||i.type==='paren') return t; const xv=system?system.xVal:0,yv=system?system.yVal:0; if(i.type==='x') return t+i.num*xv; if(i.type==='y') return t+i.num*yv; return t+i.num; },0);
+  const evalItem=(i)=>{
+    if(i.type==='sub') return 0;
+    if(i.type==='paren'){
+      // Evaluer hvert ledd i parentesen og gang med koeffisienten
+      const inner=i.expr.reduce((t,b)=>{
+        const xv=system?system.xVal:0, yv=system?system.yVal:0;
+        if(b.type==='x') return t+b.num*xv;
+        if(b.type==='y') return t+b.num*yv;
+        return t+b.num;
+      },0);
+      return inner*i.coef;
+    }
+    const xv=system?system.xVal:0, yv=system?system.yVal:0;
+    if(i.type==='x') return i.num*xv;
+    if(i.type==='y') return i.num*yv;
+    return i.num;
+  };
+  const val=s=>sides[s].reduce((t,i)=>t+evalItem(i),0);
   const tilt=Math.min(Math.max((val('left')-val('right'))*3,-35),35);
   document.getElementById('scaleL').style.transform=`translateY(${-tilt}px)`;
   document.getElementById('scaleR').style.transform=`translateY(${tilt}px)`;
