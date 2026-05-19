@@ -27,6 +27,8 @@
   .level-indicator { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 14px; font-weight: 800; font-size: 0.85rem; transition: background 0.4s; }
   .speed-badge { background: rgba(0,245,212,0.2); border: 1px solid rgba(0,245,212,0.4); border-radius: 20px; padding: 4px 12px; font-weight: 800; font-size: 0.8rem; color: #a7f3d0; display: none; }
   .mode-badge { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 4px 12px; font-weight: 700; font-size: 0.78rem; }
+  .incident-badge { background: var(--red); border-radius: 20px; padding: 4px 14px; font-weight: 800; font-size: 0.82rem; display: none; animation: incidentPulse 1s infinite; }
+  @keyframes incidentPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
   /* ── LEVEL CHANGE OVERLAY ── */
   #levelOverlay { position: fixed; inset: 0; z-index: 900; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
@@ -367,6 +369,7 @@
   <div class="header-title">🏎️ Likningsbyggeren</div>
   <div class="header-right">
     <span class="version-tag">v<span class="version-num"></span></span>
+    <span class="incident-badge" id="incidentBadge">💥 Løs oppgave for å kjøre!</span>
     <span class="mode-badge" id="modeBadge">–</span>
     <div class="level-indicator" id="headerLevel">⭐ Nivå 1</div>
     <div class="speed-badge" id="speedBadge">⚡ 0</div>
@@ -492,7 +495,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '1.7';
+const VERSION = '1.8';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
@@ -688,143 +691,68 @@ const INCIDENT_TYPES_DEF = {
 
 function triggerIncident(type) {
   if (incidentActive) return;
-  incidentActive   = true;
-  incidentType     = type;
-  const def        = INCIDENT_TYPES_DEF[type];
+  incidentActive    = true;
+  incidentType      = type;
+  const def         = INCIDENT_TYPES_DEF[type];
   incidentTasksLeft = def.tasks;
 
-  // Sync to Firebase so bilbane sees it
   if (typeof syncIncident==='function') syncIncident(type);
 
-  // Set up overlay
+  // Vis overlay med animasjon
   document.getElementById('incidentTitle').textContent = def.title;
   document.getElementById('incidentSub').textContent   = def.sub;
+  document.getElementById('incidentCountdown').style.display = 'none';
+  document.getElementById('incidentTaskWrap').style.display  = 'none';
   drawIncidentAnim(type);
-
-  const cdEl   = document.getElementById('incidentCountdown');
-  const taskEl = document.getElementById('incidentTaskWrap');
-
-  if (type === 'slide') {
-    cdEl.style.display   = 'block';
-    taskEl.style.display = 'none';
-    let secs = Math.round(def.duration/1000);
-    document.getElementById('countdownNum').textContent = secs;
-    incidentCountdownInterval = setInterval(()=>{
-      secs--;
-      document.getElementById('countdownNum').textContent = secs;
-      if (secs<=0) {
-        clearInterval(incidentCountdownInterval);
-        closeIncident();
-      }
-    },1000);
-  } else {
-    cdEl.style.display   = 'none';
-    taskEl.style.display = 'block';
-    loadIncidentTask();
-  }
-
   document.getElementById('incidentOverlay').classList.add('show');
+
+  updateIncidentBadge();
+
+  // Overlay forsvinner automatisk etter 3 sekunder
+  setTimeout(() => {
+    document.getElementById('incidentOverlay').classList.remove('show');
+    if (type === 'slide') {
+      incidentActive = false; incidentType = null;
+      updateIncidentBadge();
+      initGame();
+    } else {
+      loadIncidentTaskIntoSolver();
+    }
+  }, 3000);
 }
 
-function drawIncidentAnim(type) {
-  const container = document.getElementById('incidentAnim');
-  if (type==='slide') {
-    container.innerHTML = `
-      <svg viewBox="0 0 180 140" width="180" height="140">
-        <g class="anim-spin" style="transform-origin:90px 70px">
-          <rect x="72" y="48" width="36" height="52" rx="8" fill="#5b4fcf"/>
-          <rect x="72" y="52" width="36" height="14" rx="3" fill="rgba(150,220,255,0.6)"/>
-          <rect x="60" y="60" width="10" height="16" rx="3" fill="#222"/>
-          <rect x="110" y="60" width="10" height="16" rx="3" fill="#222"/>
-          <rect x="60" y="84" width="10" height="16" rx="3" fill="#222"/>
-          <rect x="110" y="84" width="10" height="16" rx="3" fill="#222"/>
-        </g>
-        <text x="90" y="130" text-anchor="middle" font-size="18" fill="#5b4fcf" font-weight="800">SKRENS!</text>
-      </svg>`;
-  } else if (type==='flat') {
-    container.innerHTML = `
-      <svg viewBox="0 0 180 140" width="180" height="140">
-        <rect x="72" y="30" width="36" height="52" rx="8" fill="#5b4fcf"/>
-        <rect x="72" y="34" width="36" height="14" rx="3" fill="rgba(150,220,255,0.6)"/>
-        <rect x="60" y="42" width="10" height="16" rx="3" fill="#222"/>
-        <rect x="110" y="42" width="10" height="16" rx="3" fill="#222"/>
-        <!-- Flat tires -->
-        <g class="anim-tire">
-          <ellipse cx="65" cy="92" rx="10" ry="4" fill="#222"/>
-          <ellipse cx="115" cy="92" rx="10" ry="4" fill="#222"/>
-        </g>
-        <text x="90" y="120" text-anchor="middle" font-size="13" fill="#b45309" font-weight="800">PUNKTERT!</text>
-        <text x="90" y="136" text-anchor="middle" font-size="11" fill="#6b7280">Løs 1 oppgave</text>
-      </svg>`;
-  } else {
-    container.innerHTML = `
-      <svg viewBox="0 0 180 140" width="180" height="140">
-        <!-- Barrier -->
-        <rect x="0" y="55" width="55" height="16" rx="4" fill="#e63946"/>
-        <rect x="10" y="55" width="10" height="16" fill="#f1faee" opacity="0.7"/>
-        <rect x="30" y="55" width="10" height="16" fill="#f1faee" opacity="0.7"/>
-        <!-- Car crashed -->
-        <g class="anim-crash" style="transform-origin:90px 63px">
-          <rect x="65" y="36" width="36" height="52" rx="8" fill="#5b4fcf"/>
-          <rect x="65" y="40" width="36" height="14" rx="3" fill="rgba(150,220,255,0.5)"/>
-          <rect x="55" y="48" width="10" height="16" rx="3" fill="#222"/>
-          <rect x="101" y="48" width="10" height="16" rx="3" fill="#222"/>
-          <rect x="55" y="72" width="10" height="16" rx="3" fill="#222"/>
-          <rect x="101" y="72" width="10" height="16" rx="3" fill="#222"/>
-        </g>
-        <!-- Stars -->
-        <text x="130" y="40" font-size="20" class="anim-star" style="animation-delay:0s">⭐</text>
-        <text x="145" y="60" font-size="16" class="anim-star" style="animation-delay:0.2s">✨</text>
-        <text x="125" y="65" font-size="14" class="anim-star" style="animation-delay:0.4s">💫</text>
-        <text x="90" y="120" text-anchor="middle" font-size="13" fill="#e63946" font-weight="800">KRASJ!</text>
-        <text x="90" y="136" text-anchor="middle" font-size="11" fill="#6b7280">Løs 2 oppgaver</text>
-      </svg>`;
-  }
-}
-
-async function loadIncidentTask() {
-  document.getElementById('incidentTaskText').textContent = 'Henter oppgave…';
-  document.getElementById('incidentEq').textContent = '';
-  document.getElementById('incidentAnswer').value = '';
-  document.getElementById('incidentRemaining').textContent =
-    incidentTasksLeft > 1 ? `${incidentTasksLeft} oppgaver igjen` : '1 oppgave igjen';
-  document.getElementById('incidentTaskTitle').textContent =
-    incidentType==='crash' ? '💥 Krasj-oppgave – løs for å kjøre videre' : '🔧 Punktering – løs for å bytte dekk';
-
+async function loadIncidentTaskIntoSolver() {
+  updateIncidentBadge();
   try {
-    incidentTask = await fetchAITask(Math.min(currentLevel, 3)); // enklere oppgave som straff
-    document.getElementById('incidentTaskText').textContent = incidentTask.story;
-    document.getElementById('incidentEq').textContent = '💡 '+incidentTask.hint;
+    incidentTask = await fetchAITask(Math.min(currentLevel, 3));
   } catch(e) {
     incidentTask = generateFallback(Math.min(currentLevel, 2));
-    document.getElementById('incidentTaskText').textContent = incidentTask.story;
-    document.getElementById('incidentEq').textContent = '💡 '+incidentTask.hint;
   }
+  applyTask(incidentTask);
+  startTimer();
+  showToast('🔧 Løs denne oppgaven for å kjøre videre!','error');
 }
 
-window.checkIncidentAnswer = function() {
-  const ans = parseInt(document.getElementById('incidentAnswer').value);
-  if (isNaN(ans)) { showToast('Skriv inn et svar!','error'); return; }
-  if (ans === incidentTask.equation.xValue) {
-    incidentTasksLeft--;
-    if (incidentTasksLeft <= 0) {
-      closeIncident();
-      showToast('✅ Bra! Du er tilbake i løpet!','success');
-    } else {
-      showToast('✅ Riktig! Én oppgave til…','success');
-      loadIncidentTask();
-    }
-  } else {
-    showToast('❌ Feil svar – prøv igjen!','error');
-    document.getElementById('incidentAnswer').value = '';
+function updateIncidentBadge() {
+  const badge = document.getElementById('incidentBadge');
+  if (!incidentActive || incidentTasksLeft <= 0) {
+    badge.style.display = 'none';
+    return;
   }
-};
+  badge.style.display = 'flex';
+  const n = incidentTasksLeft;
+  const suffix = n > 1 ? 'r' : '';
+  if (incidentType==='crash') badge.textContent = '💥 Løs '+n+' oppgave'+suffix+' for å kjøre!';
+  else badge.textContent = '🔧 Løs '+n+' oppgave'+suffix+' for å kjøre!';
+}
 
 function closeIncident() {
   incidentActive = false; incidentType = null; incidentTask = null;
   clearInterval(incidentCountdownInterval);
   document.getElementById('incidentOverlay').classList.remove('show');
+  document.getElementById('incidentBadge').style.display = 'none';
 }
+
 
 function maybeIncident(scoreRate) {
   if (gameMode !== 'race') return;
@@ -1096,8 +1024,26 @@ window.checkSolution=function(){
   const L=sides.left,R=sides.right;
   const xLeft  = L.length===1&&L[0].type==='x'&&L[0].num===1&&R.length===1&&R[0].type==='num'&&R[0].num===xValue;
   const xRight = R.length===1&&R[0].type==='x'&&R[0].num===1&&L.length===1&&L[0].type==='num'&&L[0].num===xValue;
+
   if(xLeft||xRight){
     clearTimer();
+
+    // ── STRAFFEMODUS ──
+    if (incidentActive && incidentTasksLeft > 0) {
+      incidentTasksLeft--;
+      updateIncidentBadge();
+      if (incidentTasksLeft <= 0) {
+        closeIncident();
+        showToast('✅ Bra! Du er tilbake i løpet!','success');
+        setTimeout(()=>initGame(), 1600);
+      } else {
+        showToast('✅ Riktig! Én oppgave til…','success');
+        setTimeout(()=>loadIncidentTaskIntoSolver(), 1200);
+      }
+      return;
+    }
+
+    // ── NORMAL MODUS ──
     totalCorrect++;
     let bonus=Math.max(10,Math.round((timerSeconds/maxSeconds)*100));
     if(builderActive) bonus=Math.round(bonus*BUILDER_BONUS_MULTIPLIER);
