@@ -1,5 +1,8 @@
 [functions]
   directory = "netlify/functions"
 
+[build]
+  ignore = "exit 0"
+
 [build.environment]
-  SECRETS_SCAN_SMART_DETECTION_ENABLED=false
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIza"
