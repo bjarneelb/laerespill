@@ -282,70 +282,77 @@
 
     <!-- SCALE WRAP -->
     <div class="scale-wrap" id="scaleWrap">
-      <!-- SVG SCALE — blokker tegnes som foreignObject inne i bjelkegruppen -->
-      <svg id="scaleSvg" viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg">
-        <!-- Base -->
-        <rect x="265" y="248" width="30" height="22" rx="4" fill="#8B5E3C"/>
-        <rect x="240" y="264" width="80" height="11" rx="5" fill="#6B4226"/>
+      <svg id="scaleSvg" viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+
+        <!-- Stand / base -->
+        <rect x="288" y="256" width="24" height="36" rx="4" fill="#7c5c3a"/>
+        <rect x="258" y="285" width="84" height="12" rx="6" fill="#5c3d1e"/>
         <!-- Vertical pole -->
-        <rect x="277" y="70" width="7" height="180" rx="3" fill="#9ca3af"/>
-        <!-- Pivot -->
-        <circle cx="280" cy="70" r="9" fill="#6b7280"/>
-        <circle cx="280" cy="70" r="4" fill="#4b5563"/>
+        <rect x="296" y="60" width="8" height="200" rx="4" fill="#a0aec0"/>
+        <!-- Pivot knob -->
+        <circle cx="300" cy="60" r="10" fill="#718096"/>
+        <circle cx="300" cy="60" r="5"  fill="#4a5568"/>
 
-        <!-- BEAM GROUP — roterer rundt pivot (280,70) -->
-        <g id="scaleBeam" style="transform-origin:280px 70px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+        <!-- BEAM — rotates around (300,60) -->
+        <g id="scaleBeam" style="transform-origin:300px 60px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+
           <!-- Bjelke -->
-          <rect x="80" y="66" width="400" height="8" rx="4" fill="#8B5E3C"/>
+          <rect x="70" y="56" width="460" height="8" rx="4" fill="#7c5c3a"/>
+          <!-- Endeknopper -->
+          <circle cx="70"  cy="60" r="6" fill="#5c3d1e"/>
+          <circle cx="530" cy="60" r="6" fill="#5c3d1e"/>
 
-          <!-- Venstre kjede -->
-          <line x1="130" y1="74" x2="130" y2="140" stroke="#9ca3af" stroke-width="3" stroke-dasharray="5,4"/>
-          <!-- Høyre kjede -->
-          <line x1="430" y1="74" x2="430" y2="140" stroke="#9ca3af" stroke-width="3" stroke-dasharray="5,4"/>
+          <!-- Venstre opphengssnorer (V-form fra to punkter på tallerken opp til ett punkt på bjelken) -->
+          <line x1="115" y1="64"  x2="88"  y2="148" stroke="#718096" stroke-width="2"/>
+          <line x1="115" y1="64"  x2="142" y2="148" stroke="#718096" stroke-width="2"/>
 
-          <!-- Venstre skål — bredere og dypere -->
-          <ellipse cx="130" cy="143" rx="70" ry="10" fill="#b0b8c8" stroke="#9ca3af" stroke-width="2"/>
-          <path d="M60,143 Q60,200 130,200 Q200,200 200,143" fill="rgba(176,184,200,0.35)" stroke="#9ca3af" stroke-width="1.5"/>
-          <!-- Venstre skål bunn -->
-          <ellipse cx="130" cy="200" rx="50" ry="7" fill="#b0b8c8" stroke="#9ca3af" stroke-width="1.5"/>
+          <!-- Høyre opphengssnorer -->
+          <line x1="485" y1="64"  x2="458" y2="148" stroke="#718096" stroke-width="2"/>
+          <line x1="485" y1="64"  x2="512" y2="148" stroke="#718096" stroke-width="2"/>
 
-          <!-- Høyre skål — bredere og dypere -->
-          <ellipse cx="430" cy="143" rx="70" ry="10" fill="#b0b8c8" stroke="#9ca3af" stroke-width="2"/>
-          <path d="M360,143 Q360,200 430,200 Q500,200 500,143" fill="rgba(176,184,200,0.35)" stroke="#9ca3af" stroke-width="1.5"/>
-          <!-- Høyre skål bunn -->
-          <ellipse cx="430" cy="200" rx="50" ry="7" fill="#b0b8c8" stroke="#9ca3af" stroke-width="1.5"/>
+          <!-- Venstre tallerken (flat, bred) -->
+          <ellipse cx="115" cy="152" rx="68" ry="9" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+          <!-- Tallerken kant/dybde -->
+          <path d="M47,152 L47,158 Q47,165 115,165 Q183,165 183,158 L183,152" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+          <ellipse cx="115" cy="158" rx="68" ry="7" fill="#b8c4d0" stroke="none"/>
 
-          <!-- Venstre blokker (foreignObject) -->
-          <foreignObject id="foLeft" x="62" y="148" width="136" height="110">
+          <!-- Høyre tallerken (flat, bred) -->
+          <ellipse cx="485" cy="152" rx="68" ry="9" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+          <path d="M417,152 L417,158 Q417,165 485,165 Q553,165 553,158 L553,152" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+          <ellipse cx="485" cy="158" rx="68" ry="7" fill="#b8c4d0" stroke="none"/>
+
+          <!-- Venstre blokker — foreignObject over tallerkenen -->
+          <foreignObject x="47" y="108" width="136" height="48">
             <div xmlns="http://www.w3.org/1999/xhtml"
                  id="dropLeft"
-                 style="width:136px;min-height:60px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:6px;border-radius:6px;"
-                 ondragover="event.preventDefault();this.style.background='rgba(91,79,207,0.15)'"
-                 ondragleave="this.style.background=''"
-                 ondrop="handleDrop(event,'left');this.style.background=''">
+                 style="width:136px;height:48px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
+                 ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
+                 ondragleave="this.style.outline=''"
+                 ondrop="handleDrop(event,'left');this.style.outline=''">
             </div>
           </foreignObject>
 
-          <!-- Høyre blokker (foreignObject) -->
-          <foreignObject id="foRight" x="362" y="148" width="136" height="110">
+          <!-- Høyre blokker — foreignObject over tallerkenen -->
+          <foreignObject x="417" y="108" width="136" height="48">
             <div xmlns="http://www.w3.org/1999/xhtml"
                  id="dropRight"
-                 style="width:136px;min-height:60px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:6px;border-radius:6px;"
-                 ondragover="event.preventDefault();this.style.background='rgba(91,79,207,0.15)'"
-                 ondragleave="this.style.background=''"
-                 ondrop="handleDrop(event,'right');this.style.background=''">
+                 style="width:136px;height:48px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
+                 ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
+                 ondragleave="this.style.outline=''"
+                 ondrop="handleDrop(event,'right');this.style.outline=''">
             </div>
           </foreignObject>
 
         </g><!-- /scaleBeam -->
 
-        <!-- Balanseindikator -->
-        <line x1="280" y1="48" x2="280" y2="60" stroke="#d1d5db" stroke-width="2"/>
-        <polygon points="280,42 275,54 285,54" fill="#d1d5db"/>
+        <!-- Balansepil øverst -->
+        <line x1="300" y1="36" x2="300" y2="50" stroke="#d1d5db" stroke-width="2"/>
+        <polygon points="300,30 294,44 306,44" fill="#d1d5db"/>
 
         <!-- Etiketter -->
-        <text x="130" y="56" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="#6b7280">Venstre</text>
-        <text x="430" y="56" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="#6b7280">Høyre</text>
+        <text x="115" y="44" text-anchor="middle" font-family="Nunito,sans-serif" font-size="14" font-weight="800" fill="#6b7280">Venstre</text>
+        <text x="485" y="44" text-anchor="middle" font-family="Nunito,sans-serif" font-size="14" font-weight="800" fill="#6b7280">Høyre</text>
+
       </svg>
     </div>
   </div>
