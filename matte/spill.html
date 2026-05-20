@@ -1,427 +1,826 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-    <meta charset="UTF-8">
-    <title>Ligningsspillet - Vekt</title>
-    <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding-bottom: 50px; margin: 0; }
-        .top-navigation { width: 100%; max-width: 850px; display: flex; justify-content: flex-start; padding: 20px 0 0 0; }
-        .btn-back { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; }
-        .btn-back:hover { background: #c0392b; transform: translateY(-1px); }
-        
-        .game-header { text-align: center; margin-bottom: 10px; }
-        .level-bar { background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
-        .controls { margin: 10px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
-        .control-group { display: flex; flex-direction: column; gap: 8px; padding: 0 15px; border-right: 1px solid #ddd; }
-        .control-group:last-child { border-right: none; }
-        .operation-group { background: #fdf2e9; padding: 10px; border-radius: 8px; border: 1px solid #e67e22; text-align: center; }
-        
-        .demo-panel { background: #e8f4f8; border: 1px solid #2980b9; display: none; }
-        .input-row { display: flex; gap: 5px; align-items: center; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ligningsvekten</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff; --border: #d0d8f0; --accent: #5b4fcf; --accent2: #e84393;
+    --green: #22c55e; --red: #ef4444; --yellow: #eab308;
+    --text: #1e1b4b; --muted: #6b7280;
+    --x-color: #7c3aed; --x-neg: #be185d;
+    --num-pos: #1d4ed8; --num-neg: #b45309;
+    --shadow: 0 4px 24px rgba(91,79,207,0.10); --r: 14px; --r-sm: 8px;
+    --scale-wood: #8B5E3C; --scale-metal: #9ca3af;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
 
-        select, input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        button { cursor: pointer; padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; background: #fff; font-weight: bold; }
-        .btn-op { background: #e67e22; color: white; border: none; }
-        .btn-eq { background: #27ae60; color: white; border: none; }
-        .btn-new-task { background: #2980b9; color: white; border: none; }
-        .btn-new-task:hover { background: #1f6391; }
-        .btn-undo { background: #34495e; color: white; border: none; }
-        .btn-undo:disabled { background: #bdc3c7; cursor: not-allowed; }
+  /* ── HEADER ── */
+  .header { width: 100%; background: var(--accent); color: white; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(91,79,207,0.25); flex-shrink: 0; }
+  .header-title { font-size: 1.2rem; font-weight: 900; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .player-badge { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 4px 12px; font-weight: 700; font-size: 0.8rem; }
+  .mode-badge { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 3px 10px; font-weight: 700; font-size: 0.75rem; }
+  .version-tag { font-size: 0.68rem; opacity: 0.55; font-weight: 600; }
+  .level-badge-header { background: var(--yellow); color: #713f12; border-radius: 20px; padding: 4px 12px; font-weight: 800; font-size: 0.8rem; }
+  .streak-badge { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 12px; font-weight: 800; font-size: 0.8rem; }
 
-        .task-box { background: #2c3e50; color: white; padding: 15px; border-radius: 8px; font-size: 1.4rem; margin-bottom: 15px; width: 550px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        
-        /* Oppgradert matematisk visning for loddrette brøker */
-        .math-display { font-family: monospace; background: #1a1a1a; color: #4af626; padding: 15px; border-radius: 8px; font-size: 1.6rem; min-width: 550px; box-shadow: inset 0 0 10px #000; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .math-side { display: inline-flex; align-items: center; gap: 8px; }
-        .math-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; padding: 0 4px; }
-        .math-num { border-bottom: 2px solid #4af626; text-align: center; width: 100%; padding-bottom: 2px; }
-        .math-den { text-align: center; width: 100%; padding-top: 2px; }
+  /* ── START SCREEN ── */
+  #startScreen { position: fixed; inset: 0; background: linear-gradient(135deg,#4338ca,#7c3aed 60%,#e84393); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .start-card { background: white; border-radius: 24px; padding: 32px 36px; width: 460px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+  .start-icon { font-size: 2.8rem; margin-bottom: 6px; }
+  .start-card h1 { font-size: 1.6rem; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
+  .start-card > p { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
+  .start-name { font-weight: 800; font-size: 0.9rem; color: var(--accent2); background: #fdf2f8; border-radius: 10px; padding: 5px 12px; display: inline-block; margin-bottom: 14px; }
 
-        .balance-container { position: relative; width: 850px; height: 400px; margin-top: 30px; }
-        .base { position: absolute; bottom: 0; left: 400px; width: 50px; height: 250px; background: #34495e; border-radius: 8px 8px 0 0; }
-        .beam { position: absolute; top: 100px; left: 75px; width: 700px; height: 12px; background: #7f8c8d; transition: transform 0.6s ease-in-out; transform-origin: center; display: flex; justify-content: space-between; }
-        .pan { position: absolute; top: 12px; width: 240px; min-height: 150px; background: rgba(0,0,0,0.05); border-top: 4px solid #444; border-radius: 0 0 20px 20px; transition: transform 0.6s ease-in-out; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 10px; padding: 15px; }
-        #pan-left { left: -120px; } #pan-right { right: -120px; }
+  .mode-selector { display: flex; gap: 6px; margin-bottom: 14px; }
+  .mode-btn { flex: 1; padding: 10px 4px; border-radius: 10px; border: 2px solid var(--border); background: #f9fafb; cursor: pointer; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.75rem; color: var(--muted); transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .mode-btn .mi { font-size: 1.3rem; }
+  .mode-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 14px rgba(91,79,207,0.4); transform: translateY(-2px); }
 
-        .item { min-width: 50px; height: 50px; padding: 0 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; border-radius: 8px; color: white; cursor: grab; user-select: none; text-align: center; font-size: 14px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
-        .box-x { background: #d35400; border: 2px solid #a04000; }
-        .box-x-neg { background: #e74c3c; border: 2px solid #c0392b; }
-        .val-pos { background: #2980b9; border: 2px solid #1c5982; }
-        .val-neg { background: #c0392b; border: 2px solid #7b241c; }
-        .box-inv-x { background: #9b59b6; border: 2px solid #6c3483; }
-        
-        .fraction { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; vertical-align: middle; line-height: 1; padding: 2px 0; }
-        .numerator { border-bottom: 1px solid white; padding-bottom: 2px; text-align: center; width: 100%; }
-        .denominator { padding-top: 2px; text-align: center; width: 100%; }
+  .mode-options { background: #f5f3ff; border-radius: 10px; padding: 12px; margin-bottom: 12px; display: none; flex-direction: column; gap: 8px; }
+  .mode-options.visible { display: flex; }
+  .opt-row { display: flex; align-items: center; gap: 8px; }
+  .opt-label { font-size: 0.75rem; font-weight: 800; color: var(--muted); white-space: nowrap; }
+  .start-input { flex: 1; padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px; font-family: 'Nunito',sans-serif; font-size: 0.9rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 2px; outline: none; background: white; }
+  .start-input:focus { border-color: var(--accent); }
+  .start-num { width: 65px; padding: 8px 8px; border: 2px solid var(--border); border-radius: 8px; font-family: 'Nunito',sans-serif; font-size: 0.9rem; font-weight: 700; text-align: center; outline: none; background: white; }
+  .start-num:focus { border-color: var(--accent); }
 
-        .context-menu { display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; padding: 5px 0; }
-        .context-menu button { display: block; width: 100%; border: none; background: none; text-align: left; padding: 8px 12px; cursor: pointer; font-size: 14px; }
-        .context-menu button:hover { background: #f0f2f5; }
-    </style>
+  .level-selector-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-align: left; margin-bottom: 5px; }
+  .level-selector { display: flex; gap: 3px; margin-bottom: 12px; flex-wrap: wrap; }
+  .level-selector label { flex: 1; min-width: 36px; cursor: pointer; }
+  .level-selector input[type="radio"] { display: none; }
+  .level-radio-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px 2px; border-radius: 8px; border: 2px solid var(--border); background: #f9fafb; font-size: 0.58rem; font-weight: 800; color: var(--muted); transition: all 0.15s; }
+  .level-radio-btn .li { font-size: 0.85rem; }
+  .level-selector input[type="radio"]:checked + .level-radio-btn { background: var(--accent); border-color: var(--accent); color: white; transform: translateY(-2px); }
+
+  .btn-start { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 800; cursor: pointer; transition: transform 0.1s; }
+  .btn-start:hover { background: #4338ca; transform: translateY(-1px); }
+  .start-version { margin-top: 8px; font-size: 0.68rem; color: #9ca3af; font-weight: 600; }
+
+  /* ── COUNTDOWN BANNER ── */
+  #countdownBanner { display: none; background: var(--accent); color: white; border-radius: var(--r); padding: 8px 18px; align-items: center; justify-content: space-between; box-shadow: var(--shadow); }
+  #countdownBanner.visible { display: flex; }
+  .countdown-time { font-size: 1.4rem; font-weight: 900; font-family: monospace; }
+  .countdown-time.urgent { color: var(--yellow); animation: urgPulse 0.5s infinite; }
+  @keyframes urgPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* ── EQUATION DISPLAY ── */
+  .eq-display { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 10px 18px; box-shadow: var(--shadow); text-align: center; font-size: 1.3rem; font-weight: 900; font-family: monospace; color: var(--accent); min-height: 44px; }
+
+  /* ── MAIN AREA ── */
+  .main { width: 100%; max-width: 920px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── SCALE + SIDEBAR LAYOUT ── */
+  .scale-area { display: grid; grid-template-columns: 200px 1fr; gap: 12px; align-items: start; }
+  .scale-area.no-sidebar { grid-template-columns: 1fr; }
+
+  /* ── SCOREBOARD SIDEBAR ── */
+  .sidebar { display: flex; flex-direction: column; gap: 10px; }
+  .score-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 14px; box-shadow: var(--shadow); }
+  .score-card-title { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .score-entry { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; font-weight: 700; }
+  .score-entry:last-child { border-bottom: none; }
+  .score-entry.is-me { color: var(--accent); }
+  .score-entry .pts { background: #f0f4ff; color: var(--accent); border-radius: 20px; padding: 1px 8px; font-size: 0.75rem; }
+  .score-entry.is-me .pts { background: var(--accent); color: white; }
+  .my-score-big { text-align: center; font-size: 2.2rem; font-weight: 900; color: var(--accent); }
+  .my-score-sub { text-align: center; font-size: 0.75rem; color: var(--muted); font-weight: 700; margin-top: 2px; }
+
+  .level-info-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 14px; box-shadow: var(--shadow); }
+  .level-info-title { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .level-info-name { font-size: 0.88rem; font-weight: 800; color: var(--accent); }
+  .level-info-desc { font-size: 0.75rem; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .wins-display { margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+  .wins-bar { flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+  .wins-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.4s; }
+
+  /* ── SVG SCALE ── */
+  .scale-wrap { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 14px; box-shadow: var(--shadow); position: relative; }
+  #scaleSvg { width: 100%; height: 260px; display: block; }
+
+  /* Scale drop zones */
+  .scale-drop { position: absolute; display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; padding: 6px; border-radius: 8px; transition: background 0.2s; min-height: 60px; }
+  .scale-drop.drag-over { background: rgba(91,79,207,0.12); outline: 2px dashed var(--accent); }
+  #dropLeft  { left: 5%; bottom: 20px; width: 32%; }
+  #dropRight { right: 5%; bottom: 20px; width: 32%; }
+
+  /* ── BLOCKS ── */
+  .block { padding: 7px 11px; border-radius: var(--r-sm); font-weight: 800; font-size: 0.88rem; cursor: grab; user-select: none; color: white; display: flex; align-items: center; justify-content: center; min-width: 42px; text-align: center; transition: transform 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+  .block:active { cursor: grabbing; transform: scale(1.08); }
+  .block.type-x      { background: var(--x-color); }
+  .block.type-x-neg  { background: var(--x-neg); }
+  .block.type-num    { background: var(--num-pos); }
+  .block.type-num-neg{ background: var(--num-neg); }
+  .block.dragging    { opacity: 0.35; }
+  .block.just-changed { animation: pop 0.4s ease-out; }
+  @keyframes pop { 0%{transform:scale(1.2);box-shadow:0 0 0 4px rgba(91,79,207,0.4)} 100%{transform:scale(1);box-shadow:0 2px 6px rgba(0,0,0,0.2)} }
+
+  /* Plus signs between blocks */
+  .block-plus { color: var(--muted); font-weight: 900; font-size: 1rem; align-self: center; user-select: none; pointer-events: none; }
+
+  /* ── BANK ── */
+  .block-bank { background: white; border-radius: var(--r); border: 2px dashed var(--border); padding: 12px; box-shadow: var(--shadow); }
+  .bank-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .bank-blocks { display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; align-items: center; }
+
+  /* ── CONTROLS ── */
+  .controls { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ctrl-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); flex-shrink: 0; }
+  .ctrl-num { width: 56px; padding: 6px 8px; border: 2px solid var(--border); border-radius: 7px; font-family: 'Nunito',sans-serif; font-size: 0.95rem; font-weight: 700; text-align: center; outline: none; }
+  .ctrl-num:focus { border-color: var(--accent); }
+  .ctrl-btn { padding: 7px 14px; border-radius: 7px; border: none; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.88rem; cursor: pointer; transition: filter 0.1s, transform 0.1s; }
+  .ctrl-btn:hover { filter: brightness(0.92); transform: translateY(-1px); }
+  .ctrl-btn:active { transform: translateY(0); }
+  .ctrl-btn.times  { background: #ede9fe; color: var(--x-color); }
+  .ctrl-btn.divide { background: #dbeafe; color: var(--num-pos); }
+  .ctrl-btn.undo   { background: #f3f4f6; color: var(--muted); }
+  .ctrl-sep { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+  .ctrl-btn.check  { background: var(--green); color: white; }
+  .ctrl-btn.new    { background: #f0f4ff; color: var(--accent); border: 2px solid var(--border); }
+  .ctrl-btn.reset  { background: #fef3c7; color: #92400e; }
+  .ctrl-btn.neg    { background: #fdf2f8; color: var(--x-neg); }
+  .ctrl-btn.split  { background: #f5f3ff; color: var(--x-color); }
+
+  /* ── BUILD MODE (nivå 9) ── */
+  .build-panel { background: #f5f3ff; border-radius: var(--r); border: 2px solid #c7d2fe; padding: 12px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .build-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); flex-shrink: 0; }
+  .build-num { width: 65px; padding: 7px 8px; border: 2px solid var(--border); border-radius: 7px; font-family: 'Nunito',sans-serif; font-size: 0.95rem; font-weight: 700; text-align: center; outline: none; }
+  .build-btn { padding: 7px 14px; border-radius: 7px; border: none; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.88rem; cursor: pointer; }
+  .build-btn.add-x   { background: #ede9fe; color: var(--x-color); }
+  .build-btn.add-num { background: #dbeafe; color: var(--num-pos); }
+
+  /* ── FEEDBACK TOAST ── */
+  .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-80px); padding: 11px 22px; border-radius: 50px; font-weight: 800; font-size: 0.95rem; color: white; z-index: 500; transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--green); }
+  .toast.error   { background: var(--red); }
+
+  /* ── CONTEXT MENU ── */
+  .ctx-menu { display: none; position: fixed; background: white; border: 2px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 2000; overflow: hidden; }
+  .ctx-menu button { display: block; width: 100%; border: none; background: none; font-family: 'Nunito',sans-serif; font-size: 0.88rem; font-weight: 700; padding: 8px 16px; cursor: pointer; text-align: left; color: var(--text); }
+  .ctx-menu button:hover { background: #f5f3ff; color: var(--accent); }
+
+  /* ── TIME UP ── */
+  #timeUpOverlay { position: fixed; inset: 0; z-index: 950; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; }
+  #timeUpOverlay.show { display: flex; }
+  .timeup-card { background: white; border-radius: 24px; padding: 40px; text-align: center; animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  .timeup-card .ti { font-size: 3rem; margin-bottom: 8px; }
+  .timeup-card h2 { font-size: 1.6rem; font-weight: 900; color: var(--accent); margin-bottom: 6px; }
+  .timeup-card .ts { font-size: 2.2rem; font-weight: 900; color: var(--green); margin-bottom: 4px; }
+  .timeup-card p { color: var(--muted); margin-bottom: 20px; }
+  .btn-again { padding: 11px 28px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.95rem; cursor: pointer; }
+
+  @media (max-width: 640px) {
+    .scale-area { grid-template-columns: 1fr; }
+    .sidebar { order: -1; }
+  }
+</style>
 </head>
 <body>
 
-    <div class="top-navigation">
-        <a href="index.html" class="btn-back">⬅ Tilbake til menyen</a>
+<div class="toast" id="toast"></div>
+
+<div class="ctx-menu" id="ctxMenu">
+  <button onclick="ctxNeg()">± Bytt fortegn</button>
+  <button onclick="ctxSplit()">⚏ Splitt blokk</button>
+</div>
+
+<div id="timeUpOverlay">
+  <div class="timeup-card">
+    <div class="ti">⏱️</div>
+    <h2>Tiden er ute!</h2>
+    <div class="ts" id="timeupScore">0</div>
+    <p>poeng på <span id="timeupMin">5</span> minutter</p>
+    <button class="btn-again" onclick="location.reload()">🔄 Spill igjen</button>
+  </div>
+</div>
+
+<!-- START SCREEN -->
+<div id="startScreen">
+  <div class="start-card">
+    <div class="start-icon">⚖️</div>
+    <h1>Ligningsvekten</h1>
+    <p>Balanser vekten – løs likninger!</p>
+    <div class="start-name" id="displayName">...</div>
+
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')"><span class="mi">🧘</span>Øvemodus</button>
+      <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')"><span class="mi">⏱️</span>Enkeltspiller</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')"><span class="mi">🏎️</span>Flerspiller</button>
     </div>
 
-    <div class="game-header">
-        <h1>Ligningsspillet: Balanser Vekten</h1>
+    <div class="mode-options" id="opts-solo">
+      <div class="opt-row"><span class="opt-label">Tid (min):</span><input class="start-num" id="timedMin" type="number" value="5" min="1" max="30"></div>
+    </div>
+    <div class="mode-options" id="opts-multi">
+      <div class="opt-row"><span class="opt-label">Romkode:</span><input class="start-input" id="roomInput" placeholder="ROMKODE" maxlength="8"></div>
     </div>
 
-    <div class="level-bar">
-        <label for="levelSelect"><strong>Velg nivå:</strong></label>
-        <select id="levelSelect" onchange="changeLevel(this.value)">
-            <option value="1">Nivå 1: Enkel flytt-bytt (Hele tall)</option>
-            <option value="2">Nivå 2: X på begge sider (Enkel flytt-bytt)</option>
-            <option value="3">Nivå 3: Flere ledd og samling (ax+b=cx+d)</option>
-            <option value="4">Nivå 4: Enkle brøker</option>
-            <option value="5">Nivå 5: Avanserte brøker</option>
-            <option value="6">Nivå 6: Ukjent x i nevner (1/x)</option>
-        </select>
-        <span id="streakDisplay" style="color: #27ae60;">Seire på rad: 0/6</span>
-        <div style="margin-left: 20px;">
-            <input type="checkbox" id="demoPanelToggle" onchange="toggleDemoPanel()">
-            <label for="demoPanelToggle"><strong>Bygg selv (frimodus)</strong></label>
-        </div>
+    <div class="level-selector-label">Velg startnivå</div>
+    <div class="level-selector">
+      <label><input type="radio" name="sl" value="0" checked><div class="level-radio-btn"><span class="li">🎲</span>Auto</div></label>
+      <label><input type="radio" name="sl" value="1"><div class="level-radio-btn"><span class="li">1</span>N1</div></label>
+      <label><input type="radio" name="sl" value="2"><div class="level-radio-btn"><span class="li">2</span>N2</div></label>
+      <label><input type="radio" name="sl" value="3"><div class="level-radio-btn"><span class="li">3</span>N3</div></label>
+      <label><input type="radio" name="sl" value="4"><div class="level-radio-btn"><span class="li">4</span>N4</div></label>
+      <label><input type="radio" name="sl" value="5"><div class="level-radio-btn"><span class="li">5</span>N5</div></label>
+      <label><input type="radio" name="sl" value="6"><div class="level-radio-btn"><span class="li">6</span>N6</div></label>
+      <label><input type="radio" name="sl" value="7"><div class="level-radio-btn"><span class="li">7</span>N7</div></label>
+      <label><input type="radio" name="sl" value="8"><div class="level-radio-btn"><span class="li">8</span>N8</div></label>
+      <label><input type="radio" name="sl" value="9"><div class="level-radio-btn"><span class="li">🔧</span>N9</div></label>
     </div>
 
-    <div id="taskText" class="task-box">Laster oppgave...</div>
-    <div id="math" class="math-display"></div>
+    <button class="btn-start" onclick="startGame()">Start! ⚖️</button>
+    <div class="start-version">v<span class="vn"></span></div>
+  </div>
+</div>
 
-    <div class="controls">
-        <div id="demoPanel" class="control-group demo-panel">
-            <strong>Legg til manuelt (Venstre)</strong>
-            <div class="input-row"><input type="number" id="x-qty-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'x')">+ X</button></div>
-            <div class="input-row"><input type="number" id="val-left" value="1" style="width:40px;"> <button onclick="manualAdd('left', 'num')">+ Tall</button></div>
-        </div>
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">⚖️ Ligningsvekten</div>
+  <div class="header-right">
+    <span class="version-tag">v<span class="vn"></span></span>
+    <span class="mode-badge" id="modeBadge">–</span>
+    <span class="level-badge-header" id="levelBadgeH">Nivå 1</span>
+    <span class="player-badge" id="headerName">–</span>
+    <span class="streak-badge">✅ <span id="winCount">0</span></span>
+  </div>
+</div>
 
-        <div class="control-group operation-group">
-            <strong>Gjør på begge sider</strong>
-            <div style="margin-bottom: 5px;">
-                <input type="text" id="op-val" value="2" style="width: 50px; text-align: center;">
-            </div>
-            <button class="btn-op" onclick="operate('multiply')">× Multipliser</button>
-            <button class="btn-op" onclick="operate('divide')">÷ Divider</button>
-        </div>
+<!-- MAIN -->
+<div class="main">
 
-        <div class="control-group">
-            <button class="btn-undo" id="undoBtn" onclick="undo()" disabled>⟲ Angre</button>
-            <div style="display: flex; gap: 5px; margin-top: 5px;">
-                <button class="btn-eq" onclick="checkSolution()">SJEKK SVAR</button>
-                <button class="btn-new-task" onclick="skipToNewTask()">NY OPPGAVE</button>
-            </div>
-        </div>
+  <!-- COUNTDOWN -->
+  <div id="countdownBanner">
+    <span style="font-weight:800">⏱️ Tid igjen:</span>
+    <span class="countdown-time" id="cdTime">5:00</span>
+    <span style="font-weight:700;font-size:0.82rem">Flest poeng vinner!</span>
+  </div>
 
-        <div id="demoPanelRight" class="control-group demo-panel" style="border-left:none;">
-            <strong>Legg til manuelt (Høyre)</strong>
-            <div class="input-row"><input type="number" id="x-qty-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'x')">+ X</button></div>
-            <div class="input-row"><input type="number" id="val-right" value="1" style="width:40px;"> <button onclick="manualAdd('right', 'num')">+ Tall</button></div>
+  <!-- EQUATION DISPLAY -->
+  <div class="eq-display" id="eqDisplay">–</div>
+
+  <!-- SCALE + SIDEBAR -->
+  <div class="scale-area no-sidebar" id="scaleArea">
+
+    <!-- SIDEBAR (vises kun i solo/multi) -->
+    <div class="sidebar" id="sidebar" style="display:none">
+      <div class="score-card" id="scoreCard">
+        <div class="score-card-title" id="scoreTitle">🏆 Poeng</div>
+        <div id="scoreContent"><div class="my-score-big" id="myScoreBig">0</div><div class="my-score-sub" id="myScoreSub">poeng</div></div>
+      </div>
+      <div class="level-info-card">
+        <div class="level-info-title">📊 Nivå</div>
+        <div class="level-info-name" id="levelInfoName">Nivå 1</div>
+        <div class="level-info-desc" id="levelInfoDesc">–</div>
+        <div class="wins-display">
+          <span id="winsText">0/3</span>
+          <div class="wins-bar"><div class="wins-fill" id="winsFill" style="width:0%"></div></div>
         </div>
+      </div>
     </div>
 
-    <div class="balance-container">
-        <div class="base"></div>
-        <div id="beam" class="beam">
-            <div id="pan-left" class="pan" ondragover="event.preventDefault()" ondrop="drop(event, 'left')"></div>
-            <div id="pan-right" class="pan" ondragover="event.preventDefault()" ondrop="drop(event, 'right')"></div>
-        </div>
+    <!-- SCALE WRAP -->
+    <div class="scale-wrap" id="scaleWrap">
+      <!-- SVG SCALE -->
+      <svg id="scaleSvg" viewBox="0 0 500 240" xmlns="http://www.w3.org/2000/svg">
+        <!-- Base / stand -->
+        <rect x="235" y="210" width="30" height="20" rx="4" fill="#8B5E3C"/>
+        <rect x="215" y="225" width="70" height="10" rx="5" fill="#6B4226"/>
+        <!-- Vertical pole -->
+        <rect x="247" y="80" width="6" height="130" rx="3" fill="#9ca3af"/>
+        <!-- Pivot circle -->
+        <circle cx="250" cy="80" r="7" fill="#6b7280"/>
+        <!-- Beam (rotates around pivot) -->
+        <g id="scaleBeam" style="transform-origin:250px 80px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+          <rect x="100" y="77" width="300" height="6" rx="3" fill="#8B5E3C"/>
+          <!-- Left chain -->
+          <line x1="145" y1="83" x2="145" y2="130" stroke="#9ca3af" stroke-width="2.5" stroke-dasharray="4,3"/>
+          <!-- Right chain -->
+          <line x1="355" y1="83" x2="355" y2="130" stroke="#9ca3af" stroke-width="2.5" stroke-dasharray="4,3"/>
+          <!-- Left pan -->
+          <ellipse cx="145" cy="132" rx="52" ry="8" fill="#b0b8c8" stroke="#9ca3af" stroke-width="1.5"/>
+          <rect x="93" y="128" width="104" height="5" rx="2" fill="#9ca3af"/>
+          <!-- Right pan -->
+          <ellipse cx="355" cy="132" rx="52" ry="8" fill="#b0b8c8" stroke="#9ca3af" stroke-width="1.5"/>
+          <rect x="303" y="128" width="104" height="5" rx="2" fill="#9ca3af"/>
+        </g>
+        <!-- Balance indicator line at center -->
+        <line x1="250" y1="60" x2="250" y2="70" stroke="#e5e7eb" stroke-width="1.5"/>
+      </svg>
+
+      <!-- Drop zones (absolutely positioned over SVG pans) -->
+      <div class="scale-drop" id="dropLeft"
+           ondragover="ev.preventDefault()" ondrop="handleDrop(event,'left')"></div>
+      <div class="scale-drop" id="dropRight"
+           ondragover="ev.preventDefault()" ondrop="handleDrop(event,'right')"></div>
     </div>
+  </div>
 
-    <div id="customContextMenu" class="context-menu">
-        <button onclick="menuInvert()">± Bytt fortegn (m/ -1)</button>
-        <button id="splitBtn" onclick="menuSplitInTwo()">⚏ Splitt opp i to deler</button>
-    </div>
+  <!-- BLOCK BANK -->
+  <div class="block-bank" id="bankPanel" style="display:none">
+    <div class="bank-label">📦 Dra blokkene inn i vektskålene</div>
+    <div class="bank-blocks" id="bankBlocks"></div>
+  </div>
 
-    <script>
-        let sides = { left: [], right: [] };
-        let xValue = 0; 
-        let idCounter = 0;
-        let history = [];
-        let currentLevel = 1;
-        let winStreak = 0;
-        let activeMenuTarget = null;
+  <!-- BUILD MODE (nivå 9) -->
+  <div class="build-panel" id="buildPanel" style="display:none">
+    <span class="build-label">🔧 Bygg blokk</span>
+    <input class="build-num" id="buildVal" type="number" placeholder="±tall">
+    <button class="build-btn add-x"   onclick="buildBlock('x')">+ x-blokk</button>
+    <button class="build-btn add-num" onclick="buildBlock('num')">+ Tall</button>
+  </div>
 
-        function toggleDemoPanel() {
-            const show = document.getElementById('demoPanelToggle').checked;
-            document.getElementById('demoPanel').style.display = show ? 'flex' : 'none';
-            document.getElementById('demoPanelRight').style.display = show ? 'flex' : 'none';
-        }
+  <!-- CONTROLS -->
+  <div class="controls">
+    <span class="ctrl-label">Begge sider:</span>
+    <input class="ctrl-num" id="opVal" type="number" value="2">
+    <button class="ctrl-btn times"  onclick="operate('mul')">× Ganger</button>
+    <button class="ctrl-btn divide" onclick="operate('div')">÷ Del</button>
+    <button class="ctrl-btn undo"   onclick="doUndo()">⟲ Angre</button>
+    <div class="ctrl-sep"></div>
+    <button class="ctrl-btn neg"   onclick="ctxNeg()">± Fortegn</button>
+    <button class="ctrl-btn split" onclick="ctxSplit()">⚏ Splitt</button>
+    <div class="ctrl-sep"></div>
+    <button class="ctrl-btn check" onclick="checkSolution()">✅ Sjekk svar</button>
+    <button class="ctrl-btn reset" onclick="resetTask()">↺ Nullstill</button>
+    <button class="ctrl-btn new"   onclick="newTask()">⏭️ Ny oppgave</button>
+  </div>
 
-        function manualAdd(side, type) {
-            saveHistory();
-            if (type === 'x') {
-                const qty = parseFloat(document.getElementById(`x-qty-${side}`).value);
-                if (qty !== 0) sides[side].push({ id: idCounter++, type: 'x', num: qty, den: 1 });
-            } else {
-                const val = parseFloat(document.getElementById(`val-${side}`).value);
-                if (val !== 0) sides[side].push({ id: idCounter++, type: 'number', num: val, den: 1 });
-            }
-            render();
-        }
+</div><!-- /main -->
 
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, set, update, onValue } from "./js/firebase-config.js";
+  window._fbReady=true; window._db=database; window._ref=ref;
+  window._set=set; window._update=update; window._onValue=onValue;
+  window._fbInit=function(room){
+    _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
+    _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateScoreboard(snap.val()); });
+  };
+  window.syncScore=function(score){
+    if(!window.roomCode) return;
+    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),{score,lastUpdated:Date.now()});
+  };
+  window.addEventListener('beforeunload',()=>{
+    if(window.roomCode&&window._fbReady) window._set(window._ref(window._db,'rooms/'+window.roomCode+'/players/'+window.playerName),null);
+  });
+  function updateScoreboard(players){
+    const me=players[window.playerName];
+    if(me) { document.getElementById('myScoreBig').textContent=me.score||0; }
+    const sorted=Object.entries(players).sort((a,b)=>b[1].score-a[1].score);
+    const top3=sorted.slice(0,3);
+    let html='';
+    sorted.forEach(([name,data],i)=>{
+      if(i>=3&&name!==window.playerName) return;
+      const isMe=name===window.playerName;
+      const medals=['🥇','🥈','🥉'];
+      html+=`<div class="score-entry ${isMe?'is-me':''}">
+        <span style="color:var(--muted);width:18px">${medals[i]||'–'}</span>
+        <span style="flex:1;padding:0 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+        <span class="pts">${data.score||0}p</span>
+      </div>`;
+    });
+    document.getElementById('scoreContent').innerHTML=html||'<div class="my-score-big" id="myScoreBig">0</div>';
+  }
+</script>
 
-        const levels = {
-            1: { targetStreak: 6, generate: () => {
-                let x = getRandomInt(2, 9); let a = getRandomInt(1, 8); xValue = x;
-                sides.left = [{ id: idCounter++, type: 'x', num: 1, den: 1 }, { id: idCounter++, type: 'number', num: a, den: 1 }];
-                sides.right = [{ id: idCounter++, type: 'number', num: x + a, den: 1 }];
-            }},
-            2: { targetStreak: 6, generate: () => {
-                // NYTT NIVÅ: x på begge sider, men forskjellen er alltid nøyaktig 1x
-                let x = getRandomInt(2, 8);
-                let c = getRandomInt(1, 4); 
-                let a = c + 1; // Forskjellen blir nøyaktig 1
-                let b = getRandomInt(1, 5);
-                let d = (a * x + b) - (c * x);
-                xValue = x;
-                sides.left = [{ id: idCounter++, type: 'x', num: a, den: 1 }, { id: idCounter++, type: 'number', num: b, den: 1 }];
-                sides.right = [{ id: idCounter++, type: 'x', num: c, den: 1 }, { id: idCounter++, type: 'number', num: d, den: 1 }];
-            }},
-            3: { targetStreak: 6, generate: () => {
-                let x = getRandomInt(2, 6); let a = getRandomInt(3, 5); let c = getRandomInt(1, a - 2); 
-                let b = getRandomInt(1, 6); let d = (a * x + b) - (c * x); xValue = x;
-                sides.left = [{ id: idCounter++, type: 'x', num: a, den: 1 }, { id: idCounter++, type: 'number', num: b, den: 1 }];
-                sides.right = [{ id: idCounter++, type: 'x', num: c, den: 1 }, { id: idCounter++, type: 'number', num: d, den: 1 }];
-            }},
-            4: { targetStreak: 6, generate: () => {
-                let den = getRandomInt(2, 4); let x = den * getRandomInt(1, 5); xValue = x;
-                sides.left = [{ id: idCounter++, type: 'x', num: 1, den: den }];
-                sides.right = [{ id: idCounter++, type: 'number', num: x / den, den: 1 }];
-            }},
-            5: { targetStreak: 6, generate: () => {
-                let variant = getRandomInt(1, 2); xValue = 6; 
-                if (variant === 1) {
-                    sides.left = [{ id: idCounter++, type: 'x', num: 1, den: 2 }, { id: idCounter++, type: 'number', num: 1, den: 3 }];
-                    sides.right = [{ id: idCounter++, type: 'number', num: 10, den: 3 }];
-                } else {
-                    sides.left = [{ id: idCounter++, type: 'x', num: 1, den: 3 }, { id: idCounter++, type: 'number', num: 1, den: 2 }];
-                    sides.right = [{ id: idCounter++, type: 'number', num: 5, den: 2 }];
-                }
-            }},
-            6: { targetStreak: 6, generate: () => {
-                let x = getRandomInt(2, 5); let multiplier = getRandomInt(1, 3); let num = x * multiplier; xValue = x;
-                sides.left = [{ id: idCounter++, type: 'inv-x', num: num, den: 1 }];
-                sides.right = [{ id: idCounter++, type: 'number', num: multiplier, den: 1 }];
-            }}
-        };
+<!-- MAIN SCRIPT -->
+<script>
+const VERSION='1.0';
+document.querySelectorAll('.vn').forEach(el=>el.textContent=VERSION);
 
-        window.onload = function() {
-            let savedLevel = localStorage.getItem('ligningsSpill_level');
-            if (savedLevel) { currentLevel = parseInt(savedLevel); document.getElementById('levelSelect').value = currentLevel; }
-            updateStreakDisplay(); initGame();
-        };
+// ── PLAYER NAME ──
+const adj=['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flinke','Dristige','Skarpe'];
+const ani=['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger','Ørn','Gepard','Panter','Falken'];
+const _usedN=new Set();
+function genName(){ const pool=[]; adj.forEach(a=>ani.forEach(b=>pool.push(a+' '+b))); const av=pool.filter(n=>!_usedN.has(n)); const name=av.length?av[Math.floor(Math.random()*av.length)]:pool[Math.floor(Math.random()*pool.length)]; _usedN.add(name); return name; }
+window.playerName=genName();
+document.getElementById('displayName').textContent='⚖️ '+window.playerName;
 
-        function initGame() {
-            sides.left = []; sides.right = []; history = [];
-            document.getElementById('undoBtn').disabled = true;
-            levels[currentLevel].generate();
-            document.getElementById('taskText').innerHTML = `<strong>Oppgave:</strong> Finn verdien av <strong>x</strong> slik at vekten blir i balanse.`;
-            render();
-        }
+// ── LEVEL DEFINITIONS ──
+const LEVELS = {
+  1: { name:'Enkel flytt-bytt', desc:'x + b = c · Blokker plassert i skålene', bank:false, neg:false },
+  2: { name:'X på begge sider', desc:'ax + b = cx + d · Blokker plassert', bank:false, neg:false },
+  3: { name:'Blanding fra banken', desc:'Nivå 1 og 2 · Dra blokker fra banken', bank:true, neg:false },
+  4: { name:'Flere ledd', desc:'ax + b = cx + d · Fra banken', bank:true, neg:false },
+  5: { name:'Enkle brøker', desc:'Koeffisienter som gir brøk underveis', bank:true, neg:false },
+  6: { name:'Avanserte brøker', desc:'Mer komplekse brøklikninger', bank:true, neg:false },
+  7: { name:'Ukjent i nevner', desc:'Likning med x i nevner', bank:true, neg:false },
+  8: { name:'Negative tall', desc:'Blanding av alle typer · Negative løsninger', bank:true, neg:true },
+  9: { name:'Bygg selv', desc:'Frimodus – bygg dine egne likninger', bank:true, neg:true, build:true },
+};
+const MAX_LEVEL=9, WIN_PER_LEVEL=3;
 
-        function skipToNewTask() {
-            if (winStreak > 0) {
-                let confirmSkip = confirm("Er du sikker? Seire på rad vil bli nullstilt.");
-                if (!confirmSkip) return;
-            }
-            winStreak = 0; updateStreakDisplay(); initGame();
-        }
+// ── STATE ──
+let gameMode='practice', timedMinutes=5, timedSecondsLeft=0, timedInterval=null;
+let currentLevel=1, startLevel=0, winsOnLevel=0;
+let currentScore=0, totalWins=0;
+let sides={left:[],right:[]}, bankItems=[];
+let idCounter=0, activeMenuTarget=null, lastChangedId=null;
+let history=[], originalTask=null;
+let xValue=0;
+let taskStartTime=Date.now();
 
-        function changeLevel(val) {
-            currentLevel = parseInt(val); localStorage.setItem('ligningsSpill_level', currentLevel);
-            winStreak = 0; updateStreakDisplay(); initGame();
-        }
+// ── MODE SELECTION ──
+window.selectMode=function(mode){
+  gameMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  document.getElementById('opts-solo').classList.toggle('visible',mode==='solo');
+  document.getElementById('opts-multi').classList.toggle('visible',mode==='multi');
+};
 
-        function updateStreakDisplay() {
-            document.getElementById('streakDisplay').innerText = `Seire på rad: ${winStreak}/${levels[currentLevel].targetStreak}`;
-        }
+// ── LEVEL INFO ──
+function updateLevelUI(){
+  const lv=LEVELS[currentLevel];
+  document.getElementById('levelBadgeH').textContent='Nivå '+currentLevel;
+  document.getElementById('levelInfoName').textContent='Nivå '+currentLevel+': '+lv.name;
+  document.getElementById('levelInfoDesc').textContent=lv.desc;
+  // Bank / build panel
+  document.getElementById('bankPanel').style.display  = lv.bank&&!lv.build ? 'block' : 'none';
+  document.getElementById('buildPanel').style.display = lv.build ? 'flex' : 'none';
+  // Wins progress
+  const pct=(winsOnLevel/WIN_PER_LEVEL)*100;
+  document.getElementById('winsFill').style.width=pct+'%';
+  document.getElementById('winsText').textContent=winsOnLevel+'/'+WIN_PER_LEVEL;
+}
 
-        function checkSolution() {
-            let isSolved = false;
-            if (sides.left.length === 1 && sides.left[0].type === 'x' && sides.left[0].num === 1 && sides.left[0].den === 1 && sides.right.length === 1 && sides.right[0].type === 'number') {
-                let finalVal = sides.right[0].num / sides.right[0].den;
-                if (Math.abs(finalVal - xValue) < 0.01) isSolved = true;
-            }
-            if (isSolved) {
-                winStreak++; updateStreakDisplay();
-                if (winStreak >= levels[currentLevel].targetStreak && currentLevel < 6) {
-                    alert("Fantastisk! Du flyttes opp til neste nivå!");
-                    currentLevel++; document.getElementById('levelSelect').value = currentLevel;
-                    localStorage.setItem('ligningsSpill_level', currentLevel); winStreak = 0; updateStreakDisplay();
-                } else if (winStreak >= levels[currentLevel].targetStreak && currentLevel === 6) {
-                    alert("Utrolig bra! Du har fullført spillet!"); winStreak = 0; updateStreakDisplay();
-                } else { alert("Riktig svar! Bra jobbet."); }
-                initGame();
-            } else {
-                alert("For å løse ligningen må du isolere én positiv X alene på venstre skål, og kun ha tall på høyre skål.");
-                winStreak = 0; updateStreakDisplay();
-            }
-        }
+// ── GENERATE TASK ──
+function generateTask(level){
+  history=[];
+  let eq;
+  switch(level){
+    case 1: eq=gen_L1(); break;
+    case 2: eq=gen_L2(); break;
+    case 3: eq=Math.random()<0.5?gen_L1():gen_L2(); break;
+    case 4: eq=gen_L4(); break;
+    case 5: eq=gen_L5(); break;
+    case 6: eq=gen_L6(); break;
+    case 7: eq=gen_L7(); break;
+    case 8: eq=gen_L8(); break;
+    default: eq=gen_L4(); break;
+  }
+  return eq;
+}
 
-        function gcd(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { let t = b; b = a % b; a = t; } return a; }
-        function createFraction(num, den) { if (den === 0) return { num: 0, den: 1 }; let g = gcd(num, den); let fN = num / g; let fD = den / g; if (fD < 0) { fN *= -1; fD *= -1; } return { num: fN, den: fD }; }
-        function saveHistory() { history.push(JSON.stringify({ sides: JSON.parse(JSON.stringify(sides)), idCounter })); document.getElementById('undoBtn').disabled = false; }
-        function undo() { if (history.length === 0) return; const s = JSON.parse(history.pop()); sides = s.sides; idCounter = s.idCounter; render(false); if (history.length === 0) document.getElementById('undoBtn').disabled = true; }
+// Random integer between a and b inclusive
+function ri(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 
-        function operate(type) {
-            saveHistory();
-            const rawVal = document.getElementById('op-val').value.trim();
-            ['left', 'right'].forEach(side => {
-                if (rawVal.toLowerCase() === 'x') {
-                    if (type === 'multiply') {
-                        sides[side] = sides[side].map(item => {
-                            if (item.type === 'inv-x') return { ...item, type: 'number' };
-                            if (item.type === 'number') return { ...item, type: 'x' };
-                            return item;
-                        });
-                    }
-                } else {
-                    const factor = parseInt(rawVal); if (isNaN(factor) || factor === 0) return;
-                    sides[side] = sides[side].map(item => {
-                        let newItem = {...item};
-                        if (type === 'multiply') { let f = createFraction(newItem.num * factor, newItem.den); newItem.num = f.num; newItem.den = f.den; }
-                        else { let f = createFraction(newItem.num, newItem.den * factor); newItem.num = f.num; newItem.den = f.den; }
-                        return newItem;
-                    }).filter(item => item.num !== 0);
-                }
-            });
-            render();
-        }
+function gen_L1(){
+  const x=ri(1,8), b=ri(1,9);
+  return { xVal:x, left:[{type:'x',num:1},{type:'num',num:b}], right:[{type:'num',num:x+b}] };
+}
+function gen_L2(){
+  const x=ri(1,6), a=ri(2,4), c=ri(1,a-1), b=ri(1,8);
+  const d=(a-c)*x+b;
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:d}] };
+}
+function gen_L4(){
+  const x=ri(1,6), a=ri(2,5), c=ri(1,a-1), b=ri(1,9), d=(a-c)*x+b;
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:d}] };
+}
+function gen_L5(){
+  // Ensure clean division: choose a, x such that ax is divisible nicely
+  const a=ri(2,4), x=a*ri(1,3), b=ri(1,8);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'num',num:a*x+b}] };
+}
+function gen_L6(){
+  const a=ri(3,6), x=a*ri(1,2), c=ri(1,a-1), b=ri(1,12), d=(a-c)*x+b;
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:d}] };
+}
+function gen_L7(){
+  // 1/x type: represent as coeff=1 but signal special
+  const x=ri(2,6), k=ri(1,3);
+  // k/x = k/x_val numerically → store as {type:'x',num:1,inv:true}
+  // Simplified: a/x + b = c, x=solution
+  const b=ri(1,5), c=k+b*x;
+  return { xVal:x, left:[{type:'xinv',num:k},{type:'num',num:b}], right:[{type:'num',num:Math.round(c/x)*1}],
+    _raw:`${k}/x + ${b} = ${k/x+b}` };
+}
+function gen_L8(){
+  const x=[-3,-2,-1,1,2,3][ri(0,5)];
+  const a=ri(2,5), b=ri(-6,6), c=ri(1,a-1);
+  const d=a*x+b-c*x;
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:d}] };
+}
 
-        function drag(ev, side, id) { ev.dataTransfer.setData("text", JSON.stringify({ side, id })); }
-        function drop(ev, targetSide) {
-            ev.preventDefault(); const data = JSON.parse(ev.dataTransfer.getData("text"));
-            const sourceSide = data.side; const sourceIdx = sides[sourceSide].findIndex(i => i.id === data.id);
-            if (sourceIdx === -1) return;
-            saveHistory(); let item = sides[sourceSide].splice(sourceIdx, 1)[0];
-            const targetEl = ev.target.closest('.item');
-            if (targetEl && sourceSide === targetSide) {
-                const targetId = parseInt(targetEl.getAttribute('data-id'));
-                const targetItem = sides[targetSide].find(i => i.id === targetId);
-                if (item.type === targetItem.type && item.id !== targetId) {
-                    let commonNum = (targetItem.num * item.den) + (item.num * targetItem.den);
-                    let commonDen = targetItem.den * item.den; let frac = createFraction(commonNum, commonDen);
-                    targetItem.num = frac.num; targetItem.den = frac.den;
-                    if (targetItem.num === 0) sides[targetSide].splice(sides[targetSide].indexOf(targetItem), 1);
-                } else sides[targetSide].push(item);
-            } else { sides[targetSide].push(item); }
-            render();
-        }
+// ── APPLY TASK ──
+function applyTask(task){
+  xValue=task.xVal;
+  const lv=LEVELS[currentLevel];
+  history=[];
 
-        function menuInvert() { if (!activeMenuTarget) return; saveHistory(); activeMenuTarget.item.num *= -1; render(); }
-        function menuSplitInTwo() {
-            if (!activeMenuTarget) return; saveHistory(); const item = activeMenuTarget.item; const sideList = sides[activeMenuTarget.side];
-            let part1 = item.num > 0 ? Math.ceil(item.num / 2) : Math.floor(item.num / 2); let part2 = item.num - part1;
-            const idx = sideList.findIndex(i => i.id === item.id); sideList.splice(idx, 1);
-            sideList.push({ id: idCounter++, type: item.type, num: part1, den: item.den });
-            sideList.push({ id: idCounter++, type: item.type, num: part2, den: item.den });
-            render();
-        }
+  if(lv.bank){
+    // Alle blokker i banken
+    bankItems=[...task.left,...task.right].filter(b=>b.num!==0).map(b=>({id:idCounter++,...b}));
+    sides={left:[],right:[]};
+  } else {
+    // Blokker plassert i skålene
+    sides={
+      left:task.left.filter(b=>b.num!==0).map(b=>({id:idCounter++,...b})),
+      right:task.right.filter(b=>b.num!==0).map(b=>({id:idCounter++,...b})),
+    };
+    bankItems=[];
+  }
 
-        document.addEventListener('click', () => { document.getElementById('customContextMenu').style.display = 'none'; });
+  originalTask={
+    left:JSON.parse(JSON.stringify(sides.left)),
+    right:JSON.parse(JSON.stringify(sides.right)),
+    bank:JSON.parse(JSON.stringify(bankItems)),
+    xVal:xValue,
+  };
 
-        function getTotals(side) {
-            let units = 0, xs = 0;
-            sides[side].forEach(i => {
-                let realVal = i.num / i.den;
-                if (i.type === 'x') xs += realVal;
-                else if (i.type === 'inv-x') xs += (realVal * (1/xValue)); 
-                else units += realVal;
-            });
-            return { units, xs };
-        }
+  taskStartTime=Date.now();
+  renderAll();
+}
 
-        // Fjerner 1-tallet foran x i selve boksene
-        function getBoxHTML(item) {
-            let label = item.type === 'x' ? 'x' : '';
-            if (item.type === 'inv-x') return `<span class="fraction"><span class="numerator">${item.num}</span><span class="denominator">x</span></span>`;
-            if (item.den === 1) {
-                return item.num === 1 && item.type === 'x' ? 'x' : (item.num === -1 && item.type === 'x' ? '-x' : item.num + label);
-            } else {
-                let nStr = item.num === 1 && item.type === 'x' ? 'x' : (item.num === -1 && item.type === 'x' ? '-x' : item.num + label);
-                return `<span class="fraction"><span class="numerator">${nStr}</span><span class="denominator">${item.den}</span></span>`;
-            }
-        }
+// ── RENDER ──
+function renderAll(){
+  renderDropZone('left',  document.getElementById('dropLeft'));
+  renderDropZone('right', document.getElementById('dropRight'));
+  renderBank();
+  updateEqDisplay();
+  updateScaleTilt();
+  updateLevelUI();
+}
 
-        function render(animate = true) {
-            ['left', 'right'].forEach(side => {
-                const pan = document.getElementById('pan-' + side); pan.innerHTML = '';
-                sides[side].forEach(item => {
-                    const div = document.createElement('div'); let isNeg = item.num < 0;
-                    div.className = 'item ' + (item.type === 'x' ? (isNeg ? 'box-x-neg' : 'box-x') : (item.type === 'inv-x' ? 'box-inv-x' : (isNeg ? 'val-neg' : 'val-pos')));
-                    div.draggable = true; div.setAttribute('data-id', item.id);
-                    div.ondragstart = (e) => drag(e, side, item.id);
-                    div.oncontextmenu = (e) => {
-                        e.preventDefault(); activeMenuTarget = { side, id: item.id, item };
-                        const menu = document.getElementById('customContextMenu');
-                        menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
-                    };
-                    div.innerHTML = getBoxHTML(item); pan.appendChild(div);
-                });
-            });
-            
-            // Bygger den loddrette brøkvisningen for ligningsfeltet
-            const display = document.getElementById('math');
-            display.innerHTML = '';
-            display.appendChild(buildHTMLSide(sides.left));
-            
-            const eqSign = document.createElement('span');
-            eqSign.innerText = ' = ';
-            display.appendChild(eqSign);
-            
-            display.appendChild(buildHTMLSide(sides.right));
-            
-            let L = getTotals('left'), R = getTotals('right');
-            let diff = (R.xs * xValue + R.units) - (L.xs * xValue + L.units);
-            let angle = Math.min(Math.max(diff * 4, -25), 25);
-            document.getElementById('beam').style.transform = `rotate(${angle}deg)`;
-            document.getElementById('pan-left').style.transform = `rotate(${-angle}deg)`;
-            document.getElementById('pan-right').style.transform = `rotate(${-angle}deg)`;
-        }
+function renderDropZone(side, container){
+  container.innerHTML='';
+  sides[side].forEach((item,idx)=>{
+    if(idx>0){
+      const plus=document.createElement('span');
+      plus.className='block-plus'; plus.textContent='+';
+      container.appendChild(plus);
+    }
+    container.appendChild(makeBlockEl(item,side));
+  });
+}
 
-        // Lager loddrette brøker i den grønne ligningsteksten
-        function buildHTMLSide(items) {
-            const container = document.createElement('span');
-            container.className = 'math-side';
-            if (items.length === 0) { container.innerText = '0'; return container; }
-            
-            items.forEach((item, idx) => {
-                if (idx > 0) {
-                    const op = document.createElement('span');
-                    op.innerText = item.num < 0 ? ' - ' : ' + ';
-                    container.appendChild(op);
-                } else if (item.num < 0) {
-                    const op = document.createElement('span');
-                    op.innerText = '-';
-                    container.appendChild(op);
-                }
-                
-                let absNum = Math.abs(item.num);
-                let label = item.type === 'x' ? 'x' : '';
-                
-                if (item.type === 'inv-x') {
-                    const fracSpan = document.createElement('span');
-                    fracSpan.className = 'math-frac';
-                    fracSpan.innerHTML = `<span class="math-num">${absNum}</span><span class="math-den">x</span>`;
-                    container.appendChild(fracSpan);
-                } else if (item.den === 1) {
-                    const termSpan = document.createElement('span');
-                    termSpan.innerText = (absNum === 1 && item.type === 'x') ? 'x' : absNum + label;
-                    container.appendChild(termSpan);
-                } else {
-                    const fracSpan = document.createElement('span');
-                    fracSpan.className = 'math-frac';
-                    let numText = (absNum === 1 && item.type === 'x') ? 'x' : absNum + label;
-                    fracSpan.innerHTML = `<span class="math-num">${numText}</span><span class="math-den">${item.den}</span>`;
-                    container.appendChild(fracSpan);
-                }
-            });
-            return container;
-        }
-    </script>
+function renderBank(){
+  const c=document.getElementById('bankBlocks'); c.innerHTML='';
+  bankItems.forEach((item,idx)=>{
+    if(idx>0){
+      const plus=document.createElement('span');
+      plus.className='block-plus'; plus.textContent='+';
+      c.appendChild(plus);
+    }
+    c.appendChild(makeBlockEl(item,'bank'));
+  });
+}
+
+function makeBlockEl(item,side){
+  const div=document.createElement('div');
+  const tc=item.type==='x'?(item.num<0?'type-x-neg':'type-x'):(item.num<0?'type-num-neg':'type-num');
+  div.className=`block ${tc}${item.id===lastChangedId?' just-changed':''}`;
+  div.draggable=true; div.setAttribute('data-id',item.id); div.setAttribute('data-side',side);
+  div.textContent=blockLabel(item);
+  div.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text',JSON.stringify({side,id:item.id})); setTimeout(()=>div.classList.add('dragging'),0); });
+  div.addEventListener('dragend',()=>div.classList.remove('dragging'));
+  div.addEventListener('contextmenu',e=>{ e.preventDefault(); activeMenuTarget={side,item}; showCtxMenu(e.clientX,e.clientY); });
+  return div;
+}
+
+function blockLabel(i){
+  if(i.type==='x')  return i.num===1?'x':i.num===-1?'-x':i.num+'x';
+  return String(i.num);
+}
+
+function updateEqDisplay(){
+  document.getElementById('eqDisplay').textContent=fmtSide(sides.left)+' = '+fmtSide(sides.right);
+}
+
+function fmtSide(items){
+  if(!items.length) return '0';
+  return items.map((i,idx)=>{ const t=blockLabel(i); return (idx>0&&i.num>=0)?'+ '+t:t; }).join(' ');
+}
+
+// ── SCALE TILT ──
+function updateScaleTilt(){
+  const val=s=>sides[s].reduce((t,i)=>t+(i.type==='x'?i.num*xValue:i.num),0);
+  const diff=val('left')-val('right');
+  const deg=Math.min(Math.max(diff*1.8,-22),22);
+  document.getElementById('scaleBeam').style.transform=`rotate(${deg}deg)`;
+}
+
+// ── DRAG & DROP ──
+['dropLeft','dropRight'].forEach((id,idx)=>{
+  const sideMap=['left','right'], el=document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
+  el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+  el.addEventListener('drop',e=>{ e.preventDefault(); el.classList.remove('drag-over'); handleDrop(e,sideMap[idx]); });
+});
+document.getElementById('bankBlocks').addEventListener('dragover',e=>e.preventDefault());
+document.getElementById('bankBlocks').addEventListener('drop',e=>{ e.preventDefault(); handleDrop(e,'bank'); });
+
+window.handleDrop=function(ev,targetSide){
+  let data; try{data=JSON.parse(ev.dataTransfer.getData('text'));}catch{return;}
+  saveHistory();
+  const srcArr=data.side==='bank'?bankItems:sides[data.side];
+  const itemIdx=srcArr.findIndex(i=>i.id===data.id);
+  if(itemIdx===-1)return;
+  const item=srcArr[itemIdx];
+
+  // Merge like types on same side
+  if(targetSide!=='bank'&&data.side===targetSide){
+    const tEl=ev.target.closest('.block');
+    if(tEl){
+      const tid=parseInt(tEl.getAttribute('data-id'));
+      const tArr=sides[targetSide];
+      const tItem=tArr.find(i=>i.id===tid);
+      if(tItem&&tItem.type===item.type&&tItem.id!==item.id){
+        tItem.num+=item.num; lastChangedId=tItem.id; srcArr.splice(itemIdx,1);
+        if(tItem.num===0){tArr.splice(tArr.indexOf(tItem),1);lastChangedId=null;}
+        renderAll();return;
+      }
+    }
+  }
+
+  lastChangedId=item.id;
+  const destArr=targetSide==='bank'?bankItems:sides[targetSide];
+  destArr.push(srcArr.splice(itemIdx,1)[0]);
+  renderAll();
+};
+
+// ── OPERATIONS ──
+window.operate=function(t){
+  const v=parseInt(document.getElementById('opVal').value); if(!v||v===0) return;
+  if(t==='div'){
+    const all=[...sides.left,...sides.right];
+    if(!all.every(i=>i.num%v===0)){ showToast('⚠️ Går ikke opp – prøv en annen fremgangsmåte!','error'); return; }
+  }
+  saveHistory();
+  lastChangedId=null;
+  ['left','right'].forEach(s=>{
+    sides[s].forEach(i=>{ i.num=t==='mul'?i.num*v:i.num/v; });
+    sides[s]=sides[s].filter(i=>i.num!==0);
+  });
+  renderAll();
+};
+
+// ── RESET ──
+window.resetTask=function(){
+  if(!originalTask)return;
+  sides={left:JSON.parse(JSON.stringify(originalTask.left)),right:JSON.parse(JSON.stringify(originalTask.right))};
+  bankItems=JSON.parse(JSON.stringify(originalTask.bank));
+  xValue=originalTask.xVal; lastChangedId=null; history=[];
+  renderAll();
+};
+
+// ── UNDO ──
+function saveHistory(){
+  history.push({
+    left:JSON.parse(JSON.stringify(sides.left)),
+    right:JSON.parse(JSON.stringify(sides.right)),
+    bank:JSON.parse(JSON.stringify(bankItems)),
+  });
+  if(history.length>20) history.shift();
+}
+window.doUndo=function(){
+  if(!history.length){showToast('Ingenting å angre','error');return;}
+  const prev=history.pop();
+  sides={left:prev.left,right:prev.right}; bankItems=prev.bank;
+  lastChangedId=null; renderAll();
+};
+
+// ── BUILD MODE ──
+window.buildBlock=function(type){
+  const v=parseInt(document.getElementById('buildVal').value);
+  if(!v||v===0||isNaN(v)){showToast('Skriv inn et tall som ikke er 0!','error');return;}
+  saveHistory();
+  const nb={id:idCounter++,type,num:v};
+  bankItems.push(nb); lastChangedId=nb.id;
+  document.getElementById('buildVal').value=''; renderAll();
+};
+
+// ── CONTEXT MENU ──
+function showCtxMenu(x,y){
+  const m=document.getElementById('ctxMenu');
+  m.style.display='block'; m.style.left=x+'px'; m.style.top=y+'px';
+}
+document.addEventListener('click',()=>document.getElementById('ctxMenu').style.display='none');
+
+window.ctxNeg=function(){
+  if(!activeMenuTarget)return;
+  saveHistory(); activeMenuTarget.item.num*=-1; lastChangedId=activeMenuTarget.item.id; renderAll();
+};
+window.ctxSplit=function(){
+  if(!activeMenuTarget||Math.abs(activeMenuTarget.item.num)<2)return;
+  saveHistory();
+  const i=activeMenuTarget.item, n1=Math.floor(i.num/2), n2=i.num-n1;
+  const arr=activeMenuTarget.side==='bank'?bankItems:sides[activeMenuTarget.side];
+  arr.splice(arr.indexOf(i),1);
+  const nid=idCounter++;
+  arr.push({id:nid,type:i.type,num:n1},{id:idCounter++,type:i.type,num:n2});
+  lastChangedId=nid; renderAll();
+};
+
+// ── CHECK SOLUTION ──
+window.checkSolution=function(){
+  const L=sides.left, R=sides.right;
+  const xLeft  = L.length===1&&L[0].type==='x'&&L[0].num===1&&R.length===1&&R[0].type==='num'&&R[0].num===xValue;
+  const xRight = R.length===1&&R[0].type==='x'&&R[0].num===1&&L.length===1&&L[0].type==='num'&&L[0].num===xValue;
+  const ok=xLeft||xRight;
+
+  if(ok){
+    totalWins++; winsOnLevel++;
+    document.getElementById('winCount').textContent=totalWins;
+
+    let bonus=0;
+    if(gameMode!=='practice'){
+      bonus=Math.max(10,Math.round(200-(Date.now()-taskStartTime)/1000*1.5));
+      currentScore+=bonus;
+      document.getElementById('myScoreBig').textContent=currentScore;
+      if(typeof syncScore==='function') syncScore(currentScore);
+    }
+
+    showToast('🎉 Riktig!'+(bonus>0?' +'+bonus+' p':''),'success');
+
+    // Level progression
+    if(winsOnLevel>=WIN_PER_LEVEL && currentLevel<MAX_LEVEL){
+      currentLevel++; winsOnLevel=0;
+      showToast('🚀 Nivå '+currentLevel+'!','success');
+    }
+    setTimeout(()=>newTask(),1400);
+  } else {
+    showToast('❌ Ikke i balanse ennå – prøv igjen!','error');
+  }
+};
+
+// ── NEW TASK ──
+window.newTask=function(){
+  if(currentLevel===9){ clearBuildMode(); return; }
+  const task=generateTask(currentLevel);
+  applyTask(task);
+};
+
+function clearBuildMode(){
+  sides={left:[],right:[]}; bankItems=[]; xValue=0;
+  renderAll(); showToast('🔧 Bygg din egen likning!','success');
+}
+
+// ── INIT GAME ──
+function initGame(){
+  currentLevel=startLevel>0?startLevel:1;
+  winsOnLevel=0; currentScore=0; totalWins=0;
+  updateLevelUI();
+  newTask();
+}
+
+// ── TIMED MODE ──
+function startTimed(){
+  timedSecondsLeft=timedMinutes*60;
+  document.getElementById('countdownBanner').classList.add('visible');
+  document.getElementById('timeupMin').textContent=timedMinutes;
+  updCD();
+  timedInterval=setInterval(()=>{ timedSecondsLeft--; updCD(); if(timedSecondsLeft<=0){clearInterval(timedInterval);document.getElementById('timeupScore').textContent=currentScore;document.getElementById('timeUpOverlay').classList.add('show');} },1000);
+}
+function updCD(){ const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60; const el=document.getElementById('cdTime'); el.textContent=m+':'+(s<10?'0':'')+s; el.className='countdown-time'+(timedSecondsLeft<=30?' urgent':''); }
+
+// ── TOAST ──
+function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+
+// ── START GAME ──
+window.startGame=function(){
+  let room='';
+  if(gameMode==='multi') room=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(gameMode==='solo')  timedMinutes=parseInt(document.getElementById('timedMin').value)||5;
+  window.roomCode=room||null;
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('headerName').textContent=window.playerName;
+
+  const modeLabels={practice:'🧘 Øvemodus',solo:'⏱️ Enkeltspiller',multi:'🏎️ Flerspiller'};
+  document.getElementById('modeBadge').textContent=modeLabels[gameMode];
+
+  // Show sidebar
+  if(gameMode!=='practice'){
+    document.getElementById('sidebar').style.display='flex';
+    document.getElementById('scaleArea').classList.remove('no-sidebar');
+    document.getElementById('scoreTitle').textContent=gameMode==='multi'?'🏆 Toppliste':'🏆 Poeng';
+  }
+
+  if(room&&window._fbReady) window._fbInit(room);
+  else window.syncScore=()=>{};
+
+  if(gameMode==='solo') startTimed();
+
+  // Read start level
+  const slVal=parseInt(document.querySelector('input[name="sl"]:checked').value)||0;
+  startLevel=slVal;
+
+  initGame();
+};
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter') checkSolution();
+  if(e.key==='z'&&(e.ctrlKey||e.metaKey)) doUndo();
+});
+</script>
 </body>
 </html>
