@@ -394,9 +394,6 @@
     <button class="ctrl-btn divide" onclick="operate('div')">÷ Del</button>
     <button class="ctrl-btn undo"   onclick="doUndo()">⟲ Angre</button>
     <div class="ctrl-sep"></div>
-    <button class="ctrl-btn neg"   onclick="ctxNeg()">± Fortegn</button>
-    <button class="ctrl-btn split" onclick="ctxSplit()">⚏ Splitt</button>
-    <div class="ctrl-sep"></div>
     <button class="ctrl-btn check" onclick="checkSolution()">✅ Sjekk svar</button>
     <button class="ctrl-btn reset" onclick="resetTask()">↺ Nullstill</button>
     <button class="ctrl-btn new"   onclick="newTask()">⏭️ Ny oppgave</button>
@@ -780,7 +777,8 @@ window.ctxNeg=function(){
   saveHistory(); activeMenuTarget.item.num*=-1; lastChangedId=activeMenuTarget.item.id; renderAll();
 };
 window.ctxSplit=function(){
-  if(!activeMenuTarget||Math.abs(activeMenuTarget.item.num)<2)return;
+  if(!activeMenuTarget) return;
+  if(Math.abs(activeMenuTarget.item.num)<2){ showToast('Kan ikke splitte 1 eller -1','error'); return; }
   saveHistory();
   const i=activeMenuTarget.item, n1=Math.floor(i.num/2), n2=i.num-n1;
   const arr=activeMenuTarget.side==='bank'?bankItems:sides[activeMenuTarget.side];
