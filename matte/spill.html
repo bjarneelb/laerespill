@@ -104,15 +104,23 @@
   #scaleSvg { width: 100%; display: block; }
 
   /* ── BLOCKS ── */
-  .block { padding: 7px 11px; border-radius: var(--r-sm); font-weight: 800; font-size: 0.88rem; cursor: grab; user-select: none; color: white; display: flex; align-items: center; justify-content: center; min-width: 42px; text-align: center; transition: transform 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+  .block { padding: 5px 9px; border-radius: var(--r-sm); font-weight: 800; font-size: 0.82rem; cursor: grab; user-select: none; color: white; display: flex; align-items: center; justify-content: center; min-width: 36px; text-align: center; transition: transform 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
   .block:active { cursor: grabbing; transform: scale(1.08); }
   .block.type-x      { background: var(--x-color); }
   .block.type-x-neg  { background: var(--x-neg); }
   .block.type-num    { background: var(--num-pos); }
   .block.type-num-neg{ background: var(--num-neg); }
   .block.dragging    { opacity: 0.35; }
-  .block.just-changed { animation: pop 0.4s ease-out; }
-  @keyframes pop { 0%{transform:scale(1.2);box-shadow:0 0 0 4px rgba(91,79,207,0.4)} 100%{transform:scale(1);box-shadow:0 2px 6px rgba(0,0,0,0.2)} }
+  .block.just-changed { animation: pop 2s ease-out; }
+  @keyframes pop { 0%{transform:scale(1.2);box-shadow:0 0 0 4px rgba(91,79,207,0.4)} 80%{box-shadow:0 0 0 2px rgba(91,79,207,0.2)} 100%{transform:scale(1);box-shadow:0 2px 6px rgba(0,0,0,0.2)} }
+
+  /* ── TASK CARD ── */
+  .task-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 18px; box-shadow: var(--shadow); display: flex; gap: 12px; align-items: flex-start; }
+  .task-icon { font-size: 1.8rem; flex-shrink: 0; margin-top: 2px; }
+  .task-body { flex: 1; }
+  .task-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 4px; }
+  .task-eq { font-size: 1.15rem; font-weight: 900; font-family: monospace; color: var(--text); }
+  .task-instr { font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-style: italic; }
 
   /* Plus signs between blocks */
   .block-plus { color: var(--muted); font-weight: 900; font-size: 1rem; align-self: center; user-select: none; pointer-events: none; }
@@ -257,8 +265,15 @@
     <span style="font-weight:700;font-size:0.82rem">Flest poeng vinner!</span>
   </div>
 
-  <!-- EQUATION DISPLAY -->
-  <div class="eq-display" id="eqDisplay">–</div>
+  <!-- TASK CARD -->
+  <div class="task-card" id="taskCard">
+    <div class="task-icon" id="taskIcon">⚖️</div>
+    <div class="task-body">
+      <div class="task-title">📋 Oppgave – Nivå <span id="taskLevelNum">1</span></div>
+      <div class="task-eq" id="taskEq">–</div>
+      <div class="task-instr" id="taskInstr">Flytt blokkene slik at x står alene på én side</div>
+    </div>
+  </div>
 
   <!-- SCALE + SIDEBAR -->
   <div class="scale-area no-sidebar" id="scaleArea">
@@ -282,60 +297,60 @@
 
     <!-- SCALE WRAP -->
     <div class="scale-wrap" id="scaleWrap">
-      <svg id="scaleSvg" viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+      <svg id="scaleSvg" viewBox="0 0 600 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
 
-        <!-- Stand / base — stangen kortere (starter på y=100 i stedet for y=60) -->
-        <rect x="288" y="256" width="24" height="36" rx="4" fill="#7c5c3a"/>
-        <rect x="258" y="285" width="84" height="12" rx="6" fill="#5c3d1e"/>
-        <!-- Vertical pole — 20% kortere: fra y=100 til y=256 -->
-        <rect x="296" y="100" width="8" height="158" rx="4" fill="#a0aec0"/>
+        <!-- Stand / base -->
+        <rect x="288" y="230" width="24" height="32" rx="4" fill="#7c5c3a"/>
+        <rect x="258" y="256" width="84" height="11" rx="6" fill="#5c3d1e"/>
+        <!-- Vertical pole -->
+        <rect x="296" y="88" width="8" height="144" rx="4" fill="#a0aec0"/>
         <!-- Pivot knob -->
-        <circle cx="300" cy="100" r="10" fill="#718096"/>
-        <circle cx="300" cy="100" r="5"  fill="#4a5568"/>
+        <circle cx="300" cy="88" r="10" fill="#718096"/>
+        <circle cx="300" cy="88" r="5"  fill="#4a5568"/>
 
-        <!-- BEAM — rotates around (300,100) -->
-        <g id="scaleBeam" style="transform-origin:300px 100px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+        <!-- BEAM — rotates around (300,88) -->
+        <g id="scaleBeam" style="transform-origin:300px 88px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
 
           <!-- Bjelke -->
-          <rect x="60" y="96" width="480" height="8" rx="4" fill="#7c5c3a"/>
+          <rect x="60" y="84" width="480" height="8" rx="4" fill="#7c5c3a"/>
           <!-- Endeknopper -->
-          <circle cx="60"  cy="100" r="6" fill="#5c3d1e"/>
-          <circle cx="540" cy="100" r="6" fill="#5c3d1e"/>
+          <circle cx="60"  cy="88" r="6" fill="#5c3d1e"/>
+          <circle cx="540" cy="88" r="6" fill="#5c3d1e"/>
 
-          <!-- Venstre snorer — lengre (ned til y=200) -->
-          <line x1="105" y1="104" x2="70"  y2="196" stroke="#718096" stroke-width="2"/>
-          <line x1="105" y1="104" x2="140" y2="196" stroke="#718096" stroke-width="2"/>
+          <!-- Venstre snorer -->
+          <line x1="105" y1="92" x2="70"  y2="178" stroke="#718096" stroke-width="2"/>
+          <line x1="105" y1="92" x2="140" y2="178" stroke="#718096" stroke-width="2"/>
 
-          <!-- Høyre snorer — lengre -->
-          <line x1="495" y1="104" x2="460" y2="196" stroke="#718096" stroke-width="2"/>
-          <line x1="495" y1="104" x2="530" y2="196" stroke="#718096" stroke-width="2"/>
+          <!-- Høyre snorer -->
+          <line x1="495" y1="92" x2="460" y2="178" stroke="#718096" stroke-width="2"/>
+          <line x1="495" y1="92" x2="530" y2="178" stroke="#718096" stroke-width="2"/>
 
-          <!-- Venstre tallerken — bredere (rx=80) -->
-          <ellipse cx="105" cy="200" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
-          <path d="M25,200 L25,207 Q25,215 105,215 Q185,215 185,207 L185,200" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
-          <ellipse cx="105" cy="207" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
+          <!-- Venstre tallerken -->
+          <ellipse cx="105" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+          <path d="M25,182 L25,189 Q25,197 105,197 Q185,197 185,189 L185,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+          <ellipse cx="105" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
 
-          <!-- Høyre tallerken — bredere (rx=80) -->
-          <ellipse cx="495" cy="200" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
-          <path d="M415,200 L415,207 Q415,215 495,215 Q575,215 575,207 L575,200" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
-          <ellipse cx="495" cy="207" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
+          <!-- Høyre tallerken -->
+          <ellipse cx="495" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+          <path d="M415,182 L415,189 Q415,197 495,197 Q575,197 575,189 L575,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+          <ellipse cx="495" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
 
-          <!-- Venstre blokker — foreignObject bredere (160px), plassert over tallerkenen -->
-          <foreignObject x="25" y="150" width="160" height="54">
+          <!-- Venstre blokker -->
+          <foreignObject x="25" y="136" width="160" height="50">
             <div xmlns="http://www.w3.org/1999/xhtml"
                  id="dropLeft"
-                 style="width:160px;height:54px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
+                 style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
                  ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
                  ondragleave="this.style.outline=''"
                  ondrop="handleDrop(event,'left');this.style.outline=''">
             </div>
           </foreignObject>
 
-          <!-- Høyre blokker — foreignObject bredere (160px) -->
-          <foreignObject x="415" y="150" width="160" height="54">
+          <!-- Høyre blokker -->
+          <foreignObject x="415" y="136" width="160" height="50">
             <div xmlns="http://www.w3.org/1999/xhtml"
                  id="dropRight"
-                 style="width:160px;height:54px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
+                 style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
                  ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
                  ondragleave="this.style.outline=''"
                  ondrop="handleDrop(event,'right');this.style.outline=''">
@@ -344,9 +359,9 @@
 
         </g><!-- /scaleBeam -->
 
-        <!-- Balansepil øverst -->
-        <line x1="300" y1="76" x2="300" y2="90" stroke="#d1d5db" stroke-width="2"/>
-        <polygon points="300,70 294,84 306,84" fill="#d1d5db"/>
+        <!-- Balansepil -->
+        <line x1="300" y1="64" x2="300" y2="78" stroke="#d1d5db" stroke-width="2"/>
+        <polygon points="300,58 294,72 306,72" fill="#d1d5db"/>
 
       </svg>
     </div>
@@ -621,7 +636,18 @@ function blockLabel(i){
 }
 
 function updateEqDisplay(){
-  document.getElementById('eqDisplay').textContent=fmtSide(sides.left)+' = '+fmtSide(sides.right);
+  const lv=LEVELS[currentLevel];
+  const eq=fmtSide(sides.left)+' = '+fmtSide(sides.right);
+  document.getElementById('taskEq').textContent=eq;
+  document.getElementById('taskLevelNum').textContent=currentLevel;
+  const icons=['','🔢','🔢','📦','📦','🔢','🔢','🔢','🔢','🔧'];
+  document.getElementById('taskIcon').textContent=icons[currentLevel]||'⚖️';
+  // Instruksjon basert på nivå
+  let instr;
+  if(!lv.bank) instr='Flytt blokkene i vektskålene slik at x står alene på én side';
+  else if(lv.build) instr='Bygg din egen likning – legg blokker i begge skålene';
+  else instr='Dra blokkene fra banken inn i vektskålene og løs likningen';
+  document.getElementById('taskInstr').textContent=instr;
 }
 
 function fmtSide(items){
@@ -636,8 +662,7 @@ function updateScaleTilt(){
   // Tyngre venstre → venstre går ned → negativ rotasjon
   const deg=Math.min(Math.max(-diff*1.8,-22),22);
   document.getElementById('scaleBeam').style.transform=`rotate(${deg}deg)`;
-  // Oppdater transform-origin til nytt pivot
-  document.getElementById('scaleBeam').style.transformOrigin='300px 100px';
+  document.getElementById('scaleBeam').style.transformOrigin='300px 88px';
 }
 
 // ── DRAG & DROP ──
