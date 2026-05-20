@@ -308,6 +308,12 @@
         <circle cx="300" cy="88" r="10" fill="#718096"/>
         <circle cx="300" cy="88" r="5"  fill="#4a5568"/>
 
+        <!-- Snorer — tegnes dynamisk av JS, utenfor beam-gruppen -->
+        <line id="strLL" stroke="#718096" stroke-width="2"/>
+        <line id="strLR" stroke="#718096" stroke-width="2"/>
+        <line id="strRL" stroke="#718096" stroke-width="2"/>
+        <line id="strRR" stroke="#718096" stroke-width="2"/>
+
         <!-- BEAM — rotates around (300,88) -->
         <g id="scaleBeam" style="transform-origin:300px 88px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
 
@@ -321,15 +327,7 @@
           <text                x="300" y="72" text-anchor="middle" font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#6b7280">=</text>
           <text id="liveRight" x="380" y="72" text-anchor="start"  font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#5b4fcf">–</text>
 
-          <!-- Venstre snorer — lengre ut mot kantene (cx=105, pan rx=80 → kanter på 25 og 185) -->
-          <line x1="105" y1="92" x2="38"  y2="182" stroke="#718096" stroke-width="2"/>
-          <line x1="105" y1="92" x2="172" y2="182" stroke="#718096" stroke-width="2"/>
-
-          <!-- Høyre snorer -->
-          <line x1="495" y1="92" x2="428" y2="182" stroke="#718096" stroke-width="2"/>
-          <line x1="495" y1="92" x2="562" y2="182" stroke="#718096" stroke-width="2"/>
-
-          <!-- VENSTRE SKÅL-GRUPPE — counter-roterer rundt skålens sentrum (105,185) -->
+          <!-- VENSTRE SKÅL-GRUPPE -->
           <g id="panLeft" style="transform-origin:105px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
             <ellipse cx="105" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
             <path d="M25,182 L25,189 Q25,197 105,197 Q185,197 185,189 L185,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
@@ -345,7 +343,7 @@
             </foreignObject>
           </g>
 
-          <!-- HØYRE SKÅL-GRUPPE — counter-roterer rundt skålens sentrum (495,185) -->
+          <!-- HØYRE SKÅL-GRUPPE -->
           <g id="panRight" style="transform-origin:495px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
             <ellipse cx="495" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
             <path d="M415,182 L415,189 Q415,197 495,197 Q575,197 575,189 L575,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
@@ -661,16 +659,62 @@ function fmtSide(items){
 }
 
 // ── SCALE TILT ──
+// Pivot: (300,88). Venstre festepunkt på bjelke: (105,88). Høyre: (495,88).
+// Skål-sentre i urotert tilstand: venstre (105,185), høyre (495,185).
+// Pan rx=80 → snorfester på skål: (cx-70, cy) og (cx+70, cy)
+const PIVOT   = {x:300, y:88};
+const BEAM_L  = {x:105, y:88};   // festepunkt snor på bjelke, venstre
+const BEAM_R  = {x:495, y:88};   // festepunkt snor på bjelke, høyre
+const PAN_L   = {x:105, y:182};  // skål-sentrum venstre (urotert)
+const PAN_R   = {x:495, y:182};  // skål-sentrum høyre (urotert)
+const PAN_OFF = 70;               // avstand fra sentrum til snorfeste på skål
+
+function rotPt(pt, pivot, rad) {
+  const dx=pt.x-pivot.x, dy=pt.y-pivot.y;
+  return {
+    x: pivot.x + dx*Math.cos(rad) - dy*Math.sin(rad),
+    y: pivot.y + dx*Math.sin(rad) + dy*Math.cos(rad),
+  };
+}
+
+function setLine(id, x1,y1, x2,y2) {
+  const el=document.getElementById(id);
+  el.setAttribute('x1',x1.toFixed(1)); el.setAttribute('y1',y1.toFixed(1));
+  el.setAttribute('x2',x2.toFixed(1)); el.setAttribute('y2',y2.toFixed(1));
+}
+
 function updateScaleTilt(){
   const val=s=>sides[s].reduce((t,i)=>t+(i.type==='x'?i.num*xValue:i.num),0);
   const diff=val('left')-val('right');
   const deg=Math.min(Math.max(-diff*1.8,-22),22);
-  // Bjelken roterer
+  const rad=deg*Math.PI/180;
+
+  // Roter bjelken
   document.getElementById('scaleBeam').style.transform=`rotate(${deg}deg)`;
   document.getElementById('scaleBeam').style.transformOrigin='300px 88px';
-  // Skålene mot-roterer så de holder seg vannrette
+
+  // Skålene mot-roterer
   document.getElementById('panLeft').style.transform=`rotate(${-deg}deg)`;
   document.getElementById('panRight').style.transform=`rotate(${-deg}deg)`;
+
+  // Beregn roterte bjelkefestepunkter
+  const bL=rotPt(BEAM_L, PIVOT, rad);
+  const bR=rotPt(BEAM_R, PIVOT, rad);
+
+  // Beregn roterte skål-sentere (bjelken roterer, men skålen mot-roterer → senteret følger bjelken)
+  const pLC=rotPt(PAN_L, PIVOT, rad);  // senter venstre skål i rotert tilstand
+  const pRC=rotPt(PAN_R, PIVOT, rad);  // senter høyre skål i rotert tilstand
+
+  // Snorfester på skål: siden skålen er vannrett, er de alltid ±PAN_OFF horisontalt fra senteret
+  const strLL = {x: pLC.x - PAN_OFF, y: pLC.y};
+  const strLR = {x: pLC.x + PAN_OFF, y: pLC.y};
+  const strRL = {x: pRC.x - PAN_OFF, y: pRC.y};
+  const strRR = {x: pRC.x + PAN_OFF, y: pRC.y};
+
+  setLine('strLL', bL.x, bL.y, strLL.x, strLL.y);
+  setLine('strLR', bL.x, bL.y, strLR.x, strLR.y);
+  setLine('strRL', bR.x, bR.y, strRL.x, strRL.y);
+  setLine('strRR', bR.x, bR.y, strRR.x, strRR.y);
 }
 
 // ── DRAG & DROP ──
@@ -835,6 +879,7 @@ function initGame(){
   currentLevel=startLevel>0?startLevel:1;
   winsOnLevel=0; currentScore=0; totalWins=0;
   updateLevelUI();
+  updateScaleTilt(); // initialiser snorer
   newTask();
 }
 
