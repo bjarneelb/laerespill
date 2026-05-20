@@ -944,7 +944,14 @@ function renderAll() {
 
 function renderSide(side,container) {
   container.innerHTML='';
-  sides[side].forEach(item=>{
+  sides[side].forEach((item,idx)=>{
+    // Legg inn + mellom blokker der neste blokk er positiv
+    if (idx > 0) {
+      const plus = document.createElement('span');
+      plus.textContent = '+';
+      plus.style.cssText = 'color:var(--muted);font-weight:900;font-size:1.1rem;align-self:center;user-select:none;pointer-events:none;';
+      container.appendChild(plus);
+    }
     const div=document.createElement('div');
     const tc=item.type==='x'?(item.num<0?'type-x-neg':'type-x'):(item.num<0?'type-num-neg':'type-num');
     div.className=`block ${tc}${item.id===lastChangedId?' just-changed':''}`;
