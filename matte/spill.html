@@ -100,14 +100,8 @@
   .wins-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.4s; }
 
   /* ── SVG SCALE ── */
-  .scale-wrap { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 14px; box-shadow: var(--shadow); position: relative; }
-  #scaleSvg { width: 100%; height: 260px; display: block; }
-
-  /* Scale drop zones */
-  .scale-drop { position: absolute; display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; padding: 6px; border-radius: 8px; transition: background 0.2s; min-height: 60px; }
-  .scale-drop.drag-over { background: rgba(91,79,207,0.12); outline: 2px dashed var(--accent); }
-  #dropLeft  { left: 5%; bottom: 20px; width: 32%; }
-  #dropRight { right: 5%; bottom: 20px; width: 32%; }
+  .scale-wrap { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 10px; box-shadow: var(--shadow); position: relative; overflow: visible; }
+  #scaleSvg { width: 100%; display: block; }
 
   /* ── BLOCKS ── */
   .block { padding: 7px 11px; border-radius: var(--r-sm); font-weight: 800; font-size: 0.88rem; cursor: grab; user-select: none; color: white; display: flex; align-items: center; justify-content: center; min-width: 42px; text-align: center; transition: transform 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
@@ -288,38 +282,71 @@
 
     <!-- SCALE WRAP -->
     <div class="scale-wrap" id="scaleWrap">
-      <!-- SVG SCALE -->
-      <svg id="scaleSvg" viewBox="0 0 500 240" xmlns="http://www.w3.org/2000/svg">
-        <!-- Base / stand -->
-        <rect x="235" y="210" width="30" height="20" rx="4" fill="#8B5E3C"/>
-        <rect x="215" y="225" width="70" height="10" rx="5" fill="#6B4226"/>
+      <!-- SVG SCALE — blokker tegnes som foreignObject inne i bjelkegruppen -->
+      <svg id="scaleSvg" viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg">
+        <!-- Base -->
+        <rect x="265" y="248" width="30" height="22" rx="4" fill="#8B5E3C"/>
+        <rect x="240" y="264" width="80" height="11" rx="5" fill="#6B4226"/>
         <!-- Vertical pole -->
-        <rect x="247" y="80" width="6" height="130" rx="3" fill="#9ca3af"/>
-        <!-- Pivot circle -->
-        <circle cx="250" cy="80" r="7" fill="#6b7280"/>
-        <!-- Beam (rotates around pivot) -->
-        <g id="scaleBeam" style="transform-origin:250px 80px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
-          <rect x="100" y="77" width="300" height="6" rx="3" fill="#8B5E3C"/>
-          <!-- Left chain -->
-          <line x1="145" y1="83" x2="145" y2="130" stroke="#9ca3af" stroke-width="2.5" stroke-dasharray="4,3"/>
-          <!-- Right chain -->
-          <line x1="355" y1="83" x2="355" y2="130" stroke="#9ca3af" stroke-width="2.5" stroke-dasharray="4,3"/>
-          <!-- Left pan -->
-          <ellipse cx="145" cy="132" rx="52" ry="8" fill="#b0b8c8" stroke="#9ca3af" stroke-width="1.5"/>
-          <rect x="93" y="128" width="104" height="5" rx="2" fill="#9ca3af"/>
-          <!-- Right pan -->
-          <ellipse cx="355" cy="132" rx="52" ry="8" fill="#b0b8c8" stroke="#9ca3af" stroke-width="1.5"/>
-          <rect x="303" y="128" width="104" height="5" rx="2" fill="#9ca3af"/>
-        </g>
-        <!-- Balance indicator line at center -->
-        <line x1="250" y1="60" x2="250" y2="70" stroke="#e5e7eb" stroke-width="1.5"/>
-      </svg>
+        <rect x="277" y="70" width="7" height="180" rx="3" fill="#9ca3af"/>
+        <!-- Pivot -->
+        <circle cx="280" cy="70" r="9" fill="#6b7280"/>
+        <circle cx="280" cy="70" r="4" fill="#4b5563"/>
 
-      <!-- Drop zones (absolutely positioned over SVG pans) -->
-      <div class="scale-drop" id="dropLeft"
-           ondragover="ev.preventDefault()" ondrop="handleDrop(event,'left')"></div>
-      <div class="scale-drop" id="dropRight"
-           ondragover="ev.preventDefault()" ondrop="handleDrop(event,'right')"></div>
+        <!-- BEAM GROUP — roterer rundt pivot (280,70) -->
+        <g id="scaleBeam" style="transform-origin:280px 70px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+          <!-- Bjelke -->
+          <rect x="80" y="66" width="400" height="8" rx="4" fill="#8B5E3C"/>
+
+          <!-- Venstre kjede -->
+          <line x1="130" y1="74" x2="130" y2="140" stroke="#9ca3af" stroke-width="3" stroke-dasharray="5,4"/>
+          <!-- Høyre kjede -->
+          <line x1="430" y1="74" x2="430" y2="140" stroke="#9ca3af" stroke-width="3" stroke-dasharray="5,4"/>
+
+          <!-- Venstre skål — bredere og dypere -->
+          <ellipse cx="130" cy="143" rx="70" ry="10" fill="#b0b8c8" stroke="#9ca3af" stroke-width="2"/>
+          <path d="M60,143 Q60,200 130,200 Q200,200 200,143" fill="rgba(176,184,200,0.35)" stroke="#9ca3af" stroke-width="1.5"/>
+          <!-- Venstre skål bunn -->
+          <ellipse cx="130" cy="200" rx="50" ry="7" fill="#b0b8c8" stroke="#9ca3af" stroke-width="1.5"/>
+
+          <!-- Høyre skål — bredere og dypere -->
+          <ellipse cx="430" cy="143" rx="70" ry="10" fill="#b0b8c8" stroke="#9ca3af" stroke-width="2"/>
+          <path d="M360,143 Q360,200 430,200 Q500,200 500,143" fill="rgba(176,184,200,0.35)" stroke="#9ca3af" stroke-width="1.5"/>
+          <!-- Høyre skål bunn -->
+          <ellipse cx="430" cy="200" rx="50" ry="7" fill="#b0b8c8" stroke="#9ca3af" stroke-width="1.5"/>
+
+          <!-- Venstre blokker (foreignObject) -->
+          <foreignObject id="foLeft" x="62" y="148" width="136" height="110">
+            <div xmlns="http://www.w3.org/1999/xhtml"
+                 id="dropLeft"
+                 style="width:136px;min-height:60px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:6px;border-radius:6px;"
+                 ondragover="event.preventDefault();this.style.background='rgba(91,79,207,0.15)'"
+                 ondragleave="this.style.background=''"
+                 ondrop="handleDrop(event,'left');this.style.background=''">
+            </div>
+          </foreignObject>
+
+          <!-- Høyre blokker (foreignObject) -->
+          <foreignObject id="foRight" x="362" y="148" width="136" height="110">
+            <div xmlns="http://www.w3.org/1999/xhtml"
+                 id="dropRight"
+                 style="width:136px;min-height:60px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;padding:6px;border-radius:6px;"
+                 ondragover="event.preventDefault();this.style.background='rgba(91,79,207,0.15)'"
+                 ondragleave="this.style.background=''"
+                 ondrop="handleDrop(event,'right');this.style.background=''">
+            </div>
+          </foreignObject>
+
+        </g><!-- /scaleBeam -->
+
+        <!-- Balanseindikator -->
+        <line x1="280" y1="48" x2="280" y2="60" stroke="#d1d5db" stroke-width="2"/>
+        <polygon points="280,42 275,54 285,54" fill="#d1d5db"/>
+
+        <!-- Etiketter -->
+        <text x="130" y="56" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="#6b7280">Venstre</text>
+        <text x="430" y="56" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="#6b7280">Høyre</text>
+      </svg>
     </div>
   </div>
 
@@ -604,7 +631,8 @@ function fmtSide(items){
 function updateScaleTilt(){
   const val=s=>sides[s].reduce((t,i)=>t+(i.type==='x'?i.num*xValue:i.num),0);
   const diff=val('left')-val('right');
-  const deg=Math.min(Math.max(diff*1.8,-22),22);
+  // Tyngre venstre → venstre går ned → negativ rotasjon
+  const deg=Math.min(Math.max(-diff*1.8,-22),22);
   document.getElementById('scaleBeam').style.transform=`rotate(${deg}deg)`;
 }
 
