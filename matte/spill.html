@@ -313,60 +313,55 @@
 
           <!-- Bjelke -->
           <rect x="60" y="84" width="480" height="8" rx="4" fill="#7c5c3a"/>
-          <!-- Endeknopper -->
           <circle cx="60"  cy="88" r="6" fill="#5c3d1e"/>
           <circle cx="540" cy="88" r="6" fill="#5c3d1e"/>
 
-          <!-- Venstre snorer -->
-          <line x1="105" y1="92" x2="70"  y2="178" stroke="#718096" stroke-width="2"/>
-          <line x1="105" y1="92" x2="140" y2="178" stroke="#718096" stroke-width="2"/>
-
-          <!-- Høyre snorer -->
-          <line x1="495" y1="92" x2="460" y2="178" stroke="#718096" stroke-width="2"/>
-          <line x1="495" y1="92" x2="530" y2="178" stroke="#718096" stroke-width="2"/>
-
-          <!-- Venstre tallerken -->
-          <ellipse cx="105" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
-          <path d="M25,182 L25,189 Q25,197 105,197 Q185,197 185,189 L185,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
-          <ellipse cx="105" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
-
-          <!-- Høyre tallerken -->
-          <ellipse cx="495" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
-          <path d="M415,182 L415,189 Q415,197 495,197 Q575,197 575,189 L575,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
-          <ellipse cx="495" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
-
-          <!-- Venstre blokker -->
-          <foreignObject x="25" y="136" width="160" height="50">
-            <div xmlns="http://www.w3.org/1999/xhtml"
-                 id="dropLeft"
-                 style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
-                 ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
-                 ondragleave="this.style.outline=''"
-                 ondrop="handleDrop(event,'left');this.style.outline=''">
-            </div>
-          </foreignObject>
-
-          <!-- Høyre blokker -->
-          <foreignObject x="415" y="136" width="160" height="50">
-            <div xmlns="http://www.w3.org/1999/xhtml"
-                 id="dropRight"
-                 style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
-                 ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
-                 ondragleave="this.style.outline=''"
-                 ondrop="handleDrop(event,'right');this.style.outline=''">
-            </div>
-          </foreignObject>
-
-          <!-- Live likning — vises over pivot, vipper med vekten -->
+          <!-- Live likning over pivot -->
           <text id="liveLeft"  x="220" y="72" text-anchor="end"   font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#5b4fcf">–</text>
           <text                x="300" y="72" text-anchor="middle" font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#6b7280">=</text>
           <text id="liveRight" x="380" y="72" text-anchor="start"  font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#5b4fcf">–</text>
 
-        </g><!-- /scaleBeam -->
+          <!-- Venstre snorer — lengre ut mot kantene (cx=105, pan rx=80 → kanter på 25 og 185) -->
+          <line x1="105" y1="92" x2="38"  y2="182" stroke="#718096" stroke-width="2"/>
+          <line x1="105" y1="92" x2="172" y2="182" stroke="#718096" stroke-width="2"/>
 
-        <!-- Balansepil -->
-        <line x1="300" y1="64" x2="300" y2="78" stroke="#d1d5db" stroke-width="2"/>
-        <polygon points="300,58 294,72 306,72" fill="#d1d5db"/>
+          <!-- Høyre snorer -->
+          <line x1="495" y1="92" x2="428" y2="182" stroke="#718096" stroke-width="2"/>
+          <line x1="495" y1="92" x2="562" y2="182" stroke="#718096" stroke-width="2"/>
+
+          <!-- VENSTRE SKÅL-GRUPPE — counter-roterer rundt skålens sentrum (105,185) -->
+          <g id="panLeft" style="transform-origin:105px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+            <ellipse cx="105" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+            <path d="M25,182 L25,189 Q25,197 105,197 Q185,197 185,189 L185,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+            <ellipse cx="105" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
+            <foreignObject x="25" y="136" width="160" height="50">
+              <div xmlns="http://www.w3.org/1999/xhtml"
+                   id="dropLeft"
+                   style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
+                   ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
+                   ondragleave="this.style.outline=''"
+                   ondrop="handleDrop(event,'left');this.style.outline=''">
+              </div>
+            </foreignObject>
+          </g>
+
+          <!-- HØYRE SKÅL-GRUPPE — counter-roterer rundt skålens sentrum (495,185) -->
+          <g id="panRight" style="transform-origin:495px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+            <ellipse cx="495" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+            <path d="M415,182 L415,189 Q415,197 495,197 Q575,197 575,189 L575,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+            <ellipse cx="495" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
+            <foreignObject x="415" y="136" width="160" height="50">
+              <div xmlns="http://www.w3.org/1999/xhtml"
+                   id="dropRight"
+                   style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
+                   ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
+                   ondragleave="this.style.outline=''"
+                   ondrop="handleDrop(event,'right');this.style.outline=''">
+              </div>
+            </foreignObject>
+          </g>
+
+        </g><!-- /scaleBeam -->
 
       </svg>
     </div>
@@ -669,10 +664,13 @@ function fmtSide(items){
 function updateScaleTilt(){
   const val=s=>sides[s].reduce((t,i)=>t+(i.type==='x'?i.num*xValue:i.num),0);
   const diff=val('left')-val('right');
-  // Tyngre venstre → venstre går ned → negativ rotasjon
   const deg=Math.min(Math.max(-diff*1.8,-22),22);
+  // Bjelken roterer
   document.getElementById('scaleBeam').style.transform=`rotate(${deg}deg)`;
   document.getElementById('scaleBeam').style.transformOrigin='300px 88px';
+  // Skålene mot-roterer så de holder seg vannrette
+  document.getElementById('panLeft').style.transform=`rotate(${-deg}deg)`;
+  document.getElementById('panRight').style.transform=`rotate(${-deg}deg)`;
 }
 
 // ── DRAG & DROP ──
