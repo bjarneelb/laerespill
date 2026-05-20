@@ -559,7 +559,13 @@ function renderSolver(){
 
 function renderSide(side,container){
   container.innerHTML='';
-  sides[side].forEach(item=>{
+  sides[side].forEach((item,idx)=>{
+    if (idx > 0) {
+      const plus = document.createElement('span');
+      plus.textContent = '+';
+      plus.style.cssText = 'color:var(--muted);font-weight:900;font-size:1.1rem;align-self:center;user-select:none;pointer-events:none;';
+      container.appendChild(plus);
+    }
     const div=document.createElement('div');
     div.className=`block ${bClass(item)}${item.id===lastChangedId?' just-changed':''}`;
     div.draggable=true; div.setAttribute('data-id',item.id); div.setAttribute('data-side',side);
