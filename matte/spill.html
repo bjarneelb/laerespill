@@ -357,6 +357,11 @@
             </div>
           </foreignObject>
 
+          <!-- Live likning — vises over pivot, vipper med vekten -->
+          <text id="liveLeft"  x="220" y="72" text-anchor="end"   font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#5b4fcf">–</text>
+          <text                x="300" y="72" text-anchor="middle" font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#6b7280">=</text>
+          <text id="liveRight" x="380" y="72" text-anchor="start"  font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#5b4fcf">–</text>
+
         </g><!-- /scaleBeam -->
 
         <!-- Balansepil -->
@@ -573,6 +578,9 @@ function applyTask(task){
     bankItems=[];
   }
 
+  // Lagre originallikning for task-kortet
+  originalEqStr = fmtSide(task.left.filter(b=>b.num!==0)) + ' = ' + fmtSide(task.right.filter(b=>b.num!==0));
+
   originalTask={
     left:JSON.parse(JSON.stringify(sides.left)),
     right:JSON.parse(JSON.stringify(sides.right)),
@@ -635,14 +643,19 @@ function blockLabel(i){
   return String(i.num);
 }
 
+// ── ORIGINAL EQUATION STRING ──
+let originalEqStr = '';
+
 function updateEqDisplay(){
   const lv=LEVELS[currentLevel];
-  const eq=fmtSide(sides.left)+' = '+fmtSide(sides.right);
-  document.getElementById('taskEq').textContent=eq;
-  document.getElementById('taskLevelNum').textContent=currentLevel;
+  // Live display i SVG
+  document.getElementById('liveLeft').textContent  = fmtSide(sides.left)  || '0';
+  document.getElementById('liveRight').textContent = fmtSide(sides.right) || '0';
+  // Task-kort: vis originallikning
+  document.getElementById('taskEq').textContent = originalEqStr || '–';
+  document.getElementById('taskLevelNum').textContent = currentLevel;
   const icons=['','🔢','🔢','📦','📦','🔢','🔢','🔢','🔢','🔧'];
-  document.getElementById('taskIcon').textContent=icons[currentLevel]||'⚖️';
-  // Instruksjon basert på nivå
+  document.getElementById('taskIcon').textContent = icons[currentLevel]||'⚖️';
   let instr;
   if(!lv.bank) instr='Flytt blokkene i vektskålene slik at x står alene på én side';
   else if(lv.build) instr='Bygg din egen likning – legg blokker i begge skålene';
