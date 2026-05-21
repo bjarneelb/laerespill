@@ -494,8 +494,7 @@ function updateLevelUI(){
   document.getElementById('levelInfoName').textContent='Nivå '+currentLevel+': '+lv.name;
   document.getElementById('levelInfoDesc').textContent=lv.desc;
   // Bank / build panel
-  document.getElementById('bankPanel').style.display  = lv.bank&&!lv.build ? 'block' : 'none';
-  document.getElementById('buildPanel').style.display = lv.build ? 'flex' : 'none';
+  document.getElementById('bankPanel').style.display  = lv.bank ? 'block' : 'none';
   document.getElementById('mulXBtn').style.display    = lv.mulX ? 'inline-flex' : 'none';
   // Wins progress
   const pct=(winsOnLevel/WIN_PER_LEVEL)*100;
@@ -1085,7 +1084,6 @@ window.checkSolution=function(){
 
 // ── NEW TASK ──
 window.newTask=function(){
-  if(currentLevel===13){ clearBuildMode(); return; }
   const task=generateTask(currentLevel);
   applyTask(task);
 };
