@@ -309,84 +309,86 @@
       </div>
     </div>
 
-    <!-- Live likning — HTML overlay over vekten -->
-    <div style="text-align:center;font-family:'Nunito',monospace;font-weight:800;font-size:0.95rem;color:#5b4fcf;padding:4px 0;background:white;border-radius:8px;border:1px solid #d0d8f0;margin-bottom:6px;">
-      <span id="liveLeft">–</span>
-      <span style="color:#6b7280;margin:0 6px">=</span>
-      <span id="liveRight">–</span>
+    <!-- SCALE + BANK side by side -->
+    <div style="display:flex;gap:10px;align-items:flex-start;flex:1">
+
+      <!-- BLOCK BANK — til venstre for vekten -->
+      <div class="block-bank" id="bankPanel" style="display:none;width:160px;flex-shrink:0;align-self:stretch">
+        <div class="bank-label">📦 Bank</div>
+        <div class="bank-blocks" id="bankBlocks" style="flex-direction:column;gap:5px"></div>
+      </div>
+
+      <!-- SCALE + LIVE DISPLAY -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:0">
+        <!-- Live likning — direkte over vekten, ingen gap -->
+        <div style="text-align:center;font-family:'Nunito',monospace;font-weight:800;font-size:0.95rem;color:#5b4fcf;padding:4px 0;background:white;border-radius:8px 8px 0 0;border:2px solid var(--border);border-bottom:none;">
+          <span id="liveLeft">–</span>
+          <span style="color:#6b7280;margin:0 6px">=</span>
+          <span id="liveRight">–</span>
+        </div>
+        <!-- SCALE WRAP -->
+        <div class="scale-wrap" id="scaleWrap" style="border-radius:0 0 var(--r) var(--r)">
+          <svg id="scaleSvg" viewBox="0 0 600 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+
+            <!-- Stand / base -->
+            <rect x="288" y="230" width="24" height="32" rx="4" fill="#7c5c3a"/>
+            <rect x="258" y="256" width="84" height="11" rx="6" fill="#5c3d1e"/>
+            <!-- Vertical pole -->
+            <rect x="296" y="88" width="8" height="144" rx="4" fill="#a0aec0"/>
+            <!-- Pivot knob -->
+            <circle cx="300" cy="88" r="10" fill="#718096"/>
+            <circle cx="300" cy="88" r="5"  fill="#4a5568"/>
+
+            <!-- Snorer -->
+            <line id="strLL" stroke="#718096" stroke-width="2"/>
+            <line id="strLR" stroke="#718096" stroke-width="2"/>
+            <line id="strRL" stroke="#718096" stroke-width="2"/>
+            <line id="strRR" stroke="#718096" stroke-width="2"/>
+
+            <!-- BEAM -->
+            <g id="scaleBeam" style="transform-origin:300px 88px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+
+              <rect x="60" y="84" width="480" height="8" rx="4" fill="#7c5c3a"/>
+              <circle cx="60"  cy="88" r="6" fill="#5c3d1e"/>
+              <circle cx="540" cy="88" r="6" fill="#5c3d1e"/>
+
+              <!-- VENSTRE SKÅL -->
+              <g id="panLeft" style="transform-origin:105px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+                <ellipse cx="105" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+                <path d="M25,182 L25,189 Q25,197 105,197 Q185,197 185,189 L185,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+                <ellipse cx="105" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
+                <foreignObject x="25" y="136" width="160" height="50">
+                  <div xmlns="http://www.w3.org/1999/xhtml"
+                       id="dropLeft"
+                       style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
+                       ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
+                       ondragleave="this.style.outline=''"
+                       ondrop="handleDrop(event,'left');this.style.outline=''">
+                  </div>
+                </foreignObject>
+              </g>
+
+              <!-- HØYRE SKÅL -->
+              <g id="panRight" style="transform-origin:495px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+                <ellipse cx="495" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+                <path d="M415,182 L415,189 Q415,197 495,197 Q575,197 575,189 L575,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+                <ellipse cx="495" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
+                <foreignObject x="415" y="136" width="160" height="50">
+                  <div xmlns="http://www.w3.org/1999/xhtml"
+                       id="dropRight"
+                       style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
+                       ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
+                       ondragleave="this.style.outline=''"
+                       ondrop="handleDrop(event,'right');this.style.outline=''">
+                  </div>
+                </foreignObject>
+              </g>
+
+            </g><!-- /scaleBeam -->
+          </svg>
+        </div>
+      </div>
     </div>
-
-    <!-- SCALE WRAP -->
-    <div class="scale-wrap" id="scaleWrap">
-      <svg id="scaleSvg" viewBox="0 0 600 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
-
-        <!-- Stand / base -->
-        <rect x="288" y="230" width="24" height="32" rx="4" fill="#7c5c3a"/>
-        <rect x="258" y="256" width="84" height="11" rx="6" fill="#5c3d1e"/>
-        <!-- Vertical pole -->
-        <rect x="296" y="88" width="8" height="144" rx="4" fill="#a0aec0"/>
-        <!-- Pivot knob -->
-        <circle cx="300" cy="88" r="10" fill="#718096"/>
-        <circle cx="300" cy="88" r="5"  fill="#4a5568"/>
-
-        <!-- Snorer — tegnes dynamisk av JS, utenfor beam-gruppen -->
-        <line id="strLL" stroke="#718096" stroke-width="2"/>
-        <line id="strLR" stroke="#718096" stroke-width="2"/>
-        <line id="strRL" stroke="#718096" stroke-width="2"/>
-        <line id="strRR" stroke="#718096" stroke-width="2"/>
-
-        <!-- BEAM — rotates around (300,88) -->
-        <g id="scaleBeam" style="transform-origin:300px 88px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
-
-          <!-- Bjelke -->
-          <rect x="60" y="84" width="480" height="8" rx="4" fill="#7c5c3a"/>
-          <circle cx="60"  cy="88" r="6" fill="#5c3d1e"/>
-          <circle cx="540" cy="88" r="6" fill="#5c3d1e"/>
-
-          <!-- Live likning vises i HTML-overlay, ikke SVG -->
-
-          <!-- VENSTRE SKÅL-GRUPPE -->
-          <g id="panLeft" style="transform-origin:105px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
-            <ellipse cx="105" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
-            <path d="M25,182 L25,189 Q25,197 105,197 Q185,197 185,189 L185,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
-            <ellipse cx="105" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
-            <foreignObject x="25" y="136" width="160" height="50">
-              <div xmlns="http://www.w3.org/1999/xhtml"
-                   id="dropLeft"
-                   style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
-                   ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
-                   ondragleave="this.style.outline=''"
-                   ondrop="handleDrop(event,'left');this.style.outline=''">
-              </div>
-            </foreignObject>
-          </g>
-
-          <!-- HØYRE SKÅL-GRUPPE -->
-          <g id="panRight" style="transform-origin:495px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
-            <ellipse cx="495" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
-            <path d="M415,182 L415,189 Q415,197 495,197 Q575,197 575,189 L575,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
-            <ellipse cx="495" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
-            <foreignObject x="415" y="136" width="160" height="50">
-              <div xmlns="http://www.w3.org/1999/xhtml"
-                   id="dropRight"
-                   style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:flex-end;justify-content:center;padding:2px 4px;overflow:hidden;"
-                   ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
-                   ondragleave="this.style.outline=''"
-                   ondrop="handleDrop(event,'right');this.style.outline=''">
-              </div>
-            </foreignObject>
-          </g>
-
-        </g><!-- /scaleBeam -->
-
-      </svg>
-    </div>
-  </div>
-
-  <!-- BLOCK BANK -->
-  <div class="block-bank" id="bankPanel" style="display:none">
-    <div class="bank-label">📦 Dra blokkene inn i vektskålene</div>
-    <div class="bank-blocks" id="bankBlocks"></div>
   </div>
 
   <!-- CONTROLS -->
@@ -567,27 +569,34 @@ function gen_L7(){
 }
 
 // N8: flere brøker, samme nevner
-function gen_L8(){
-  const den=ri(2,4);
-  const x=den*ri(1,3);
+// Sjekk at likningen ikke er triviell (begge sider identiske)
+function isTrivial(task){
+  const evalSide=s=>s.reduce((t,i)=>{
+    if(i.type==='x') return t+i.num*task.xVal;
+    if(i.type==='num') return t+i.num;
+    if(i.type==='frac') return t+i.num/i.den;
+    if(i.type==='fracx') return t+(i.num/i.den)*task.xVal;
+    if(i.type==='fracxi') return t+(task.xVal?i.num/(i.den*task.xVal):0);
+    return t;
+  },0);
+  return Math.abs(evalSide(task.left)-evalSide(task.right))<0.001;
+}
+function retry(gen){ let t,n=0; do{t=gen();n++;}while(isTrivial(t)&&n<20); return t; }
+
+function gen_L8(){ return retry(()=>{
+  const den=ri(2,4), x=den*ri(1,3);
   const a=ri(1,den-1)||1, c=ri(1,den-1)||1, b=ri(1,6);
   const rhs=a*x/den+b-c*x/den;
-  return { xVal:x,
-    left: [fracx(a,den),{type:'num',num:b}],
-    right:[fracx(c,den),{type:'num',num:rhs}] };
-}
+  return { xVal:x, left:[fracx(a,den),{type:'num',num:b}], right:[fracx(c,den),{type:'num',num:rhs}] };
+});}
 
 // N9: flere brøker, ulike nevnere
-function gen_L9(){
-  const den1=ri(2,3), den2=den1===2?3:2;
-  const lcm=den1*den2;
-  const x=lcm*ri(1,2);
-  const a=ri(1,den1-1)||1, b=ri(1,6), c=ri(1,den2-1)||1;
+function gen_L9(){ return retry(()=>{
+  const den1=ri(2,3), den2=den1===2?3:2, lcm=den1*den2;
+  const x=lcm*ri(1,2), a=ri(1,den1-1)||1, b=ri(1,6), c=ri(1,den2-1)||1;
   const rhs=a*x/den1+b-c*x/den2;
-  return { xVal:x,
-    left: [fracx(a,den1),{type:'num',num:b}],
-    right:[fracx(c,den2),{type:'num',num:rhs}] };
-}
+  return { xVal:x, left:[fracx(a,den1),{type:'num',num:b}], right:[fracx(c,den2),{type:'num',num:rhs}] };
+});}
 
 // N10: én fracxi + tall
 function gen_L10(){
