@@ -249,7 +249,7 @@
       <label><input type="radio" name="sl" value="10"><div class="level-radio-btn"><span class="li">10</span></div></label>
       <label><input type="radio" name="sl" value="11"><div class="level-radio-btn"><span class="li">11</span></div></label>
       <label><input type="radio" name="sl" value="12"><div class="level-radio-btn"><span class="li">12</span></div></label>
-      <label><input type="radio" name="sl" value="13"><div class="level-radio-btn"><span class="li">🔧</span></div></label>
+      <label><input type="radio" name="sl" value="13"><div class="level-radio-btn"><span class="li">13</span></div></label>
     </div>
 
     <button class="btn-start" onclick="startGame()">Start! ⚖️</button>
@@ -385,14 +385,6 @@
     <div class="bank-blocks" id="bankBlocks"></div>
   </div>
 
-  <!-- BUILD MODE (nivå 9) -->
-  <div class="build-panel" id="buildPanel" style="display:none">
-    <span class="build-label">🔧 Bygg blokk</span>
-    <input class="build-num" id="buildVal" type="number" placeholder="±tall">
-    <button class="build-btn add-x"   onclick="buildBlock('x')">+ x-blokk</button>
-    <button class="build-btn add-num" onclick="buildBlock('num')">+ Tall</button>
-  </div>
-
   <!-- CONTROLS -->
   <div class="controls">
     <span class="ctrl-label">Begge sider:</span>
@@ -400,6 +392,8 @@
     <button class="ctrl-btn times"  onclick="operate('mul')">× Ganger</button>
     <button class="ctrl-btn divide" onclick="operate('div')">÷ Del</button>
     <button class="ctrl-btn undo"   onclick="doUndo()">⟲ Angre</button>
+    <div class="ctrl-sep"></div>
+    <button class="ctrl-btn times"  id="mulXBtn" onclick="operateX()" style="display:none">× x</button>
     <div class="ctrl-sep"></div>
     <button class="ctrl-btn check" onclick="checkSolution()">✅ Sjekk svar</button>
     <button class="ctrl-btn reset" onclick="resetTask()">↺ Nullstill</button>
@@ -446,7 +440,7 @@
 
 <!-- MAIN SCRIPT -->
 <script>
-const VERSION='1.0';
+const VERSION='1.1';
 document.querySelectorAll('.vn').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -459,19 +453,19 @@ document.getElementById('displayName').textContent='⚖️ '+window.playerName;
 
 // ── LEVEL DEFINITIONS ──
 const LEVELS = {
-  1:  { name:'Enkel flytt-bytt',       desc:'x + b = c · Blokker i skålene',           bank:false, neg:false },
-  2:  { name:'X på begge sider',        desc:'ax + b = cx + d · Blokker i skålene',     bank:false, neg:false },
-  3:  { name:'Blanding fra banken',     desc:'Nivå 1 og 2 · Dra blokker fra banken',    bank:true,  neg:false },
-  4:  { name:'Flere ledd',              desc:'Større koeffisienter · Fra banken',        bank:true,  neg:false },
-  5:  { name:'Krever divisjon',         desc:'Løsning krever å dele begge sider',       bank:true,  neg:false },
-  6:  { name:'Komplekse ledd',          desc:'Større koeffisienter, to sider',          bank:true,  neg:false },
-  7:  { name:'Én brøk',                 desc:'Én brøkkoeffisient · Ingen x i nevner',   bank:true,  neg:false },
-  8:  { name:'Brøker, samme nevner',    desc:'Flere brøker med samme nevner',           bank:true,  neg:false },
-  9:  { name:'Brøker, ulike nevnere',   desc:'Flere brøker med ulike nevnere',          bank:true,  neg:false },
-  10: { name:'X i nevner',              desc:'Brøker der x kan stå i nevner',           bank:true,  neg:false },
-  11: { name:'Negative løsninger',      desc:'Blanding av alle typer, negative svar',   bank:true,  neg:true  },
-  12: { name:'Repetisjon/blanding',     desc:'Blanding av alle nivåer',                 bank:true,  neg:true  },
-  13: { name:'Bygg selv',               desc:'Frimodus – bygg egne likninger',          bank:true,  neg:true,  build:true },
+  1:  { name:'Enkel flytt-bytt',       desc:'x + b = c · Blokker i skålene',                bank:false, neg:false },
+  2:  { name:'X på begge sider',        desc:'ax + b = cx + d · Blokker i skålene',          bank:false, neg:false },
+  3:  { name:'Blanding fra banken',     desc:'Nivå 1 og 2 · Dra blokker fra banken',         bank:true,  neg:false },
+  4:  { name:'Flere ledd',              desc:'Større koeffisienter · Fra banken',             bank:true,  neg:false },
+  5:  { name:'Krever divisjon',         desc:'Løsning krever å dele begge sider',            bank:true,  neg:false },
+  6:  { name:'Komplekse ledd',          desc:'Større koeffisienter, x på begge sider',       bank:true,  neg:false },
+  7:  { name:'Én brøk',                 desc:'Én brøkkoeffisient foran x, ellers heltall',   bank:true,  neg:false },
+  8:  { name:'Brøker, samme nevner',    desc:'Flere brøker med samme nevner',                bank:true,  neg:false },
+  9:  { name:'Brøker, ulike nevnere',   desc:'Flere brøker med ulike nevnere',               bank:true,  neg:false },
+  10: { name:'X i nevner (enkel)',      desc:'Én brøk med x i nevner · Ganger med x',       bank:true,  neg:false, mulX:true },
+  11: { name:'X i nevner (avansert)',   desc:'Flere brøker med x i nevner, koeff. i nevner', bank:true,  neg:false, mulX:true },
+  12: { name:'Negative løsninger',      desc:'Blanding av alle typer, negative svar',        bank:true,  neg:true  },
+  13: { name:'Repetisjon/blanding',     desc:'Blanding av alle nivåer',                      bank:true,  neg:true  },
 };
 const MAX_LEVEL=13, WIN_PER_LEVEL=3;
 
@@ -502,6 +496,7 @@ function updateLevelUI(){
   // Bank / build panel
   document.getElementById('bankPanel').style.display  = lv.bank&&!lv.build ? 'block' : 'none';
   document.getElementById('buildPanel').style.display = lv.build ? 'flex' : 'none';
+  document.getElementById('mulXBtn').style.display    = lv.mulX ? 'inline-flex' : 'none';
   // Wins progress
   const pct=(winsOnLevel/WIN_PER_LEVEL)*100;
   document.getElementById('winsFill').style.width=pct+'%';
@@ -524,20 +519,15 @@ function generateTask(level){
     case 10: return gen_L10();
     case 11: return gen_L11();
     case 12: return gen_L12();
+    case 13: return gen_L13();
     default: return gen_L4();
   }
 }
 
 function ri(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
-
-// Frac blokk helpers
-// {type:'frac',  num:a, den:b}        → a/b (tallblokk)
-// {type:'fracx', num:a, den:b}        → ax/b (x-blokk)
-// {type:'fracxi',num:a, den:1}        → a/x (x i nevner, den brukes ikke)
-
 function frac(num,den){ return {type:'frac', num,den}; }
 function fracx(num,den){ return {type:'fracx',num,den}; }
-function fracxi(num){ return {type:'fracxi',num,den:1}; }
+function fracxi(num,den=1){ return {type:'fracxi',num,den}; }
 
 function gen_L1(){
   const x=ri(1,8), b=ri(1,9);
@@ -596,31 +586,67 @@ function gen_L9(){
     right:[fracx(c,den2),{type:'num',num:rhs}] };
 }
 
-// N10: brøker med x i nevner, eks: 6/x + 2 = 5 → x=2
+// N10: én fracxi + tall
 function gen_L10(){
   const x=ri(2,6), k=ri(1,4)*x, b=ri(1,5);
-  const rhs=k/x+b;
-  return { xVal:x, left:[fracxi(k),{type:'num',num:b}], right:[{type:'num',num:rhs}] };
+  return { xVal:x, left:[fracxi(k),{type:'num',num:b}], right:[{type:'num',num:k/x+b}] };
 }
 
-// N11: negative løsninger, blanding
+// N11: flere fracxi og/eller koeffisient i nevner — ingen x-blokker
 function gen_L11(){
+  const choice=ri(1,3);
+  if(choice===1){
+    const x=ri(2,5), k1=ri(1,3)*x, k2=ri(1,2)*x, b=ri(1,5);
+    return { xVal:x, left:[fracxi(k1),fracxi(k2),{type:'num',num:b}], right:[{type:'num',num:k1/x+k2/x+b}] };
+  } else if(choice===2){
+    const a=ri(2,3), x=a*ri(1,3), k=a*x*ri(1,2), b=ri(1,5);
+    return { xVal:x, left:[fracxi(k,a),{type:'num',num:b}], right:[{type:'num',num:k/(a*x)+b}] };
+  } else {
+    const x=ri(2,4)*2, k1=ri(1,3)*x, k2=ri(1,2)*2*x, b=ri(1,5);
+    return { xVal:x, left:[fracxi(k1),fracxi(k2,2),{type:'num',num:b}], right:[{type:'num',num:k1/x+k2/(2*x)+b}] };
+  }
+}
+
+// N12: negative løsninger
+function gen_L12(){
   const x=[-4,-3,-2,-1,1,2,3,4][ri(0,7)];
   const a=ri(2,5), c=ri(1,a-1), b=ri(-6,6);
   return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
 }
 
-// N12: blanding av alle nivåer
-function gen_L12(){
-  const choice=ri(1,10);
+// N13: blanding av alle nivåer
+function gen_L13(){
+  const choice=ri(1,12);
   if(choice<=2) return gen_L4();
   if(choice<=4) return gen_L7();
   if(choice<=6) return gen_L8();
-  if(choice<=8) return gen_L11();
-  return gen_L9();
+  if(choice<=8) return gen_L12();
+  if(choice<=10) return gen_L9();
+  return gen_L10();
 }
 
 function gcd(a,b){ return b===0?a:gcd(b,a%b); }
+
+// ── GANGE MED X ──
+window.operateX=function(){
+  const hasFracXi=[...sides.left,...sides.right].some(i=>i.type==='fracxi');
+  if(!hasFracXi){ showToast('Ingen brøker med x i nevner','error'); return; }
+  saveHistory(); lastChangedId=null;
+  ['left','right'].forEach(s=>{
+    sides[s]=sides[s].map(i=>{
+      if(i.type==='fracxi'){
+        if(i.den===1) return {id:i.id,type:'num',num:i.num};
+        const g=gcd(i.num,i.den);
+        if(i.den/g===1) return {id:i.id,type:'num',num:i.num/g};
+        return {id:i.id,type:'frac',num:i.num/g,den:i.den/g};
+      }
+      if(i.type==='num')  return {id:i.id,type:'x',  num:i.num};
+      if(i.type==='frac') return {id:i.id,type:'fracx',num:i.num,den:i.den};
+      return i;
+    }).filter(i=>i.num!==0);
+  });
+  renderAll();
+};
 
 // ── APPLY TASK ──
 function applyTask(task){
@@ -721,12 +747,15 @@ function blockLabel(i){
   return String(i.num);
 }
 
-// Tekst-representasjon av brøkblokk (for live-display og fmtTaskSide)
+// Tekst-representasjon av brøkblokk for live-display (med unicode-strek)
 function fracText(i){
-  if(i.type==='fracxi') return i.num+'/x';
+  if(i.type==='fracxi') {
+    const denStr = i.den>1 ? i.den+'x' : 'x';
+    return i.num+'\u2044'+denStr;
+  }
   const top = i.type==='fracx' ? (Math.abs(i.num)===1?'x':Math.abs(i.num)+'x') : String(Math.abs(i.num));
-  const sign = i.num<0?'-':'';
-  return sign+top+'/'+i.den;
+  const sign = i.num<0?'−':'';
+  return sign+top+'\u2044'+i.den;
 }
 
 // HTML-brøkvisning inne i blokk
@@ -831,9 +860,21 @@ function drawStrings(deg) {
   setLine('strRR', bR.x, bR.y, pRC.x+PAN_OFF, pRC.y);
 }
 
-// Cubic ease-in-out — matcher CSS cubic-bezier(.4,0,.2,1) godt nok
+// Tilnærm CSS cubic-bezier(.4,0,.2,1) via de Casteljau
 function easeInOut(t) {
-  return t<0.5 ? 2*t*t : -1+(4-2*t)*t;
+  // cubic-bezier(0.4, 0, 0.2, 1) — Material Design standard easing
+  // Løs t via Newton-Raphson: finn t slik at Bx(t_css) = t
+  const p1x=0.4, p1y=0, p2x=0.2, p2y=1;
+  let ts=t; // startgjett
+  for(let i=0;i<8;i++){
+    const c=3*p1x, b=3*(p2x-p1x)-c, a=1-c-b;
+    const bx=((a*ts+b)*ts+c)*ts;
+    const dx=(3*a*ts+2*b)*ts+c;
+    if(Math.abs(dx)<1e-6) break;
+    ts-=(bx-t)/dx;
+  }
+  const c=3*p1y, b=3*(p2y-p1y)-c, a=1-c-b;
+  return ((a*ts+b)*ts+c)*ts;
 }
 
 function animateStrings(ts) {
@@ -879,7 +920,6 @@ document.getElementById('bankBlocks').addEventListener('drop',e=>{ e.preventDefa
 
 window.handleDrop=function(ev,targetSide){
   let data; try{data=JSON.parse(ev.dataTransfer.getData('text'));}catch{return;}
-  saveHistory();
   const srcArr=data.side==='bank'?bankItems:sides[data.side];
   const itemIdx=srcArr.findIndex(i=>i.id===data.id);
   if(itemIdx===-1)return;
@@ -892,14 +932,24 @@ window.handleDrop=function(ev,targetSide){
       const tid=parseInt(tEl.getAttribute('data-id'));
       const tArr=sides[targetSide];
       const tItem=tArr.find(i=>i.id===tid);
-      if(tItem&&tItem.type===item.type&&tItem.id!==item.id){
-        tItem.num+=item.num; lastChangedId=tItem.id; srcArr.splice(itemIdx,1);
-        if(tItem.num===0){tArr.splice(tArr.indexOf(tItem),1);lastChangedId=null;}
-        renderAll();return;
+      if(tItem&&tItem.id!==item.id){
+        // Sjekk om begge er brøkblokker med ulik nevner
+        const bothFrac=(tItem.type===item.type)&&['frac','fracx'].includes(item.type);
+        if(bothFrac&&tItem.den!==item.den){
+          showToast('⚠️ Brøkene må ha samme nevner for å slå sammen!','error');
+          return; // ingen saveHistory, ingen endring
+        }
+        if(tItem.type===item.type){
+          saveHistory();
+          tItem.num+=item.num; lastChangedId=tItem.id; srcArr.splice(itemIdx,1);
+          if(tItem.num===0){tArr.splice(tArr.indexOf(tItem),1);lastChangedId=null;}
+          renderAll();return;
+        }
       }
     }
   }
 
+  saveHistory();
   lastChangedId=item.id;
   const destArr=targetSide==='bank'?bankItems:sides[targetSide];
   destArr.push(srcArr.splice(itemIdx,1)[0]);
