@@ -555,21 +555,19 @@ function applyTask(task){
   const lv=LEVELS[currentLevel];
   history=[];
 
+  // Lagre originallikning FØR blokker lages — bruk dedikert formatter
+  originalEqStr = fmtTaskSide(task.left.filter(b=>b.num!==0)) + ' = ' + fmtTaskSide(task.right.filter(b=>b.num!==0));
+
   if(lv.bank){
-    // Alle blokker i banken
     bankItems=[...task.left,...task.right].filter(b=>b.num!==0).map(b=>({id:idCounter++,...b}));
     sides={left:[],right:[]};
   } else {
-    // Blokker plassert i skålene
     sides={
       left:task.left.filter(b=>b.num!==0).map(b=>({id:idCounter++,...b})),
       right:task.right.filter(b=>b.num!==0).map(b=>({id:idCounter++,...b})),
     };
     bankItems=[];
   }
-
-  // Lagre originallikning for task-kortet
-  originalEqStr = fmtSide(task.left.filter(b=>b.num!==0)) + ' = ' + fmtSide(task.right.filter(b=>b.num!==0));
 
   originalTask={
     left:JSON.parse(JSON.stringify(sides.left)),
@@ -631,6 +629,17 @@ function makeBlockEl(item,side){
 function blockLabel(i){
   if(i.type==='x')  return i.num===1?'x':i.num===-1?'-x':i.num+'x';
   return String(i.num);
+}
+
+// Formatter for rå task-objekter (ingen id, bruker type direkte)
+function fmtTaskSide(items){
+  if(!items.length) return '0';
+  return items.map((item,idx)=>{
+    let term;
+    if(item.type==='x') term = item.num===1?'x':item.num===-1?'-x':item.num+'x';
+    else term = String(item.num);
+    return (idx>0 && item.num>=0) ? '+ '+term : term;
+  }).join(' ');
 }
 
 // ── ORIGINAL EQUATION STRING ──
