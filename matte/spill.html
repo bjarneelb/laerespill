@@ -818,6 +818,8 @@ function evalItem(i){
   if(i.type==='fracxi')return xValue!==0?i.num/xValue:0;
   return 0;
 }
+
+function drawStrings(deg) {
   const rad=deg*Math.PI/180;
   const bL=rotPt(BEAM_L, PIVOT, rad);
   const bR=rotPt(BEAM_R, PIVOT, rad);
