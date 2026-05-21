@@ -659,15 +659,18 @@ function fmtSide(items){
 }
 
 // ── SCALE TILT ──
-// Pivot: (300,88). Venstre festepunkt på bjelke: (105,88). Høyre: (495,88).
-// Skål-sentre i urotert tilstand: venstre (105,185), høyre (495,185).
-// Pan rx=80 → snorfester på skål: (cx-70, cy) og (cx+70, cy)
 const PIVOT   = {x:300, y:88};
-const BEAM_L  = {x:105, y:88};   // festepunkt snor på bjelke, venstre
-const BEAM_R  = {x:495, y:88};   // festepunkt snor på bjelke, høyre
-const PAN_L   = {x:105, y:182};  // skål-sentrum venstre (urotert)
-const PAN_R   = {x:495, y:182};  // skål-sentrum høyre (urotert)
-const PAN_OFF = 70;               // avstand fra sentrum til snorfeste på skål
+const BEAM_L  = {x:105, y:88};
+const BEAM_R  = {x:495, y:88};
+const PAN_L   = {x:105, y:182};
+const PAN_R   = {x:495, y:182};
+const PAN_OFF = 70;
+const TILT_DURATION = 700; // ms — må matche CSS transition
+
+let currentDeg = 0;
+let targetDeg  = 0;
+let animStart  = null;
+let animFrame  = null;
 
 function rotPt(pt, pivot, rad) {
   const dx=pt.x-pivot.x, dy=pt.y-pivot.y;
@@ -683,38 +686,52 @@ function setLine(id, x1,y1, x2,y2) {
   el.setAttribute('x2',x2.toFixed(1)); el.setAttribute('y2',y2.toFixed(1));
 }
 
+function drawStrings(deg) {
+  const rad=deg*Math.PI/180;
+  const bL=rotPt(BEAM_L, PIVOT, rad);
+  const bR=rotPt(BEAM_R, PIVOT, rad);
+  const pLC=rotPt(PAN_L, PIVOT, rad);
+  const pRC=rotPt(PAN_R, PIVOT, rad);
+  setLine('strLL', bL.x, bL.y, pLC.x-PAN_OFF, pLC.y);
+  setLine('strLR', bL.x, bL.y, pLC.x+PAN_OFF, pLC.y);
+  setLine('strRL', bR.x, bR.y, pRC.x-PAN_OFF, pRC.y);
+  setLine('strRR', bR.x, bR.y, pRC.x+PAN_OFF, pRC.y);
+}
+
+// Cubic ease-in-out — matcher CSS cubic-bezier(.4,0,.2,1) godt nok
+function easeInOut(t) {
+  return t<0.5 ? 2*t*t : -1+(4-2*t)*t;
+}
+
+function animateStrings(ts) {
+  if (!animStart) animStart=ts;
+  const elapsed=ts-animStart;
+  const t=Math.min(elapsed/TILT_DURATION, 1);
+  const deg=currentDeg + (targetDeg-currentDeg)*easeInOut(t);
+  drawStrings(deg);
+  if (t<1) {
+    animFrame=requestAnimationFrame(animateStrings);
+  } else {
+    currentDeg=targetDeg;
+    animFrame=null; animStart=null;
+  }
+}
+
 function updateScaleTilt(){
   const val=s=>sides[s].reduce((t,i)=>t+(i.type==='x'?i.num*xValue:i.num),0);
   const diff=val('left')-val('right');
-  const deg=Math.min(Math.max(-diff*1.8,-22),22);
-  const rad=deg*Math.PI/180;
+  targetDeg=Math.min(Math.max(-diff*1.8,-22),22);
 
-  // Roter bjelken
-  document.getElementById('scaleBeam').style.transform=`rotate(${deg}deg)`;
+  // CSS-animasjon på bjelke og skåler
+  document.getElementById('scaleBeam').style.transform=`rotate(${targetDeg}deg)`;
   document.getElementById('scaleBeam').style.transformOrigin='300px 88px';
+  document.getElementById('panLeft').style.transform=`rotate(${-targetDeg}deg)`;
+  document.getElementById('panRight').style.transform=`rotate(${-targetDeg}deg)`;
 
-  // Skålene mot-roterer
-  document.getElementById('panLeft').style.transform=`rotate(${-deg}deg)`;
-  document.getElementById('panRight').style.transform=`rotate(${-deg}deg)`;
-
-  // Beregn roterte bjelkefestepunkter
-  const bL=rotPt(BEAM_L, PIVOT, rad);
-  const bR=rotPt(BEAM_R, PIVOT, rad);
-
-  // Beregn roterte skål-sentere (bjelken roterer, men skålen mot-roterer → senteret følger bjelken)
-  const pLC=rotPt(PAN_L, PIVOT, rad);  // senter venstre skål i rotert tilstand
-  const pRC=rotPt(PAN_R, PIVOT, rad);  // senter høyre skål i rotert tilstand
-
-  // Snorfester på skål: siden skålen er vannrett, er de alltid ±PAN_OFF horisontalt fra senteret
-  const strLL = {x: pLC.x - PAN_OFF, y: pLC.y};
-  const strLR = {x: pLC.x + PAN_OFF, y: pLC.y};
-  const strRL = {x: pRC.x - PAN_OFF, y: pRC.y};
-  const strRR = {x: pRC.x + PAN_OFF, y: pRC.y};
-
-  setLine('strLL', bL.x, bL.y, strLL.x, strLL.y);
-  setLine('strLR', bL.x, bL.y, strLR.x, strLR.y);
-  setLine('strRL', bR.x, bR.y, strRL.x, strRL.y);
-  setLine('strRR', bR.x, bR.y, strRR.x, strRR.y);
+  // Snore-animasjon via rAF
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame=null; }
+  animStart=null;
+  animFrame=requestAnimationFrame(animateStrings);
 }
 
 // ── DRAG & DROP ──
