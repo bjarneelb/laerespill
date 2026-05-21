@@ -110,9 +110,19 @@
   .block.type-x-neg  { background: var(--x-neg); }
   .block.type-num    { background: var(--num-pos); }
   .block.type-num-neg{ background: var(--num-neg); }
+  .block.type-frac   { background: var(--num-pos); }      /* brøk uten x — blå */
+  .block.type-frac-neg { background: var(--num-neg); }    /* negativ brøk uten x */
+  .block.type-fracx  { background: var(--x-color); }      /* brøk med x i teller — lilla */
+  .block.type-fracx-neg { background: var(--x-neg); }
+  .block.type-fracxi { background: var(--x-color); }      /* brøk med x i nevner — lilla */
   .block.dragging    { opacity: 0.35; }
   .block.just-changed { animation: pop 2s ease-out; }
   @keyframes pop { 0%{transform:scale(1.2);box-shadow:0 0 0 4px rgba(91,79,207,0.4)} 80%{box-shadow:0 0 0 2px rgba(91,79,207,0.2)} 100%{transform:scale(1);box-shadow:0 2px 6px rgba(0,0,0,0.2)} }
+
+  /* Brøkvisning inne i blokk */
+  .frac-block { display:inline-flex; flex-direction:column; align-items:center; line-height:1.1; }
+  .frac-top   { border-bottom: 1.5px solid rgba(255,255,255,0.8); padding-bottom: 1px; min-width: 18px; text-align: center; }
+  .frac-bot   { padding-top: 1px; min-width: 18px; text-align: center; }
 
   /* ── TASK CARD ── */
   .task-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 18px; box-shadow: var(--shadow); display: flex; gap: 12px; align-items: flex-start; }
@@ -227,15 +237,19 @@
     <div class="level-selector-label">Velg startnivå</div>
     <div class="level-selector">
       <label><input type="radio" name="sl" value="0" checked><div class="level-radio-btn"><span class="li">🎲</span>Auto</div></label>
-      <label><input type="radio" name="sl" value="1"><div class="level-radio-btn"><span class="li">1</span>N1</div></label>
-      <label><input type="radio" name="sl" value="2"><div class="level-radio-btn"><span class="li">2</span>N2</div></label>
-      <label><input type="radio" name="sl" value="3"><div class="level-radio-btn"><span class="li">3</span>N3</div></label>
-      <label><input type="radio" name="sl" value="4"><div class="level-radio-btn"><span class="li">4</span>N4</div></label>
-      <label><input type="radio" name="sl" value="5"><div class="level-radio-btn"><span class="li">5</span>N5</div></label>
-      <label><input type="radio" name="sl" value="6"><div class="level-radio-btn"><span class="li">6</span>N6</div></label>
-      <label><input type="radio" name="sl" value="7"><div class="level-radio-btn"><span class="li">7</span>N7</div></label>
-      <label><input type="radio" name="sl" value="8"><div class="level-radio-btn"><span class="li">8</span>N8</div></label>
-      <label><input type="radio" name="sl" value="9"><div class="level-radio-btn"><span class="li">🔧</span>N9</div></label>
+      <label><input type="radio" name="sl" value="1"><div class="level-radio-btn"><span class="li">1</span></div></label>
+      <label><input type="radio" name="sl" value="2"><div class="level-radio-btn"><span class="li">2</span></div></label>
+      <label><input type="radio" name="sl" value="3"><div class="level-radio-btn"><span class="li">3</span></div></label>
+      <label><input type="radio" name="sl" value="4"><div class="level-radio-btn"><span class="li">4</span></div></label>
+      <label><input type="radio" name="sl" value="5"><div class="level-radio-btn"><span class="li">5</span></div></label>
+      <label><input type="radio" name="sl" value="6"><div class="level-radio-btn"><span class="li">6</span></div></label>
+      <label><input type="radio" name="sl" value="7"><div class="level-radio-btn"><span class="li">7</span></div></label>
+      <label><input type="radio" name="sl" value="8"><div class="level-radio-btn"><span class="li">8</span></div></label>
+      <label><input type="radio" name="sl" value="9"><div class="level-radio-btn"><span class="li">9</span></div></label>
+      <label><input type="radio" name="sl" value="10"><div class="level-radio-btn"><span class="li">10</span></div></label>
+      <label><input type="radio" name="sl" value="11"><div class="level-radio-btn"><span class="li">11</span></div></label>
+      <label><input type="radio" name="sl" value="12"><div class="level-radio-btn"><span class="li">12</span></div></label>
+      <label><input type="radio" name="sl" value="13"><div class="level-radio-btn"><span class="li">🔧</span></div></label>
     </div>
 
     <button class="btn-start" onclick="startGame()">Start! ⚖️</button>
@@ -445,17 +459,21 @@ document.getElementById('displayName').textContent='⚖️ '+window.playerName;
 
 // ── LEVEL DEFINITIONS ──
 const LEVELS = {
-  1: { name:'Enkel flytt-bytt', desc:'x + b = c · Blokker plassert i skålene', bank:false, neg:false },
-  2: { name:'X på begge sider', desc:'ax + b = cx + d · Blokker plassert', bank:false, neg:false },
-  3: { name:'Blanding fra banken', desc:'Nivå 1 og 2 · Dra blokker fra banken', bank:true, neg:false },
-  4: { name:'Flere ledd', desc:'ax + b = cx + d · Fra banken', bank:true, neg:false },
-  5: { name:'Enkle brøker', desc:'Koeffisienter som gir brøk underveis', bank:true, neg:false },
-  6: { name:'Avanserte brøker', desc:'Mer komplekse brøklikninger', bank:true, neg:false },
-  7: { name:'Ukjent i nevner', desc:'Likning med x i nevner', bank:true, neg:false },
-  8: { name:'Negative tall', desc:'Blanding av alle typer · Negative løsninger', bank:true, neg:true },
-  9: { name:'Bygg selv', desc:'Frimodus – bygg dine egne likninger', bank:true, neg:true, build:true },
+  1:  { name:'Enkel flytt-bytt',       desc:'x + b = c · Blokker i skålene',           bank:false, neg:false },
+  2:  { name:'X på begge sider',        desc:'ax + b = cx + d · Blokker i skålene',     bank:false, neg:false },
+  3:  { name:'Blanding fra banken',     desc:'Nivå 1 og 2 · Dra blokker fra banken',    bank:true,  neg:false },
+  4:  { name:'Flere ledd',              desc:'Større koeffisienter · Fra banken',        bank:true,  neg:false },
+  5:  { name:'Krever divisjon',         desc:'Løsning krever å dele begge sider',       bank:true,  neg:false },
+  6:  { name:'Komplekse ledd',          desc:'Større koeffisienter, to sider',          bank:true,  neg:false },
+  7:  { name:'Én brøk',                 desc:'Én brøkkoeffisient · Ingen x i nevner',   bank:true,  neg:false },
+  8:  { name:'Brøker, samme nevner',    desc:'Flere brøker med samme nevner',           bank:true,  neg:false },
+  9:  { name:'Brøker, ulike nevnere',   desc:'Flere brøker med ulike nevnere',          bank:true,  neg:false },
+  10: { name:'X i nevner',              desc:'Brøker der x kan stå i nevner',           bank:true,  neg:false },
+  11: { name:'Negative løsninger',      desc:'Blanding av alle typer, negative svar',   bank:true,  neg:true  },
+  12: { name:'Repetisjon/blanding',     desc:'Blanding av alle nivåer',                 bank:true,  neg:true  },
+  13: { name:'Bygg selv',               desc:'Frimodus – bygg egne likninger',          bank:true,  neg:true,  build:true },
 };
-const MAX_LEVEL=9, WIN_PER_LEVEL=3;
+const MAX_LEVEL=13, WIN_PER_LEVEL=3;
 
 // ── STATE ──
 let gameMode='practice', timedMinutes=5, timedSecondsLeft=0, timedInterval=null;
@@ -493,23 +511,33 @@ function updateLevelUI(){
 // ── GENERATE TASK ──
 function generateTask(level){
   history=[];
-  let eq;
   switch(level){
-    case 1: eq=gen_L1(); break;
-    case 2: eq=gen_L2(); break;
-    case 3: eq=Math.random()<0.5?gen_L1():gen_L2(); break;
-    case 4: eq=gen_L4(); break;
-    case 5: eq=gen_L5(); break;
-    case 6: eq=gen_L6(); break;
-    case 7: eq=gen_L7(); break;
-    case 8: eq=gen_L8(); break;
-    default: eq=gen_L4(); break;
+    case 1:  return gen_L1();
+    case 2:  return gen_L2();
+    case 3:  return Math.random()<0.5?gen_L1():gen_L2();
+    case 4:  return gen_L4();
+    case 5:  return gen_L5();
+    case 6:  return gen_L6();
+    case 7:  return gen_L7();
+    case 8:  return gen_L8();
+    case 9:  return gen_L9();
+    case 10: return gen_L10();
+    case 11: return gen_L11();
+    case 12: return gen_L12();
+    default: return gen_L4();
   }
-  return eq;
 }
 
-// Random integer between a and b inclusive
 function ri(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+// Frac blokk helpers
+// {type:'frac',  num:a, den:b}        → a/b (tallblokk)
+// {type:'fracx', num:a, den:b}        → ax/b (x-blokk)
+// {type:'fracxi',num:a, den:1}        → a/x (x i nevner, den brukes ikke)
+
+function frac(num,den){ return {type:'frac', num,den}; }
+function fracx(num,den){ return {type:'fracx',num,den}; }
+function fracxi(num){ return {type:'fracxi',num,den:1}; }
 
 function gen_L1(){
   const x=ri(1,8), b=ri(1,9);
@@ -517,37 +545,82 @@ function gen_L1(){
 }
 function gen_L2(){
   const x=ri(1,6), a=ri(2,4), c=ri(1,a-1), b=ri(1,8);
-  const d=(a-c)*x+b;
-  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:d}] };
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
 }
 function gen_L4(){
-  const x=ri(1,6), a=ri(2,5), c=ri(1,a-1), b=ri(1,9), d=(a-c)*x+b;
-  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:d}] };
+  const x=ri(1,6), a=ri(2,5), c=ri(1,a-1), b=ri(1,9);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
 }
 function gen_L5(){
-  // Ensure clean division: choose a, x such that ax is divisible nicely
   const a=ri(2,4), x=a*ri(1,3), b=ri(1,8);
   return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'num',num:a*x+b}] };
 }
 function gen_L6(){
-  const a=ri(3,6), x=a*ri(1,2), c=ri(1,a-1), b=ri(1,12), d=(a-c)*x+b;
-  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:d}] };
+  const a=ri(3,6), x=a*ri(1,2), c=ri(1,a-1), b=ri(1,12);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
 }
+
+// N7: én brøk i likningen, ingen x i nevner
+// Eks: (2/3)x + 4 = 8 → x=6
 function gen_L7(){
-  // 1/x type: represent as coeff=1 but signal special
-  const x=ri(2,6), k=ri(1,3);
-  // k/x = k/x_val numerically → store as {type:'x',num:1,inv:true}
-  // Simplified: a/x + b = c, x=solution
-  const b=ri(1,5), c=k+b*x;
-  return { xVal:x, left:[{type:'xinv',num:k},{type:'num',num:b}], right:[{type:'num',num:Math.round(c/x)*1}],
-    _raw:`${k}/x + ${b} = ${k/x+b}` };
+  const den=ri(2,4), num=ri(1,den-1)||1;
+  // x må være delelig med den/gcd(num,den) for heltallssvar
+  const g=gcd(num,den);
+  const step=den/g;
+  const x=step*ri(1,4);
+  const b=ri(1,8);
+  const rhs=num*x/den+b;
+  return { xVal:x, left:[fracx(num,den),{type:'num',num:b}], right:[{type:'num',num:rhs}] };
 }
+
+// N8: flere brøker, samme nevner
 function gen_L8(){
-  const x=[-3,-2,-1,1,2,3][ri(0,5)];
-  const a=ri(2,5), b=ri(-6,6), c=ri(1,a-1);
-  const d=a*x+b-c*x;
-  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:d}] };
+  const den=ri(2,4);
+  const x=den*ri(1,3);
+  const a=ri(1,den-1)||1, c=ri(1,den-1)||1, b=ri(1,6);
+  const rhs=a*x/den+b-c*x/den;
+  return { xVal:x,
+    left: [fracx(a,den),{type:'num',num:b}],
+    right:[fracx(c,den),{type:'num',num:rhs}] };
 }
+
+// N9: flere brøker, ulike nevnere
+function gen_L9(){
+  const den1=ri(2,3), den2=den1===2?3:2;
+  const lcm=den1*den2;
+  const x=lcm*ri(1,2);
+  const a=ri(1,den1-1)||1, b=ri(1,6), c=ri(1,den2-1)||1;
+  const rhs=a*x/den1+b-c*x/den2;
+  return { xVal:x,
+    left: [fracx(a,den1),{type:'num',num:b}],
+    right:[fracx(c,den2),{type:'num',num:rhs}] };
+}
+
+// N10: brøker med x i nevner, eks: 6/x + 2 = 5 → x=2
+function gen_L10(){
+  const x=ri(2,6), k=ri(1,4)*x, b=ri(1,5);
+  const rhs=k/x+b;
+  return { xVal:x, left:[fracxi(k),{type:'num',num:b}], right:[{type:'num',num:rhs}] };
+}
+
+// N11: negative løsninger, blanding
+function gen_L11(){
+  const x=[-4,-3,-2,-1,1,2,3,4][ri(0,7)];
+  const a=ri(2,5), c=ri(1,a-1), b=ri(-6,6);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
+}
+
+// N12: blanding av alle nivåer
+function gen_L12(){
+  const choice=ri(1,10);
+  if(choice<=2) return gen_L4();
+  if(choice<=4) return gen_L7();
+  if(choice<=6) return gen_L8();
+  if(choice<=8) return gen_L11();
+  return gen_L9();
+}
+
+function gcd(a,b){ return b===0?a:gcd(b,a%b); }
 
 // ── APPLY TASK ──
 function applyTask(task){
@@ -616,29 +689,68 @@ function renderBank(){
 
 function makeBlockEl(item,side){
   const div=document.createElement('div');
-  const tc=item.type==='x'?(item.num<0?'type-x-neg':'type-x'):(item.num<0?'type-num-neg':'type-num');
-  div.className=`block ${tc}${item.id===lastChangedId?' just-changed':''}`;
+  div.className=`block ${bClass(item)}${item.id===lastChangedId?' just-changed':''}`;
   div.draggable=true; div.setAttribute('data-id',item.id); div.setAttribute('data-side',side);
-  div.textContent=blockLabel(item);
+  // Brøkblokker bruker HTML-innhold, vanlige bruker textContent
+  const isFrac=['frac','fracx','fracxi'].includes(item.type);
+  if(isFrac){
+    div.innerHTML=fracHTML(item);
+  } else {
+    div.textContent=blockLabel(item);
+  }
   div.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text',JSON.stringify({side,id:item.id})); setTimeout(()=>div.classList.add('dragging'),0); });
   div.addEventListener('dragend',()=>div.classList.remove('dragging'));
   div.addEventListener('contextmenu',e=>{ e.preventDefault(); activeMenuTarget={side,item}; showCtxMenu(e.clientX,e.clientY); });
   return div;
 }
 
+function bClass(item){
+  switch(item.type){
+    case 'x':     return item.num<0?'type-x-neg':'type-x';
+    case 'num':   return item.num<0?'type-num-neg':'type-num';
+    case 'frac':  return item.num<0?'type-frac-neg':'type-frac';
+    case 'fracx': return item.num<0?'type-fracx-neg':'type-fracx';
+    case 'fracxi':return 'type-fracxi';
+    default:      return 'type-num';
+  }
+}
+
 function blockLabel(i){
   if(i.type==='x')  return i.num===1?'x':i.num===-1?'-x':i.num+'x';
+  if(['frac','fracx','fracxi'].includes(i.type)) return fracText(i);
   return String(i.num);
 }
 
-// Formatter for rå task-objekter (ingen id, bruker type direkte)
+// Tekst-representasjon av brøkblokk (for live-display og fmtTaskSide)
+function fracText(i){
+  if(i.type==='fracxi') return i.num+'/x';
+  const top = i.type==='fracx' ? (Math.abs(i.num)===1?'x':Math.abs(i.num)+'x') : String(Math.abs(i.num));
+  const sign = i.num<0?'-':'';
+  return sign+top+'/'+i.den;
+}
+
+// HTML-brøkvisning inne i blokk
+function fracHTML(i){
+  let top, bot;
+  if(i.type==='fracxi'){
+    top=String(i.num); bot='x';
+  } else {
+    top = i.type==='fracx' ? (Math.abs(i.num)===1?'x':Math.abs(i.num)+'x') : String(Math.abs(i.num));
+    bot = String(i.den);
+  }
+  const sign = i.num<0?'<span style="margin-right:2px">−</span>':'';
+  return `${sign}<span class="frac-block"><span class="frac-top">${top}</span><span class="frac-bot">${bot}</span></span>`;
+}
+
+// Formatter for rå task-objekter
 function fmtTaskSide(items){
   if(!items.length) return '0';
   return items.map((item,idx)=>{
     let term;
-    if(item.type==='x') term = item.num===1?'x':item.num===-1?'-x':item.num+'x';
-    else term = String(item.num);
-    return (idx>0 && item.num>=0) ? '+ '+term : term;
+    if(item.type==='x') term=item.num===1?'x':item.num===-1?'-x':item.num+'x';
+    else if(['frac','fracx','fracxi'].includes(item.type)) term=fracText(item);
+    else term=String(item.num);
+    return (idx>0&&item.num>=0)?'+ '+term:term;
   }).join(' ');
 }
 
@@ -664,7 +776,10 @@ function updateEqDisplay(){
 
 function fmtSide(items){
   if(!items.length) return '0';
-  return items.map((i,idx)=>{ const t=blockLabel(i); return (idx>0&&i.num>=0)?'+ '+t:t; }).join(' ');
+  return items.map((i,idx)=>{
+    const t=blockLabel(i);
+    return (idx>0&&i.num>=0)?'+ '+t:t;
+  }).join(' ');
 }
 
 // ── SCALE TILT ──
@@ -695,7 +810,14 @@ function setLine(id, x1,y1, x2,y2) {
   el.setAttribute('x2',x2.toFixed(1)); el.setAttribute('y2',y2.toFixed(1));
 }
 
-function drawStrings(deg) {
+function evalItem(i){
+  if(i.type==='x')     return i.num*xValue;
+  if(i.type==='num')   return i.num;
+  if(i.type==='frac')  return i.num/i.den;
+  if(i.type==='fracx') return (i.num/i.den)*xValue;
+  if(i.type==='fracxi')return xValue!==0?i.num/xValue:0;
+  return 0;
+}
   const rad=deg*Math.PI/180;
   const bL=rotPt(BEAM_L, PIVOT, rad);
   const bR=rotPt(BEAM_R, PIVOT, rad);
@@ -727,7 +849,7 @@ function animateStrings(ts) {
 }
 
 function updateScaleTilt(){
-  const val=s=>sides[s].reduce((t,i)=>t+(i.type==='x'?i.num*xValue:i.num),0);
+  const val=s=>sides[s].reduce((t,i)=>t+evalItem(i),0);
   const diff=val('left')-val('right');
   targetDeg=Math.min(Math.max(-diff*1.8,-22),22);
 
@@ -787,13 +909,34 @@ window.operate=function(t){
   const v=parseInt(document.getElementById('opVal').value); if(!v||v===0) return;
   if(t==='div'){
     const all=[...sides.left,...sides.right];
-    if(!all.every(i=>i.num%v===0)){ showToast('⚠️ Går ikke opp – prøv en annen fremgangsmåte!','error'); return; }
+    const nonFrac=all.filter(i=>!['frac','fracx','fracxi'].includes(i.type));
+    if(!nonFrac.every(i=>i.num%v===0)){ showToast('⚠️ Går ikke opp – prøv en annen fremgangsmåte!','error'); return; }
   }
   saveHistory();
   lastChangedId=null;
   ['left','right'].forEach(s=>{
-    sides[s].forEach(i=>{ i.num=t==='mul'?i.num*v:i.num/v; });
-    sides[s]=sides[s].filter(i=>i.num!==0);
+    sides[s]=sides[s].map(i=>{
+      // Brøkblokk: prøv å eliminere nevner
+      if(i.type==='frac'||i.type==='fracx'||i.type==='fracxi'){
+        if(t==='mul'){
+          const newNum=i.num*v;
+          const newDen=i.den;
+          const g=gcd(Math.abs(newNum),newDen);
+          if(newDen/g===1){
+            // Nevner eliminert → konverter til vanlig blokk
+            if(i.type==='fracx') return {id:i.id,type:'x',num:newNum/g};
+            if(i.type==='frac')  return {id:i.id,type:'num',num:newNum/g};
+            if(i.type==='fracxi')return {id:i.id,type:'fracxi',num:newNum,den:1}; // x i nevner, bare skaler
+          }
+          return {...i, num:newNum/g, den:newDen/g};
+        } else {
+          // Del: skaler teller
+          return {...i, num:i.num/v};
+        }
+      }
+      // Vanlig blokk
+      return {...i, num:t==='mul'?i.num*v:i.num/v};
+    }).filter(i=>i.num!==0);
   });
   renderAll();
 };
@@ -890,7 +1033,7 @@ window.checkSolution=function(){
 
 // ── NEW TASK ──
 window.newTask=function(){
-  if(currentLevel===9){ clearBuildMode(); return; }
+  if(currentLevel===13){ clearBuildMode(); return; }
   const task=generateTask(currentLevel);
   applyTask(task);
 };
