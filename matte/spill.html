@@ -309,6 +309,13 @@
       </div>
     </div>
 
+    <!-- Live likning — HTML overlay over vekten -->
+    <div style="text-align:center;font-family:'Nunito',monospace;font-weight:800;font-size:0.95rem;color:#5b4fcf;padding:4px 0;background:white;border-radius:8px;border:1px solid #d0d8f0;margin-bottom:6px;">
+      <span id="liveLeft">–</span>
+      <span style="color:#6b7280;margin:0 6px">=</span>
+      <span id="liveRight">–</span>
+    </div>
+
     <!-- SCALE WRAP -->
     <div class="scale-wrap" id="scaleWrap">
       <svg id="scaleSvg" viewBox="0 0 600 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
@@ -336,10 +343,7 @@
           <circle cx="60"  cy="88" r="6" fill="#5c3d1e"/>
           <circle cx="540" cy="88" r="6" fill="#5c3d1e"/>
 
-          <!-- Live likning over pivot -->
-          <text id="liveLeft"  x="220" y="72" text-anchor="end"   font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#5b4fcf">–</text>
-          <text                x="300" y="72" text-anchor="middle" font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#6b7280">=</text>
-          <text id="liveRight" x="380" y="72" text-anchor="start"  font-family="Nunito,monospace" font-size="15" font-weight="800" fill="#5b4fcf">–</text>
+          <!-- Live likning vises i HTML-overlay, ikke SVG -->
 
           <!-- VENSTRE SKÅL-GRUPPE -->
           <g id="panLeft" style="transform-origin:105px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
@@ -654,7 +658,7 @@ function applyTask(task){
   history=[];
 
   // Lagre originallikning FØR blokker lages — bruk dedikert formatter
-  originalEqStr = fmtTaskSide(task.left.filter(b=>b.num!==0)) + ' = ' + fmtTaskSide(task.right.filter(b=>b.num!==0));
+  originalEqStr = fmtTaskSideHTML(task.left.filter(b=>b.num!==0)) + ' = ' + fmtTaskSideHTML(task.right.filter(b=>b.num!==0));
 
   if(lv.bank){
     bankItems=[...task.left,...task.right].filter(b=>b.num!==0).map(b=>({id:idCounter++,...b}));
@@ -770,13 +774,26 @@ function fracHTML(i){
   return `${sign}<span class="frac-block"><span class="frac-top">${top}</span><span class="frac-bot">${bot}</span></span>`;
 }
 
-// Formatter for rå task-objekter
-function fmtTaskSide(items){
+// HTML-streng for brøk i tekst (for task-kort via innerHTML)
+function fracHTML_inline(i){
+  let top, bot;
+  if(i.type==='fracxi'){
+    top=String(i.num);
+    bot=i.den>1?i.den+'x':'x';
+  } else {
+    top=i.type==='fracx'?(Math.abs(i.num)===1?'x':Math.abs(i.num)+'x'):String(Math.abs(i.num));
+    bot=String(i.den);
+  }
+  const sign=i.num<0?'−':'';
+  return `${sign}<span style="display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;vertical-align:middle;margin:0 1px"><span style="border-bottom:1.5px solid currentColor;padding:0 2px;font-size:0.8em">${top}</span><span style="padding:0 2px;font-size:0.8em">${bot}</span></span>`;
+}
+
+function fmtTaskSideHTML(items){
   if(!items.length) return '0';
   return items.map((item,idx)=>{
     let term;
-    if(item.type==='x') term=item.num===1?'x':item.num===-1?'-x':item.num+'x';
-    else if(['frac','fracx','fracxi'].includes(item.type)) term=fracText(item);
+    if(['frac','fracx','fracxi'].includes(item.type)) term=fracHTML_inline(item);
+    else if(item.type==='x') term=item.num===1?'x':item.num===-1?'−x':item.num+'x';
     else term=String(item.num);
     return (idx>0&&item.num>=0)?'+ '+term:term;
   }).join(' ');
@@ -788,10 +805,10 @@ let originalEqStr = '';
 function updateEqDisplay(){
   const lv=LEVELS[currentLevel];
   // Live display i SVG
-  document.getElementById('liveLeft').textContent  = fmtSide(sides.left)  || '0';
-  document.getElementById('liveRight').textContent = fmtSide(sides.right) || '0';
+  document.getElementById('liveLeft').innerHTML  = fmtSideHTML(sides.left)  || '0';
+  document.getElementById('liveRight').innerHTML = fmtSideHTML(sides.right) || '0';
   // Task-kort: vis originallikning
-  document.getElementById('taskEq').textContent = originalEqStr || '–';
+  document.getElementById('taskEq').innerHTML = originalEqStr || '–';
   document.getElementById('taskLevelNum').textContent = currentLevel;
   const icons=['','🔢','🔢','📦','📦','🔢','🔢','🔢','🔢','🔧'];
   document.getElementById('taskIcon').textContent = icons[currentLevel]||'⚖️';
@@ -800,6 +817,16 @@ function updateEqDisplay(){
   else if(lv.build) instr='Bygg din egen likning – legg blokker i begge skålene';
   else instr='Dra blokkene fra banken inn i vektskålene og løs likningen';
   document.getElementById('taskInstr').textContent=instr;
+}
+
+function fmtSideHTML(items){
+  if(!items.length) return '0';
+  return items.map((i,idx)=>{
+    let term;
+    if(['frac','fracx','fracxi'].includes(i.type)) term=fracHTML_inline(i);
+    else term=blockLabel(i);
+    return (idx>0&&i.num>=0)?'+ '+term:term;
+  }).join(' ');
 }
 
 function fmtSide(items){
