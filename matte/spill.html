@@ -641,6 +641,7 @@ function gcd(a,b){ return b===0?a:gcd(b,a%b); }
 
 // ── GANGE MED X ──
 window.operateX=function(){
+  if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
   const hasFracXi=[...sides.left,...sides.right].some(i=>i.type==='fracxi');
   if(!hasFracXi){ showToast('Ingen brøker med x i nevner','error'); return; }
   saveHistory(); lastChangedId=null;
@@ -672,6 +673,10 @@ function applyTask(task){
   if(lv.bank){
     bankItems=[...task.left,...task.right].filter(b=>b.num!==0).map(b=>({id:idCounter++,...b}));
     sides={left:[],right:[]};
+    // Start byggefasen — lagre original for sammenligning
+    buildingPhase=true;
+    originalLeft  = task.left.filter(b=>b.num!==0).map(b=>({...b}));
+    originalRight = task.right.filter(b=>b.num!==0).map(b=>({...b}));
   } else {
     sides={
       left:task.left.filter(b=>b.num!==0).map(b=>({id:idCounter++,...b})),
@@ -823,8 +828,8 @@ function updateEqDisplay(){
   document.getElementById('taskIcon').textContent = icons[currentLevel]||'⚖️';
   let instr;
   if(!lv.bank) instr='Flytt blokkene i vektskålene slik at x står alene på én side';
-  else if(lv.build) instr='Bygg din egen likning – legg blokker i begge skålene';
-  else instr='Dra blokkene fra banken inn i vektskålene og løs likningen';
+  else if(buildingPhase) instr='🏗️ Bygg likningen: dra blokkene fra banken inn i riktige skåler';
+  else instr='Flytt blokkene slik at x står alene på én side';
   document.getElementById('taskInstr').textContent=instr;
 }
 
@@ -943,7 +948,46 @@ function updateScaleTilt(){
   animFrame=requestAnimationFrame(animateStrings);
 }
 
-// ── DRAG & DROP ──
+// ── BYGGEFASE ──
+let buildingPhase = false;   // true når vi er i byggefasen
+let originalLeft  = [];      // originallikning venstre side (for sjekk)
+let originalRight = [];      // originallikning høyre side (for sjekk)
+
+const BUILD_MSG = '🏗️ Bygg likningen i oppgavekortet først!';
+
+// Sjekk om en side matcher originalen (uansett rekkefølge, men type+num må stemme)
+function sideMatchesOriginal(current, original) {
+  if(current.length !== original.length) return false;
+  const used = new Array(original.length).fill(false);
+  for(const c of current) {
+    const idx = original.findIndex((o,i)=>!used[i]&&o.type===c.type&&o.num===c.num&&(o.den===undefined||o.den===c.den));
+    if(idx===-1) return false;
+    used[idx]=true;
+  }
+  return true;
+}
+
+// Sjekk om vekten er i balanse
+function isBalanced() {
+  const val=s=>sides[s].reduce((t,i)=>t+evalItem(i),0);
+  return Math.abs(val('left')-val('right'))<0.001;
+}
+
+// Sjekk om byggefasen er fullført
+function checkBuildComplete() {
+  if(!buildingPhase) return;
+  if(bankItems.length>0) return;
+  if(!sideMatchesOriginal(sides.left, originalLeft)) return;
+  if(!sideMatchesOriginal(sides.right, originalRight)) return;
+  if(!isBalanced()) return;
+  // Alt stemmer — gå videre til løsningsfasen
+  buildingPhase=false;
+  showToast('✅ Likningen er bygget! Nå kan du løse den.','success');
+  // Oppdater oppgavekort-instruksjon
+  const lv=LEVELS[currentLevel];
+  document.getElementById('taskInstr').textContent='Flytt blokkene slik at x står alene på én side';
+  renderAll();
+}
 ['dropLeft','dropRight'].forEach((id,idx)=>{
   const sideMap=['left','right'], el=document.getElementById(id);
   el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
@@ -968,11 +1012,12 @@ window.handleDrop=function(ev,targetSide){
       const tArr=sides[targetSide];
       const tItem=tArr.find(i=>i.id===tid);
       if(tItem&&tItem.id!==item.id){
-        // Sjekk om begge er brøkblokker med ulik nevner
+        // Blokker sammenslåing i byggefasen
+        if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
         const bothFrac=(tItem.type===item.type)&&['frac','fracx'].includes(item.type);
         if(bothFrac&&tItem.den!==item.den){
           showToast('⚠️ Brøkene må ha samme nevner for å slå sammen!','error');
-          return; // ingen saveHistory, ingen endring
+          return;
         }
         if(tItem.type===item.type){
           saveHistory();
@@ -989,10 +1034,13 @@ window.handleDrop=function(ev,targetSide){
   const destArr=targetSide==='bank'?bankItems:sides[targetSide];
   destArr.push(srcArr.splice(itemIdx,1)[0]);
   renderAll();
+  // Sjekk om byggefasen er fullført
+  if(buildingPhase) checkBuildComplete();
 };
 
 // ── OPERATIONS ──
 window.operate=function(t){
+  if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
   const v=parseInt(document.getElementById('opVal').value); if(!v||v===0) return;
   if(t==='div'){
     const all=[...sides.left,...sides.right];
@@ -1034,6 +1082,10 @@ window.resetTask=function(){
   sides={left:JSON.parse(JSON.stringify(originalTask.left)),right:JSON.parse(JSON.stringify(originalTask.right))};
   bankItems=JSON.parse(JSON.stringify(originalTask.bank));
   xValue=originalTask.xVal; lastChangedId=null; history=[];
+  // Tilbakestill byggefasen om nivået har bank
+  if(LEVELS[currentLevel].bank){
+    buildingPhase=true;
+  }
   renderAll();
 };
 
@@ -1075,6 +1127,7 @@ window.ctxNeg=function(){
   saveHistory(); activeMenuTarget.item.num*=-1; lastChangedId=activeMenuTarget.item.id; renderAll();
 };
 window.ctxSplit=function(){
+  if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
   if(!activeMenuTarget) return;
   if(Math.abs(activeMenuTarget.item.num)<2){ showToast('Kan ikke splitte 1 eller -1','error'); return; }
   saveHistory();
