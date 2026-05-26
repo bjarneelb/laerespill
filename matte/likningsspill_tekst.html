@@ -963,7 +963,7 @@ function renderSide(side,container) {
   container.innerHTML='';
   sides[side].forEach((item,idx)=>{
     // Legg inn + mellom blokker der neste blokk er positiv
-    if (idx > 0) {
+    if (idx > 0 && side !== 'bank') {
       const plus = document.createElement('span');
       plus.textContent = '+';
       plus.style.cssText = 'color:var(--muted);font-weight:900;font-size:1.1rem;align-self:center;user-select:none;pointer-events:none;';
