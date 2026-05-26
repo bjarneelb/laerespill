@@ -1219,8 +1219,16 @@ window.startGame=function(){
     document.getElementById('scoreTitle').textContent=gameMode==='multi'?'🏆 Toppliste':'🏆 Poeng';
   }
 
-  if(room&&window._fbReady) window._fbInit(room);
-  else window.syncScore=()=>{};
+  if(room){
+    // Vent på at Firebase-modulen er lastet
+    const waitFb=()=>{
+      if(window._fbReady){ window._fbInit(room); }
+      else { setTimeout(waitFb,50); }
+    };
+    waitFb();
+  } else {
+    window.syncScore=()=>{};
+  }
 
   if(gameMode==='solo') startTimed();
 
