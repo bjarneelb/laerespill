@@ -313,37 +313,33 @@
 
     <!-- MODE SELECTOR -->
     <div class="mode-selector">
-      <button class="mode-btn active" data-mode="solo" onclick="selectMode('solo')">
-        <span class="mode-icon">🧑</span>Enkeltspiller
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">
+        <span class="mode-icon">🧘</span>Øvemodus
+      </button>
+      <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')">
+        <span class="mode-icon">⏱️</span>Enkeltspiller
       </button>
       <button class="mode-btn" data-mode="race" onclick="selectMode('race')">
-        <span class="mode-icon">🏎️</span>Med bilbane
-      </button>
-      <button class="mode-btn" data-mode="timed" onclick="selectMode('timed')">
-        <span class="mode-icon">⏱️</span>Tidsutfordring
+        <span class="mode-icon">🏎️</span>Flerspiller
       </button>
     </div>
 
-    <!-- SOLO: ingen ekstra valg -->
-    <div class="mode-options" id="opts-solo"></div>
+    <!-- PRACTICE: ingen ekstra valg -->
+    <div class="mode-options" id="opts-practice"></div>
+
+    <!-- SOLO: tid -->
+    <div class="mode-options" id="opts-solo">
+      <div class="opt-row">
+        <span class="opt-label">Tid (min):</span>
+        <input class="start-num" id="timedMinutes" type="number" value="5" min="1" max="30">
+      </div>
+    </div>
 
     <!-- RACE: romkode -->
     <div class="mode-options" id="opts-race">
       <div class="opt-row">
         <span class="opt-label">Romkode:</span>
         <input class="start-input" id="roomInputRace" placeholder="ROMKODE" maxlength="8">
-      </div>
-    </div>
-
-    <!-- TIMED: romkode + tid -->
-    <div class="mode-options" id="opts-timed">
-      <div class="opt-row">
-        <span class="opt-label">Romkode:</span>
-        <input class="start-input" id="roomInputTimed" placeholder="ROMKODE" maxlength="8">
-      </div>
-      <div class="opt-row">
-        <span class="opt-label">Tid (min):</span>
-        <input class="start-num" id="timedMinutes" type="number" value="3" min="1" max="30">
       </div>
     </div>
 
@@ -495,7 +491,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '1.8';
+const VERSION = '1.9';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
@@ -560,12 +556,12 @@ const icons = ['🐱','🐶','🦊','🐻','🐼','🦁','🐸','🐧','🦋','�
 window.selectMode = function(mode) {
   gameMode = mode;
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode===mode));
-  ['solo','race','timed'].forEach(m => {
+  ['practice','solo','race'].forEach(m => {
     const el = document.getElementById('opts-'+m);
-    if (el) el.classList.toggle('visible', m===mode && m!=='solo');
+    if (el) el.classList.toggle('visible', m===mode);
   });
 };
-selectMode('solo');
+selectMode('practice');
 
 // ── LEVEL UI ──
 function updateLevelUI() {
@@ -769,42 +765,51 @@ function maybeIncident(scoreRate) {
 }
 
 // ── TEMPLATES ──
+const NAMES = ['Ali','Emma','Noah','Sofia','Lucas','Leah','Mia','Jonas','Ida','Tobias','Nora','Elias'];
+
 const templates = {
   1: [
-    'x + b = c. Eks: Kari har 5 kr mer enn Ola. Til sammen har de 17 kr. Finn Olas beløp.',
-    'x + b = c. Eks: Ola er 4 år eldre enn søsteren sin. Til sammen er de 20 år. Hvor gammel er søsteren?',
-    'x + b = c. Eks: En eske med epler veier 3 kg mer enn en eske med appelsiner. Til sammen veier de 11 kg. Hva veier appelsinene?',
+    'x + b = c. Eks: Emma er 5 år eldre enn Noah. Til sammen er de 19 år. Hvor gammel er Noah?',
+    'x + b = c. Eks: Leah har 8 bøker mer enn Lucas. Til sammen har de 24 bøker. Hvor mange bøker har Lucas?',
+    'x + b = c. Eks: I en klasse er det 7 flere jenter enn gutter. Det er 27 elever totalt. Hvor mange gutter er det?',
+    'x - b = c. Eks: Etter å ha brukt 45 kr har Mia 30 kr igjen. Hvor mye hadde hun fra starten?',
   ],
   2: [
-    'a·x = c. Eks: Tre like esker veier til sammen 18 kg. Hva veier én eske?',
-    'a·x = c. Eks: Kari er dobbelt så gammel som Ola. Kari er 14 år. Hvor gammel er Ola?',
-    'a·x = c. Eks: Fire like billetter koster til sammen 140 kr. Hva koster én billett?',
-    'a·x = c. Eks: Et tog kjører 3 ganger så fort som en sykkel. Toget kjører 90 km/t. Hvor fort sykler syklisten?',
+    'a·x = c. Eks: Tre like esker veier til sammen 21 kg. Hva veier én eske?',
+    'a·x = c. Eks: Jonas er dobbelt så gammel som Ida. Jonas er 16 år. Hvor gammel er Ida?',
+    'a·x = c. Eks: Fire like billetter koster til sammen 240 kr. Hva koster én billett?',
+    'a·x = c. Eks: Et tog kjører 4 ganger så fort som en sykkel. Toget kjører 120 km/t. Hvor fort sykler syklisten?',
+    'a·x = c. Eks: Nora baker 3 ganger så mange kaker som Elias. Nora baker 18 kaker. Hvor mange baker Elias?',
   ],
   3: [
-    'a·x + b = c. Eks: En voksenbillett koster 3 ganger barnebilletten pluss 20 kr. Voksenbilletten koster 110 kr. Hva koster barnebilletten?',
-    'a·x + b = c. Eks: Ali er 3 år eldre enn Ola, og Kari er dobbelt så gammel som Ola. Til sammen er Ali og Kari 33 år. Hvor gammel er Ola?',
-    'a·x - b = c. Eks: En butikk selger 4 ganger så mange eppler som bananer, minus 2. De selger 18 eppler. Hvor mange bananer selger de?',
-    'a·x + b = c. Eks: En taxi koster 25 kr i startavgift pluss 15 kr per kilometer. Turen koster 115 kr. Hvor mange kilometer kjørte de?',
+    'a·x + b = c. Eks: En voksenbillett koster 3 ganger barnebilletten pluss 30 kr. Voksenbilletten koster 150 kr. Hva koster barnebilletten?',
+    'a·x + b = c. Eks: En taxi koster 40 kr i startavgift pluss 15 kr per kilometer. Turen koster 190 kr. Hvor mange kilometer kjørte de?',
+    'a·x + b = c. Eks: Tobias er 3 år eldre enn dobbelt så gammel som Elias. Tobias er 25 år. Hvor gammel er Elias?',
+    'a·x + b = c. Eks: Sofia sparer 50 kr i uka og har allerede 150 kr. Etter x uker har hun 500 kr. Finn x.',
+    'a·x + b = c. Eks: En snekker tar 400 kr i timebetaling pluss 250 kr for materialer. Totalt koster jobben 1650 kr. Hvor mange timer jobbet snekker?',
   ],
   4: [
-    'a·x + b = c·x + d. Eks: Per sparer 50 kr i uka og har 200 kr fra før. Lise sparer 30 kr i uka og har 400 kr. Etter hvor mange uker har de like mye?',
-    'a·x + b = c·x + d. Eks: Ola er 4 år eldre enn Kari, og mamma er 23 år eldre enn Ola. Mamma er dobbelt så gammel som Kari. Finn Karis alder.',
-    'a·x + b = c·x + d. Eks: To busser starter fra hver sin by og kjører mot hverandre. Buss A kjører 60 km/t og har 10 km forsprang. Buss B kjører 80 km/t. Etter x timer møtes de. Finn x.',
+    'a·x + b = c·x + d. Bruk realistiske sparemål: minst 50 kr per uke. Eks: Emma sparer 100 kr i uka og har 300 kr fra før. Noah sparer 50 kr i uka og har 800 kr. Etter hvor mange uker har de like mye?',
+    'a·x + b = c·x + d. Eks: Ali er 6 år eldre enn Mia, og mamma er 25 år eldre enn Ali. Mamma er dobbelt så gammel som Mia. Finn Mias alder.',
+    'a·x + b = c·x + d. Eks: To taxiselskaper: det ene tar 30 kr startavgift og 12 kr/km, det andre tar 10 kr startavgift og 18 kr/km. Etter x km er de like dyre. Finn x.',
+    'a·x + b = c·x + d. Eks: Lucas tjener 150 kr i timen og har jobbet x timer. Jonas tjener 200 kr i timen og har jobbet 2 timer mindre. De har tjent like mye. Finn x.',
+    'a·x + b = c·x + d. Eks: Leah og Ida dyrker tomater. Leah har 40 tomater og plukker 8 per dag. Ida har 10 tomater og plukker 14 per dag. Etter x dager har de like mange. Finn x.',
   ],
   5: [
-    'a·x + b = c·x + d med minst ett negativt tall. Eks: Ali skylder Ola 5 kr, og Kari har 3 ganger Alis beløp pluss 8 kr. Til sammen har Kari og Ola 31 kr. Finn Alis beløp.',
-    'a·x - b = c - d·x med negative ledd. Eks: Temperaturen synker 3 grader i timen fra 20 grader. En annen by begynner på 8 grader og synker 1 grad i timen. Etter x timer er det like kaldt. Finn x.',
-    'Relasjon med 3 personer og minst ett negativt ledd. Eks: Kari har dobbelt så mye penger som Ola minus 10 kr. Per har 3 ganger så mye som Ola. Til sammen har Kari og Per 80 kr. Finn Olas beløp.',
+    'a·x + b = c·x + d der b eller d er negativt – beskriv gjeld som "skylder X kr", ALDRI som negativt tall i teksten. Eks: Jonas sparer 80 kr per uke, men skylder 160 kr. Nora sparer 50 kr per uke og har 80 kr. Etter x uker har de like mye.',
+    'a·x - b = c·x + d. Temperaturoppgave: Eks: Temperaturen i Oslo er 6 grader og synker 3 grader per time. I Bergen er det 2 grader under null (minus 2) og synker 1 grad per time. Etter x timer er det like kaldt. Finn x.',
+    'Relasjon med minst ett negativt ledd – beskriv underskudd som gjeld. Eks: Leah har dobbelt så mye penger som Tobias, men skylder 40 kr til sin søster. Nora har tre ganger så mye som Tobias. Til sammen har Leah og Nora 100 kr. Finn Tobias sine penger.',
+    'a·x + b = c·x + d med høydeforskjell. Eks: Et fjell er 200 meter høyt og en drone stiger 15 meter per minutt fra bunnen. Et annet startpunkt er 50 meter under havnivå og stiger 20 meter per minutt. Etter x minutter er de like høye. Finn x.',
   ],
   6: [
-    'Kombiner maler fra nivå 2-5 fritt. Kan ha 3+ ledd på én side. Eks: 2x + 3x - 4 = x + 20. Lag en engasjerende historieoppgave som leder til en slik likning.',
-    'Kompleks relasjon med 3 eller flere personer. Eks: A er dobbelt så gammel som B, C er 5 år yngre enn A, og summen av alle tre er 55 år. Finn Bs alder.',
-    'Økonomioppgave med 3+ ledd. Eks: En butikk øker prisen med 2x og senker en annen vare med x - 5. Den totale prisendringen er 31 kr. Finn x.',
+    'Kombiner maler fra nivå 2–5 fritt. Kan ha 3+ ledd. Eks: 2x + 3x - 20 = x + 60. Lag en engasjerende historieoppgave med realistiske tall (beløp 50–500 kr).',
+    'Kompleks relasjon med 3 personer. Eks: Sofia er dobbelt så gammel som Elias, Lucas er 4 år yngre enn Sofia, og summen av alle tre er 56 år. Finn Elias sin alder.',
+    'Økonomioppgave med 3+ ledd og realistiske beløp. Eks: En butikk øker prisen på to varer med henholdsvis 2x og x - 20 kr. Den totale prisøkningen er 130 kr. Finn x.',
+    'Fartoppgave med møtepunkt. Eks: To tog starter fra Oslo og Bergen (500 km mellom dem) og kjører mot hverandre. Det ene kjører 120 km/t og det andre 80 km/t. Etter x timer møtes de. Finn x.',
   ],
   7: [
-    'Likning der divisjon underveis gir et naturlig mellomsteg som ikke er trivielt. xValue MÅ være et heltall. Eks: 3x + 6 = 21 → 3x = 15 → x = 5. Gjør divisjonssteget litt vanskeligere. Linjær likning der koeffisienten foran x ikke er 1 eller 2.',
-    'Likning der eleven må gange begge sider for å rydde, deretter dele. xValue MÅ være et heltall. Eks: 5x - 10 = 2x + 8 → 3x = 18 → x = 6. Lag en oppgave der mellomregningene er tydelige steg.',
+    'Likning der divisjon underveis gir et naturlig mellomsteg. xValue MÅ være et positivt heltall. Koeffisienten foran x skal være minst 3. Eks: 4x + 12 = 36. Bruk kontekst med realistiske beløp over 50 kr.',
+    'Likning der eleven må flytte ledd og deretter dele. xValue MÅ være et positivt heltall. Eks: 5x - 15 = 2x + 9 → 3x = 24 → x = 8. Bruk realistisk kontekst – sparepenger, alder eller fart.',
   ],
 };
 
@@ -861,6 +866,10 @@ KRITISKE REGLER:
 5. xValue MÅ være et positivt heltall mellom 2 og 20.
 6. ${xSideRule}
 7. Ingen blokker med num = 0.
+8. Bruk varierte navn fra denne listen: ${NAMES.join(', ')} – IKKE alltid Per, Kari og Ola.
+9. Sparepenger og beløp MÅ være realistiske: bruk 50, 100, 150, 200 kr per uke – ALDRI under 20 kr per uke.
+10. Negative tall beskrives ALLTID naturlig: "skylder X kr" (gjeld), "X grader under null" (temperatur), "X meter under havnivå" (høyde), "underskudd på X kr" – ALDRI bare et negativt tall i teksten.
+11. Sørg for variasjon: unngå å alltid bruke penger og alder – bruk også fart, vekt, temperatur, antall gjenstander.
 
 Svar KUN med gyldig JSON (ingen markdown):
 {
@@ -887,11 +896,13 @@ Svar KUN med gyldig JSON (ingen markdown):
 function generateFallback(level) {
   xValue = Math.floor(Math.random()*7)+3;
   const lv = Math.min(level,4);
+  const n = () => NAMES[Math.floor(Math.random()*NAMES.length)];
+  const n1=n(), n2=n();
   const fbs = {
-    1:()=>{ const b=Math.floor(Math.random()*8)+2; return {story:`Kari er ${b} år eldre enn Ola. Til sammen er de ${xValue*2+b} år. Hvor gammel er Ola?`,hint:'La x = Olas alder',equation:{left:[{type:'x',num:1},{type:'num',num:b},{type:'x',num:1}],right:[{type:'num',num:xValue*2+b}],xValue}}; },
+    1:()=>{ const b=Math.floor(Math.random()*8)+2; return {story:`${n1} er ${b} år eldre enn ${n2}. Til sammen er de ${xValue*2+b} år. Hvor gammel er ${n2}?`,hint:`La x = ${n2}s alder`,equation:{left:[{type:'x',num:1},{type:'num',num:b},{type:'x',num:1}],right:[{type:'num',num:xValue*2+b}],xValue}}; },
     2:()=>{ const a=Math.floor(Math.random()*3)+2; return {story:`${a} like esker veier ${a*xValue} kg. Hva veier én eske?`,hint:'La x = vekten til én eske',equation:{left:[{type:'x',num:a}],right:[{type:'num',num:a*xValue}],xValue}}; },
-    3:()=>{ const a=Math.floor(Math.random()*3)+2,b=Math.floor(Math.random()*8)+2; return {story:`Voksenbillett koster ${a} ganger barnebilletten pluss ${b} kr. Voksenbilletten er ${a*xValue+b} kr.`,hint:'La x = barnebillett',equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'num',num:a*xValue+b}],xValue}}; },
-    4:()=>{ const c=1,a=c+2,d=Math.floor(Math.random()*8)+2,b=(c*xValue+d)-(a*xValue); return {story:`Per sparer ${a} kr/uke og har ${b} kr. Lise sparer ${c} kr/uke og har ${d} kr. Etter x uker er de like rike.`,hint:'La x = antall uker',equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'x',num:c},{type:'num',num:d}],xValue}}; },
+    3:()=>{ const a=Math.floor(Math.random()*3)+2,b=Math.floor(Math.random()*8)+2; return {story:`${n1} betaler ${a} ganger så mye som ${n2} pluss ${b} kr. ${n1} betaler ${a*xValue+b} kr.`,hint:`La x = ${n2}s pris`,equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'num',num:a*xValue+b}],xValue}}; },
+    4:()=>{ const c=1,a=c+2,d=Math.floor(Math.random()*5+1)*50,b=(c*xValue+d)-(a*xValue); return {story:`${n1} sparer ${a*50} kr i uka og har ${b} kr fra før. ${n2} sparer ${c*50} kr i uka og har ${d} kr. Etter x uker har de like mye.`,hint:'La x = antall uker',equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'x',num:c},{type:'num',num:d}],xValue}}; },
   };
   return fbs[lv]();
 }
@@ -906,6 +917,11 @@ function applyTask(task) {
     ...task.equation.right.filter(b=>b.num!==0)
   ].map(b=>({id:idCounter++,type:b.type,num:b.num}));
   originalTask = {bank:JSON.parse(JSON.stringify(allBlocks)),left:[],right:[],x:xValue};
+  // Lagre originalsideckene for byggefase-sjekk
+  origLeft  = task.equation.left.filter(b=>b.num!==0).map(b=>({type:b.type,num:b.num}));
+  origRight = task.equation.right.filter(b=>b.num!==0).map(b=>({type:b.type,num:b.num}));
+  // Start byggefasen
+  buildingPhase = true;
   // Nullstill handlingssporing
   hasMovedBlock=false; hasOperated=false; hasBuiltBlock=false;
   resetTask();
@@ -921,6 +937,7 @@ window.resetTask = function() {
     sides.bank=JSON.parse(JSON.stringify(originalTask.bank));
     sides.left=[]; sides.right=[];
   }
+  buildingPhase = true;
   xValue=originalTask.x; lastChangedId=null; renderAll();
 };
 
@@ -982,6 +999,40 @@ function updateScaleTilt() {
   document.getElementById('scaleR').style.transform=`translateY(${tilt}px)`;
 }
 
+// ── BYGGEFASE ──
+let buildingPhase = false;
+let origLeft = [], origRight = []; // original venstre/høyre for sjekk
+const BUILD_MSG = '🏗️ Bygg likningen i oppgavekortet først!';
+
+function sidesMatchOriginal() {
+  const match=(curr,orig)=>{
+    if(curr.length!==orig.length) return false;
+    const used=new Array(orig.length).fill(false);
+    for(const c of curr){
+      const idx=orig.findIndex((o,i)=>!used[i]&&o.type===c.type&&o.num===c.num);
+      if(idx===-1) return false;
+      used[idx]=true;
+    }
+    return true;
+  };
+  return match(sides.left,origLeft)&&match(sides.right,origRight);
+}
+
+function isBalanced() {
+  const val=s=>sides[s].reduce((t,i)=>t+(i.type==='x'?i.num*xValue:i.num),0);
+  return Math.abs(val('left')-val('right'))<0.001;
+}
+
+function checkBuildComplete() {
+  if(!buildingPhase) return;
+  if(sides.bank.length>0) return;
+  if(!sidesMatchOriginal()) return;
+  if(!isBalanced()) return;
+  buildingPhase=false;
+  showToast('✅ Likningen er bygget! Nå kan du løse den.','success');
+  renderAll();
+}
+
 // ── DRAG & DROP ──
 ['scaleL','scaleR','bankPanel'].forEach((id,idx)=>{
   const sideMap=['left','right','bank'],el=document.getElementById(id);
@@ -995,28 +1046,45 @@ window.handleDrop=function(ev,targetSide){
   const srcArr=sides[data.side],itemIdx=srcArr.findIndex(i=>i.id===data.id);
   if(itemIdx===-1)return;
   const item=srcArr[itemIdx];
+
+  // Blokkér sammenslåing i byggefasen
   if(targetSide!=='bank'&&data.side===targetSide){
     const targetEl=ev.target.closest('.block');
     if(targetEl){
       const tItem=sides[targetSide].find(i=>i.id===parseInt(targetEl.getAttribute('data-id')));
-      if(tItem&&tItem.type===item.type&&tItem.id!==item.id){
-        tItem.num+=item.num;lastChangedId=tItem.id;srcArr.splice(itemIdx,1);
-        if(tItem.num===0){sides[targetSide].splice(sides[targetSide].indexOf(tItem),1);lastChangedId=null;}
-        renderAll();return;
+      if(tItem&&tItem.id!==item.id){
+        if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
+        if(tItem.type===item.type){
+          tItem.num+=item.num;lastChangedId=tItem.id;srcArr.splice(itemIdx,1);
+          if(tItem.num===0){sides[targetSide].splice(sides[targetSide].indexOf(tItem),1);lastChangedId=null;}
+          renderAll();return;
+        }
       }
     }
   }
-  lastChangedId=item.id; sides[targetSide].push(srcArr.splice(itemIdx,1)[0]);
-  if (targetSide !== 'bank') hasMovedBlock = true;
+
+  lastChangedId=item.id;
+  sides[targetSide].push(srcArr.splice(itemIdx,1)[0]);
+  if(targetSide!=='bank') hasMovedBlock=true;
   renderAll();
+  if(buildingPhase) checkBuildComplete();
 };
 
 // ── OPERATIONS ──
 window.operate=function(t){
+  if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
   const v=parseInt(document.getElementById('opVal').value);
-  if(!v||v<=0)return;
+  if(!v||v===0)return;
+  // Divisjonssperre
+  if(t==='divide'){
+    const all=[...sides.left,...sides.right];
+    if(!all.every(i=>i.num%v===0)){ showToast('⚠️ Går ikke opp – prøv en annen fremgangsmåte!','error'); return; }
+  }
   lastChangedId=null; hasOperated=true;
-  ['left','right'].forEach(s=>{sides[s].forEach(i=>{i.num=t==='multiply'?i.num*v:Math.round(i.num/v);});sides[s]=sides[s].filter(i=>i.num!==0);});
+  ['left','right'].forEach(s=>{
+    sides[s].forEach(i=>{i.num=t==='multiply'?i.num*v:i.num/v;});
+    sides[s]=sides[s].filter(i=>i.num!==0);
+  });
   renderAll();
 };
 
@@ -1052,18 +1120,21 @@ window.checkSolution=function(){
 
     // ── NORMAL MODUS ──
     totalCorrect++;
-    let bonus=Math.max(10,Math.round((timerSeconds/maxSeconds)*100));
-    if(builderActive) bonus=Math.round(bonus*BUILDER_BONUS_MULTIPLIER);
-    currentScore+=bonus;
+    let bonus=0;
+    if(gameMode!=='practice'){
+      bonus=Math.max(10,Math.round((timerSeconds/maxSeconds)*100));
+      if(builderActive) bonus=Math.round(bonus*BUILDER_BONUS_MULTIPLIER);
+      currentScore+=bonus;
+    }
     const now=Date.now();
     const dt=(now-lastScoreTime)/1000;
-    if(dt>0&&dt<120) speedRate=Math.max(0,Math.round((bonus/dt)*10));
+    if(dt>0&&dt<120&&gameMode!=='practice') speedRate=Math.max(0,Math.round((bonus/dt)*10));
     lastScoreTime=now; lastScoreValue=currentScore;
     document.getElementById('streakCount').textContent=totalCorrect;
     if(typeof syncScore==='function') syncScore(currentScore);
-    updateSpeedDisplay();
+    if(gameMode!=='practice') updateSpeedDisplay();
     adjustLevel(bonus);
-    const msg=builderActive?'🎉 Riktig! +'+bonus+' poeng (🔧 ×1.2 bonus!)':'🎉 Riktig! +'+bonus+' poeng!';
+    const msg=gameMode==='practice'?'🎉 Riktig!':builderActive?'🎉 Riktig! +'+bonus+' poeng (🔧 ×1.2 bonus!)':'🎉 Riktig! +'+bonus+' poeng!';
     showToast(msg,'success');
     builderBlocks=[];
     hasMovedBlock=false; hasOperated=false; hasBuiltBlock=false;
@@ -1116,23 +1187,24 @@ window._startSession = function() {
   lastScoreTime=Date.now(); lastScoreValue=0;
   updateProgressBar(); updateLevelUI();
 
-  // Mode-specific setup
   const modeBadge = document.getElementById('modeBadge');
-  if (gameMode==='solo') {
-    modeBadge.textContent='🧑 Enkeltspiller';
+  if (gameMode==='practice') {
+    modeBadge.textContent='🧘 Øvemodus';
+    document.getElementById('scoreTitle').textContent='📊 Fremgang';
+    document.getElementById('scoreList').innerHTML='<div style="color:var(--muted);font-size:0.85rem;text-align:center">Øvemodus – ingen poeng</div>';
+    window.syncScore=()=>{};
+    window.syncIncident=()=>{};
+  } else if (gameMode==='solo') {
+    modeBadge.textContent='⏱️ Enkeltspiller';
     document.getElementById('scoreTitle').textContent='🏆 Poeng';
     document.getElementById('scoreList').innerHTML='<div style="font-size:2rem;font-weight:900;color:var(--accent);text-align:center">0</div>';
-    // Override syncScore for solo: just update display
-    window.syncScore = (s)=>{ updateSoloScore(); };
+    window.syncScore=(s)=>{ updateSoloScore(); };
+    window.syncIncident=()=>{};
+    startTimedCountdown();
   } else if (gameMode==='race') {
-    modeBadge.textContent='🏎️ Med bilbane';
+    modeBadge.textContent='🏎️ Flerspiller';
     document.getElementById('scoreTitle').textContent='🏆 Toppliste';
     document.getElementById('speedBadge').style.display='flex';
-  } else if (gameMode==='timed') {
-    modeBadge.textContent='⏱️ Tidsutfordring';
-    document.getElementById('scoreTitle').textContent='🏆 Toppliste';
-    startTimedCountdown();
-    // syncScore is handled by Firebase module
   }
   initGame();
 };
@@ -1142,7 +1214,6 @@ window.addEventListener('load',()=>{
     r.addEventListener('change',()=>{ startLevel=parseInt(r.value); });
   });
 
-  // Slett spillers Firebase-post når de forlater siden
   window.addEventListener('beforeunload', ()=>{
     if (window.roomCode && window._fbReady && window._set && window._ref && window._db) {
       window._set(window._ref(window._db,'rooms/'+window.roomCode+'/players/'+window.playerName), null);
@@ -1152,22 +1223,17 @@ window.addEventListener('load',()=>{
   window.startGame=function(){
     let room='';
     if(gameMode==='race') room=document.getElementById('roomInputRace').value.trim().toUpperCase();
-    if(gameMode==='timed'){
-      room=document.getElementById('roomInputTimed').value.trim().toUpperCase();
-      timedMinutes=parseInt(document.getElementById('timedMinutes').value)||3;
-    }
+    if(gameMode==='solo') timedMinutes=parseInt(document.getElementById('timedMinutes').value)||5;
 
-    window.roomCode = room||null;
+    window.roomCode=room||null;
     document.getElementById('startScreen').style.display='none';
     document.getElementById('headerName').textContent=window.playerName;
 
-    if(room && window._fbReady){
-      window._fbInit(room);
-    } else if(gameMode==='solo'){
-      window.syncScore=(s)=>updateSoloScore();
-      window.syncIncident=()=>{};
+    if(room){
+      const waitFb=()=>{ if(window._fbReady){window._fbInit(room);}else{setTimeout(waitFb,50);} };
+      waitFb();
     } else {
-      window.syncScore=()=>{};
+      window.syncScore=gameMode==='solo'?(s)=>updateSoloScore():()=>{};
       window.syncIncident=()=>{};
     }
     window._startSession();
