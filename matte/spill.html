@@ -717,11 +717,6 @@ function renderDropZone(side, container){
 function renderBank(){
   const c=document.getElementById('bankBlocks'); c.innerHTML='';
   bankItems.forEach((item,idx)=>{
-    if(idx>0){
-      const plus=document.createElement('span');
-      plus.className='block-plus'; plus.textContent='+';
-      c.appendChild(plus);
-    }
     c.appendChild(makeBlockEl(item,'bank'));
   });
 }
