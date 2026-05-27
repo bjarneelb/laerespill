@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koordinatslag</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f1e;
+  --panel: #0d1628;
+  --border: #1a3a5c;
+  --accent: #00d4ff;
+  --green: #00ff88;
+  --red: #ff3344;
+  --yellow: #ffd700;
+  --muted: #4a6a8a;
+  --text: #c8e0f0;
+  --hit: #ff4422;
+  --miss: #2288ff;
+  --ship: #3a7a4a;
+  --ship-sunk: #1a3a2a;
+  --font-mono: 'Share Tech Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  width: 100%; background: #060c18;
+  border-bottom: 2px solid var(--accent);
+  padding: 10px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 0 20px rgba(0,212,255,0.2);
+}
+.header-title {
+  font-family: var(--font-mono);
+  font-size: 1.3rem; color: var(--accent);
+  letter-spacing: 3px;
+  text-shadow: 0 0 10px rgba(0,212,255,0.5);
+}
+.header-status {
+  font-family: var(--font-mono);
+  font-size: 0.85rem; color: var(--green);
+  padding: 4px 12px;
+  border: 1px solid var(--green);
+  border-radius: 4px;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+.btn-menu {
+  font-family: var(--font-mono);
+  font-size: 0.75rem; color: var(--muted);
+  padding: 4px 12px;
+  border: 1px solid var(--muted);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s;
+}
+.btn-menu:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── OVERLAY SCREENS ── */
+.overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(6,12,24,0.97);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.screen-card {
+  background: var(--panel);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 36px 40px;
+  width: 480px;
+  box-shadow: 0 0 40px rgba(0,212,255,0.15);
+  text-align: center;
+}
+.screen-card h1 {
+  font-family: var(--font-mono);
+  font-size: 1.8rem; color: var(--accent);
+  letter-spacing: 3px; margin-bottom: 8px;
+}
+.screen-card p { color: var(--muted); font-size: 0.88rem; margin-bottom: 20px; }
+.screen-name { color: var(--green); font-weight: 800; font-size: 1rem; margin-bottom: 20px; }
+
+/* Inputs */
+.field-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; text-align: left; }
+.field-label { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.field-input {
+  width: 100%; padding: 10px 14px;
+  background: #060c18; border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text);
+  font-family: var(--font-mono); font-size: 1rem;
+  outline: none; text-transform: uppercase; letter-spacing: 2px; text-align: center;
+  transition: border-color 0.2s;
+}
+.field-input:focus { border-color: var(--accent); }
+.field-row { display: flex; gap: 8px; }
+.field-row .field-input { flex: 1; }
+
+.btn-primary {
+  width: 100%; padding: 12px;
+  background: transparent; border: 2px solid var(--accent);
+  border-radius: 6px; color: var(--accent);
+  font-family: var(--font-mono); font-size: 0.95rem;
+  letter-spacing: 2px; cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  margin-top: 4px;
+}
+.btn-primary:hover {
+  background: rgba(0,212,255,0.1);
+  box-shadow: 0 0 20px rgba(0,212,255,0.3);
+}
+.btn-secondary {
+  width: 100%; padding: 10px;
+  background: transparent; border: 1px solid var(--muted);
+  border-radius: 6px; color: var(--muted);
+  font-family: var(--font-mono); font-size: 0.85rem;
+  cursor: pointer; margin-top: 8px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.btn-secondary:hover { color: var(--text); border-color: var(--text); }
+
+/* ── PLACEMENT SCREEN ── */
+.placement-screen {
+  width: 100%; max-width: 1100px;
+  padding: 16px;
+  display: flex; gap: 20px; align-items: flex-start;
+}
+.placement-left { flex: 1; }
+.placement-right { width: 320px; flex-shrink: 0; }
+
+.ship-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.ship-row {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.ship-row.placed { border-color: var(--green); }
+.ship-row.error  { border-color: var(--red); }
+.ship-name { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); margin-bottom: 6px; }
+.ship-len  { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; }
+.ship-inputs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.coord-input {
+  width: 52px; padding: 6px 8px;
+  background: #060c18; border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text);
+  font-family: var(--font-mono); font-size: 0.88rem;
+  text-align: center; outline: none;
+}
+.coord-input:focus { border-color: var(--accent); }
+.ship-sep { color: var(--muted); font-size: 0.8rem; }
+.ship-status { font-size: 0.72rem; margin-top: 4px; min-height: 16px; }
+.ship-status.ok  { color: var(--green); }
+.ship-status.err { color: var(--red); }
+
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+/* ── GAME SCREEN ── */
+.game-screen {
+  width: 100%; max-width: 1200px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.boards-row { display: flex; gap: 16px; align-items: flex-start; }
+.board-wrap { flex: 1; }
+.board-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 6px; text-align: center;
+}
+.board-label span { color: var(--accent); }
+
+/* ── SVG GRID ── */
+.grid-svg { width: 100%; aspect-ratio: 1; display: block; }
+
+/* ── SHOT INPUT ── */
+.shot-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+}
+.shot-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.shot-field { display: flex; flex-direction: column; gap: 4px; }
+.shot-label { font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); letter-spacing: 1px; }
+.shot-input {
+  width: 72px; padding: 8px 10px;
+  background: #060c18; border: 1px solid var(--border);
+  border-radius: 6px; color: var(--accent);
+  font-family: var(--font-mono); font-size: 1.1rem;
+  text-align: center; outline: none;
+}
+.shot-input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(0,212,255,0.2); }
+.btn-fire {
+  padding: 8px 24px;
+  background: var(--red); border: none;
+  border-radius: 6px; color: white;
+  font-family: var(--font-mono); font-size: 0.9rem;
+  letter-spacing: 2px; cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.1s;
+  align-self: flex-end;
+}
+.btn-fire:hover { box-shadow: 0 0 20px rgba(255,51,68,0.5); transform: translateY(-1px); }
+.btn-fire:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── STATUS BAR ── */
+.status-bar {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.status-msg {
+  font-family: var(--font-mono);
+  font-size: 0.88rem; color: var(--green);
+  flex: 1;
+}
+.status-ships { display: flex; gap: 8px; flex-wrap: wrap; }
+.ship-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem; padding: 2px 8px;
+  border-radius: 3px; border: 1px solid;
+}
+.ship-badge.alive { border-color: var(--green); color: var(--green); }
+.ship-badge.sunk  { border-color: var(--muted); color: var(--muted); text-decoration: line-through; }
+
+/* ── WIN OVERLAY ── */
+#winOverlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(6,12,24,0.95);
+  display: none; align-items: center; justify-content: center;
+}
+#winOverlay.show { display: flex; }
+.win-card {
+  text-align: center;
+  animation: popIn 0.6s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+.win-trophy { font-size: 5rem; margin-bottom: 12px; }
+.win-title { font-family: var(--font-mono); font-size: 2.5rem; color: var(--yellow); letter-spacing: 4px; margin-bottom: 8px; }
+.win-sub   { font-size: 1rem; color: var(--muted); margin-bottom: 24px; }
+
+/* ── WAITING ── */
+.waiting { text-align: center; padding: 40px; }
+.waiting-icon { font-size: 3rem; animation: pulse 1.5s infinite; margin-bottom: 12px; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.waiting p { font-family: var(--font-mono); color: var(--muted); font-size: 0.9rem; }
+
+/* ── SINKING ANIMATION ── */
+@keyframes sinkAnim {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  60%  { transform: translateY(8px) rotate(-8deg); opacity: 0.7; }
+  100% { transform: translateY(18px) rotate(-15deg); opacity: 0.4; }
+}
+.sinking { animation: sinkAnim 1.5s ease-in forwards; }
+
+@keyframes ripple {
+  0%   { r: 4; opacity: 0.9; }
+  100% { r: 22; opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- WIN OVERLAY -->
+<div id="winOverlay">
+  <div class="win-card">
+    <div class="win-trophy">🏆</div>
+    <div class="win-title" id="winTitle">SEIER!</div>
+    <div class="win-sub"  id="winSub">Du senket alle motstanderens skip!</div>
+    <button class="btn-primary" style="width:200px;margin:0 auto" onclick="location.reload()">🔄 Spill igjen</button>
+    <a href="/ligningsvekt/" class="btn-secondary" style="display:block;margin-top:8px;text-align:center;text-decoration:none;padding:10px;border:1px solid var(--muted);border-radius:6px;color:var(--muted);font-family:var(--font-mono);font-size:0.85rem">← Tilbake til meny</a>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">⚓ KOORDINATSLAG</div>
+  <div class="header-right">
+    <div class="header-status" id="headerStatus">VENTER</div>
+    <a class="btn-menu" href="/ligningsvekt/">← MENY</a>
+  </div>
+</div>
+
+<!-- LOBBY SCREEN -->
+<div class="overlay" id="lobbyScreen">
+  <div class="screen-card">
+    <h1>⚓ KOORDINATSLAG</h1>
+    <p>Senk motstanderens flåte ved å skyte på koordinater!</p>
+    <div class="field-group">
+      <div class="field-label">Ditt navn</div>
+      <input class="field-input" id="playerNameInput" placeholder="KAPTEIN..." maxlength="16">
+    </div>
+    <button class="btn-primary" onclick="createRoom()">🚀 OPPRETT ROM</button>
+    <div style="margin: 16px 0; color: var(--muted); font-size: 0.8rem; font-family: var(--font-mono)">— ELLER —</div>
+    <div class="field-group">
+      <div class="field-label">Romkode</div>
+      <input class="field-input" id="roomCodeInput" placeholder="ROMKODE" maxlength="6">
+    </div>
+    <button class="btn-primary" onclick="joinRoom()">⚓ KOBLE TIL ROM</button>
+    <div id="lobbyError" style="color:var(--red);font-size:0.8rem;margin-top:10px;font-family:var(--font-mono)"></div>
+  </div>
+</div>
+
+<!-- WAITING FOR OPPONENT -->
+<div class="overlay" id="waitingScreen" style="display:none">
+  <div class="screen-card">
+    <div class="waiting">
+      <div class="waiting-icon">📡</div>
+      <h1 style="margin-bottom:8px">ROM: <span id="displayRoomCode" style="color:var(--yellow)"></span></h1>
+      <p style="margin-bottom:20px">Del romkoden med motstanderen din</p>
+      <p id="waitingMsg">Venter på motstander...</p>
+    </div>
+  </div>
+</div>
+
+<!-- PLACEMENT SCREEN -->
+<div id="placementScreen" style="display:none">
+  <div class="placement-screen">
+    <div class="placement-left">
+      <div class="section-title">🗺️ Ditt koordinatsystem — plasser flåten din</div>
+      <svg class="grid-svg" id="myPlacementGrid" viewBox="-20 -20 440 440"></svg>
+    </div>
+    <div class="placement-right">
+      <div class="section-title">⚓ Skip</div>
+      <div class="ship-list" id="shipList"></div>
+      <button class="btn-primary" id="readyBtn" onclick="confirmPlacement()" disabled>✅ KLAR TIL KAMP!</button>
+      <div id="placementMsg" style="color:var(--muted);font-size:0.78rem;font-family:var(--font-mono);margin-top:10px;text-align:center"></div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="gameScreen" style="display:none">
+  <div class="game-screen">
+    <div class="boards-row">
+      <div class="board-wrap">
+        <div class="board-label">🛡️ MITT BRETT — <span id="myNameLabel">–</span></div>
+        <svg class="grid-svg" id="myGrid" viewBox="-20 -20 440 440"></svg>
+      </div>
+      <div class="board-wrap">
+        <div class="board-label">🎯 FIENDTLIG FARVANN — <span id="oppNameLabel">–</span></div>
+        <svg class="grid-svg" id="oppGrid" viewBox="-20 -20 440 440"></svg>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="status-bar">
+      <div class="status-msg" id="statusMsg">–</div>
+      <div class="status-ships" id="myFleet"></div>
+    </div>
+
+    <!-- SHOT INPUT -->
+    <div class="shot-panel" id="shotPanel">
+      <div class="section-title">🎯 Skyt på koordinat</div>
+      <div class="shot-row">
+        <div class="shot-field">
+          <div class="shot-label">X (−5 til 5)</div>
+          <input class="shot-input" id="shotX" type="number" min="-5" max="5" placeholder="x">
+        </div>
+        <div class="shot-field">
+          <div class="shot-label">Y (−5 til 5)</div>
+          <input class="shot-input" id="shotY" type="number" min="-5" max="5" placeholder="y">
+        </div>
+        <button class="btn-fire" id="fireBtn" onclick="fireShot()" disabled>🔥 FYRE!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, set, update, onValue, remove, get } from "./js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set;
+  window._update=update; window._onValue=onValue;
+  window._remove=remove; window._get=get;
+  window._fbReady=true;
+</script>
+
+<script>
+// ── CONSTANTS ──
+const GRID_MIN=-5, GRID_MAX=5, GRID_SIZE=GRID_MAX-GRID_MIN+1; // 11
+const CELL=36; // pixels per cell in SVG
+const SHIPS=[
+  {name:'Hangarskip', len:5, short:'H'},
+  {name:'Slagskip',   len:4, short:'S'},
+  {name:'Krysser',    len:3, short:'K'},
+  {name:'Ubåt',       len:3, short:'U'},
+  {name:'Destroyer',  len:2, short:'D'},
+];
+const TOTAL_COORDS=SHIPS.reduce((t,s)=>t+s.len,0); // 17
+
+// ── STATE ──
+let myName='', roomCode='', mySlot=''; // 'p1' or 'p2'
+let myShips=[]; // [{name,len,coords:[{x,y}]}, ...]
+let placedShips={}; // {shipIdx: [{x,y},...]}
+let myHits=[];   // coords opp has shot at me
+let oppHits=[];  // coords I have shot at opp
+let mySunk=[];   // ship indices opp has sunk
+let oppSunk=[];  // ship indices I have sunk (opponent's ships)
+let myTurn=false;
+let gameOver=false;
+let animatingCells=new Set(); // for ripple animation
+
+// ── PLAYER NAME ──
+const adj=['Kaptein','Admiral','Kommandør','Løytnant','Vise-Admiral'];
+const ani=['Hauk','Ulv','Bjørn','Rev','Ørn'];
+window.myPlayerName = adj[Math.floor(Math.random()*adj.length)]+' '+ani[Math.floor(Math.random()*ani.length)];
+document.getElementById('playerNameInput').placeholder = window.myPlayerName;
+
+// ── GRID HELPERS ──
+function cellToSVG(x,y){ return {sx:(x-GRID_MIN)*CELL, sy:(GRID_MAX-y)*CELL}; }
+
+function drawGrid(svgId, opts={}) {
+  const svg=document.getElementById(svgId);
+  svg.innerHTML='';
+  const W=GRID_SIZE*CELL, H=GRID_SIZE*CELL;
+
+  // Ocean background
+  const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bg.setAttribute('x',0); bg.setAttribute('y',0);
+  bg.setAttribute('width',W); bg.setAttribute('height',H);
+  bg.setAttribute('fill','#05101e'); svg.appendChild(bg);
+
+  // Grid lines
+  for(let i=0;i<=GRID_SIZE;i++){
+    const xl=document.createElementNS('http://www.w3.org/2000/svg','line');
+    xl.setAttribute('x1',i*CELL); xl.setAttribute('y1',0);
+    xl.setAttribute('x2',i*CELL); xl.setAttribute('y2',H);
+    xl.setAttribute('stroke','#0a2a4a'); xl.setAttribute('stroke-width','1');
+    svg.appendChild(xl);
+    const yl=document.createElementNS('http://www.w3.org/2000/svg','line');
+    yl.setAttribute('x1',0); yl.setAttribute('y1',i*CELL);
+    yl.setAttribute('x2',W); yl.setAttribute('y2',i*CELL);
+    yl.setAttribute('stroke','#0a2a4a'); yl.setAttribute('stroke-width','1');
+    svg.appendChild(yl);
+  }
+
+  // Axes (thicker)
+  const ax=document.createElementNS('http://www.w3.org/2000/svg','line');
+  const ay=document.createElementNS('http://www.w3.org/2000/svg','line');
+  const ox=(0-GRID_MIN)*CELL, oy=(GRID_MAX-0)*CELL;
+  ax.setAttribute('x1',0); ax.setAttribute('y1',oy); ax.setAttribute('x2',W); ax.setAttribute('y2',oy);
+  ax.setAttribute('stroke','#1a4a7a'); ax.setAttribute('stroke-width','2'); svg.appendChild(ax);
+  ay.setAttribute('x1',ox); ay.setAttribute('y1',0); ay.setAttribute('x2',ox); ay.setAttribute('y2',H);
+  ay.setAttribute('stroke','#1a4a7a'); ay.setAttribute('stroke-width','2'); svg.appendChild(ay);
+
+  // Labels
+  for(let v=GRID_MIN;v<=GRID_MAX;v++){
+    // X-axis labels
+    const tx=document.createElementNS('http://www.w3.org/2000/svg','text');
+    const {sx}=cellToSVG(v,0);
+    tx.setAttribute('x',sx+CELL/2); tx.setAttribute('y',-6);
+    tx.setAttribute('text-anchor','middle'); tx.setAttribute('fill','#2a5a8a');
+    tx.setAttribute('font-size','10'); tx.setAttribute('font-family','Share Tech Mono,monospace');
+    tx.textContent=v; svg.appendChild(tx);
+    // Y-axis labels
+    const ty=document.createElementNS('http://www.w3.org/2000/svg','text');
+    const {sy}=cellToSVG(0,v);
+    ty.setAttribute('x',-6); ty.setAttribute('y',sy+CELL/2+4);
+    ty.setAttribute('text-anchor','end'); ty.setAttribute('fill','#2a5a8a');
+    ty.setAttribute('font-size','10'); ty.setAttribute('font-family','Share Tech Mono,monospace');
+    ty.textContent=v; svg.appendChild(ty);
+  }
+}
+
+function drawShipOnGrid(svgId, coords, sunk=false, id='') {
+  const svg=document.getElementById(svgId);
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  if(id) g.setAttribute('id',id);
+  coords.forEach(({x,y})=>{
+    const {sx,sy}=cellToSVG(x,y);
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',sx+2); r.setAttribute('y',sy+2);
+    r.setAttribute('width',CELL-4); r.setAttribute('height',CELL-4);
+    r.setAttribute('rx','3');
+    r.setAttribute('fill', sunk ? '#1a3a2a' : '#1a4a2a');
+    r.setAttribute('stroke', sunk ? '#0a2a1a' : '#2a8a4a');
+    r.setAttribute('stroke-width','1.5');
+    g.appendChild(r);
+    // Ship symbol in center cell
+    const cx=sx+CELL/2, cy=sy+CELL/2;
+    if(!sunk){
+      const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx',cx); dot.setAttribute('cy',cy); dot.setAttribute('r','3');
+      dot.setAttribute('fill','#4aaa6a'); g.appendChild(dot);
+    }
+  });
+  svg.appendChild(g);
+}
+
+function drawHit(svgId,x,y,animate=false){
+  const svg=document.getElementById(svgId);
+  const {sx,sy}=cellToSVG(x,y);
+  const cx=sx+CELL/2, cy=sy+CELL/2;
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+
+  if(animate){
+    // Explosion burst
+    for(let i=0;i<8;i++){
+      const angle=i*Math.PI/4;
+      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',cx); line.setAttribute('y1',cy);
+      line.setAttribute('x2',cx+Math.cos(angle)*14); line.setAttribute('y2',cy+Math.sin(angle)*14);
+      line.setAttribute('stroke','#ff8800'); line.setAttribute('stroke-width','2');
+      line.style.animation=`fadeOut 0.8s ease-out forwards`;
+      g.appendChild(line);
+    }
+  }
+
+  // Static hit icon — explosion
+  const c1=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c1.setAttribute('cx',cx); c1.setAttribute('cy',cy); c1.setAttribute('r','9');
+  c1.setAttribute('fill','#cc2200'); c1.setAttribute('opacity','0.85');
+  g.appendChild(c1);
+  const sym=document.createElementNS('http://www.w3.org/2000/svg','text');
+  sym.setAttribute('x',cx); sym.setAttribute('y',cy+5);
+  sym.setAttribute('text-anchor','middle'); sym.setAttribute('fill','#ffaa00');
+  sym.setAttribute('font-size','12'); sym.textContent='✕';
+  g.appendChild(sym);
+  svg.appendChild(g);
+}
+
+function drawMiss(svgId,x,y,animate=false){
+  const svg=document.getElementById(svgId);
+  const {sx,sy}=cellToSVG(x,y);
+  const cx=sx+CELL/2, cy=sy+CELL/2;
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+
+  if(animate){
+    // Ripple rings
+    for(let i=0;i<3;i++){
+      const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      ring.setAttribute('cx',cx); ring.setAttribute('cy',cy); ring.setAttribute('r','4');
+      ring.setAttribute('fill','none'); ring.setAttribute('stroke','#2288ff');
+      ring.setAttribute('stroke-width','2');
+      ring.style.animation=`rippleOut 0.8s ease-out ${i*0.2}s forwards`;
+      g.appendChild(ring);
+    }
+  }
+
+  // Static miss icon — small concentric rings
+  [10,7,4].forEach((r,i)=>{
+    const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    ring.setAttribute('cx',cx); ring.setAttribute('cy',cy); ring.setAttribute('r',r);
+    ring.setAttribute('fill','none');
+    ring.setAttribute('stroke',`rgba(34,136,255,${0.3+i*0.25})`);
+    ring.setAttribute('stroke-width','1.5');
+    g.appendChild(ring);
+  });
+  svg.appendChild(g);
+}
+
+function sinkShipAnimation(svgId, coords) {
+  const svg=document.getElementById(svgId);
+  // Find and animate ship group, then redraw as sunk
+  const g=svg.querySelector('[data-ship]');
+
+  // Draw sunk ship
+  coords.forEach(({x,y})=>{
+    const {sx,sy}=cellToSVG(x,y);
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',sx+2); r.setAttribute('y',sy+2);
+    r.setAttribute('width',CELL-4); r.setAttribute('height',CELL-4);
+    r.setAttribute('rx','3'); r.setAttribute('fill','#0a1a12');
+    r.setAttribute('stroke','#1a4a2a'); r.setAttribute('stroke-width','1');
+    r.style.animation='sinkPulse 1s ease-out 3 forwards';
+    svg.appendChild(r);
+  });
+}
+
+// CSS for animations (injected)
+const style=document.createElement('style');
+style.textContent=`
+@keyframes fadeOut { from{opacity:1} to{opacity:0} }
+@keyframes rippleOut { 0%{r:4;opacity:0.9} 100%{r:20;opacity:0} }
+@keyframes sinkPulse { 0%,100%{opacity:0.4} 50%{opacity:0.9;fill:#1a3a22} }
+`;
+document.head.appendChild(style);
+
+// ── SHIP PLACEMENT ──
+function buildShipCoords(x1,y1,x2,y2,len) {
+  const dx=x2-x1, dy=y2-y1;
+  const adx=Math.abs(dx), ady=Math.abs(dy);
+  // Validate direction
+  if(dx!==0&&dy!==0&&adx!==ady) return {err:'Skipet må stå vannrett, loddrett eller diagonalt (45°)'};
+  // Validate length
+  const steps=Math.max(adx,ady)+1;
+  if(steps!==len) return {err:`Skipet må ha nøyaktig ${len} koordinater (du oppga ${steps})`};
+  // Within bounds
+  const sx=dx===0?0:dx/adx, sy=dy===0?0:dy/ady;
+  const coords=[];
+  for(let i=0;i<len;i++) coords.push({x:x1+sx*i, y:y1+sy*i});
+  for(const c of coords){
+    if(c.x<GRID_MIN||c.x>GRID_MAX||c.y<GRID_MIN||c.y>GRID_MAX)
+      return {err:`Koordinat (${c.x},${c.y}) er utenfor brettet`};
+  }
+  return {coords};
+}
+
+function coordsOverlapOrTouch(coordsA, coordsB){
+  for(const a of coordsA){
+    for(const b of coordsB){
+      if(Math.abs(a.x-b.x)<=1&&Math.abs(a.y-b.y)<=1) return true;
+    }
+  }
+  return false;
+}
+
+function buildPlacementUI(){
+  const list=document.getElementById('shipList');
+  list.innerHTML='';
+  SHIPS.forEach((ship,idx)=>{
+    const row=document.createElement('div');
+    row.className='ship-row';
+    row.id='shiprow-'+idx;
+    row.innerHTML=`
+      <div class="ship-name">${ship.name} (${ship.short})</div>
+      <div class="ship-len">Lengde: ${ship.len} koordinater</div>
+      <div class="ship-inputs">
+        <span class="ship-sep">Fra</span>
+        <input class="coord-input" id="s${idx}x1" placeholder="x" type="number" min="-5" max="5">
+        <input class="coord-input" id="s${idx}y1" placeholder="y" type="number" min="-5" max="5">
+        <span class="ship-sep">til</span>
+        <input class="coord-input" id="s${idx}x2" placeholder="x" type="number" min="-5" max="5">
+        <input class="coord-input" id="s${idx}y2" placeholder="y" type="number" min="-5" max="5">
+        <button onclick="placeShip(${idx})" style="padding:5px 10px;background:transparent;border:1px solid var(--accent);border-radius:4px;color:var(--accent);font-family:var(--font-mono);font-size:0.75rem;cursor:pointer">OK</button>
+      </div>
+      <div class="ship-status" id="shipstatus-${idx}"></div>
+    `;
+    list.appendChild(row);
+    // Place on enter
+    ['x1','y1','x2','y2'].forEach(f=>{
+      document.getElementById(`s${idx}${f}`).addEventListener('keydown',e=>{ if(e.key==='Enter') placeShip(idx); });
+    });
+  });
+}
+
+function placeShip(idx){
+  const ship=SHIPS[idx];
+  const x1=parseInt(document.getElementById(`s${idx}x1`).value);
+  const y1=parseInt(document.getElementById(`s${idx}y1`).value);
+  const x2=parseInt(document.getElementById(`s${idx}x2`).value);
+  const y2=parseInt(document.getElementById(`s${idx}y2`).value);
+  const statusEl=document.getElementById('shipstatus-'+idx);
+  const rowEl=document.getElementById('shiprow-'+idx);
+
+  if([x1,y1,x2,y2].some(v=>isNaN(v))){
+    statusEl.textContent='Fyll inn alle koordinater'; statusEl.className='ship-status err';
+    rowEl.className='ship-row error'; return;
+  }
+
+  const result=buildShipCoords(x1,y1,x2,y2,ship.len);
+  if(result.err){ statusEl.textContent=result.err; statusEl.className='ship-status err'; rowEl.className='ship-row error'; return; }
+
+  // Check overlap/touch with already placed ships
+  for(const [i,coords] of Object.entries(placedShips)){
+    if(parseInt(i)===idx) continue;
+    if(coordsOverlapOrTouch(result.coords,coords)){
+      statusEl.textContent='Overlapper eller berører et annet skip!';
+      statusEl.className='ship-status err'; rowEl.className='ship-row error'; return;
+    }
+  }
+
+  placedShips[idx]=result.coords;
+  statusEl.textContent='✓ Plassert!'; statusEl.className='ship-status ok'; rowEl.className='ship-row placed';
+
+  // Redraw placement grid
+  drawGrid('myPlacementGrid');
+  Object.entries(placedShips).forEach(([i,coords])=> drawShipOnGrid('myPlacementGrid',coords,false));
+
+  // Check if all placed
+  if(Object.keys(placedShips).length===SHIPS.length){
+    document.getElementById('readyBtn').disabled=false;
+    document.getElementById('placementMsg').textContent='Alle skip plassert! Trykk KLAR når du er fornøyd.';
+    document.getElementById('placementMsg').style.color='var(--green)';
+  }
+}
+
+// ── FIREBASE HELPERS ──
+function waitFb(cb){ if(window._fbReady){cb();}else{setTimeout(()=>waitFb(cb),50);} }
+
+function createRoom(){
+  const name=(document.getElementById('playerNameInput').value.trim()||window.myPlayerName).toUpperCase();
+  myName=name;
+  roomCode=Math.random().toString(36).slice(2,6).toUpperCase();
+  mySlot='p1';
+  waitFb(()=>{
+    window._set(window._ref(window._db,'rooms/'+roomCode),{
+      p1:{name,ready:false,ships:'',hits:''},
+      p2:{name:'',ready:false,ships:'',hits:''},
+      turn:'p1', started:false
+    });
+    document.getElementById('displayRoomCode').textContent=roomCode;
+    document.getElementById('lobbyScreen').style.display='none';
+    document.getElementById('waitingScreen').style.display='flex';
+    listenRoom();
+  });
+}
+
+function joinRoom(){
+  const name=(document.getElementById('playerNameInput').value.trim()||window.myPlayerName).toUpperCase();
+  const code=document.getElementById('roomCodeInput').value.trim().toUpperCase();
+  if(!code){ setLobbyError('Skriv inn romkode'); return; }
+  myName=name; roomCode=code; mySlot='p2';
+  waitFb(()=>{
+    window._get(window._ref(window._db,'rooms/'+code)).then(snap=>{
+      const d=snap.val();
+      if(!d){ setLobbyError('Rommet finnes ikke'); return; }
+      if(d.p2&&d.p2.name){ setLobbyError('Rommet er fullt'); return; }
+      window._update(window._ref(window._db,'rooms/'+code+'/p2'),{name,ready:false,ships:'',hits:''});
+      document.getElementById('displayRoomCode').textContent=code;
+      document.getElementById('lobbyScreen').style.display='none';
+      document.getElementById('waitingScreen').style.display='flex';
+      listenRoom();
+    });
+  });
+}
+
+function setLobbyError(msg){ document.getElementById('lobbyError').textContent=msg; }
+
+function listenRoom(){
+  window._onValue(window._ref(window._db,'rooms/'+roomCode), snap=>{
+    const d=snap.val(); if(!d) return;
+    const opp=mySlot==='p1'?'p2':'p1';
+
+    // Opponent joined
+    if(d.p2&&d.p2.name&&document.getElementById('waitingScreen').style.display!=='none'){
+      document.getElementById('waitingMsg').textContent='Motstander: '+d[opp].name+' — plasser skipene!';
+      startPlacement(d[opp].name);
+    }
+
+    // Both ready — start game
+    if(d.p1.ready&&d.p2&&d.p2.ready&&!d.started){
+      if(mySlot==='p1') window._update(window._ref(window._db,'rooms/'+roomCode),{started:true});
+    }
+    if(d.started){
+      startGame(d);
+    }
+
+    // Game updates
+    if(d.started){
+      syncGame(d);
+    }
+  });
+}
+
+function startPlacement(oppName){
+  document.getElementById('waitingScreen').style.display='none';
+  document.getElementById('placementScreen').style.display='block';
+  document.getElementById('myNameLabel').textContent=myName;
+  document.getElementById('oppNameLabel').textContent=oppName;
+  drawGrid('myPlacementGrid');
+  buildPlacementUI();
+}
+
+function confirmPlacement(){
+  if(Object.keys(placedShips).length<SHIPS.length){ return; }
+  myShips=SHIPS.map((s,i)=>({...s, coords:placedShips[i], hits:[]}));
+  const shipsStr=JSON.stringify(Object.values(placedShips));
+  window._update(window._ref(window._db,'rooms/'+roomCode+'/'+mySlot),{ready:true,ships:shipsStr});
+  document.getElementById('readyBtn').disabled=true;
+  document.getElementById('readyBtn').textContent='⏳ Venter på motstander...';
+  document.getElementById('placementMsg').textContent='Venter på at motstanderen plasserer skipene sine...';
+}
+
+let gameStarted=false;
+function startGame(d){
+  if(gameStarted) return; gameStarted=true;
+  const opp=mySlot==='p1'?'p2':'p1';
+  document.getElementById('placementScreen').style.display='none';
+  document.getElementById('gameScreen').style.display='block';
+  document.getElementById('headerStatus').textContent='I KAMP';
+  drawGrid('myGrid'); drawGrid('oppGrid');
+  // Draw my ships
+  myShips.forEach((ship,i)=> drawShipOnGrid('myGrid',ship.coords,false,'ship-'+i));
+  updateFleetDisplay();
+  syncGame(d);
+}
+
+let lastHitsLen=0, lastMyHitsLen=0;
+function syncGame(d){
+  if(gameOver) return;
+  const opp=mySlot==='p1'?'p2':'p1';
+  const oppData=d[opp];
+  const myData=d[mySlot];
+
+  // Opponent's shots at me
+  const oppHitsRaw=oppData.hits?JSON.parse(oppData.hits):[];
+  if(oppHitsRaw.length>myHits.length){
+    const newShots=oppHitsRaw.slice(myHits.length);
+    newShots.forEach(shot=>{
+      myHits.push(shot);
+      const hit=myShips.some(s=>s.coords.some(c=>c.x===shot.x&&c.y===shot.y));
+      drawHit('myGrid',shot.x,shot.y,hit);
+      if(!hit) drawMiss('myGrid',shot.x,shot.y,true);
+      // Check sunk
+      myShips.forEach((ship,si)=>{
+        if(mySunk.includes(si)) return;
+        const allHit=ship.coords.every(c=>myHits.some(h=>h.x===c.x&&h.y===c.y));
+        if(allHit){ mySunk.push(si); sinkShipAnimation('myGrid',ship.coords); }
+      });
+    });
+    updateFleetDisplay();
+  }
+
+  // My shots at opponent (recorded in my slot's hits)
+  const myHitsRaw=myData.hits?JSON.parse(myData.hits):[];
+  if(myHitsRaw.length>oppHits.length){
+    const newShots=myHitsRaw.slice(oppHits.length);
+    newShots.forEach(shot=>{
+      oppHits.push(shot);
+      if(shot.hit){
+        drawHit('oppGrid',shot.x,shot.y,true);
+        if(shot.sunkShip){
+          setStatus(`💥 SENKET! ${shot.sunkShip}!`);
+          animateSunk('oppGrid',shot.sunkCoords||[]);
+        } else {
+          setStatus(`✅ TREFF på (${shot.x},${shot.y})!`);
+        }
+      } else {
+        drawMiss('oppGrid',shot.x,shot.y,true);
+        setStatus(`💧 Bom på (${shot.x},${shot.y})`);
+      }
+    });
+  }
+
+  // Turn
+  myTurn=d.turn===mySlot;
+  document.getElementById('fireBtn').disabled=!myTurn||gameOver;
+  if(myTurn) setStatus('🎯 Din tur — velg koordinat og skyt!');
+  else setStatus('⏳ Venter på motstanderens skudd...');
+
+  // Check win
+  if(mySunk.length===SHIPS.length) showResult(false);
+  const oppSunkCount=oppHits.filter(h=>h.sunkShip).reduce((s,h)=>{
+    const n=h.sunkShip;
+    return s.includes(n)?s:[...s,n];
+  },[]).length;
+  if(oppSunkCount===SHIPS.length) showResult(true);
+}
+
+function animateSunk(svgId, coords){
+  coords.forEach(({x,y})=>{
+    const {sx,sy}=cellToSVG(x,y);
+    const svg=document.getElementById(svgId);
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',sx+2); r.setAttribute('y',sy+2);
+    r.setAttribute('width',CELL-4); r.setAttribute('height',CELL-4);
+    r.setAttribute('rx','3'); r.setAttribute('fill','#0a1a12');
+    r.setAttribute('stroke','#1a3a2a'); r.setAttribute('stroke-width','1');
+    r.style.animation='sinkPulse 1s ease-out 3 forwards';
+    svg.appendChild(r);
+  });
+}
+
+function fireShot(){
+  const x=parseInt(document.getElementById('shotX').value);
+  const y=parseInt(document.getElementById('shotY').value);
+  if(isNaN(x)||isNaN(y)){ setStatus('⚠️ Skriv inn gyldige koordinater'); return; }
+  if(x<GRID_MIN||x>GRID_MAX||y<GRID_MIN||y>GRID_MAX){ setStatus('⚠️ Koordinater må være mellom -5 og 5'); return; }
+  if(oppHits.some(h=>h.x===x&&h.y===y)){ setStatus('⚠️ Du har allerede skutt der!'); return; }
+
+  // Check if hit on opp's ships
+  const opp=mySlot==='p1'?'p2':'p1';
+  window._get(window._ref(window._db,'rooms/'+roomCode+'/'+opp+'/ships')).then(snap=>{
+    const oppShipsRaw=JSON.parse(snap.val()||'[]');
+    const oppShipsCoords=oppShipsRaw.map((c,i)=>({coords:c,ship:SHIPS[i]}));
+    let hit=false, sunkShip=null, sunkCoords=null;
+
+    for(let si=0;si<oppShipsCoords.length;si++){
+      const sc=oppShipsCoords[si];
+      if(sc.coords.some(c=>c.x===x&&c.y===y)){
+        hit=true;
+        // Check if sunk (all coords hit)
+        const allPrevHits=[...oppHits,{x,y}];
+        const allHit=sc.coords.every(c=>allPrevHits.some(h=>h.x===c.x&&h.y===c.y));
+        if(allHit){ sunkShip=SHIPS[si].name; sunkCoords=sc.coords; }
+        break;
+      }
+    }
+
+    const newHit={x,y,hit};
+    if(sunkShip){ newHit.sunkShip=sunkShip; newHit.sunkCoords=sunkCoords; }
+
+    const updatedHits=JSON.stringify([...oppHits,newHit]);
+    const nextTurn=mySlot==='p1'?'p2':'p1';
+    window._update(window._ref(window._db,'rooms/'+roomCode),{
+      [`${mySlot}/hits`]:updatedHits,
+      turn:nextTurn
+    });
+
+    document.getElementById('shotX').value='';
+    document.getElementById('shotY').value='';
+    document.getElementById('fireBtn').disabled=true;
+  });
+}
+
+function updateFleetDisplay(){
+  const el=document.getElementById('myFleet');
+  el.innerHTML='';
+  SHIPS.forEach((ship,i)=>{
+    const badge=document.createElement('div');
+    badge.className='ship-badge '+(mySunk.includes(i)?'sunk':'alive');
+    badge.textContent=ship.name;
+    el.appendChild(badge);
+  });
+}
+
+function setStatus(msg){ document.getElementById('statusMsg').textContent=msg; }
+
+function showResult(won){
+  if(gameOver) return; gameOver=true;
+  document.getElementById('fireBtn').disabled=true;
+  document.getElementById('winTitle').textContent=won?'SEIER!':'NEDERLAGET...';
+  document.getElementById('winSub').textContent=won?'Du senket alle motstanderens skip!':'Alle dine skip er senket!';
+  document.getElementById('winOverlay').classList.add('show');
+}
+
+// Cleanup on leave
+window.addEventListener('beforeunload',()=>{
+  if(roomCode&&window._fbReady) window._remove(window._ref(window._db,'rooms/'+roomCode));
+});
+</script>
+</body>
+</html>
