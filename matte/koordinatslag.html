@@ -1253,6 +1253,7 @@ function fireShot(){
   document.getElementById('shotX').value='';
   document.getElementById('shotY').value='';
   if(soloMode){ soloFire(x,y); return; }
+  if(oppHits.some(h=>h.x===x&&h.y===y)){ setStatus('⚠️ Du har allerede skutt der!'); return; }
 
   // Check if hit on opp's ships
   const opp=mySlot==='p1'?'p2':'p1';
