@@ -1343,10 +1343,8 @@ function updateFleetPanels(){
       let hitsOnShip=0;
       if(sunk){
         hitsOnShip=ship.len;
-      } else {
-        const firstUnsunkIdx=oppShipList.findIndex((_,i)=>!oppSunk.includes(i));
-        hitsOnShip=(si===firstUnsunkIdx)?Math.min(unknownHits,ship.len):0;
       }
+      // Don't show unknown hits on unsunk ships — we don't know which ship was hit
       const len=ship.len||0;
       const row=document.createElement('div');
       row.className='fleet-row'+(sunk?' sunk':'');
