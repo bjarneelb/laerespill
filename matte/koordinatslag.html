@@ -242,7 +242,49 @@ body {
 .ship-badge.alive { border-color: var(--green); color: var(--green); }
 .ship-badge.sunk  { border-color: var(--muted); color: var(--muted); text-decoration: line-through; }
 
-/* ── WIN OVERLAY ── */
+/* ── FLEET PANELS ── */
+.fleet-panel {
+  flex: 1; background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 16px;
+}
+.fleet-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 0; border-bottom: 1px solid #0a1a2a;
+  font-family: var(--font-mono); font-size: 0.8rem;
+}
+.fleet-row:last-child { border-bottom: none; }
+.fleet-row.sunk { opacity: 0.45; }
+.fleet-name { flex: 1; color: var(--text); }
+.fleet-row.sunk .fleet-name { text-decoration: line-through; color: var(--muted); }
+.fleet-hits { display: flex; gap: 3px; align-items: center; }
+.hit-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid var(--muted);
+  background: transparent;
+}
+.hit-dot.hit  { background: var(--hit); border-color: var(--hit); }
+.hit-dot.sunk { background: #333; border-color: #333; }
+.fleet-sunk-x {
+  color: var(--red); font-size: 1rem; font-weight: 900;
+  margin-left: 4px;
+}
+
+/* ── TOAST ── */
+.battle-toast {
+  position: fixed; top: 70px; left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: #0d1628; border: 2px solid var(--yellow);
+  border-radius: 8px; padding: 12px 24px;
+  font-family: var(--font-mono); font-size: 1rem;
+  color: var(--yellow); z-index: 500;
+  box-shadow: 0 0 30px rgba(255,215,0,0.3);
+  opacity: 0; transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none; white-space: nowrap;
+}
+.battle-toast.show {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
 #winOverlay {
   position: fixed; inset: 0; z-index: 2000;
   background: rgba(6,12,24,0.95);
@@ -279,6 +321,9 @@ body {
 </style>
 </head>
 <body>
+
+<!-- BATTLE TOAST -->
+<div class="battle-toast" id="battleToast"></div>
 
 <!-- WIN OVERLAY -->
 <div id="winOverlay">
@@ -367,7 +412,18 @@ body {
     <!-- STATUS -->
     <div class="status-bar">
       <div class="status-msg" id="statusMsg">–</div>
-      <div class="status-ships" id="myFleet"></div>
+    </div>
+
+    <!-- FLEET PANELS -->
+    <div style="display:flex;gap:16px">
+      <div class="fleet-panel">
+        <div class="section-title">🛡️ Min flåte</div>
+        <div id="myFleetPanel"></div>
+      </div>
+      <div class="fleet-panel">
+        <div class="section-title">🎯 Motstanderens flåte</div>
+        <div id="oppFleetPanel"></div>
+      </div>
     </div>
 
     <!-- SHOT INPUT -->
@@ -876,7 +932,7 @@ function soloStartGame(){
   drawGrid('myGrid'); drawGrid('oppGrid');
   myShips=SHIPS.map((s,i)=>({...s,coords:placedShips[i],hits:[]}));
   myShips.forEach((ship,i)=>drawShipOnGrid('myGrid',ship.coords,false,i));
-  updateFleetDisplay();
+  updateFleetPanels();
   myTurn=true;
   document.getElementById('fireBtn').disabled=false;
   setStatus('🎯 Din tur — velg koordinat og skyt!');
@@ -905,6 +961,7 @@ function soloFire(x,y){
   if(sunkIdx>=0){
     pcSunk.push(sunkIdx);
     animateSunk('oppGrid',sunkCoords);
+    showBattleToast(`💥 Du senket ${sunkShip}!`);
     setStatus(`💥 SENKET! ${sunkShip}!`);
     if(pcSunk.length===SHIPS.length){ setTimeout(()=>showResult(true),800); return; }
   } else if(hit){
@@ -945,6 +1002,7 @@ function aiTurn(){
       // Reset hunt after sink
       aiLastHits=[]; aiHuntDir=null; aiTargets=[];
       animateSunk('myGrid',sunkCoords);
+      showBattleToast(`💥 Datamaskinen senket din ${sunkName}!`);
       setStatus(`💥 Datamaskinen senket ditt ${sunkName}!`);
       updateFleetDisplay();
       if(playerSunk.length===SHIPS.length){ setTimeout(()=>showResult(false),800); return; }
@@ -1127,10 +1185,14 @@ function syncGame(d){
       myShips.forEach((ship,si)=>{
         if(mySunk.includes(si)) return;
         const allHit=ship.coords.every(c=>myHits.some(h=>h.x===c.x&&h.y===c.y));
-        if(allHit){ mySunk.push(si); sinkShipAnimation('myGrid',ship.coords); }
+        if(allHit){
+          mySunk.push(si);
+          sinkShipAnimation('myGrid',ship.coords);
+          showBattleToast(`💥 ${d[opp].name} senket din ${ship.name}!`);
+        }
       });
     });
-    updateFleetDisplay();
+    updateFleetPanels();
   }
 
   // My shots at opponent (recorded in my slot's hits)
@@ -1142,6 +1204,7 @@ function syncGame(d){
       if(shot.hit){
         drawHit('oppGrid',shot.x,shot.y,true);
         if(shot.sunkShip){
+          showBattleToast(`💥 Du senket ${shot.sunkShip}!`);
           setStatus(`💥 SENKET! ${shot.sunkShip}!`);
           animateSunk('oppGrid',shot.sunkCoords||[]);
         } else {
@@ -1152,6 +1215,7 @@ function syncGame(d){
         setStatus(`💧 Bom på (${shot.x},${shot.y})`);
       }
     });
+    updateFleetPanels();
   }
 
   // Turn
@@ -1214,16 +1278,57 @@ function fireShot(){
   });
 }
 
-function updateFleetDisplay(){
-  const el=document.getElementById('myFleet');
-  el.innerHTML='';
-  SHIPS.forEach((ship,i)=>{
-    const badge=document.createElement('div');
-    badge.className='ship-badge '+(mySunk.includes(i)?'sunk':'alive');
-    badge.textContent=ship.name;
-    el.appendChild(badge);
+// ── TOAST ──
+let toastTimer=null;
+function showBattleToast(msg){
+  const el=document.getElementById('battleToast');
+  el.textContent=msg; el.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// ── FLEET PANELS ──
+function updateFleetPanels(){
+  // My fleet — show hits received from opponent
+  const myEl=document.getElementById('myFleetPanel');
+  myEl.innerHTML='';
+  myShips.forEach((ship,si)=>{
+    const hitsOnShip=soloMode
+      ? playerHits.filter(h=>ship.coords.some(c=>c.x===h.x&&c.y===h.y)).length
+      : (myHits||[]).filter(h=>ship.coords.some(c=>c.x===h.x&&c.y===h.y)).length;
+    const sunk=soloMode?playerSunk.includes(si):mySunk.includes(si);
+    const row=document.createElement('div');
+    row.className='fleet-row'+(sunk?' sunk':'');
+    const dots=ship.coords.map((_,i)=>{
+      const hit=i<hitsOnShip;
+      return `<div class="hit-dot${hit?' hit':''}${sunk?' sunk':''}"></div>`;
+    }).join('');
+    row.innerHTML=`<span class="fleet-name">${ship.name}</span><div class="fleet-hits">${dots}${sunk?'<span class="fleet-sunk-x">✕</span>':''}</div>`;
+    myEl.appendChild(row);
+  });
+
+  // Opp fleet — show my hits on opponent
+  const oppEl=document.getElementById('oppFleetPanel');
+  oppEl.innerHTML='';
+  const oppShipList=soloMode?pcShips:SHIPS;
+  oppShipList.forEach((ship,si)=>{
+    const myHitsArr=soloMode?pcHits:oppHits;
+    const hitsOnShip=myHitsArr.filter(h=>ship.coords&&ship.coords.some(c=>c.x===h.x&&c.y===h.y)).length;
+    const sunk=soloMode?pcSunk.includes(si):oppSunk.includes(si);
+    // For multiplayer we don't know opp coords — show known hits only
+    const len=ship.len||ship.coords?.length||0;
+    const row=document.createElement('div');
+    row.className='fleet-row'+(sunk?' sunk':'');
+    let dots='';
+    for(let i=0;i<len;i++){
+      dots+=`<div class="hit-dot${i<hitsOnShip?' hit':''}${sunk?' sunk':''}"></div>`;
+    }
+    row.innerHTML=`<span class="fleet-name">${ship.name}</span><div class="fleet-hits">${dots}${sunk?'<span class="fleet-sunk-x">✕</span>':''}</div>`;
+    oppEl.appendChild(row);
   });
 }
+
+function updateFleetDisplay(){ updateFleetPanels(); }
 
 function setStatus(msg){ document.getElementById('statusMsg').textContent=msg; }
 
