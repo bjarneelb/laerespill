@@ -908,7 +908,7 @@ function generateRandomFleet(){
       coords=randomShipPlacement(SHIPS[si].len);
       attempts++;
     } while(attempts<200 && coords.some(c=>used.some(u=>Math.abs(u.x-c.x)<=1&&Math.abs(u.y-c.y)<=1)));
-    fleet.push({...SHIPS[si],coords,hits:[]});
+    fleet.push({...SHIPS[si], coords, shipIdx:si, hits:[]});
     coords.forEach(c=>used.push(c));
   }
   return fleet;
@@ -1116,7 +1116,10 @@ function listenRoom(){
 
     // Both ready — start game
     if(d.p1.ready&&d.p2&&d.p2.ready&&!d.started){
-      if(mySlot==='p1') window._update(window._ref(window._db,'rooms/'+roomCode),{started:true});
+      if(mySlot==='p1'){
+        const firstTurn=Math.random()<0.5?'p1':'p2';
+        window._update(window._ref(window._db,'rooms/'+roomCode),{started:true, turn:firstTurn});
+      }
     }
     if(d.started){
       startGame(d);
@@ -1301,14 +1304,12 @@ function updateFleetPanels(){
   const myEl=document.getElementById('myFleetPanel');
   myEl.innerHTML='';
   myShips.forEach((ship,si)=>{
-    const hitsOnShip=soloMode
-      ? playerHits.filter(h=>ship.coords.some(c=>c.x===h.x&&c.y===h.y)).length
-      : (myHits||[]).filter(h=>ship.coords.some(c=>c.x===h.x&&c.y===h.y)).length;
+    const hitsArr=soloMode?playerHits:(myHits||[]);
     const sunk=soloMode?playerSunk.includes(si):mySunk.includes(si);
     const row=document.createElement('div');
     row.className='fleet-row'+(sunk?' sunk':'');
-    const dots=ship.coords.map((_,i)=>{
-      const hit=i<hitsOnShip;
+    const dots=ship.coords.map(c=>{
+      const hit=hitsArr.some(h=>h.x===c.x&&h.y===c.y);
       return `<div class="hit-dot${hit?' hit':''}${sunk?' sunk':''}"></div>`;
     }).join('');
     row.innerHTML=`<span class="fleet-name">${ship.name}</span><div class="fleet-hits">${dots}${sunk?'<span class="fleet-sunk-x">✕</span>':''}</div>`;
@@ -1326,27 +1327,35 @@ function updateFleetPanels(){
   oppShipList.forEach((ship,si)=>{
     let hitsOnShip=0, sunk=false;
     if(soloMode){
-      hitsOnShip=(pcHits||[]).filter(h=>ship.coords&&ship.coords.some(c=>c.x===h.x&&c.y===h.y)).length;
+      const dots=ship.coords.map(c=>{
+        const hit=(pcHits||[]).some(h=>h.x===c.x&&h.y===c.y);
+        const s=pcSunk.includes(si);
+        return `<div class="hit-dot${hit?' hit':''}${s?' sunk':''}"></div>`;
+      }).join('');
       sunk=pcSunk.includes(si);
+      const row=document.createElement('div');
+      row.className='fleet-row'+(sunk?' sunk':'');
+      row.innerHTML=`<span class="fleet-name">${ship.name}</span><div class="fleet-hits">${dots}${sunk?'<span class="fleet-sunk-x">✕</span>':''}</div>`;
+      oppEl.appendChild(row);
     } else {
       sunk=oppSunk.includes(si);
+      let hitsOnShip=0;
       if(sunk){
         hitsOnShip=ship.len;
       } else {
-        // Show unknown hits on the first unsunk ship
         const firstUnsunkIdx=oppShipList.findIndex((_,i)=>!oppSunk.includes(i));
         hitsOnShip=(si===firstUnsunkIdx)?Math.min(unknownHits,ship.len):0;
       }
+      const len=ship.len||0;
+      const row=document.createElement('div');
+      row.className='fleet-row'+(sunk?' sunk':'');
+      let dots='';
+      for(let i=0;i<len;i++){
+        dots+=`<div class="hit-dot${i<hitsOnShip?' hit':''}${sunk?' sunk':''}"></div>`;
+      }
+      row.innerHTML=`<span class="fleet-name">${ship.name}</span><div class="fleet-hits">${dots}${sunk?'<span class="fleet-sunk-x">✕</span>':''}</div>`;
+      oppEl.appendChild(row);
     }
-    const len=ship.len||ship.coords?.length||0;
-    const row=document.createElement('div');
-    row.className='fleet-row'+(sunk?' sunk':'');
-    let dots='';
-    for(let i=0;i<len;i++){
-      dots+=`<div class="hit-dot${i<hitsOnShip?' hit':''}${sunk?' sunk':''}"></div>`;
-    }
-    row.innerHTML=`<span class="fleet-name">${ship.name}</span><div class="fleet-hits">${dots}${sunk?'<span class="fleet-sunk-x">✕</span>':''}</div>`;
-    oppEl.appendChild(row);
   });
 }
 
