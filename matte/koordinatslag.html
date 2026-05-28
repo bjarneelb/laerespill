@@ -357,7 +357,7 @@ body {
     <button class="btn-primary" onclick="startSolo()">🤖 SPILL MOT PC</button>
     <div style="margin:10px 0 0;display:flex;align-items:center;gap:8px;justify-content:center">
       <input type="checkbox" id="testModeCheck" style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent)">
-      <label for="testModeCheck" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--muted);cursor:pointer">Testmodus — plasser skip automatisk</label>
+      <label for="testModeCheck" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--muted);cursor:pointer">Automatisk plassering (kun vannrett)</label>
     </div>
     <div style="margin: 14px 0; color: var(--muted); font-size: 0.8rem; font-family: var(--font-mono)">— ELLER MOT VENN —</div>
     <button class="btn-primary" onclick="createRoom()">🚀 OPPRETT ROM</button>
@@ -907,18 +907,32 @@ function startSolo(){
 let testMode = false;
 
 function autoPlaceShips(){
-  const fleet = generateRandomFleet();
+  const fleet=[];
+  const used=[];
+  for(let si=0;si<SHIPS.length;si++){
+    let coords, attempts=0;
+    do {
+      // Kun vannrett plassering
+      const x=Math.floor(Math.random()*(GRID_SIZE-SHIPS[si].len+1))+GRID_MIN;
+      const y=Math.floor(Math.random()*GRID_SIZE)+GRID_MIN;
+      coords=[];
+      for(let i=0;i<SHIPS[si].len;i++) coords.push({x:x+i, y});
+      attempts++;
+    } while(attempts<200 && coords.some(c=>used.some(u=>Math.abs(u.x-c.x)<=1&&Math.abs(u.y-c.y)<=1)));
+    fleet.push({...SHIPS[si], coords, shipIdx:si, hits:[]});
+    coords.forEach(c=>used.push(c));
+  }
   fleet.forEach((ship,i)=>{
-    placedShips[i] = ship.coords;
+    placedShips[i]=ship.coords;
     const statusEl=document.getElementById('shipstatus-'+i);
     const rowEl=document.getElementById('shiprow-'+i);
-    if(statusEl) { statusEl.textContent='✓ Auto-plassert'; statusEl.className='ship-status ok'; }
+    if(statusEl){ statusEl.textContent='✓ Auto-plassert'; statusEl.className='ship-status ok'; }
     if(rowEl) rowEl.className='ship-row placed';
   });
   drawGrid('myPlacementGrid');
   fleet.forEach((ship,i)=>drawShipOnGrid('myPlacementGrid',ship.coords,false,i));
   document.getElementById('readyBtn').disabled=false;
-  document.getElementById('placementMsg').textContent='Skip plassert automatisk! Trykk KLAR for å starte.';
+  document.getElementById('placementMsg').textContent='Skip plassert automatisk (kun vannrett)! Trykk KLAR for å starte.';
   document.getElementById('placementMsg').style.color='var(--green)';
 }
 
