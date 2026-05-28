@@ -355,6 +355,10 @@ body {
       <input class="field-input" id="playerNameInput" placeholder="KAPTEIN..." maxlength="16">
     </div>
     <button class="btn-primary" onclick="startSolo()">🤖 SPILL MOT PC</button>
+    <div style="margin:10px 0 0;display:flex;align-items:center;gap:8px;justify-content:center">
+      <input type="checkbox" id="testModeCheck" style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent)">
+      <label for="testModeCheck" style="font-family:var(--font-mono);font-size:0.78rem;color:var(--muted);cursor:pointer">Testmodus — plasser skip automatisk</label>
+    </div>
     <div style="margin: 14px 0; color: var(--muted); font-size: 0.8rem; font-family: var(--font-mono)">— ELLER MOT VENN —</div>
     <button class="btn-primary" onclick="createRoom()">🚀 OPPRETT ROM</button>
     <div style="margin: 14px 0; color: var(--muted); font-size: 0.8rem; font-family: var(--font-mono)">— KOBLE TIL EKSISTERENDE ROM —</div>
@@ -889,14 +893,33 @@ let aiTargets = [];     // queued targets from hunt
 function startSolo(){
   const name=(document.getElementById('playerNameInput').value.trim()||window.myPlayerName).toUpperCase();
   myName=name; soloMode=true;
+  testMode=document.getElementById('testModeCheck').checked;
   document.getElementById('lobbyScreen').style.display='none';
   document.getElementById('placementScreen').style.display='block';
   document.getElementById('myNameLabel').textContent=myName;
   document.getElementById('oppNameLabel').textContent='DATAMASKIN';
   drawGrid('myPlacementGrid');
   buildPlacementUI();
-  // Generate PC ships randomly
   pcShips=generateRandomFleet();
+  if(testMode) autoPlaceShips();
+}
+
+let testMode = false;
+
+function autoPlaceShips(){
+  const fleet = generateRandomFleet();
+  fleet.forEach((ship,i)=>{
+    placedShips[i] = ship.coords;
+    const statusEl=document.getElementById('shipstatus-'+i);
+    const rowEl=document.getElementById('shiprow-'+i);
+    if(statusEl) { statusEl.textContent='✓ Auto-plassert'; statusEl.className='ship-status ok'; }
+    if(rowEl) rowEl.className='ship-row placed';
+  });
+  drawGrid('myPlacementGrid');
+  fleet.forEach((ship,i)=>drawShipOnGrid('myPlacementGrid',ship.coords,false,i));
+  document.getElementById('readyBtn').disabled=false;
+  document.getElementById('placementMsg').textContent='Skip plassert automatisk! Trykk KLAR for å starte.';
+  document.getElementById('placementMsg').style.color='var(--green)';
 }
 
 function generateRandomFleet(){
@@ -1133,12 +1156,14 @@ function listenRoom(){
 }
 
 function startPlacement(oppName){
+  testMode=document.getElementById('testModeCheck').checked;
   document.getElementById('waitingScreen').style.display='none';
   document.getElementById('placementScreen').style.display='block';
   document.getElementById('myNameLabel').textContent=myName;
   document.getElementById('oppNameLabel').textContent=oppName;
   drawGrid('myPlacementGrid');
   buildPlacementUI();
+  if(testMode) autoPlaceShips();
 }
 
 function confirmPlacement(){
@@ -1260,13 +1285,12 @@ function fireShot(){
   window._get(window._ref(window._db,'rooms/'+roomCode+'/'+opp+'/ships')).then(snap=>{
     const oppShipsRaw=JSON.parse(snap.val()||'[]');
     const oppShipsCoords=oppShipsRaw.map((c,i)=>({coords:c,ship:SHIPS[i]}));
-    let hit=false, sunkShip=null, sunkCoords=null;
+    let hit=false, hitShip=null, sunkShip=null, sunkCoords=null;
 
     for(let si=0;si<oppShipsCoords.length;si++){
       const sc=oppShipsCoords[si];
       if(sc.coords.some(c=>c.x===x&&c.y===y)){
-        hit=true;
-        // Check if sunk (all coords hit)
+        hit=true; hitShip=SHIPS[si].name;
         const allPrevHits=[...oppHits,{x,y}];
         const allHit=sc.coords.every(c=>allPrevHits.some(h=>h.x===c.x&&h.y===c.y));
         if(allHit){ sunkShip=SHIPS[si].name; sunkCoords=sc.coords; }
@@ -1275,6 +1299,7 @@ function fireShot(){
     }
 
     const newHit={x,y,hit};
+    if(hitShip)  newHit.hitShip=hitShip;
     if(sunkShip){ newHit.sunkShip=sunkShip; newHit.sunkCoords=sunkCoords; }
 
     const updatedHits=JSON.stringify([...oppHits,newHit]);
@@ -1343,8 +1368,10 @@ function updateFleetPanels(){
       let hitsOnShip=0;
       if(sunk){
         hitsOnShip=ship.len;
+      } else {
+        // Count hits tagged with this ship's name
+        hitsOnShip=oppHits.filter(h=>h.hitShip===ship.name).length;
       }
-      // Don't show unknown hits on unsunk ships — we don't know which ship was hit
       const len=ship.len||0;
       const row=document.createElement('div');
       row.className='fleet-row'+(sunk?' sunk':'');
