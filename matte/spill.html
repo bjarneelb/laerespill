@@ -426,9 +426,8 @@
   });
   function updateScoreboard(players){
     const me=players[window.playerName];
-    if(me) { document.getElementById('myScoreBig').textContent=me.score||0; }
+    const myScore=me?me.score||0:currentScore||0;
     const sorted=Object.entries(players).sort((a,b)=>b[1].score-a[1].score);
-    const top3=sorted.slice(0,3);
     let html='';
     sorted.forEach(([name,data],i)=>{
       if(i>=3&&name!==window.playerName) return;
@@ -440,7 +439,9 @@
         <span class="pts">${data.score||0}p</span>
       </div>`;
     });
-    document.getElementById('scoreContent').innerHTML=html||'<div class="my-score-big" id="myScoreBig">0</div>';
+    document.getElementById('scoreContent').innerHTML=
+      `<div class="my-score-big" id="myScoreBig">${myScore}</div>`+
+      (html||'');
   }
 </script>
 
@@ -1145,8 +1146,11 @@ window.checkSolution=function(){
     if(gameMode!=='practice'){
       bonus=Math.max(10,Math.round(200-(Date.now()-taskStartTime)/1000*1.5));
       currentScore+=bonus;
-      document.getElementById('myScoreBig').textContent=currentScore;
-      if(typeof syncScore==='function') syncScore(currentScore);
+      const scorEl=document.getElementById('myScoreBig');
+      if(scorEl) scorEl.textContent=currentScore;
+      try {
+        if(typeof window.syncScore==='function') window.syncScore(currentScore);
+      } catch(e) { console.warn('syncScore feil:', e); }
     }
 
     showToast('🎉 Riktig!'+(bonus>0?' +'+bonus+' p':''),'success');
