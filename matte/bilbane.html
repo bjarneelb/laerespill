@@ -347,55 +347,66 @@ let winnerDeclared = false;
 let lastScores = {};    // for å beregne poengrate
 let animFrame = null;
 
-// ── TRACK — Silverstone GP-layout, Catmull-Rom spline ──
-// Punkter er normalisert 0-1, i kjøreretning (med klokken)
-// Basert på faktisk Silverstone GP-layout sett ovenfra
+// ── TRACK — koordinater hentet fra SVG-banen (bane.svg), normalisert 0-1 ──
+// SVG viewBox: 0 0 680 480 — x/680, y/480
 const TRACK_CTRL = [
-  // START/MÅL — midten øverst, Hangar Straight går mot høyre
-  {x:0.42,y:0.12},
-  {x:0.52,y:0.12},
-  {x:0.62,y:0.12},
-  // Copse — rask høyresving øverst høyre
-  {x:0.74,y:0.13},
-  {x:0.82,y:0.18},
-  {x:0.84,y:0.26},
-  // Maggotts — venstresving (bilen svinger venstre)
-  {x:0.80,y:0.32},
-  {x:0.74,y:0.34},
-  // Becketts — høyresving (S-sving del 2)
-  {x:0.77,y:0.38},
-  {x:0.82,y:0.42},
-  // Chapel — venstresving og ut på Hangar Straight igjen
-  {x:0.80,y:0.47},
-  {x:0.74,y:0.50},
-  // Hangar Straight — lang rettstrekning nedover høyre side
-  {x:0.86,y:0.52},
-  {x:0.88,y:0.60},
-  {x:0.88,y:0.68},
-  // Stowe — tett høyresving
-  {x:0.86,y:0.76},
-  {x:0.80,y:0.80},
-  // Vale/Club — bred buet sving mot bunnen
-  {x:0.70,y:0.86},
-  {x:0.58,y:0.90},
-  {x:0.46,y:0.91},
-  // Luffield — langsom hairpin venstre nede
-  {x:0.32,y:0.88},
-  {x:0.22,y:0.82},
-  {x:0.18,y:0.74},
-  // Woodcote — lang buet sving opp venstre side
-  {x:0.14,y:0.64},
-  {x:0.12,y:0.54},
-  {x:0.13,y:0.44},
-  // Abbey — venstresving oppe til venstre
-  {x:0.16,y:0.34},
-  {x:0.20,y:0.26},
-  // Farm/Village — rettstrekning og svinger opp mot start
-  {x:0.18,y:0.18},
-  {x:0.24,y:0.13},
-  {x:0.32,y:0.12},
-  // Tilbake til start
-  {x:0.42,y:0.12},
+  // Start/mål — bunn, venstre del av langstreken
+  {x:110/680, y:408/480},
+  {x:200/680, y:408/480},
+  {x:330/680, y:408/480},
+  {x:450/680, y:408/480},
+  {x:545/680, y:408/480},
+  // Stor sving høyre nede
+  {x:600/680, y:400/480},
+  {x:635/680, y:370/480},
+  {x:643/680, y:340/480},
+  {x:645/680, y:310/480},
+  {x:643/680, y:282/480},
+  // Sving øvre høyre
+  {x:638/680, y:250/480},
+  {x:625/680, y:220/480},
+  {x:616/680, y:204/480},
+  {x:590/680, y:185/480},
+  {x:568/680, y:174/480},
+  // Topp langstrekk
+  {x:535/680, y:158/480},
+  {x:500/680, y:153/480},
+  {x:470/680, y:152/480},
+  {x:452/680, y:151/480},
+  // Chicane/knekk ned
+  {x:430/680, y:140/480},
+  {x:415/680, y:128/480},
+  {x:405/680, y:108/480},
+  {x:395/680, y:88/480},
+  {x:384/680, y:72/480},
+  {x:354/680, y:65/480},
+  // Topp langstrekk venstre
+  {x:320/680, y:62/480},
+  {x:282/680, y:61/480},
+  {x:245/680, y:62/480},
+  {x:210/680, y:70/480},
+  {x:194/680, y:82/480},
+  // Sving øvre venstre
+  {x:175/680, y:96/480},
+  {x:163/680, y:107/480},
+  {x:148/680, y:128/480},
+  {x:138/680, y:148/480},
+  {x:136/680, y:162/480},
+  {x:134/680, y:185/480},
+  {x:133/680, y:208/480},
+  // Venstre langstrekk ned
+  {x:120/680, y:232/480},
+  {x:107/680, y:259/480},
+  {x:90/680, y:272/480},
+  {x:82/680, y:279/480},
+  // Sving bunn venstre
+  {x:65/680, y:298/480},
+  {x:56/680, y:318/480},
+  {x:55/680, y:338/480},
+  {x:58/680, y:360/480},
+  {x:72/680, y:382/480},
+  {x:95/680, y:398/480},
+  {x:110/680, y:408/480},
 ];
 
 let trackPoints  = [];   // flattede Catmull-Rom punkter (piksel)
@@ -749,7 +760,6 @@ function runTrafficLights(onGo) {
 function resetForNewRace() {
   // Nullstill alle biler lokalt
   Object.keys(players).forEach(name => {
-    players[name].laps = 0;
     players[name].dist = 0;
     players[name].speed = 0;
     players[name].targetSpeed = 0;
@@ -820,8 +830,10 @@ function startFirebaseSync(room) {
 
       if (!players[name]) {
         const idx = Object.keys(players).length;
+        // Start ved begynnelsen av spline — start/mål-streken
+        const startDist = 0;
         players[name] = {
-          laps: 0, dist: 0,
+          laps: 0, dist: startDist,
           targetSpeed: 0, speed: 0,
           color: COLORS[idx % COLORS.length],
           incident: null, lastIncident: 0,
