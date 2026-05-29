@@ -1,0 +1,77 @@
+<svg width="100%" viewBox="0 0 680 480" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Racerbane</title>
+<desc>Racerbane med jevn bredde, kantsteiner kun i svinger, trær langt fra banen</desc>
+
+<defs>
+  <pattern id="kerbpat" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+    <rect width="12" height="6" fill="#cc2222"/>
+    <rect y="6" width="12" height="6" fill="#eeeeee"/>
+  </pattern>
+  <pattern id="checker" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+    <rect width="8" height="8" fill="#ffffff"/>
+    <rect width="4" height="4" fill="#000000"/>
+    <rect x="4" y="4" width="4" height="4" fill="#000000"/>
+  </pattern>
+</defs>
+
+<!-- Gress -->
+<rect width="680" height="480" fill="#4a8040"/>
+
+<!-- LAG 1: Runoff (sand) -->
+<path d="M 110,408 L 545,408 Q 615,408 638,348 L 643,282 Q 647,235 616,204 L 568,174 Q 540,157 500,153 L 452,151 Q 424,151 410,128 L 399,102 Q 388,75 354,65 L 282,61 Q 230,59 194,82 L 163,107 Q 140,128 136,162 L 133,208 Q 131,240 107,259 L 82,279 Q 55,302 55,342 Q 55,378 110,408 Z"
+  fill="none" stroke="#d4b896" stroke-width="86" stroke-linejoin="round" stroke-linecap="round"/>
+
+<!-- LAG 2: Kantsteiner kun i svingene -->
+<path d="M 530,408 Q 615,408 638,348 L 643,296" fill="none" stroke="url(#kerbpat)" stroke-width="60" stroke-linecap="round"/>
+<path d="M 643,296 Q 647,235 616,204 L 580,180" fill="none" stroke="url(#kerbpat)" stroke-width="60" stroke-linecap="round"/>
+<path d="M 468,152 Q 424,151 410,128 L 399,102 Q 388,75 354,65 L 310,63" fill="none" stroke="url(#kerbpat)" stroke-width="60" stroke-linecap="round"/>
+<path d="M 95,268 Q 55,302 55,342 Q 55,378 110,408 L 130,408" fill="none" stroke="url(#kerbpat)" stroke-width="60" stroke-linecap="round"/>
+<path d="M 176,94 Q 140,128 136,162 L 133,220" fill="none" stroke="url(#kerbpat)" stroke-width="60" stroke-linecap="round"/>
+
+<!-- LAG 3: Asfalt -->
+<path d="M 110,408 L 545,408 Q 615,408 638,348 L 643,282 Q 647,235 616,204 L 568,174 Q 540,157 500,153 L 452,151 Q 424,151 410,128 L 399,102 Q 388,75 354,65 L 282,61 Q 230,59 194,82 L 163,107 Q 140,128 136,162 L 133,208 Q 131,240 107,259 L 82,279 Q 55,302 55,342 Q 55,378 110,408 Z"
+  fill="none" stroke="#2d2d2d" stroke-width="58" stroke-linejoin="round" stroke-linecap="round"/>
+
+<!-- LAG 4: Midtlinje -->
+<path d="M 110,408 L 545,408 Q 615,408 638,348 L 643,282 Q 647,235 616,204 L 568,174 Q 540,157 500,153 L 452,151 Q 424,151 410,128 L 399,102 Q 388,75 354,65 L 282,61 Q 230,59 194,82 L 163,107 Q 140,128 136,162 L 133,208 Q 131,240 107,259 L 82,279 Q 55,302 55,342 Q 55,378 110,408 Z"
+  fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="14,10" stroke-linejoin="round" stroke-linecap="round" opacity="0.5"/>
+
+<!-- PIT LANE -->
+<line x1="110" y1="408" x2="455" y2="408" stroke="#111111" stroke-width="18"/>
+<line x1="112" y1="408" x2="453" y2="408" stroke="#ffdd00" stroke-width="1.2" stroke-dasharray="8,6" opacity="0.85"/>
+
+<!-- STARTSTRIPE -->
+<rect x="197" y="382" width="24" height="52" fill="url(#checker)" rx="1"/>
+
+<!-- BYGNINGER -->
+<rect x="240" y="424" width="130" height="26" rx="2" fill="#bb2222"/>
+<rect x="240" y="424" width="130" height="9" rx="2" fill="#881818"/>
+<rect x="200" y="426" width="36" height="22" rx="2" fill="#bb2222"/>
+<rect x="200" y="426" width="36" height="8" rx="2" fill="#881818"/>
+
+<!-- TRÆR -->
+<g opacity="0.95">
+  <circle cx="8" cy="185" r="13" fill="#1e5015"/><circle cx="15" cy="179" r="9" fill="#2a6b1c"/>
+  <circle cx="5" cy="308" r="12" fill="#1e5015"/><circle cx="12" cy="302" r="8" fill="#2a6b1c"/>
+  <circle cx="8" cy="402" r="11" fill="#1e5015"/><circle cx="15" cy="396" r="8" fill="#2a6b1c"/>
+  <circle cx="108" cy="8" r="12" fill="#1e5015"/><circle cx="116" cy="3" r="8" fill="#2a6b1c"/>
+  <circle cx="228" cy="5" r="11" fill="#1e5015"/><circle cx="235" cy="1" r="8" fill="#2a6b1c"/>
+  <circle cx="348" cy="4" r="12" fill="#1e5015"/><circle cx="356" cy="0" r="8" fill="#2a6b1c"/>
+  <circle cx="462" cy="6" r="11" fill="#1e5015"/><circle cx="469" cy="2" r="8" fill="#2a6b1c"/>
+  <circle cx="560" cy="10" r="12" fill="#1e5015"/><circle cx="567" cy="5" r="8" fill="#2a6b1c"/>
+  <circle cx="672" cy="168" r="12" fill="#1e5015"/><circle cx="672" cy="161" r="8" fill="#2a6b1c"/>
+  <circle cx="670" cy="300" r="11" fill="#1e5015"/><circle cx="670" cy="293" r="8" fill="#2a6b1c"/>
+  <circle cx="668" cy="392" r="12" fill="#1e5015"/><circle cx="668" cy="385" r="8" fill="#2a6b1c"/>
+  <circle cx="580" cy="468" r="12" fill="#1e5015"/><circle cx="587" cy="462" r="8" fill="#2a6b1c"/>
+  <circle cx="445" cy="472" r="11" fill="#1e5015"/><circle cx="452" cy="466" r="8" fill="#2a6b1c"/>
+  <circle cx="100" cy="470" r="12" fill="#1e5015"/><circle cx="107" cy="464" r="8" fill="#2a6b1c"/>
+  <circle cx="290" cy="152" r="12" fill="#1e5015"/><circle cx="297" cy="146" r="8" fill="#2a6b1c"/>
+  <circle cx="215" cy="182" r="11" fill="#1e5015"/><circle cx="222" cy="176" r="8" fill="#2a6b1c"/>
+  <circle cx="385" cy="198" r="11" fill="#1e5015"/><circle cx="392" cy="192" r="8" fill="#2a6b1c"/>
+  <circle cx="448" cy="272" r="12" fill="#1e5015"/><circle cx="455" cy="266" r="8" fill="#2a6b1c"/>
+  <circle cx="348" cy="306" r="11" fill="#1e5015"/><circle cx="355" cy="300" r="8" fill="#2a6b1c"/>
+  <circle cx="228" cy="283" r="12" fill="#1e5015"/><circle cx="235" cy="277" r="8" fill="#2a6b1c"/>
+  <circle cx="318" cy="236" r="11" fill="#1e5015"/><circle cx="325" cy="230" r="8" fill="#2a6b1c"/>
+</g>
+
+</svg>
