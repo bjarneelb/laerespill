@@ -179,7 +179,36 @@
   .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(255,214,10,0.6); }
 
   /* ── WINNER OVERLAY ── */
-  #winnerOverlay {
+  /* ── START BUTTON ── */
+  .btn-start-race {
+    padding: 10px 22px;
+    background: var(--neon); border: none; border-radius: 8px;
+    color: #0a0a1a; font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem; letter-spacing: 2px; cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 16px rgba(0,245,212,0.4);
+  }
+  .btn-start-race:hover { transform: scale(1.05); box-shadow: 0 0 24px rgba(0,245,212,0.6); }
+  .btn-start-race:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── TRAFFIC LIGHTS ── */
+  #trafficLights {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    display: none; flex-direction: column; align-items: center; gap: 8px;
+    background: rgba(0,0,0,0.85); border: 3px solid #333;
+    border-radius: 16px; padding: 20px 28px; z-index: 200;
+  }
+  #trafficLights.show { display: flex; }
+  .tl-light {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #1a1a1a; border: 2px solid #333;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .tl-light.red-on    { background: #ff2222; box-shadow: 0 0 20px #ff2222; }
+  .tl-light.yellow-on { background: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
+  .tl-light.green-on  { background: #00ee44; box-shadow: 0 0 20px #00ee44; }
+  .tl-label { font-family: 'Black Han Sans',sans-serif; font-size: 0.8rem; color: var(--muted); letter-spacing: 2px; margin-top: 4px; }
     position: fixed; inset: 0; z-index: 300;
     background: rgba(0,0,0,0.85);
     display: none; align-items: center; justify-content: center;
@@ -224,12 +253,21 @@
   </div>
 </div>
 
+<!-- TRAFFIC LIGHTS -->
+<div id="trafficLights">
+  <div class="tl-light" id="tl-red"></div>
+  <div class="tl-light" id="tl-yellow"></div>
+  <div class="tl-light" id="tl-green"></div>
+  <div class="tl-label" id="tl-label">KLAR</div>
+</div>
+
 <!-- HEADER -->
 <div class="topbar">
   <div class="topbar-title">🏎️ LIKNINGSLØPET</div>
   <div class="topbar-center">
     <span class="lap-goal">MÅL: <span id="lapGoalDisplay">5</span> RUNDER</span>
     <span class="room-badge" id="roomDisplay">–</span>
+    <button class="btn-start-race" id="startRaceBtn" onclick="triggerStart()">🚦 START LØPET</button>
     <span class="player-count"><span id="playerCount">0</span> kjørere</span>
   </div>
   <div style="font-size:0.8rem;color:var(--muted)">Ligningsbyggeren v1.5</div>
@@ -262,9 +300,10 @@
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, set, onValue } from "./js/firebase-config.js";
+  import { database, ref, set, onValue, update } from "./js/firebase-config.js";
   window._db = database; window._ref = ref;
   window._set = set; window._onValue = onValue;
+  window._update = update;
   window._fbReady = true;
 </script>
 
@@ -439,198 +478,16 @@ function getPosOnTrack(dist) {
 // ── TEGN BANEN ──
 function drawTrack() {
   const W=canvas.width, H=canvas.height;
-  const sky=ctx.createLinearGradient(0,0,0,H);
-  sky.addColorStop(0,'#0a0a1a'); sky.addColorStop(1,'#1a2a1a');
-  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-
-  drawGrass();
-
-  // Skygge
-  ctx.save();
-  ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=20;
-  drawSplinePath(TRACK_WIDTH+10,'#111');
-  ctx.restore();
-
-  // Asfalt
-  drawSplinePath(TRACK_WIDTH,'#2d2d2d');
-
-  // Midtstrek — stille stiplet linje
-  ctx.save(); ctx.setLineDash([16,12]);
-  drawSplinePath(1,'rgba(255,255,255,0.22)');
-  ctx.setLineDash([]); ctx.restore();
-
-  // Barrierer (offset-sti)
-  drawBarrier( TRACK_WIDTH * 0.92);   // ytre
-  drawBarrier(-TRACK_WIDTH * 0.92);   // indre
-
-  drawFinishLine();
-  drawDecorations();
-}
-
-// Tegn selve spline-kurven som en stroke
-function drawSplinePath(width, color) {
-  if (!trackPoints.length) return;
-  ctx.beginPath();
-  ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
-  for (let i=1; i<trackPoints.length; i++) {
-    ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+  ctx.clearRect(0,0,W,H);
+  if (window._trackImage && window._trackImage.complete) {
+    ctx.drawImage(window._trackImage, 0, 0, W, H);
+  } else {
+    // Fallback: grønn bakgrunn mens bildet laster
+    ctx.fillStyle='#4a8040';
+    ctx.fillRect(0,0,W,H);
   }
-  ctx.closePath();
-  ctx.lineWidth=width; ctx.strokeStyle=color;
-  ctx.stroke();
 }
 
-// Bygg en offset-sti langs trackPoints (positiv = ytre, negativ = indre)
-function buildOffsetPath(offset) {
-  if (!trackPoints.length) return [];
-  const pts = [];
-  const n = trackPoints.length - 1;
-
-  for (let i = 0; i < n; i++) {
-    // Bruk bredere vindu (±6 punkter) for jevn normalvektor uten kryss
-    const W = 6;
-    let dx = 0, dy = 0;
-    for (let w = 1; w <= W; w++) {
-      const a = trackPoints[(i - w + n) % n];
-      const b = trackPoints[(i + w) % n];
-      dx += b.x - a.x;
-      dy += b.y - a.y;
-    }
-    const len = Math.sqrt(dx*dx + dy*dy) || 1;
-    pts.push({
-      x: trackPoints[i].x + (-dy / len) * offset,
-      y: trackPoints[i].y + ( dx / len) * offset,
-    });
-  }
-  pts.push({...pts[0]});
-  return pts;
-}
-
-function drawGrass() {
-  if (!trackPoints.length) return;
-  const W=canvas.width, H=canvas.height;
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0,0,W,H);
-  ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
-  for (let i=1; i<trackPoints.length; i++) ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
-  ctx.closePath();
-  const grd=ctx.createLinearGradient(0,0,W,H);
-  grd.addColorStop(0,'#2a5225'); grd.addColorStop(1,'#1e3d1a');
-  ctx.fillStyle=grd; ctx.fill('evenodd');
-  ctx.globalAlpha=0.12;
-  for (let i=0; i<140; i++) {
-    ctx.fillStyle=i%2===0?'#4a8a40':'#1a3a16';
-    ctx.fillRect((Math.sin(i*137.5)*0.5+0.5)*W, (Math.cos(i*97.3)*0.5+0.5)*H, 3, 3);
-  }
-  ctx.globalAlpha=1; ctx.restore();
-}
-
-// Barriere: tegn sammenhengende offset-sti med rutemønster
-function drawBarrier(offset) {
-  if (!trackPoints.length) return;
-  const pts = buildOffsetPath(offset);
-  if (!pts.length) return;
-
-  // Tegn hele stien i én operasjon per farge (annenhvert segment)
-  const segmentLen = 14; // piksler per rute
-  let accumulated = 0;
-  let colorIdx = 0;
-
-  ctx.save();
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'butt';
-
-  for (let i = 0; i < pts.length - 1; i++) {
-    const dx = pts[i+1].x - pts[i].x;
-    const dy = pts[i+1].y - pts[i].y;
-    const segDist = Math.sqrt(dx*dx + dy*dy);
-    let remaining = segDist;
-    let t = 0;
-
-    while (remaining > 0) {
-      const available = segmentLen - (accumulated % segmentLen);
-      const draw = Math.min(available, remaining);
-      const t2 = t + draw / segDist;
-
-      const x1 = pts[i].x + (pts[i+1].x - pts[i].x) * t;
-      const y1 = pts[i].y + (pts[i+1].y - pts[i].y) * t;
-      const x2 = pts[i].x + (pts[i+1].x - pts[i].x) * t2;
-      const y2 = pts[i].y + (pts[i+1].y - pts[i].y) * t2;
-
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.strokeStyle = Math.floor(accumulated / segmentLen) % 2 === 0 ? '#e63946' : '#f1faee';
-      ctx.stroke();
-
-      accumulated += draw;
-      remaining -= draw;
-      t = t2;
-    }
-  }
-  ctx.restore();
-}
-
-function drawFinishLine() {
-  if (trackPoints.length<4) return;
-  // Bruk offset-sti for å finne bredden på startstreken
-  const outer = buildOffsetPath( TRACK_WIDTH * 0.9);
-  const inner = buildOffsetPath(-TRACK_WIDTH * 0.9);
-  if (!outer.length || !inner.length) return;
-
-  const po = outer[0], pi = inner[0];
-  const angle = Math.atan2(po.y - pi.y, po.x - pi.x);
-  const totalW = Math.hypot(po.x-pi.x, po.y-pi.y);
-  const sqSize = 7;
-  const cols = Math.round(totalW / sqSize);
-
-  ctx.save();
-  for (let col = 0; col < cols; col++) {
-    for (let row = 0; row < 2; row++) {
-      const frac = col / cols;
-      const x = pi.x + (po.x-pi.x)*frac + Math.cos(angle-Math.PI/2)*row*sqSize;
-      const y = pi.y + (po.y-pi.y)*frac + Math.sin(angle-Math.PI/2)*row*sqSize;
-      ctx.fillStyle = (col+row)%2===0 ? 'white' : 'black';
-      ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
-      ctx.fillRect(-sqSize/2,-sqSize/2,sqSize,sqSize);
-      ctx.restore();
-    }
-  }
-  // Label
-  ctx.font='bold 12px Nunito'; ctx.fillStyle='#ffd60a'; ctx.textAlign='center';
-  const midX=(po.x+pi.x)/2, midY=(po.y+pi.y)/2;
-  const perpX=Math.cos(angle-Math.PI/2)*28, perpY=Math.sin(angle-Math.PI/2)*28;
-  ctx.fillText('START/MÅL', midX-perpX, midY-perpY-6);
-  ctx.restore();
-}
-
-function drawDecorations() {
-  if (!trackPoints.length) return;
-  const outerPts = buildOffsetPath(TRACK_WIDTH + 22);
-  ctx.save();
-  const treePositions=[0.05,0.13,0.25,0.38,0.50,0.63,0.75,0.88];
-  treePositions.forEach((frac,i)=>{
-    const idx=Math.floor(frac*outerPts.length);
-    const p=outerPts[idx]; if(!p) return;
-    ctx.fillStyle='#5c3317'; ctx.fillRect(p.x-3,p.y+8,6,12);
-    ctx.fillStyle=i%2===0?'#2d6a26':'#3a8a32';
-    ctx.beginPath(); ctx.arc(p.x,p.y+6,13,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#4aaa3a';
-    ctx.beginPath(); ctx.arc(p.x-3,p.y,9,0,Math.PI*2); ctx.fill();
-  });
-
-  const crowdColors=['#e63946','#457b9d','#f1c40f','#2ecc71','#9b59b6','#e67e22'];
-  ctx.globalAlpha=0.55;
-  for (let i=0; i<120; i++) {
-    const idx=Math.floor((i/120)*outerPts.length);
-    const p=outerPts[idx]; if(!p) continue;
-    const jx=Math.sin(i*7.3)*5, jy=Math.cos(i*5.1)*5;
-    ctx.fillStyle=crowdColors[i%crowdColors.length];
-    ctx.beginPath(); ctx.arc(p.x+jx+(i%3)*6,p.y+jy,3.5,0,Math.PI*2); ctx.fill();
-  }
-  ctx.globalAlpha=1; ctx.restore();
-}
 
 // ── DRAW CARS ──
 function drawCars() {
@@ -702,16 +559,14 @@ function drawCars() {
 // ── MAIN RENDER LOOP ──
 let lastTime = 0;
 function gameLoop(ts) {
-  const dt = Math.min((ts - lastTime) / 1000, 0.1); // delta seconds, max 100ms
+  const dt = Math.min((ts - lastTime) / 1000, 0.1);
   lastTime = ts;
 
-  if (raceStarted) {
-    updateCars(dt);
-    drawTrack();
-    drawCars();
-    updateSidePanels();
-    checkWinner();
-  }
+  updateCars(dt);
+  drawTrack();
+  drawCars();
+  updateSidePanels();
+  if (raceStarted) checkWinner();
 
   animFrame = requestAnimationFrame(gameLoop);
 }
@@ -722,6 +577,12 @@ function updateCars(dt) {
   Object.keys(players).forEach(name => {
     const p = players[name];
     if (!p) return;
+
+    // Frys bilen hvis løpet ikke har startet
+    if (!raceStarted) {
+      p.speed = 0; p.targetSpeed = 0;
+      return;
+    }
 
     // Glir jevnt mot targetSpeed (akselerasjon/bremsing)
     const target = p.targetSpeed || 0;
@@ -836,21 +697,94 @@ function showIncident(name, type) {
   setTimeout(()=>{ if(toast.parentNode) toast.parentNode.removeChild(toast); }, 3200);
 }
 
+// ── TRAFFIC LIGHT SEQUENCE ──
+function triggerStart() {
+  if (!roomCode || !window._fbReady) return;
+  document.getElementById('startRaceBtn').disabled = true;
+  // Signal til Firebase at countdown starter
+  window._update(window._ref(window._db, 'rooms/'+roomCode), { countdown: Date.now() });
+}
+
+function runTrafficLights(onGo) {
+  const lights = document.getElementById('trafficLights');
+  const red    = document.getElementById('tl-red');
+  const yellow = document.getElementById('tl-yellow');
+  const green  = document.getElementById('tl-green');
+  const label  = document.getElementById('tl-label');
+  lights.classList.add('show');
+  red.className='tl-light'; yellow.className='tl-light'; green.className='tl-light';
+  label.textContent='KLAR';
+
+  setTimeout(()=>{ red.classList.add('red-on');    label.textContent='KLAR'; }, 200);
+  setTimeout(()=>{ yellow.classList.add('yellow-on'); label.textContent='SET'; },  1200);
+  setTimeout(()=>{
+    red.classList.remove('red-on');
+    yellow.classList.remove('yellow-on');
+    green.classList.add('green-on');
+    label.textContent='GÅ!';
+  }, 2200);
+  setTimeout(()=>{
+    lights.classList.remove('show');
+    onGo();
+  }, 3400);
+}
+
+function resetForNewRace() {
+  // Nullstill alle biler lokalt
+  Object.keys(players).forEach(name => {
+    players[name].laps = 0;
+    players[name].dist = 0;
+    players[name].speed = 0;
+    players[name].targetSpeed = 0;
+    players[name].peakSpeed = 0;
+  });
+  Object.keys(lastScores).forEach(name => {
+    lastScores[name] = { score: 0, time: Date.now() };
+  });
+  // Nullstill poeng i Firebase
+  if (window._fbReady && roomCode) {
+    Object.keys(players).forEach(name => {
+      window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+name), { score: 0, lastUpdated: Date.now() });
+    });
+  }
+  raceStarted = true;
+  winnerDeclared = false;
+  document.getElementById('winnerOverlay').classList.remove('show');
+}
+
 // ── WINNER CHECK ──
 function checkWinner() {
-  if (winnerDeclared) return;
+  if (winnerDeclared || !raceStarted) return;
   const winner = Object.entries(players).find(([,p])=>(p.laps||0)>=lapGoal);
   if (winner) {
     winnerDeclared = true;
+    raceStarted = false;
     const name = winner[0];
     document.getElementById('winnerName').textContent = name;
     document.getElementById('winnerOverlay').classList.add('show');
+    // Re-aktiver startknapp for ny runde
+    document.getElementById('startRaceBtn').disabled = false;
   }
 }
 
 // ── FIREBASE SYNC ──
 function startFirebaseSync(room) {
   if (!window._fbReady) return;
+
+  // Lytt på countdown-signal
+  let lastCountdown = 0;
+  window._onValue(window._ref(window._db, 'rooms/'+room+'/countdown'), snap => {
+    const ts = snap.val();
+    if (!ts || ts === lastCountdown) return;
+    lastCountdown = ts;
+    // Biler skal stå stille under nedtelling
+    Object.keys(players).forEach(n => {
+      players[n].targetSpeed = 0;
+      players[n].speed = 0;
+      players[n].peakSpeed = 0;
+    });
+    runTrafficLights(() => resetForNewRace());
+  });
 
   const COLORS = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c',
                   '#9b59b6','#1abc9c','#e67e22','#3498db','#e91e63',
@@ -981,19 +915,29 @@ window.launchRace = function() {
 
   roomCode = room;
   window.roomCode = room;
-  raceStarted = true;
+  // raceStarted settes IKKE her — venter på trafikklys
+  raceStarted = false;
 
   if (room && window._fbReady) {
     startFirebaseSync(room);
   } else {
     startDemo();
   }
+  // Aktiver startknapp
+  document.getElementById('startRaceBtn').disabled = false;
 };
 
 // ── STARTUP ──
 window.addEventListener('load', () => {
   resizeCanvas();
   window.addEventListener('resize', () => { resizeCanvas(); });
+
+  // Last inn SVG-bakgrunn
+  const img = new Image();
+  img.src = './bane.svg';
+  img.onload = () => { window._trackImage = img; };
+  window._trackImage = img;
+
   requestAnimationFrame(gameLoop);
 });
 </script>
