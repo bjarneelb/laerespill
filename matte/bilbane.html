@@ -179,7 +179,24 @@
   .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(255,214,10,0.6); }
 
   /* ── WINNER OVERLAY ── */
-  /* ── START BUTTON ── */
+  #winnerOverlay {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-60%) scale(0.8);
+    z-index: 300;
+    background: rgba(10,10,26,0.96);
+    border: 3px solid var(--gold);
+    border-radius: 20px;
+    padding: 28px 44px;
+    display: none; flex-direction: column; align-items: center;
+    box-shadow: 0 0 60px rgba(255,214,10,0.3);
+    transition: transform 0.5s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+    opacity: 0;
+  }
+  #winnerOverlay.show {
+    display: flex;
+    transform: translate(-50%,-60%) scale(1);
+    opacity: 1;
+  }
   .btn-start-race {
     padding: 10px 22px;
     background: var(--neon); border: none; border-radius: 8px;
@@ -191,6 +208,8 @@
   .btn-start-race:hover { transform: scale(1.05); box-shadow: 0 0 24px rgba(0,245,212,0.6); }
   .btn-start-race:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
 
+  /* ── TRAFFIC LIGHTS ── */
+  #trafficLights {
   /* ── TRAFFIC LIGHTS ── */
   #trafficLights {
     position: absolute; top: 50%; left: 50%;
@@ -209,21 +228,22 @@
   .tl-light.yellow-on { background: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
   .tl-light.green-on  { background: #00ee44; box-shadow: 0 0 20px #00ee44; }
   .tl-label { font-family: 'Black Han Sans',sans-serif; font-size: 0.8rem; color: var(--muted); letter-spacing: 2px; margin-top: 4px; }
-    position: fixed; inset: 0; z-index: 300;
-    background: rgba(0,0,0,0.85);
-    display: none; align-items: center; justify-content: center;
-    flex-direction: column;
+
+  /* ── WINNER POPUP ── */
+  #winnerOverlay {
+    position: absolute; top: 38%; left: 50%;
+    transform: translate(-50%,-50%) scale(0.8);
+    z-index: 300; display: none; flex-direction: column; align-items: center;
+    background: rgba(10,10,26,0.96); border: 3px solid var(--gold);
+    border-radius: 20px; padding: 24px 40px;
+    box-shadow: 0 0 60px rgba(255,214,10,0.3);
+    opacity: 0; transition: opacity 0.3s;
   }
-  #winnerOverlay.show { display: flex; }
-  .winner-card {
-    text-align: center;
-    animation: winnerPop 0.6s cubic-bezier(.34,1.56,.64,1);
-  }
-  @keyframes winnerPop { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
-  .winner-trophy { font-size: 6rem; margin-bottom: 12px; }
-  .winner-title { font-family: 'Black Han Sans', sans-serif; font-size: 3rem; color: var(--gold); letter-spacing: 3px; margin-bottom: 8px; }
-  .winner-name  { font-family: 'Black Han Sans', sans-serif; font-size: 2rem; color: white; margin-bottom: 24px; }
-  .btn-restart { padding: 14px 36px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Black Han Sans',sans-serif; font-size: 1.1rem; letter-spacing: 2px; cursor: pointer; }
+  #winnerOverlay.show { display: flex; transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  .winner-trophy { font-size: 3.5rem; margin-bottom: 6px; }
+  .winner-title { font-family: 'Black Han Sans', sans-serif; font-size: 2rem; color: var(--gold); letter-spacing: 3px; margin-bottom: 4px; }
+  .winner-name  { font-family: 'Black Han Sans', sans-serif; font-size: 1.4rem; color: white; margin-bottom: 16px; }
+  .btn-restart { padding: 10px 28px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Black Han Sans',sans-serif; font-size: 0.95rem; letter-spacing: 2px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -245,12 +265,9 @@
 
 <!-- WINNER OVERLAY -->
 <div id="winnerOverlay">
-  <div class="winner-card">
-    <div class="winner-trophy">🏆</div>
-    <div class="winner-title">VINNER!</div>
-    <div class="winner-name" id="winnerName">–</div>
-    <button class="btn-restart" onclick="location.reload()">🔄 Nytt løp</button>
-  </div>
+  <div class="winner-trophy">🏆</div>
+  <div class="winner-title">VINNER!</div>
+  <div class="winner-name" id="winnerName">–</div>
 </div>
 
 <!-- TRAFFIC LIGHTS -->
