@@ -263,21 +263,6 @@
   </div>
 </div>
 
-<!-- WINNER OVERLAY -->
-<div id="winnerOverlay">
-  <div class="winner-trophy">🏆</div>
-  <div class="winner-title">VINNER!</div>
-  <div class="winner-name" id="winnerName">–</div>
-</div>
-
-<!-- TRAFFIC LIGHTS -->
-<div id="trafficLights">
-  <div class="tl-light" id="tl-red"></div>
-  <div class="tl-light" id="tl-yellow"></div>
-  <div class="tl-light" id="tl-green"></div>
-  <div class="tl-label" id="tl-label">KLAR</div>
-</div>
-
 <!-- HEADER -->
 <div class="topbar">
   <div class="topbar-title">🏎️ LIKNINGSLØPET</div>
@@ -302,9 +287,24 @@
   </div>
 
   <!-- CENTER: TRACK -->
-  <div style="position:relative;overflow:hidden">
+  <div id="trackWrap" style="position:relative;overflow:hidden;height:100%">
     <canvas id="trackCanvas"></canvas>
     <div class="incident-feed" id="incidentFeed"></div>
+
+    <!-- WINNER OVERLAY — inne i banen -->
+    <div id="winnerOverlay">
+      <div class="winner-trophy">🏆</div>
+      <div class="winner-title">VINNER!</div>
+      <div class="winner-name" id="winnerName">–</div>
+    </div>
+
+    <!-- TRAFFIC LIGHTS — inne i banen -->
+    <div id="trafficLights">
+      <div class="tl-light" id="tl-red"></div>
+      <div class="tl-light" id="tl-yellow"></div>
+      <div class="tl-light" id="tl-green"></div>
+      <div class="tl-label" id="tl-label">KLAR</div>
+    </div>
   </div>
 
   <!-- RIGHT: FULL STANDINGS -->
