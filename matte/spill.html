@@ -135,7 +135,29 @@
   /* Plus signs between blocks */
   .block-plus { color: var(--muted); font-weight: 900; font-size: 1rem; display:flex; align-items:center; user-select: none; pointer-events: none; }
 
-  /* ── BANK ── */
+  /* ── BUILD14 PANELS ── */
+  .build14-panel {
+    width: 160px; flex-shrink: 0; display: none;
+    flex-direction: column; gap: 6px;
+    background: white; border-radius: var(--r);
+    border: 2px solid var(--border);
+    padding: 10px 10px; box-shadow: var(--shadow);
+    align-self: stretch;
+  }
+  .build14-panel.visible { display: flex; }
+  .build14-title { font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--accent); border-bottom: 1px solid var(--border);
+    padding-bottom: 4px; margin-bottom: 2px; }
+  .build14-row { display: flex; gap: 4px; align-items: center; }
+  .build14-input { width: 48px; padding: 5px 6px; border: 1.5px solid var(--border);
+    border-radius: 5px; font-family: 'Nunito',sans-serif; font-size: 0.82rem;
+    font-weight: 700; text-align: center; outline: none; }
+  .build14-input:focus { border-color: var(--accent); }
+  .build14-input:disabled { background: #f3f4f6; color: var(--muted); }
+  .build14-add { width: 100%; padding: 6px; background: var(--accent); color: white;
+    border: none; border-radius: 5px; font-family: 'Nunito',sans-serif;
+    font-size: 0.78rem; font-weight: 800; cursor: pointer; margin-top: 2px; }
+  .build14-add:hover { background: #4338ca; }
   .block-bank { background: white; border-radius: var(--r); border: 2px dashed var(--border); padding: 12px; box-shadow: var(--shadow); }
   .bank-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
   .bank-blocks { display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; align-items: center; }
@@ -201,6 +223,7 @@
 <div class="ctx-menu" id="ctxMenu">
   <button onclick="ctxNeg()">± Bytt fortegn</button>
   <button onclick="ctxSplit()">⚏ Splitt blokk</button>
+  <button id="ctxDeleteBtn" onclick="ctxDeleteBlock()" style="display:none;color:var(--red)">🗑️ Slett blokk</button>
 </div>
 
 <div id="timeUpOverlay">
@@ -250,6 +273,7 @@
       <label><input type="radio" name="sl" value="11"><div class="level-radio-btn"><span class="li">11</span></div></label>
       <label><input type="radio" name="sl" value="12"><div class="level-radio-btn"><span class="li">12</span></div></label>
       <label><input type="radio" name="sl" value="13"><div class="level-radio-btn"><span class="li">13</span></div></label>
+      <label><input type="radio" name="sl" value="14"><div class="level-radio-btn"><span class="li">14</span></div></label>
     </div>
 
     <button class="btn-start" onclick="startGame()">Start! ⚖️</button>
@@ -312,7 +336,15 @@
     <!-- SCALE + BANK side by side -->
     <div style="display:flex;gap:10px;align-items:flex-start;flex:1">
 
-      <!-- BLOCK BANK — til venstre for vekten -->
+      <!-- BYGG VENSTRE (nivå 14) -->
+      <div class="build14-panel" id="build14Left">
+        <div class="build14-title">+ Venstre skål</div>
+        <input class="build14-input" id="b14LNum" type="text" placeholder="teller" style="width:100%;margin-bottom:4px">
+        <input class="build14-input" id="b14LDen" type="text" placeholder="nevner (valgfritt)" style="width:100%;margin-bottom:4px">
+        <button class="build14-add" onclick="build14Add('left')">+ Legg til</button>
+      </div>
+
+      <!-- BLOCK BANK — til venstre for vekten (nivå 3-13) -->
       <div class="block-bank" id="bankPanel" style="display:none;width:160px;flex-shrink:0;align-self:stretch">
         <div class="bank-label">📦 Bank</div>
         <div class="bank-blocks" id="bankBlocks" style="display:flex;flex-direction:column;gap:5px;align-items:flex-start"></div>
@@ -388,8 +420,17 @@
           </svg>
         </div>
       </div>
-    </div>
-  </div>
+
+      <!-- BYGG HØYRE (nivå 14) -->
+      <div class="build14-panel" id="build14Right">
+        <div class="build14-title">+ Høyre skål</div>
+        <input class="build14-input" id="b14RNum" type="text" placeholder="teller" style="width:100%;margin-bottom:4px">
+        <input class="build14-input" id="b14RDen" type="text" placeholder="nevner (valgfritt)" style="width:100%;margin-bottom:4px">
+        <button class="build14-add" onclick="build14Add('right')">+ Legg til</button>
+      </div>
+
+    </div><!-- /flex row -->
+  </div><!-- /scale-area -->
 
   <!-- CONTROLS -->
   <div class="controls">
@@ -420,6 +461,11 @@
   window.syncScore=function(score){
     if(!window.roomCode) return;
     _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),{score,lastUpdated:Date.now()});
+  };
+  window.syncIncident=function(type){
+    if(!window.roomCode) return;
+    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),
+      {incident:type, incidentAt:Date.now()});
   };
   window.addEventListener('beforeunload',()=>{
     if(window.roomCode&&window._fbReady) window._set(window._ref(window._db,'rooms/'+window.roomCode+'/players/'+window.playerName),null);
@@ -473,8 +519,9 @@ const LEVELS = {
   11: { name:'X i nevner (avansert)',   desc:'Flere brøker med x i nevner, koeff. i nevner', bank:true,  neg:false, mulX:true },
   12: { name:'Negative løsninger',      desc:'Blanding av alle typer, negative svar',        bank:true,  neg:true  },
   13: { name:'Repetisjon/blanding',     desc:'Blanding av alle nivåer',                      bank:true,  neg:true  },
+  14: { name:'Bygg og løs',             desc:'Bygg likningen selv, deretter løs den',        bank:false, neg:true, build14:true },
 };
-const MAX_LEVEL=13, WIN_PER_LEVEL=3;
+const MAX_LEVEL=14, WIN_PER_LEVEL=3;
 
 // ── STATE ──
 let gameMode='practice', timedMinutes=5, timedSecondsLeft=0, timedInterval=null;
@@ -501,8 +548,12 @@ function updateLevelUI(){
   document.getElementById('levelInfoName').textContent='Nivå '+currentLevel+': '+lv.name;
   document.getElementById('levelInfoDesc').textContent=lv.desc;
   // Bank / build panel
-  document.getElementById('bankPanel').style.display  = lv.bank ? 'block' : 'none';
-  document.getElementById('mulXBtn').style.display    = lv.mulX ? 'inline-flex' : 'none';
+  document.getElementById('bankPanel').style.display   = (lv.bank && !lv.build14) ? 'block' : 'none';
+  document.getElementById('mulXBtn').style.display     = lv.mulX ? 'inline-flex' : 'none';
+  const b14 = lv.build14 ? 'flex' : 'none';
+  document.getElementById('build14Left').style.display  = b14;
+  document.getElementById('build14Right').style.display = b14;
+  if(lv.build14) initBuild14Panels();
   // Wins progress
   const pct=(winsOnLevel/WIN_PER_LEVEL)*100;
   document.getElementById('winsFill').style.width=pct+'%';
@@ -526,6 +577,7 @@ function generateTask(level){
     case 11: return gen_L11();
     case 12: return gen_L12();
     case 13: return gen_L13();
+    case 14: return gen_L14();
     default: return gen_L4();
   }
 }
@@ -634,7 +686,90 @@ function gen_L9(){ return retry(()=>{
   return { xVal:x, left:[fracx(a,den1),{type:'num',num:b}], right:[fracx(c,den2),{type:'num',num:rhs}] };
 });}
 
-function gcd(a,b){ return b===0?a:gcd(b,a%b); }
+// ── BUILD14 — bygg blokker via teller/nevner-felt ──
+
+// Parser: tolker en streng som "3", "-2", "x", "2x", "-3x"
+// Returnerer {coeff, hasX} eller null ved ugyldig input
+function parseExpr(str){
+  if(!str||!str.trim()) return null;
+  str=str.trim().toLowerCase().replace(/\s+/g,'');
+  // Kun x
+  if(str==='x')  return {coeff:1,  hasX:true};
+  if(str==='-x') return {coeff:-1, hasX:true};
+  // ax
+  const mx=str.match(/^(-?\d+)x$/);
+  if(mx) return {coeff:parseInt(mx[1]), hasX:true};
+  // Rent tall
+  const mn=str.match(/^-?\d+$/);
+  if(mn) return {coeff:parseInt(str), hasX:false};
+  return null;
+}
+
+function initBuild14Panels(){
+  // Ingenting å initialisere — bare tekstfelter
+}
+
+window.build14Add=function(side){
+  const cap=side==='left'?'L':'R';
+  const numStr=document.getElementById('b14'+cap+'Num').value.trim();
+  const denStr=document.getElementById('b14'+cap+'Den').value.trim();
+
+  const top=parseExpr(numStr);
+  if(!top){ showToast('Ugyldig teller — eks: 3, -2, x, 2x','error'); return; }
+  if(top.coeff===0){ showToast('Koeffisient kan ikke være 0','error'); return; }
+
+  let newBlock;
+
+  if(!denStr){
+    // Ingen nevner
+    if(top.hasX) newBlock={id:idCounter++,type:'x',  num:top.coeff};
+    else         newBlock={id:idCounter++,type:'num', num:top.coeff};
+  } else {
+    const bot=parseExpr(denStr);
+    if(!bot){ showToast('Ugyldig nevner — eks: 2, x, 3x','error'); return; }
+    if(bot.coeff===0){ showToast('Nevner kan ikke være 0','error'); return; }
+
+    if(!bot.hasX){
+      const den=Math.abs(bot.coeff);
+      const sign=bot.coeff<0?-1:1;
+      // Nevner=1: behandle som vanlig blokk
+      if(den===1){
+        if(top.hasX) newBlock={id:idCounter++,type:'x',  num:top.coeff*sign};
+        else         newBlock={id:idCounter++,type:'num', num:top.coeff*sign};
+      } else {
+        if(top.hasX) newBlock={id:idCounter++,type:'fracx', num:top.coeff*sign, den};
+        else         newBlock={id:idCounter++,type:'frac',  num:top.coeff*sign, den};
+      }
+    } else {
+      // Nevner inneholder x
+      const den=Math.abs(bot.coeff);
+      if(top.hasX){ showToast('Kan ikke ha x i både teller og nevner','error'); return; }
+      newBlock={id:idCounter++,type:'fracxi', num:top.coeff, den};
+    }
+  }
+
+  saveHistory();
+  sides[side].push(newBlock);
+  lastChangedId=newBlock.id;
+  document.getElementById('b14'+cap+'Num').value='';
+  document.getElementById('b14'+cap+'Den').value='';
+  renderAll();
+  if(buildingPhase) checkBuildComplete();
+};
+
+// Høyreklikk → Slett blokk (kun nivå 14)
+function ctxDeleteBlock(){
+  if(!activeMenuTarget) return;
+  saveHistory();
+  const arr=activeMenuTarget.side==='bank'?bankItems:sides[activeMenuTarget.side];
+  const idx=arr.findIndex(i=>i.id===activeMenuTarget.item.id);
+  if(idx!==-1){ arr.splice(idx,1); lastChangedId=null; renderAll(); }
+}
+
+function gcd(a,b){ return b===0?Math.abs(a):gcd(b,a%b); }
+
+// ── GEN LEVEL 14 ──
+function gen_L14(){ return gen_L13(); }
 
 // ── GANGE MED X ──
 window.operateX=function(){
@@ -667,7 +802,14 @@ function applyTask(task){
   // Lagre originallikning FØR blokker lages — bruk dedikert formatter
   originalEqStr = fmtTaskSideHTML(task.left.filter(b=>b.num!==0)) + ' = ' + fmtTaskSideHTML(task.right.filter(b=>b.num!==0));
 
-  if(lv.bank){
+  if(lv.build14){
+    // Nivå 14: ingen bank, ingen blokker — eleven bygger selv
+    bankItems=[];
+    sides={left:[],right:[]};
+    buildingPhase=true;
+    originalLeft  = task.left.filter(b=>b.num!==0).map(b=>({...b}));
+    originalRight = task.right.filter(b=>b.num!==0).map(b=>({...b}));
+  } else if(lv.bank){
     bankItems=[...task.left,...task.right].filter(b=>b.num!==0).map(b=>({id:idCounter++,...b}));
     sides={left:[],right:[]};
     // Start byggefasen — lagre original for sammenligning
@@ -735,7 +877,13 @@ function makeBlockEl(item,side){
   }
   div.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text',JSON.stringify({side,id:item.id})); setTimeout(()=>div.classList.add('dragging'),0); });
   div.addEventListener('dragend',()=>div.classList.remove('dragging'));
-  div.addEventListener('contextmenu',e=>{ e.preventDefault(); activeMenuTarget={side,item}; showCtxMenu(e.clientX,e.clientY); });
+  div.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    activeMenuTarget={side,item};
+    const del=document.getElementById('ctxDeleteBtn');
+    if(del) del.style.display=LEVELS[currentLevel]&&LEVELS[currentLevel].build14?'block':'none';
+    showCtxMenu(e.clientX,e.clientY);
+  });
   return div;
 }
 
@@ -819,8 +967,10 @@ function updateEqDisplay(){
   const icons=['','🔢','🔢','📦','📦','🔢','🔢','🔢','🔢','🔧'];
   document.getElementById('taskIcon').textContent = icons[currentLevel]||'⚖️';
   let instr;
-  if(!lv.bank) instr='Flytt blokkene i vektskålene slik at x står alene på én side';
-  else if(buildingPhase) instr='🏗️ Bygg likningen: dra blokkene fra banken inn i riktige skåler';
+  if(lv.build14 && buildingPhase)  instr='🏗️ Bygg likningen i oppgaven — skriv inn blokkene og legg dem i riktig skål';
+  else if(lv.build14 && !buildingPhase) instr='Løs likningen — flytt blokkene slik at x står alene på én side';
+  else if(!lv.bank) instr='Flytt blokkene i vektskålene slik at x står alene på én side';
+  else if(buildingPhase) instr='🏗️ Bygg likningen i oppgaven: dra blokkene fra banken inn i riktige skåler';
   else instr='Flytt blokkene slik at x står alene på én side';
   document.getElementById('taskInstr').textContent=instr;
 }
@@ -945,7 +1095,7 @@ let buildingPhase = false;   // true når vi er i byggefasen
 let originalLeft  = [];      // originallikning venstre side (for sjekk)
 let originalRight = [];      // originallikning høyre side (for sjekk)
 
-const BUILD_MSG = '🏗️ Bygg likningen i oppgavekortet først!';
+const BUILD_MSG = '🏗️ Bygg likningen i oppgaven først!';
 
 // Sjekk om en side matcher originalen (uansett rekkefølge, men type+num må stemme)
 function sideMatchesOriginal(current, original) {
@@ -975,9 +1125,6 @@ function checkBuildComplete() {
   // Alt stemmer — gå videre til løsningsfasen
   buildingPhase=false;
   showToast('✅ Likningen er bygget! Nå kan du løse den.','success');
-  // Oppdater oppgavekort-instruksjon
-  const lv=LEVELS[currentLevel];
-  document.getElementById('taskInstr').textContent='Flytt blokkene slik at x står alene på én side';
   renderAll();
 }
 ['dropLeft','dropRight'].forEach((id,idx)=>{
@@ -998,14 +1145,16 @@ window.handleDrop=function(ev,targetSide){
 
   // Merge like types on same side
   if(targetSide!=='bank'&&data.side===targetSide){
-    const tEl=ev.target.closest('.block');
+    const tEl=ev.target.closest ? ev.target.closest('.block') : null;
+    // Også sjekk om vi er i byggefasen — da skal ingen merge tillates på skålene
+    if(buildingPhase && tEl){
+      showToast(BUILD_MSG,'error'); return;
+    }
     if(tEl){
       const tid=parseInt(tEl.getAttribute('data-id'));
       const tArr=sides[targetSide];
       const tItem=tArr.find(i=>i.id===tid);
       if(tItem&&tItem.id!==item.id){
-        // Blokker sammenslåing i byggefasen
-        if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
         const bothFrac=(tItem.type===item.type)&&['frac','fracx'].includes(item.type);
         if(bothFrac&&tItem.den!==item.den){
           showToast('⚠️ Brøkene må ha samme nevner for å slå sammen!','error');
@@ -1030,7 +1179,37 @@ window.handleDrop=function(ev,targetSide){
   if(buildingPhase) checkBuildComplete();
 };
 
-// ── OPERATIONS ──
+// ── INCIDENT SYSTEM ──
+const INCIDENT_TYPES = {
+  slide: { title:'💨 Du sklir!', sub:'Ingen straff – bare vent litt.' },
+  flat:  { title:'🔧 Punktering!', sub:'Løs én oppgave for å kjøre videre.' },
+  crash: { title:'💥 Krasj!', sub:'Løs to oppgaver for å kjøre videre.' },
+};
+let incidentActive=false, incidentType=null, incidentTasksLeft=0;
+let speedRate=0, lastScoreTime=Date.now(), lastScoreValue=0;
+
+function maybeIncident(rate){
+  if(incidentActive||gameMode==='practice') return;
+  const risk=Math.min(0.4, rate/500);
+  if(Math.random()<risk){
+    const r=Math.random();
+    if(r<0.4)      triggerIncident('slide');
+    else if(r<0.75) triggerIncident('flat');
+    else            triggerIncident('crash');
+  }
+}
+
+function triggerIncident(type){
+  if(incidentActive) return;
+  incidentActive=true; incidentType=type;
+  const def=INCIDENT_TYPES[type];
+  incidentTasksLeft=type==='crash'?2:type==='flat'?1:0;
+  if(typeof window.syncIncident==='function') window.syncIncident(type);
+  showToast(def.title+' '+def.sub, 'error');
+  if(type==='slide'){
+    setTimeout(()=>{ incidentActive=false; incidentType=null; }, 3000);
+  }
+}
 window.operate=function(t){
   if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
   const v=parseInt(document.getElementById('opVal').value); if(!v||v===0) return;
@@ -1146,6 +1325,10 @@ window.checkSolution=function(){
     if(gameMode!=='practice'){
       bonus=Math.max(10,Math.round(200-(Date.now()-taskStartTime)/1000*1.5));
       currentScore+=bonus;
+      const now=Date.now();
+      const dt=(now-lastScoreTime)/1000;
+      if(dt>0&&dt<120) speedRate=Math.max(0,Math.round((bonus/dt)*10));
+      lastScoreTime=now;
       const scorEl=document.getElementById('myScoreBig');
       if(scorEl) scorEl.textContent=currentScore;
       try {
@@ -1160,7 +1343,7 @@ window.checkSolution=function(){
       currentLevel++; winsOnLevel=0;
       showToast('🚀 Nivå '+currentLevel+'!','success');
     }
-    setTimeout(()=>newTask(),1400);
+    setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) newTask(); },1400);
   } else {
     showToast('❌ Ikke i balanse ennå – prøv igjen!','error');
   }
