@@ -727,10 +727,14 @@ function showIncident(name, type) {
 
 // ── TRAFFIC LIGHT SEQUENCE ──
 function triggerStart() {
-  if (!roomCode || !window._fbReady) return;
   document.getElementById('startRaceBtn').disabled = true;
-  // Signal til Firebase at countdown starter
-  window._update(window._ref(window._db, 'rooms/'+roomCode), { countdown: Date.now() });
+  if (roomCode && window._fbReady) {
+    // Flerspiller: signal via Firebase
+    window._update(window._ref(window._db, 'rooms/'+roomCode), { countdown: Date.now() });
+  } else {
+    // Demo/solo: kjør trafikklys direkte
+    runTrafficLights(() => resetForNewRace());
+  }
 }
 
 function runTrafficLights(onGo) {
