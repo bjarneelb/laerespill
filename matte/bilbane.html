@@ -764,6 +764,7 @@ function resetForNewRace() {
   document.getElementById('winnerOverlay').classList.remove('show');
   // Nullstill alle biler lokalt
   Object.keys(players).forEach(name => {
+    players[name].laps = 0;
     players[name].dist = 0;
     players[name].speed = 0;
     players[name].targetSpeed = 0;
