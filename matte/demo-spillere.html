@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo-spillere</title>
+<style>
+:root{--bg:#0a0f1e;--panel:#0d1628;--border:#1a3a5c;--accent:#00d4ff;
+  --green:#00ff88;--red:#ff3344;--yellow:#ffd700;--muted:#4a6a8a;--text:#c8e0f0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Courier New',monospace;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:var(--panel);border:2px solid var(--accent);border-radius:12px;
+  padding:28px 32px;width:480px;box-shadow:0 0 40px rgba(0,212,255,0.1);}
+h1{font-size:1.2rem;color:var(--accent);letter-spacing:3px;margin-bottom:4px;}
+p{color:var(--muted);font-size:0.8rem;margin-bottom:20px;}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.label{font-size:0.68rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+input{padding:9px 12px;background:#060c18;border:1px solid var(--border);
+  border-radius:6px;color:var(--text);font-family:inherit;font-size:0.9rem;
+  outline:none;width:100%;}
+input:focus{border-color:var(--accent);}
+.row{display:flex;gap:8px;}
+.row .field{flex:1;}
+button{width:100%;padding:11px;background:transparent;border:2px solid var(--accent);
+  border-radius:6px;color:var(--accent);font-family:inherit;font-size:0.9rem;
+  letter-spacing:2px;cursor:pointer;transition:all 0.2s;margin-top:4px;}
+button:hover{background:rgba(0,212,255,0.1);}
+button.stop{border-color:var(--red);color:var(--red);}
+button.stop:hover{background:rgba(255,51,68,0.1);}
+button:disabled{opacity:0.3;cursor:not-allowed;}
+.status{margin-top:16px;padding:12px;background:#060c18;border-radius:8px;
+  border:1px solid var(--border);font-size:0.75rem;max-height:240px;overflow-y:auto;}
+.status-line{padding:2px 0;border-bottom:1px solid #0a1a2a;}
+.status-line:last-child{border-bottom:none;}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+.badge{display:inline-block;padding:1px 7px;border-radius:3px;font-size:0.65rem;
+  margin-left:4px;border:1px solid;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🤖 DEMO-SPILLERE</h1>
+  <p>Sender tilfeldige poeng til Firebase — nyttig for å teste baner uten å løse oppgaver.</p>
+
+  <div class="field">
+    <div class="label">Romkode</div>
+    <input id="roomCode" placeholder="ROMKODE" maxlength="8" style="text-transform:uppercase;letter-spacing:2px;text-align:center">
+  </div>
+  <div class="row">
+    <div class="field">
+      <div class="label">Antall spillere</div>
+      <input id="numPlayers" type="number" value="8" min="1" max="30">
+    </div>
+    <div class="field">
+      <div class="label">Poeng per minutt (maks)</div>
+      <input id="pps" type="number" value="80" min="10" max="200">
+    </div>
+  </div>
+
+  <button id="startBtn" onclick="startDemo()">▶ START DEMO</button>
+  <button id="stopBtn" class="stop" onclick="stopDemo()" disabled>■ STOPP</button>
+  <button onclick="clearPlayers()" style="border-color:var(--muted);color:var(--muted);margin-top:6px">🗑️ Fjern spillere fra Firebase</button>
+
+  <div class="status" id="status">
+    <div class="status-line" style="color:var(--muted)">Ikke startet...</div>
+  </div>
+</div>
+
+<script type="module">
+  import { database, ref, update, set, remove } from "./js/firebase-config.js";
+  window._db=database; window._ref=ref;
+  window._update=update; window._set=set; window._remove=remove;
+  window._fbReady=true;
+</script>
+
+<script>
+const NAMES=[
+  'Emma Hansen','Noah Berg','Sofia Dahl','Lucas Lie','Mia Holm',
+  'Oliver Sand','Ingrid Nygård','Ella Vik','William Lund','Astrid Haug',
+  'Theo Strand','Frida Moe','Jakob Foss','Nora Bakke','Filip Aas',
+  'Sigrid Dal','Emil Vold','Thea Bøe','Sander Ro','Malin Eng',
+  'Jonas Flip','Ida Krog','Henrik Sol','Marie Sky','Lars Fjeld',
+  'Kari Blom','Petter Ås','Anne Stein','Rune Elv','Tove Dun'
+];
+
+const COLORS=['#e84393','#00d4ff','#00ff88','#ffd700','#ff6600','#aa44ff'];
+
+let interval=null;
+let demoPlayers=[];
+
+function startDemo(){
+  if(!window._fbReady){ log('⚠️ Firebase ikke klar ennå, vent litt...'); return; }
+  const room=document.getElementById('roomCode').value.trim().toUpperCase();
+  const n=Math.min(30,Math.max(1,parseInt(document.getElementById('numPlayers').value)||8));
+  if(!room){ log('⚠️ Skriv inn romkode!'); return; }
+
+  // Velg n tilfeldige navn
+  demoPlayers=[...NAMES].sort(()=>Math.random()-0.5).slice(0,n).map((name,i)=>({
+    name, score:0, color:COLORS[i%COLORS.length]
+  }));
+
+  // Registrer dem i Firebase
+  demoPlayers.forEach(p=>{
+    window._update(window._ref(window._db,'rooms/'+room+'/players/'+p.name),{
+      score:0, lastUpdated:Date.now()
+    });
+  });
+
+  log(`✅ Startet ${n} demo-spillere i rom <strong>${room}</strong>`);
+  demoPlayers.forEach(p=>log(`<span class="dot" style="background:${p.color}"></span>${p.name} — starter på 0 poeng`));
+
+  document.getElementById('startBtn').disabled=true;
+  document.getElementById('stopBtn').disabled=false;
+
+  // Send poengoppdateringer hvert sekund
+  // Simuler ekte spillere: hvert 20-60 sekund løser de en oppgave og får 10-100 poeng
+  // Noen er raskere enn andre — gi hver spiller en individuell hastighet
+  demoPlayers.forEach(p=>{
+    p.speed=0.4+Math.random()*0.6; // 40-100% av maks hastighet
+    p.nextAnswer=Date.now()+(5+Math.random()*20)*1000; // første svar om 5-25 sek
+  });
+
+  interval=setInterval(()=>{
+    const now=Date.now();
+    demoPlayers.forEach(p=>{
+      if(now<p.nextAnswer) return;
+      // Svar riktig — gi bonus 10-100 poeng (som ekte spill)
+      const bonus=Math.floor((10+Math.random()*90)*p.speed);
+      p.score+=bonus;
+      window._update(window._ref(window._db,'rooms/'+room+'/players/'+p.name),{
+        score:p.score, lastUpdated:now
+      });
+      // Neste svar om 20-60 sek (justert etter hastighet)
+      const interval_sek=(20+Math.random()*40)/p.speed;
+      p.nextAnswer=now+interval_sek*1000;
+    });
+    if(Math.random()<0.05) updateStatus();
+  },500);
+}
+
+function stopDemo(){
+  if(interval){ clearInterval(interval); interval=null; }
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('stopBtn').disabled=true;
+  log('■ Demo stoppet. Spillerne er fortsatt i Firebase.');
+  updateStatus();
+}
+
+function clearPlayers(){
+  const room=document.getElementById('roomCode').value.trim().toUpperCase();
+  if(!room||!window._fbReady){ log('⚠️ Skriv inn romkode først'); return; }
+  if(interval){ clearInterval(interval); interval=null; }
+  demoPlayers.forEach(p=>{
+    window._remove(window._ref(window._db,'rooms/'+room+'/players/'+p.name));
+  });
+  demoPlayers=[];
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('stopBtn').disabled=true;
+  log('🗑️ Spillere fjernet fra Firebase.');
+}
+
+function updateStatus(){
+  const sorted=[...demoPlayers].sort((a,b)=>b.score-a.score);
+  sorted.forEach(p=>{
+    log(`<span class="dot" style="background:${p.color}"></span>${p.name}: <strong style="color:var(--yellow)">${p.score}</strong> poeng`);
+  });
+}
+
+function log(msg){
+  const el=document.getElementById('status');
+  const line=document.createElement('div');
+  line.className='status-line';
+  line.innerHTML=msg;
+  el.appendChild(line);
+  el.scrollTop=el.scrollHeight;
+  // Maks 80 linjer
+  while(el.children.length>80) el.removeChild(el.firstChild);
+}
+</script>
+</body>
+</html>
