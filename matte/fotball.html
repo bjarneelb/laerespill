@@ -144,29 +144,43 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 <div class="overlay-screen" id="setupOverlay">
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
-    <p>Sett opp kampen og fordel lag</p>
-    <div class="field-group">
-      <div class="field-label">Romkode</div>
-      <input class="field-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
-    </div>
-    <div class="field-row">
+    <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
+
+    <!-- STEG 1: Opprett rom -->
+    <div id="step1">
       <div class="field-group">
-        <div class="field-label">Kamptid (min)</div>
-        <input class="field-input" id="matchDuration" type="number" value="10" min="2" max="40" style="letter-spacing:0;text-align:center">
+        <div class="field-label">Romkode</div>
+        <input class="field-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
       </div>
-      <div class="field-group">
-        <div class="field-label">Bytteintervall (min)</div>
-        <input class="field-input" id="subInterval" type="number" value="2" min="1" max="10" style="letter-spacing:0;text-align:center">
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Kamptid (min)</div>
+          <input class="field-input" id="matchDuration" type="number" value="10" min="2" max="40" style="letter-spacing:0;text-align:center">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Bytteintervall (min)</div>
+          <input class="field-input" id="subInterval" type="number" value="2" min="1" max="10" style="letter-spacing:0;text-align:center">
+        </div>
       </div>
+      <button class="btn-primary" onclick="createRoom()">📡 OPPRETT ROM</button>
+      <div id="setupError" style="color:var(--red);font-family:var(--font-mono);font-size:0.75rem;margin-top:8px"></div>
     </div>
-    <div class="waiting-list">
-      <div class="w-title">TILKOBLEDE SPILLERE</div>
-      <div id="waitingPlayerList">Venter på spillere...</div>
+
+    <!-- STEG 2: Vent på spillere, fordel lag, start -->
+    <div id="step2" style="display:none">
+      <div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--green);
+           padding:8px;background:rgba(0,255,136,0.08);border-radius:6px;
+           border-left:2px solid var(--green);margin-bottom:10px">
+        ✅ ROM OPPRETTET: <span id="roomDisplay2" style="color:var(--yellow);font-size:1rem"></span>
+      </div>
+      <div class="waiting-list">
+        <div class="w-title">TILKOBLEDE SPILLERE (<span id="playerCountSetup">0</span>)</div>
+        <div id="waitingPlayerList">Venter på spillere...</div>
+      </div>
+      <button class="btn-assign" onclick="assignTeams()">🎲 Fordel lag tilfeldig</button>
+      <div class="team-display" id="teamDisplay"></div>
+      <button class="btn-primary" id="startMatchBtn" onclick="launchMatch()" disabled>⚽ START KAMP</button>
     </div>
-    <button class="btn-assign" onclick="assignTeams()">🎲 Fordel lag tilfeldig</button>
-    <div class="team-display" id="teamDisplay"></div>
-    <button class="btn-primary" onclick="launchMatch()">⚽ START KAMP</button>
-    <div id="setupError" style="color:var(--red);font-family:var(--font-mono);font-size:0.75rem;margin-top:8px"></div>
   </div>
 </div>
 
@@ -282,6 +296,40 @@ let lastTime=0;
 // ═══════════════════════════════════════════════════════════
 // SETUP
 // ═══════════════════════════════════════════════════════════
+window.createRoom=function(){
+  const room=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(!room){setErr('Skriv inn romkode!');return;}
+  if(!window._fbReady){setErr('Firebase ikke klar, vent litt...');return;}
+  matchDuration=(parseInt(document.getElementById('matchDuration').value)||10)*60;
+  subIntervalSec=(parseInt(document.getElementById('subInterval').value)||2)*60;
+  totalMatchTime=matchDuration; matchTimeLeft=matchDuration;
+  roomCode=room;
+  // Opprett rommet i Firebase
+  window._set(window._ref(window._db,'rooms/'+room+'/meta'),{
+    created:Date.now(), type:'fotball'
+  });
+  document.getElementById('roomDisplay').textContent=room;
+  document.getElementById('roomDisplay2').textContent=room;
+  document.getElementById('step1').style.display='none';
+  document.getElementById('step2').style.display='block';
+  document.getElementById('setupSubtitle').textContent='Del koden med elevene, fordel lag og start!';
+  // Start lytting på spillere
+  startPlayerListener(room);
+};
+
+function startPlayerListener(room){
+  window._onValue(window._ref(window._db,'rooms/'+room+'/players'),snap=>{
+    const data=snap.val()||{};
+    const now=Date.now();
+    players={};
+    Object.entries(data).forEach(([name,info])=>{
+      if(info.lastUpdated&&(now-info.lastUpdated)>MAX_INACTIVE_MS) return;
+      players[name]=info;
+    });
+    updateWaitingList();
+  });
+}
+
 window.assignTeams=function(){
   const names=Object.keys(players);
   if(names.length<2){setErr('Trenger minst 2 spillere!');return;}
@@ -289,6 +337,7 @@ window.assignTeams=function(){
   teams={'LAG A':[],'LAG B':[]};
   shuffled.forEach((n,i)=>{teams[TEAM_NAMES[i%2]].push(n);});
   renderTeamDisplay();
+  document.getElementById('startMatchBtn').disabled=false;
 };
 
 function renderTeamDisplay(){
@@ -310,15 +359,11 @@ function updateWaitingList(){
   el.innerHTML=names.length
     ?names.map(n=>`<span class="player-pill">${n}</span>`).join('')
     :'<span style="color:var(--muted);font-size:0.75rem">Venter...</span>';
+  const cnt=document.getElementById('playerCountSetup');
+  if(cnt) cnt.textContent=names.length;
 }
 
 window.launchMatch=function(){
-  const room=document.getElementById('roomInput').value.trim().toUpperCase();
-  matchDuration=(parseInt(document.getElementById('matchDuration').value)||10)*60;
-  subIntervalSec=(parseInt(document.getElementById('subInterval').value)||2)*60;
-  totalMatchTime=matchDuration;
-  matchTimeLeft=matchDuration;
-  roomCode=room;
   if(Object.keys(teams).length<2){setErr('Fordel lag først!');return;}
   document.getElementById('setupOverlay').style.display='none';
   document.getElementById('startBtn').disabled=false;
@@ -328,7 +373,8 @@ window.launchMatch=function(){
   updateTimerDisplay();
   initFootballers();
   updateRosters();
-  if(room&&window._fbReady) startFirebaseSync(room);
+  // Start Firebase-lytting på kickoff og poeng (spillere lyttet på allerede)
+  startMatchFirebaseSync(roomCode);
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -847,13 +893,10 @@ function renderRoster(elId,teamName,color){
   });
 }
 
-// ═══════════════════════════════════════════════════════════
-// FIREBASE
-// ═══════════════════════════════════════════════════════════
-function startFirebaseSync(room){
+// Lytter kun på kickoff og poeng — spillere lyttes på allerede fra createRoom
+function startMatchFirebaseSync(room){
   if(!window._fbReady) return;
 
-  // Kickoff listener
   let lastKickoff=0;
   window._onValue(window._ref(window._db,'rooms/'+room+'/kickoff'),snap=>{
     const ts=snap.val(); if(!ts||ts===lastKickoff) return;
@@ -861,7 +904,12 @@ function startFirebaseSync(room){
     startCountdown(()=>startGame());
   });
 
-  // Players listener
+  window._onValue(window._ref(window._db,'rooms/'+room+'/scores'),snap=>{
+    const data=snap.val(); if(!data) return;
+    try{const s=JSON.parse(data); Object.assign(scores,s); updateScoreDisplay();}catch(e){}
+  });
+
+  // Fortsett å lytte på spillerpoeng under kampen
   window._onValue(window._ref(window._db,'rooms/'+room+'/players'),snap=>{
     const data=snap.val(); if(!data) return;
     const now=Date.now();
@@ -869,21 +917,23 @@ function startFirebaseSync(room){
       if(!players[name]) players[name]={score:0,scoreRate:0,energy:0.8,boost:0};
       const prev=players[name].score||0;
       const dt=(now-(players[name].lastUpdated||now))/1000||1;
-      players[name].scoreRate=Math.max(0,(info.score-prev)/dt*60); // pts per min
+      players[name].scoreRate=Math.max(0,(info.score-prev)/dt*60);
       players[name].score=info.score||0;
       players[name].lastUpdated=now;
-      // Detect boost (score just went up)
       if(info.score>prev) players[name].boostAt=now;
     });
-    updateWaitingList();
     updateRosters();
   });
 
-  // Scores sync
-  window._onValue(window._ref(window._db,'rooms/'+room+'/scores'),snap=>{
-    const data=snap.val(); if(!data) return;
-    try{const s=JSON.parse(data); Object.assign(scores,s); updateScoreDisplay();}catch(e){}
-  });
+  setInterval(()=>{
+    if(!players) return;
+    const now=Date.now();
+    Object.keys(players).forEach(name=>{
+      const p=players[name];
+      if(p.lastUpdated&&(now-p.lastUpdated)>MAX_INACTIVE_MS)
+        window._remove(window._ref(window._db,'rooms/'+room+'/players/'+name));
+    });
+  },60000);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -891,10 +941,7 @@ function startFirebaseSync(room){
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('load',()=>{
   initCanvas();
-  // Draw empty pitch immediately
   drawPitch();
-  // Update waiting list in setup
-  setInterval(()=>updateWaitingList(),2000);
 });
 </script>
 </body>
