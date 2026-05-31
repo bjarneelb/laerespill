@@ -126,6 +126,7 @@
   .action-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; filter:none; }
   .btn-check { background:var(--green); color:white; }
   .btn-reset { background:#fef3c7; color:#92400e; }
+  .btn-undo  { background:#f3f4f6; color:var(--muted); }
   .btn-sub   { background:#d1fae5; color:#065f46; border:2px solid #6ee7b7; }
   .btn-sub.ready { background:#059669; color:white; border-color:#059669; animation:subtlePulse 2s infinite; }
   @keyframes subtlePulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 0 4px rgba(5,150,105,0.25)} }
@@ -297,6 +298,7 @@
     </div>
     <div class="actions-row" style="margin-top:10px">
       <button class="action-btn btn-sub" id="subBtn" onclick="makeBlock()" disabled>📦 Lag innsettingsblokk</button>
+      <button class="action-btn btn-undo" onclick="doUndo()">⟲ Angre</button>
       <button class="action-btn btn-reset" onclick="resetSolver()">↺ Nullstill</button>
     </div>
   </div>
@@ -381,7 +383,7 @@ let subBlock=null;                     // innsettingsblokk i banken
 let knownVar='', knownVal=null;        // fra steg 2
 let finalVar='', finalVal=null;        // fra steg 3
 let sides={left:[],right:[]};
-let lastChangedId=null, activeMenuTarget=null, solverOriginal=null;
+let lastChangedId=null, activeMenuTarget=null, solverOriginal=null, solverHistory=[];
 
 // ── 60 LIKNINGSSETT ──
 const SYSTEMS=[
@@ -811,9 +813,9 @@ document.addEventListener('click',()=>document.getElementById('ctxMenu').style.d
     if(itemIdx===-1)return; const item=srcArr[itemIdx]; const targetSide=sideMap[idx];
     if(data.side===targetSide){
       const tEl=e.target.closest('.block');
-      if(tEl){ const tItem=sides[targetSide].find(i=>i.id===parseInt(tEl.getAttribute('data-id'))); if(tItem&&tItem.type===item.type&&tItem.id!==item.id){ tItem.num+=item.num; lastChangedId=tItem.id; srcArr.splice(itemIdx,1); if(tItem.num===0){sides[targetSide].splice(sides[targetSide].indexOf(tItem),1);lastChangedId=null;} renderSolver();return; } }
+      if(tEl){ const tItem=sides[targetSide].find(i=>i.id===parseInt(tEl.getAttribute('data-id'))); if(tItem&&tItem.type===item.type&&tItem.id!==item.id){ saveHistory(); tItem.num+=item.num; lastChangedId=tItem.id; srcArr.splice(itemIdx,1); if(tItem.num===0){sides[targetSide].splice(sides[targetSide].indexOf(tItem),1);lastChangedId=null;} renderSolver();return; } }
     }
-    lastChangedId=item.id; sides[targetSide].push(srcArr.splice(itemIdx,1)[0]); renderSolver();
+    saveHistory(); lastChangedId=item.id; sides[targetSide].push(srcArr.splice(itemIdx,1)[0]); renderSolver();
   });
 });
 
@@ -824,19 +826,34 @@ window.operate=function(t){
     const allBlocks=[...sides.left,...sides.right].filter(i=>i.type!=='sub');
     if(!allBlocks.every(i=>i.num%v===0)){ showToast('⚠️ Går ikke opp – prøv en annen fremgangsmåte!','error'); return; }
   }
-  lastChangedId=null;
+  saveHistory(); lastChangedId=null;
   ['left','right'].forEach(s=>{ sides[s].forEach(i=>{ if(i.type!=='sub') i.num=t==='multiply'?i.num*v:i.num/v; }); sides[s]=sides[s].filter(i=>i.num!==0||i.type==='sub'); });
   renderSolver();
 };
 
 // ── RESET SOLVER ──
+function saveHistory(){
+  solverHistory.push({
+    left:JSON.parse(JSON.stringify(sides.left)),
+    right:JSON.parse(JSON.stringify(sides.right)),
+  });
+  if(solverHistory.length>30) solverHistory.shift();
+}
+
+window.doUndo=function(){
+  if(!solverHistory.length){ showToast('Ingenting å angre','error'); return; }
+  const prev=solverHistory.pop();
+  sides={left:prev.left,right:prev.right};
+  lastChangedId=null; renderSolver();
+};
+
 window.resetSolver=function(){
   if(solverOriginal){
     sides={left:JSON.parse(JSON.stringify(solverOriginal.left)),right:JSON.parse(JSON.stringify(solverOriginal.right))};
   } else {
     sides={left:[],right:[]};
   }
-  lastChangedId=null; renderSolver();
+  solverHistory=[]; lastChangedId=null; renderSolver();
 };
 
 // ── FINAL ANSWER ──
