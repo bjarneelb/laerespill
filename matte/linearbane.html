@@ -271,7 +271,48 @@
   }
 
   /* ── WINNER OVERLAY ── */
-  #winnerOverlay {
+  /* ── START BUTTON ── */
+  .btn-start-race {
+    padding: 8px 20px; background: var(--accent); border: none; border-radius: 8px;
+    color: #0d1117; font-family: 'Black Han Sans', sans-serif;
+    font-size: 0.95rem; letter-spacing: 2px; cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 12px rgba(255,214,10,0.4);
+  }
+  .btn-start-race:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,214,10,0.6); }
+  .btn-start-race:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── COUNTDOWN ── */
+  #countdownOverlay {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  #countdownOverlay.show { display: flex; }
+  #countdownNum {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 8rem; color: var(--accent);
+    text-shadow: 0 0 40px rgba(255,214,10,0.8);
+    animation: cPop 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes cPop { from{transform:scale(0.3);opacity:0} to{transform:scale(1);opacity:1} }
+
+  /* ── MODE TOGGLE ── */
+  .mode-toggle { display:flex; gap:8px; margin-bottom:12px; }
+  .mode-toggle-btn { flex:1; padding:8px 4px; background:transparent; border:2px solid #30363d; border-radius:8px; color:#8b949e; font-family:'Black Han Sans',sans-serif; font-size:0.75rem; letter-spacing:1px; cursor:pointer; transition:all 0.15s; }
+  .mode-toggle-btn.active { background:var(--accent); border-color:var(--accent); color:#0d1117; }
+  .team-setup { display:none; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .team-setup.visible { display:flex; }
+  .waiting-players { background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:10px; min-height:50px; }
+  .waiting-title { font-family:'Black Han Sans',sans-serif; font-size:0.65rem; color:#8b949e; letter-spacing:1px; margin-bottom:6px; }
+  .player-pill { display:inline-block; background:rgba(255,214,10,0.15); border:1px solid var(--accent); border-radius:20px; padding:2px 10px; font-size:0.72rem; color:var(--accent); margin:2px; }
+  .team-display { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+  .team-card { flex:1; min-width:80px; background:#0d1117; border-radius:8px; padding:8px; border:2px solid; }
+  .team-card-title { font-family:'Black Han Sans',sans-serif; font-size:0.75rem; letter-spacing:1px; margin-bottom:4px; }
+  .team-member { font-size:0.68rem; color:#8b949e; }
+  .btn-assign { width:100%; padding:7px; background:transparent; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-family:'Black Han Sans',sans-serif; font-size:0.75rem; cursor:pointer; margin-bottom:6px; }
+  .btn-assign:hover { background:rgba(255,214,10,0.1); }
     position: fixed; inset: 0; z-index: 300;
     background: rgba(0,0,0,0.85);
     display: none; align-items: center; justify-content: center;
@@ -337,7 +378,6 @@
     <div class="setup-icon">➡️</div>
     <h1>FREMDRIFTSBANEN</h1>
     <p>Koble til rommet og sett poengmål</p>
-
     <div class="setup-field">
       <div class="setup-label">Romkode</div>
       <input class="setup-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
@@ -346,8 +386,29 @@
       <div class="setup-label">Poengmål</div>
       <input class="setup-input num" id="goalInput" type="number" value="300" min="50" max="9999" placeholder="300">
     </div>
-    <button class="btn-launch" onclick="launchRace()">🚦 START</button>
+    <div class="mode-toggle">
+      <button class="mode-toggle-btn active" id="btnFFA" onclick="selectMode('ffa')">🏃 Alle mot alle</button>
+      <button class="mode-toggle-btn" id="btnTeam" onclick="selectMode('team')">🤝 Lagmodus</button>
+    </div>
+    <div class="team-setup" id="teamSetup">
+      <div class="setup-field">
+        <div class="setup-label">Antall lag</div>
+        <input class="setup-input num" id="teamCount" type="number" value="2" min="2" max="4">
+      </div>
+      <div class="waiting-players">
+        <div class="waiting-title">TILKOBLEDE SPILLERE</div>
+        <div id="waitingPlayerList">Venter på spillere...</div>
+      </div>
+      <button class="btn-assign" onclick="assignTeams()">🎲 Fordel lag tilfeldig</button>
+      <div class="team-display" id="teamDisplay"></div>
+    </div>
+    <button class="btn-launch" onclick="launchRace()">🚀 KOBLE TIL</button>
   </div>
+</div>
+
+<!-- COUNTDOWN OVERLAY -->
+<div id="countdownOverlay">
+  <div id="countdownNum">3</div>
 </div>
 
 <!-- WINNER OVERLAY -->
@@ -357,7 +418,6 @@
     <div class="winner-title">VINNER!</div>
     <div class="winner-name" id="winnerName">–</div>
     <div class="winner-score" id="winnerScore">0 poeng</div>
-    <button class="btn-restart" onclick="location.reload()">🔄 Nytt løp</button>
   </div>
 </div>
 
@@ -367,13 +427,14 @@
   <div class="topbar-center">
     <span class="goal-badge">MÅL: <span id="goalDisplay">300</span> POENG</span>
     <span class="room-badge" id="roomDisplay">–</span>
+    <button class="btn-start-race" id="startRaceBtn" onclick="triggerStart()" disabled>🚦 START LØPET</button>
     <span class="player-count"><span id="playerCount">0</span> spillere</span>
   </div>
   <div style="font-size:0.78rem;color:var(--muted)">Likningsspill v1.7</div>
 </div>
 
 <!-- RACE AREA -->
-<div class="race-area" id="raceArea">
+<div class="race-area" id="raceArea" style="position:relative">
   <div class="empty-state" id="emptyState">
     <span class="big">⏳</span>
     <span>Venter på spillere...</span>
@@ -382,11 +443,12 @@
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, onValue, remove } from "./js/firebase-config.js";
+  import { database, ref, onValue, remove, update } from "./js/firebase-config.js";
   window._db = database;
   window._ref = ref;
   window._onValue = onValue;
   window._remove = remove;
+  window._update = update;
   window._fbReady = true;
 </script>
 
@@ -394,9 +456,95 @@
 // ── STATE ──
 let goalScore   = 300;
 let roomCode    = '';
-let players     = {};   // { name: { score, lastUpdated } }
+let players     = {};
 let winnerDeclared = false;
-const MAX_INACTIVE_MS = 6 * 60 * 1000; // 6 minutter
+let raceStarted = false;
+const MAX_INACTIVE_MS = 6 * 60 * 1000;
+
+// ── TEAM MODE ──
+let raceMode = 'ffa';
+const TEAM_COLORS = ['#e84393','#00d4ff','#00ff88','#ffd700'];
+const TEAM_NAMES  = ['LAG 1','LAG 2','LAG 3','LAG 4'];
+let teams = {};
+
+window.selectMode = function(mode) {
+  raceMode = mode;
+  document.getElementById('btnFFA').classList.toggle('active', mode==='ffa');
+  document.getElementById('btnTeam').classList.toggle('active', mode==='team');
+  document.getElementById('teamSetup').classList.toggle('visible', mode==='team');
+};
+
+window.assignTeams = function() {
+  const n = Math.min(4, Math.max(2, parseInt(document.getElementById('teamCount').value)||2));
+  const names = Object.keys(players);
+  if(names.length < n){ return; }
+  const shuffled = [...names].sort(()=>Math.random()-0.5);
+  teams = {};
+  TEAM_NAMES.slice(0,n).forEach(t=>{ teams[t]=[]; });
+  shuffled.forEach((name,i)=>{ teams[TEAM_NAMES[i%n]].push(name); });
+  renderTeamDisplay();
+  if(window._fbReady && roomCode)
+    window._update(window._ref(window._db,'rooms/'+roomCode),{teams:JSON.stringify(teams)});
+};
+
+function renderTeamDisplay(){
+  const el=document.getElementById('teamDisplay'); el.innerHTML='';
+  Object.entries(teams).forEach(([name,members],i)=>{
+    const card=document.createElement('div');
+    card.className='team-card'; card.style.borderColor=TEAM_COLORS[i];
+    card.innerHTML=`<div class="team-card-title" style="color:${TEAM_COLORS[i]}">${name}</div>`+
+      members.map(m=>`<div class="team-member">● ${m}</div>`).join('');
+    el.appendChild(card);
+  });
+}
+
+function updateWaitingList(){
+  const el=document.getElementById('waitingPlayerList'); if(!el) return;
+  const names=Object.keys(players);
+  el.innerHTML=names.length
+    ? names.map(n=>`<span class="player-pill">${n}</span>`).join('')
+    : '<span style="color:#8b949e;font-size:0.75rem">Venter på spillere...</span>';
+}
+
+// ── COUNTDOWN ──
+function runCountdown(onGo){
+  const overlay=document.getElementById('countdownOverlay');
+  const numEl=document.getElementById('countdownNum');
+  overlay.classList.add('show');
+  let n=3;
+  numEl.textContent=n;
+  // Force reflow to restart animation
+  void numEl.offsetWidth;
+  const tick=setInterval(()=>{
+    n--;
+    if(n>0){
+      numEl.style.animation='none'; void numEl.offsetWidth;
+      numEl.style.animation='';
+      numEl.textContent=n;
+    } else {
+      numEl.textContent='GÅ!';
+      clearInterval(tick);
+      setTimeout(()=>{ overlay.classList.remove('show'); onGo(); },600);
+    }
+  },1000);
+}
+
+// ── START ──
+window.triggerStart = function(){
+  document.getElementById('startRaceBtn').disabled=true;
+  // Nullstill poeng
+  Object.keys(players).forEach(name=>{
+    players[name].score=0;
+    if(window._fbReady && roomCode)
+      window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+name),{score:0,lastUpdated:Date.now()});
+  });
+  winnerDeclared=false;
+  document.getElementById('winnerOverlay').classList.remove('show');
+  if(roomCode && window._fbReady)
+    window._update(window._ref(window._db,'rooms/'+roomCode),{countdown:Date.now()});
+  else
+    runCountdown(()=>{ raceStarted=true; });
+};
 
 const CAR_EMOJIS = ['🔴','🔵','🟡','🟢','🟠','🟣','⚪','🟤',
                     '🚗','🏎️','🚙','🚕','🚓','🚑','🚒','🛻',
@@ -431,7 +579,6 @@ function render() {
   const now = Date.now();
   const area = document.getElementById('raceArea');
 
-  // Filtrer bort inaktive
   const active = Object.entries(players)
     .filter(([,p]) => !p.lastUpdated || (now - p.lastUpdated) < MAX_INACTIVE_MS)
     .sort((a,b) => (b[1].score||0) - (a[1].score||0));
@@ -443,40 +590,84 @@ function render() {
     return;
   }
 
-  // Bygg rader
+  if (raceMode === 'team' && Object.keys(teams).length >= 2) {
+    renderTeams(area, active);
+    return;
+  }
+
+  // ── FFA RENDER ──
   area.innerHTML = '';
   active.forEach(([name, data], i) => {
-    const score = data.score || 0;
+    const score = raceStarted ? (data.score || 0) : 0;
     const pct   = Math.min((score / goalScore) * 100, 100);
     const meta  = getPlayerMeta(name);
-    const isLeader = i === 0;
     const medals = ['🥇','🥈','🥉'];
     const pos = medals[i] || (i+1)+'.';
     const posClass = i===0?'p1':i===1?'p2':i===2?'p3':'';
-    const won = score >= goalScore;
+    const won = raceStarted && score >= goalScore;
 
     const row = document.createElement('div');
     row.className = 'track-row';
-    row.setAttribute('data-name', name);
     row.innerHTML = `
       <div class="row-pos ${posClass}">${pos}</div>
-      <div class="row-name ${isLeader?'is-leader':''}">${name}</div>
+      <div class="row-name ${i===0?'is-leader':''}">${name}</div>
       <div class="row-track">
         <div class="row-fill" style="width:${pct}%"></div>
-        <div class="row-car ${won?'winner-bounce':''}"
-             style="left:calc(${pct}% - 12px)">
-          ${meta.car}
-        </div>
+        <div class="row-car ${won?'winner-bounce':''}" style="left:calc(${pct}% - 12px)">${meta.car}</div>
         <div class="goal-line"></div>
       </div>
       <div class="row-score" style="color:${meta.color}">${score}</div>
     `;
     area.appendChild(row);
 
-    // Sjekk vinner
     if (won && !winnerDeclared) {
       winnerDeclared = true;
       setTimeout(() => showWinner(name, score), 600);
+      document.getElementById('startRaceBtn').disabled = false;
+    }
+  });
+}
+
+function renderTeams(area, active) {
+  // Beregn gjennomsnittsscore per lag
+  const teamScores = {};
+  Object.entries(teams).forEach(([teamName, members], i) => {
+    const scores = members.map(m => players[m]?.score || 0);
+    const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+    teamScores[teamName] = { avg, members, color: TEAM_COLORS[i] };
+  });
+
+  const sorted = Object.entries(teamScores).sort((a,b)=>b[1].avg-a[1].avg);
+  area.innerHTML = '';
+  document.getElementById('playerCount').textContent = active.length;
+
+  sorted.forEach(([teamName, t], i) => {
+    const score = raceStarted ? t.avg : 0;
+    const pct = Math.min((score / goalScore) * 100, 100);
+    const medals = ['🥇','🥈','🥉'];
+    const pos = medals[i] || (i+1)+'.';
+    const won = raceStarted && score >= goalScore;
+
+    const row = document.createElement('div');
+    row.className = 'track-row';
+    row.innerHTML = `
+      <div class="row-pos ${i===0?'p1':i===1?'p2':i===2?'p3':''}">${pos}</div>
+      <div class="row-name ${i===0?'is-leader':''}" style="color:${t.color}">
+        ${teamName}<br><span style="font-size:0.7rem;color:#8b949e">${t.members.join(', ')}</span>
+      </div>
+      <div class="row-track">
+        <div class="row-fill" style="width:${pct}%;background:${t.color}"></div>
+        <div class="row-car ${won?'winner-bounce':''}" style="left:calc(${pct}% - 12px)">🏎️</div>
+        <div class="goal-line"></div>
+      </div>
+      <div class="row-score" style="color:${t.color}">${score}</div>
+    `;
+    area.appendChild(row);
+
+    if (won && !winnerDeclared) {
+      winnerDeclared = true;
+      setTimeout(() => showWinner(teamName, score), 600);
+      document.getElementById('startRaceBtn').disabled = false;
     }
   });
 }
@@ -510,49 +701,58 @@ function launchConfetti() {
 function startFirebaseSync(room) {
   if (!window._fbReady) return;
 
+  // Lytt på countdown-signal
+  let lastCountdown = 0;
+  window._onValue(window._ref(window._db, 'rooms/'+room+'/countdown'), snap => {
+    const ts = snap.val();
+    if (!ts || ts === lastCountdown) return;
+    lastCountdown = ts;
+    Object.keys(players).forEach(name => { players[name].score = 0; });
+    winnerDeclared = false;
+    document.getElementById('winnerOverlay').classList.remove('show');
+    runCountdown(() => { raceStarted = true; render(); });
+  });
+
   window._onValue(window._ref(window._db, 'rooms/'+room+'/players'), snap => {
     const data = snap.val();
     if (!data) { players = {}; render(); return; }
 
     const now = Date.now();
-    // Oppdater lokalt
     players = {};
     Object.entries(data).forEach(([name, info]) => {
-      // Hopp over inaktive
       if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS) return;
       players[name] = info;
     });
 
+    updateWaitingList();
     render();
 
-    // Rydd inaktive fra Firebase
     Object.entries(data).forEach(([name, info]) => {
-      if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS) {
+      if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS)
         window._remove(window._ref(window._db,'rooms/'+room+'/players/'+name));
-      }
     });
   });
 
-  // Periodevis rydding hvert minutt
   setInterval(() => {
     if (!players) return;
     const now = Date.now();
     Object.keys(players).forEach(name => {
       const p = players[name];
-      if (p.lastUpdated && (now - p.lastUpdated) > MAX_INACTIVE_MS) {
+      if (p.lastUpdated && (now - p.lastUpdated) > MAX_INACTIVE_MS)
         window._remove(window._ref(window._db,'rooms/'+roomCode+'/players/'+name));
-      }
     });
   }, 60000);
 }
 
 // Demo-modus uten Firebase
 function startDemo() {
+  raceStarted = false;
   const names = ['Raske Gaupe','Lynraske Rev','Smarte Bjørn','Ville Ulv',
                  'Modige Hauk','Gylne Ugle','Flinke Løve','Smidige Tiger'];
-  names.forEach(name => { players[name] = { score: Math.floor(Math.random()*goalScore*0.7), lastUpdated: Date.now() }; });
+  names.forEach(name => { players[name] = { score: 0, lastUpdated: Date.now() }; });
   render();
   setInterval(() => {
+    if (!raceStarted) return;
     Object.keys(players).forEach(name => {
       players[name].score = Math.min(goalScore+50, players[name].score + Math.floor(Math.random()*18));
       players[name].lastUpdated = Date.now();
@@ -564,7 +764,7 @@ function startDemo() {
 // ── LAUNCH ──
 window.launchRace = function() {
   const room = document.getElementById('roomInput').value.trim().toUpperCase();
-  goalScore  = parseInt(document.getElementById('goalInput').value) || 300;
+  goalScore = parseInt(document.getElementById('goalInput').value) || 300;
 
   document.getElementById('goalDisplay').textContent = goalScore;
   document.getElementById('roomDisplay').textContent = room || 'DEMO';
@@ -577,6 +777,7 @@ window.launchRace = function() {
   } else {
     startDemo();
   }
+  document.getElementById('startRaceBtn').disabled = false;
 };
 </script>
 </body>
