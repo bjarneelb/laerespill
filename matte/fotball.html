@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.906</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.907</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -754,7 +754,8 @@ function doCarrierAction(carrier){
 
 function passTo(from,to){
   blockedPlayerId=from.id;
-  blockedTeamName=null;
+  // Ikke nullstill blockedTeamName — keeper kan ha satt den allerede
+  if(!blockedTeamName) blockedTeamName=null;
   blockTimer=3.0;
   ballCarrier=null; carryTimer=0; nextActionTime=99;
   const dx=to.x-from.x, dy=to.y-from.y, dist=Math.hypot(dx,dy)||1;
