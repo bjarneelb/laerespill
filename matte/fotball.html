@@ -588,30 +588,36 @@ const FRICTION=0.88, BALL_SPEED=280, PLAYER_BASE_SPEED=90;
 const KICK_DIST=20, SHOT_DIST=160;
 const GOAL_W=90, GOAL_DEPTH=14;
 
-// Tidsstyrt: bæreren har ballen i MIN_CARRY sek før den kan passe/skyte
-const MIN_CARRY=0.6, MAX_CARRY=2.5;
-let carryTimer=0; // sekunder bæreren har hatt ballen
+// Tidsstyrt: sett neste beslutning som et fast tidspunkt
+const MIN_CARRY=0.8, MAX_CARRY=2.2;
+let carryTimer=0;
+let nextActionTime=0; // sekunder — når bæreren skal handle neste gang
+let recentlyPassedFrom=null; // spiller-id som nettopp passet — ikke pickup igjen med en gang
+let recentlyPassedTimer=0;
 
 function updatePhysics(dt){
+  // Oppdater recently-passed timer
+  if(recentlyPassedFrom!==null){
+    recentlyPassedTimer-=dt;
+    if(recentlyPassedTimer<=0) recentlyPassedFrom=null;
+  }
+
   if(ballCarrier!==null){
     const carrier=footballers.find(f=>f.id===ballCarrier);
-    if(!carrier){ ballCarrier=null; }
+    if(!carrier){ ballCarrier=null; nextActionTime=0; }
     else {
       ball.x=carrier.x; ball.y=carrier.y;
       carryTimer+=dt;
-      // Beslutning: pass eller skudd etter MIN_CARRY sekunder
-      if(carryTimer>=MIN_CARRY) decideAction(carrier, dt);
+      // Handle når det er tid
+      if(carryTimer>=nextActionTime) doCarrierAction(carrier);
     }
   } else {
-    // Ball i bevegelse
     ball.x+=ball.vx*dt; ball.y+=ball.vy*dt;
     ball.vx*=Math.pow(FRICTION,dt*60); ball.vy*=Math.pow(FRICTION,dt*60);
 
-    // Veggbounce topp/bunn
     if(ball.y<12){ball.y=12;ball.vy=Math.abs(ball.vy)*0.5;}
     if(ball.y>PH-12){ball.y=PH-12;ball.vy=-Math.abs(ball.vy)*0.5;}
 
-    // Mål eller veggbounce venstre/høyre
     const goalTop=PH/2-GOAL_W/2, goalBot=PH/2+GOAL_W/2;
     if(ball.x<12){
       if(ball.y>goalTop&&ball.y<goalBot) goalScored('left');
@@ -622,25 +628,22 @@ function updatePhysics(dt){
       else{ball.x=PW-12;ball.vx=-Math.abs(ball.vx)*0.5;}
     }
 
-    // Ball pickup — kun nærmeste spiller
-    if(Math.hypot(ball.vx,ball.vy)<20){ // bare pickup når ballen er nesten stille
-      let nearest=null, nearDist=KICK_DIST;
-      footballers.forEach(f=>{
-        const d=Math.hypot(f.x-ball.x,f.y-ball.y);
-        if(d<nearDist){nearDist=d;nearest=f;}
-      });
-      if(nearest){ballCarrier=nearest.id;carryTimer=0;}
-    } else {
-      // Løpende pickup for spillere i ballens bane
-      footballers.forEach(f=>{
-        if(Math.hypot(f.x-ball.x,f.y-ball.y)<KICK_DIST){
-          ballCarrier=f.id; carryTimer=0;
-        }
-      });
+    // Pickup — nærmeste spiller, men ikke den som nettopp passet
+    let nearest=null, nearDist=KICK_DIST*2;
+    footballers.forEach(f=>{
+      if(f.id===recentlyPassedFrom) return;
+      const d=Math.hypot(f.x-ball.x,f.y-ball.y);
+      if(d<nearDist){nearDist=d;nearest=f;}
+    });
+    if(nearest&&nearDist<KICK_DIST){
+      ballCarrier=nearest.id;
+      carryTimer=0;
+      // Sett neste handling om MIN_CARRY til MAX_CARRY sekunder
+      nextActionTime=MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY);
     }
   }
 
-  // Flytt spillere
+  // Flytt alle spillere
   footballers.forEach(f=>{
     const spd=(PLAYER_BASE_SPEED+(f.energy||1)*30+(f.boost||0)*50)*dt;
     const hasball=ballCarrier===f.id;
@@ -648,59 +651,74 @@ function updatePhysics(dt){
     if(target){
       const dx=target.x-f.x, dy=target.y-f.y;
       const dist=Math.hypot(dx,dy)||1;
-      if(dist>6){
-        f.x+=dx/dist*Math.min(spd,dist);
-        f.y+=dy/dist*Math.min(spd,dist);
-      }
+      if(dist>6) f.x+=dx/dist*Math.min(spd,dist);
+      if(dist>6) f.y+=dy/dist*Math.min(spd,dist);
     }
     f.x=Math.max(14,Math.min(PW-14,f.x));
     f.y=Math.max(14,Math.min(PH-14,f.y));
   });
 }
 
-function decideAction(carrier, dt){
+function doCarrierAction(carrier){
   const attackRight=carrier.isLeft;
   const goalX=attackRight?PW:0;
   const distToGoal=Math.hypot(carrier.x-goalX,carrier.y-PH/2);
 
-  // Skyt hvis nær nok mål, eller har hatt ballen lenge nok
-  const shouldShoot = distToGoal<SHOT_DIST || carryTimer>MAX_CARRY*0.8;
-  if(shouldShoot && (distToGoal<SHOT_DIST || carryTimer>MAX_CARRY)){
+  // Skyt alltid hvis nær nok mål
+  if(distToGoal<SHOT_DIST){
     shoot(carrier); return;
   }
 
-  // Pass fremover
-  const teammates=footballers.filter(ff=>ff.team===carrier.team&&ff.id!==carrier.id&&ff.role!=='keeper');
-  const inFront=teammates.filter(ff=>attackRight?ff.x>carrier.x+40:ff.x<carrier.x-40);
-  const candidates=inFront.length?inFront:teammates;
-  if(candidates.length>0 && (carryTimer>MIN_CARRY+Math.random()*0.8)){
+  // Tving skudd hvis har båret for lenge
+  if(carryTimer>MAX_CARRY){
+    // 50% sjanse skudd, 50% pass
+    if(Math.random()<0.5){ shoot(carrier); return; }
+  }
+
+  // Pass til medspiller fremover
+  const teammates=footballers.filter(ff=>
+    ff.team===carrier.team && ff.id!==carrier.id && ff.role!=='keeper'
+  );
+  const inFront=teammates.filter(ff=>attackRight?ff.x>carrier.x+30:ff.x<carrier.x-30);
+  const candidates=inFront.length>=1?inFront:teammates;
+
+  if(candidates.length>0){
+    // Velg medspiller nærmest åpent rom (ikke klumpa mot motstander)
     const t=candidates[Math.floor(Math.random()*candidates.length)];
     passTo(carrier,t);
+  } else {
+    // Ingen å passe til — prøv igjen snart
+    nextActionTime=carryTimer+0.3;
   }
 }
 
 function passTo(from,to){
-  ballCarrier=null; carryTimer=0;
+  recentlyPassedFrom=from.id;
+  recentlyPassedTimer=0.8; // sekunder
+  ballCarrier=null; carryTimer=0; nextActionTime=0;
   const dx=to.x-from.x, dy=to.y-from.y, dist=Math.hypot(dx,dy)||1;
-  const spd=BALL_SPEED*(0.9+from.energy*0.3);
-  const inaccuracy=(1.1-(from.energy||1))*40;
+  const spd=BALL_SPEED*(0.85+(from.energy||1)*0.3);
+  const inaccuracy=(1.1-(from.energy||1))*35;
   ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
   ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
-  ball.x=from.x; ball.y=from.y;
+  ball.x=from.x+dx/dist*15;
+  ball.y=from.y+dy/dist*15;
 }
 
 function shoot(f){
-  ballCarrier=null; carryTimer=0;
+  recentlyPassedFrom=f.id;
+  recentlyPassedTimer=0.5;
+  ballCarrier=null; carryTimer=0; nextActionTime=0;
   const attackRight=f.isLeft;
   const goalX=attackRight?PW:0;
-  // Sikt mot midten av mål med litt unøyaktighet
-  const aimY=PH/2+(Math.random()-0.5)*GOAL_W*0.8;
+  const aimY=PH/2+(Math.random()-0.5)*GOAL_W*0.7;
   const dx=goalX-f.x, dy=aimY-f.y, dist=Math.hypot(dx,dy)||1;
-  const spd=BALL_SPEED*(1.2+(f.energy||1)*0.4);
-  const inaccuracy=(1.2-(f.energy||1))*30;
+  const spd=BALL_SPEED*(1.3+(f.energy||1)*0.3);
+  const inaccuracy=(1.2-(f.energy||1))*25;
   ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
   ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
-  ball.x=f.x; ball.y=f.y;
+  ball.x=f.x+dx/dist*15;
+  ball.y=f.y+dy/dist*15;
 }
 
 function getTarget(f, hasBall){
