@@ -245,9 +245,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, onValue, update, set } from "./js/firebase-config.js";
+  import { database, ref, onValue, update, set, remove } from "./js/firebase-config.js";
   window._db=database; window._ref=ref;
-  window._onValue=onValue; window._update=update; window._set=set;
+  window._onValue=onValue; window._update=update; window._set=set; window._remove=remove;
   window._fbReady=true;
 </script>
 
@@ -644,37 +644,51 @@ function updatePhysics(dt){
   });
 }
 
-function getTarget(f,hasBall){
-  const attacking=f.isLeft; // isLeft attacks towards right goal
-  const goalX=attacking?PW-20:20;
-  const defX=attacking?PW*0.1:PW*0.9;
+function getTarget(f, hasBall){
+  // isLeft=true: laget starter på venstre side, angriper mot høyre (høy x)
+  const attackRight = f.isLeft;
+  const myGoalX  = attackRight ? 20      : PW-20;
+  const oppGoalX = attackRight ? PW-20   : 20;
 
   if(f.role==='keeper'){
-    // Stay on goal line, track ball vertically
-    const homeX=attacking?20:PW-20;
-    return {x:homeX,y:Math.max(PH/2-GOAL_W/2,Math.min(PH/2+GOAL_W/2,ball.y))};
+    return {x:myGoalX, y:Math.max(PH/2-GOAL_W/2+8, Math.min(PH/2+GOAL_W/2-8, ball.y))};
   }
 
   if(hasBall){
-    // Dribble towards goal
-    return {x:goalX+(Math.random()-0.5)*40,y:PH/2+(Math.random()-0.5)*60};
+    // Dribble mot motstanders mål
+    const jitter=(Math.random()-0.5)*20;
+    return {x:oppGoalX+(Math.random()-0.5)*60, y:PH/2+jitter};
   }
 
-  const myTeamHasBall=ballCarrier!==null&&footballers.find(ff=>ff.id===ballCarrier)?.team===f.team;
+  const myTeamHasBall = ballCarrier!==null &&
+    footballers.find(ff=>ff.id===ballCarrier)?.team===f.team;
+
+  // Baseposisjoner per rolle (normalisert 0-1 fra eget mål)
+  const xFrac = {'def':0.22, 'mid':0.45, 'fwd':0.72};
+  const frac  = xFrac[f.role] || 0.5;
+  const baseX = attackRight
+    ? 20 + frac*(PW-40)
+    : PW-20 - frac*(PW-40);
+
+  // Indeks blant spillere med samme rolle på samme lag
+  const sameRole = footballers.filter(ff=>ff.team===f.team&&ff.role===f.role);
+  const idx      = sameRole.indexOf(f);
+  const total    = sameRole.length||1;
+  const spread   = PH*0.65;
+  const baseY    = PH/2 - spread/2 + (idx+0.5)*(spread/total);
+
   if(myTeamHasBall){
-    // Move into space
-    const xOff={'def':attacking?PW*0.2:PW*0.8,'mid':attacking?PW*0.4:PW*0.6,'fwd':attacking?PW*0.7:PW*0.3};
-    const targetX=xOff[f.role]||PW/2;
-    const spread=(PH*0.6);
-    const idx=footballers.filter(ff=>ff.team===f.team&&ff.role===f.role).indexOf(f);
-    const total=Math.max(1,footballers.filter(ff=>ff.team===f.team&&ff.role===f.role).length);
-    const targetY=PH/2-spread/2+(idx+0.5)*(spread/total);
-    return {x:targetX,y:targetY};
+    // Løp fremover i posisjon
+    const pushX = attackRight ? Math.min(baseX+60, PW*0.85) : Math.max(baseX-60, PW*0.15);
+    return {x:pushX, y:baseY+(Math.random()-0.5)*10};
   } else {
-    // Press ball / defend
-    if(f.role==='fwd'){return {x:ball.x,y:ball.y};}
-    const xOff={'def':attacking?PW*0.15:PW*0.85,'mid':attacking?PW*0.3:PW*0.7};
-    return {x:xOff[f.role]||PW/2, y:ball.y+(Math.random()-0.5)*80};
+    // Trekk tilbake i posisjon, press på ball hvis fwd
+    if(f.role==='fwd'){
+      const dx=ball.x-f.x, dy=ball.y-f.y;
+      const dist=Math.hypot(dx,dy);
+      if(dist<120) return {x:ball.x,y:ball.y};
+    }
+    return {x:baseX, y:baseY+(Math.random()-0.5)*8};
   }
 }
 
@@ -707,35 +721,34 @@ function passTo(from,to){
 
 function shoot(f){
   ballCarrier=null;
-  const goalX=f.isLeft?PW:0;
+  const attackRight=f.isLeft;
+  const goalX=attackRight?PW:0;
   const dx=goalX-f.x, dy=PH/2-f.y, dist=Math.hypot(dx,dy)||1;
   const spd=BALL_SPEED*(1+f.energy*0.6);
   const inaccuracy=(1.2-f.energy)*50;
   ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
-  ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy*(1+(f.isLeft?-1:1)*0.1);
+  ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
   ball.x=f.x; ball.y=f.y;
 }
 
 function goalScored(side){
-  // side: 'left' = goal in left goal (right-attacking team scores)
-  // Find which team attacks which direction
-  let scoringTeam=null;
-  footballers.forEach(f=>{
-    if(f.role==='fwd'){
-      if(side==='right'&&f.isLeft) scoringTeam=f.team;
-      if(side==='left'&&!f.isLeft) scoringTeam=f.team;
-    }
-  });
-  if(scoringTeam&&scores[scoringTeam]!==undefined){
+  // side='left': ball gikk i venstre mål → laget som angriper høyre (isLeft=true) scorer
+  // side='right': ball gikk i høyre mål → laget som angriper venstre (isLeft=false) scorer
+  const scoringTeam = footballers.find(f=>
+    f.role==='fwd' && (side==='right' ? f.isLeft : !f.isLeft)
+  )?.team;
+
+  if(scoringTeam && scores[scoringTeam]!==undefined){
     scores[scoringTeam]++;
     updateScoreDisplay();
-    // Reset positions
+    // Reset ball og flytt spillere til startposisjon
     ball.x=PW/2; ball.y=PH/2; ball.vx=0; ball.vy=0; ballCarrier=null;
-    // Spread footballers
-    footballers.forEach(f=>{
-      const pos=getStartPos(f.role,0,1,f.isLeft,0,PW,PH);
-      f.x=pos.x+(Math.random()-0.5)*40;
-      f.y=f.y; // keep y roughly
+    footballers.forEach((f,i)=>{
+      const sameRole=footballers.filter(ff=>ff.team===f.team&&ff.role===f.role);
+      const idx=sameRole.indexOf(f);
+      const total=sameRole.length||1;
+      const pos=getStartPos(f.role,idx,total,f.isLeft,0,PW,PH);
+      f.x=pos.x; f.y=pos.y;
     });
     if(window._fbReady&&roomCode)
       window._update(window._ref(window._db,'rooms/'+roomCode),{scores:JSON.stringify(scores)});
