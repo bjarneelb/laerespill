@@ -645,10 +645,15 @@ function updatePhysics(dt){
       else{ball.x=PW-12;ball.vx=-Math.abs(ball.vx)*0.5;}
     }
 
-    // Pickup — nærmeste spiller plukker opp (ikke den som nettopp passet)
+    // Pickup — nærmeste spiller (respekter lag-blokkering)
     let nearest=null, nearDist=9999;
     footballers.forEach(f=>{
-      if(f.id===recentlyPassedFrom) return;
+      // Blokkert: enten individet som passet, eller laget som nettopp passet
+      if(recentlyPassedFrom===f.id) return;
+      if(typeof recentlyPassedFrom==='string'&&recentlyPassedFrom.startsWith('team:')){
+        const blockedTeam=recentlyPassedFrom.split(':')[1];
+        if(f.team!==blockedTeam) return; // motstander er blokkert
+      }
       const d=Math.hypot(f.x-ball.x,f.y-ball.y);
       if(d<nearDist){nearDist=d;nearest=f;}
     });
@@ -682,13 +687,25 @@ function doCarrierAction(carrier){
   // Keeper passer alltid umiddelbart til nærmeste medspiller fremover
   if(carrier.role==='keeper'){
     const teammates=footballers.filter(ff=>
-      ff.team===carrier.team && ff.id!==carrier.id && ff.role!=='keeper'
+      ff.team===carrier.team && ff.id!==carrier.id
     );
-    // Foretrekk forsvarsspillere
-    const defs=teammates.filter(ff=>ff.role==='def');
-    const t=(defs.length?defs:teammates)[Math.floor(Math.random()*(defs.length||teammates.length))];
-    if(t) passTo(carrier,t);
-    else { nextActionTime=carryTimer+0.2; }
+    // Foretrekk forsvarsspillere som ikke er for nær angripere
+    const safe=teammates.filter(ff=>{
+      const oppNear=footballers.some(opp=>
+        opp.team!==carrier.team && Math.hypot(opp.x-ff.x,opp.y-ff.y)<80
+      );
+      return !oppNear;
+    });
+    const candidates=safe.length?safe:teammates;
+    const t=candidates[Math.floor(Math.random()*candidates.length)];
+    if(t){
+      // Merk hele motstanderlaget som blokkert fra pickup i 1.5 sek
+      recentlyPassedFrom='team:'+carrier.team;
+      recentlyPassedTimer=1.5;
+      passTo(carrier,t);
+    } else {
+      nextActionTime=carryTimer+0.2;
+    }
     return;
   }
 
