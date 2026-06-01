@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.4</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.5</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -685,22 +685,22 @@ function doCarrierAction(carrier){
   const goalX=attackRight?PW:0;
   const distToGoal=Math.hypot(carrier.x-goalX,carrier.y-PH/2);
 
-  // Keeper passer alltid umiddelbart til nærmeste medspiller fremover
+  // Keeper passer alltid umiddelbart til medspiller minst 25% av banen unna
   if(carrier.role==='keeper'){
+    const minDist=PW*0.25;
     const teammates=footballers.filter(ff=>
       ff.team===carrier.team && ff.id!==carrier.id
     );
-    // Foretrekk forsvarsspillere som ikke er for nær angripere
-    const safe=teammates.filter(ff=>{
-      const oppNear=footballers.some(opp=>
-        opp.team!==carrier.team && Math.hypot(opp.x-ff.x,opp.y-ff.y)<80
-      );
-      return !oppNear;
-    });
-    const candidates=safe.length?safe:teammates;
+    // Foretrekk spillere som er langt nok unna keeper OG ikke omringet av motstandere
+    const farEnough=teammates.filter(ff=>
+      Math.hypot(ff.x-carrier.x,ff.y-carrier.y)>=minDist
+    );
+    const safe=farEnough.filter(ff=>
+      !footballers.some(opp=>opp.team!==carrier.team&&Math.hypot(opp.x-ff.x,opp.y-ff.y)<70)
+    );
+    const candidates=safe.length?safe:(farEnough.length?farEnough:teammates);
     const t=candidates[Math.floor(Math.random()*candidates.length)];
     if(t){
-      // Merk hele motstanderlaget som blokkert fra pickup i 1.5 sek
       recentlyPassedFrom='team:'+carrier.team;
       recentlyPassedTimer=1.5;
       passTo(carrier,t);
