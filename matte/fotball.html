@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.902</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.903</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -653,15 +653,16 @@ function updatePhysics(dt){
       else{ball.x=PW-12;ball.vx=-Math.abs(ball.vx)*0.5;}
     }
 
-    // Pickup — nærmeste spiller (respekter lag-blokkering)
+    // Pickup — nærmeste spiller (respekter blokkering)
     let nearest=null, nearDist=9999;
+    const blockedId = typeof recentlyPassedFrom==='number' ? recentlyPassedFrom :
+      (typeof recentlyPassedFrom==='string' ? parseInt(recentlyPassedFrom.split('|')[0]) : null);
+    const blockedTeam = typeof recentlyPassedFrom==='string' && recentlyPassedFrom.includes('team:')
+      ? recentlyPassedFrom.split('team:')[1] : null;
+
     footballers.forEach(f=>{
-      // Blokkert: enten individet som passet, eller laget som nettopp passet
-      if(recentlyPassedFrom===f.id) return;
-      if(typeof recentlyPassedFrom==='string'&&recentlyPassedFrom.startsWith('team:')){
-        const blockedTeam=recentlyPassedFrom.split(':')[1];
-        if(f.team!==blockedTeam) return; // motstander er blokkert
-      }
+      if(blockedId!==null && f.id===blockedId) return;
+      if(blockedTeam && f.team===blockedTeam) return;
       const d=Math.hypot(f.x-ball.x,f.y-ball.y);
       if(d<nearDist){nearDist=d;nearest=f;}
     });
@@ -712,8 +713,9 @@ function doCarrierAction(carrier){
     const t=candidates[Math.floor(Math.random()*candidates.length)];
     console.log('passing to '+(t?.name||'none')+' dist='+Math.round(Math.hypot((t?.x||0)-carrier.x,(t?.y||0)-carrier.y)));
     if(t){
-      // Blokker keeper selv fra å plukke opp igjen
-      recentlyPassedFrom=carrier.id; // blokkerer denne spilleren spesifikt
+      // Blokker keeper selv OG hele motstanderlaget fra pickup
+      const oppTeam=Object.keys(teams).find(tn=>tn!==carrier.team)||'';
+      recentlyPassedFrom=carrier.id+'|team:'+oppTeam;
       recentlyPassedTimer=3.0;
       passTo(carrier,t);
     } else {
