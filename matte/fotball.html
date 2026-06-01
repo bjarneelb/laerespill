@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v1.0</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.901</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -666,6 +666,7 @@ function updatePhysics(dt){
       if(d<nearDist){nearDist=d;nearest=f;}
     });
     if(nearest&&nearDist<KICK_DIST*3){
+      console.log('PICKUP: '+nearest.name+' role='+nearest.role+' dist='+Math.round(nearDist)+' blocked='+recentlyPassedFrom);
       ballCarrier=nearest.id; carryTimer=0;
       nextActionTime=nearest.role==='keeper'?0.2:MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY);
     }
@@ -711,10 +712,9 @@ function doCarrierAction(carrier){
     const t=candidates[Math.floor(Math.random()*candidates.length)];
     console.log('passing to '+(t?.name||'none')+' dist='+Math.round(Math.hypot((t?.x||0)-carrier.x,(t?.y||0)-carrier.y)));
     if(t){
-      // Blokker MOTSTANDERLAGET fra pickup i 2 sek
-      const oppTeam=Object.keys(teams).find(tn=>tn!==carrier.team);
-      recentlyPassedFrom='team:'+oppTeam;
-      recentlyPassedTimer=2.0;
+      // Blokker keeper selv fra å plukke opp igjen
+      recentlyPassedFrom=carrier.id; // blokkerer denne spilleren spesifikt
+      recentlyPassedTimer=3.0;
       passTo(carrier,t);
     } else {
       nextActionTime=carryTimer+0.2;
