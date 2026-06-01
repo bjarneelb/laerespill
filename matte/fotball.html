@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.9</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v1.0</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -711,7 +711,9 @@ function doCarrierAction(carrier){
     const t=candidates[Math.floor(Math.random()*candidates.length)];
     console.log('passing to '+(t?.name||'none')+' dist='+Math.round(Math.hypot((t?.x||0)-carrier.x,(t?.y||0)-carrier.y)));
     if(t){
-      recentlyPassedFrom='team:'+carrier.team;
+      // Blokker MOTSTANDERLAGET fra pickup i 2 sek
+      const oppTeam=Object.keys(teams).find(tn=>tn!==carrier.team);
+      recentlyPassedFrom='team:'+oppTeam;
       recentlyPassedTimer=2.0;
       passTo(carrier,t);
     } else {
