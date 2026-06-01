@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.905</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.906</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -663,7 +663,7 @@ function updatePhysics(dt){
       if(d<radius && d<nearDist){nearDist=d;nearest=f;}
     });
     if(nearest){
-      console.log('PICKUP: '+nearest.name+' team='+nearest.team+' dist='+Math.round(nearDist)+' blockedTeam='+blockedTeamName);
+      console.log('PICKUP: '+nearest.name+'(id='+nearest.id+') team='+nearest.team+' dist='+Math.round(nearDist)+' | blockedId='+blockedPlayerId+' blockedTeam="'+blockedTeamName+'" teams='+JSON.stringify(Object.keys(teams)));
       ballCarrier=nearest.id; carryTimer=0;
       nextActionTime=nearest.role==='keeper'?0.2:MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY);
     }
@@ -713,6 +713,7 @@ function doCarrierAction(carrier){
       blockedPlayerId=carrier.id;
       blockedTeamName=oppTeam;
       blockTimer=3.0;
+      console.log('KEEPER PASS: id='+carrier.id+' team='+carrier.team+' oppTeam='+oppTeam+' blockedPlayerId='+blockedPlayerId+' blockedTeamName='+blockedTeamName);
       passTo(carrier,t);
     } else {
       nextActionTime=carryTimer+0.2;
