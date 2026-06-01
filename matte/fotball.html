@@ -261,6 +261,7 @@ const MAX_ON_PITCH=11;
 const BENCH_RATE_WEIGHT=0.5; // benk bidrar 50% til lagets gjennomsnitt
 
 let roomCode='', matchDuration=600, subIntervalSec=120;
+const MAX_INACTIVE_MS = 6 * 60 * 1000;
 let teams={}; // {lagA:[navn,...], lagB:[...]}
 let players={}; // {navn:{score,lastUpdated,energy,boostUntil}}
 let gameRunning=false, gamePaused=false;
