@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.909</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.910</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -216,6 +216,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
     <div class="timer-display" id="timerDisplay">10:00</div>
     <button class="btn-start" id="startBtn" onclick="triggerKickoff()" disabled>▶ AVSPARK</button>
     <button class="btn-start" id="pauseBtn" onclick="togglePause()" disabled style="border-color:var(--yellow);color:var(--yellow)">⏸ PAUSE</button>
+    <button class="btn-start" id="whistleBtn" onclick="triggerWhistle()" disabled style="border-color:var(--red);color:var(--red)">🔴 BLÅS AV</button>
     <a href="/ligningsvekt/" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:4px 10px;border:1px solid var(--muted);border-radius:4px">← MENY</a>
   </div>
 </div>
@@ -369,16 +370,21 @@ window.launchMatch=function(){
   if(Object.keys(teams).length<2){setErr('Fordel lag først!');return;}
   document.getElementById('setupOverlay').style.display='none';
   document.getElementById('startBtn').disabled=false;
+  document.getElementById('whistleBtn').disabled=false;
   scores={};
   Object.keys(teams).forEach(t=>{scores[t]=0;});
   updateScoreDisplay();
   updateTimerDisplay();
-  // Vent én frame så canvas får riktig størrelse
   requestAnimationFrame(()=>{
     resizeCanvas();
     initFootballers();
     updateRosters();
     startMatchFirebaseSync(roomCode);
+    // Start render-loop uten fysikk — venter på avspark
+    animId=requestAnimationFrame(function renderOnly(ts){
+      drawPitch(); drawFootballers(); drawBall();
+      if(!gameRunning) animId=requestAnimationFrame(renderOnly);
+    });
   });
 };
 
@@ -481,6 +487,34 @@ function startCountdown(cb){
   },1000);
 }
 
+window.triggerWhistle=function(){
+  // Blås av — stopp kamp og tilbakestill
+  gameRunning=false; gamePaused=false;
+  if(animId){ cancelAnimationFrame(animId); animId=null; }
+  scores={}; Object.keys(teams).forEach(t=>{scores[t]=0;});
+  half=1; matchTimeLeft=totalMatchTime;
+  updateScoreDisplay(); updateTimerDisplay();
+  document.getElementById('halfBadge').textContent='1. OMGANG';
+  document.getElementById('winOverlay').style.display='none';
+  document.getElementById('halftimeOverlay').style.display='none';
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('pauseBtn').disabled=true;
+  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+  // Nullstill Firebase
+  if(window._fbReady&&roomCode){
+    window._update(window._ref(window._db,'rooms/'+roomCode),{
+      scores:JSON.stringify(scores), kickoff:null
+    });
+  }
+  initFootballers();
+  updateRosters();
+  // Start render-loop uten fysikk
+  animId=requestAnimationFrame(function renderOnly(ts){
+    drawPitch(); drawFootballers(); drawBall();
+    if(!gameRunning) animId=requestAnimationFrame(renderOnly);
+  });
+};
+
 window.togglePause=function(){
   if(!gameRunning) return;
   gamePaused=!gamePaused;
@@ -495,6 +529,8 @@ function startGame(){
   lastSubTime=0; subTimer=0;
   document.getElementById('pauseBtn').disabled=false;
   document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+  document.getElementById('whistleBtn').disabled=false;
+  document.getElementById('startBtn').disabled=true;
   if(animId) cancelAnimationFrame(animId);
   animId=requestAnimationFrame(gameLoop);
 }
