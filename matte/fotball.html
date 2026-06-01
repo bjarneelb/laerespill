@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.907</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.908</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -611,7 +611,7 @@ function updateEnergies(){
 // ═══════════════════════════════════════════════════════════
 const FRICTION=0.88, BALL_SPEED=280, PLAYER_BASE_SPEED=90;
 const KICK_DIST=20, SHOT_DIST=160;
-const GOAL_W=90, GOAL_DEPTH=14;
+const GOAL_W=140, GOAL_DEPTH=14;
 
 // Tidsstyrt: sett neste beslutning som et fast tidspunkt
 const MIN_CARRY=0.8, MAX_CARRY=2.2;
@@ -775,14 +775,31 @@ function shoot(f){
   ballCarrier=null; carryTimer=0; nextActionTime=99;
   const attackRight=f.isLeft;
   const goalX=attackRight?PW:0;
-  const aimY=PH/2+(Math.random()-0.5)*GOAL_W*0.7;
+  const goalTop=PH/2-GOAL_W/2;
+  const goalBot=PH/2+GOAL_W/2;
+
+  // Finn keeper for dette målet
+  const keeper=footballers.find(ff=>ff.role==='keeper'&&ff.team!==f.team);
+  let aimY;
+  if(keeper){
+    // Sikt på den halvdelen av målet som er LENGST fra keeper
+    const keeperY=keeper.y;
+    const topHalfMid=(goalTop+PH/2)/2;
+    const botHalfMid=(PH/2+goalBot)/2;
+    aimY=Math.abs(keeperY-topHalfMid)<Math.abs(keeperY-botHalfMid)?botHalfMid:topHalfMid;
+    // Legg til litt variasjon
+    aimY+=( Math.random()-0.5)*GOAL_W*0.3;
+  } else {
+    aimY=goalTop+Math.random()*GOAL_W;
+  }
+
   const dx=goalX-f.x, dy=aimY-f.y, dist=Math.hypot(dx,dy)||1;
   const spd=BALL_SPEED*(1.3+(f.energy||1)*0.3);
-  const inaccuracy=(1.2-(f.energy||1))*25;
+  const inaccuracy=(1.2-(f.energy||1))*20;
   ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
   ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
-  ball.x=f.x+dx/dist*15;
-  ball.y=f.y+dy/dist*15;
+  ball.x=f.x+(dx/dist)*KICK_DIST*4;
+  ball.y=f.y+(dy/dist)*KICK_DIST*4;
 }
 
 function getTarget(f, hasBall){
