@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.903</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.905</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -617,14 +617,15 @@ const GOAL_W=90, GOAL_DEPTH=14;
 const MIN_CARRY=0.8, MAX_CARRY=2.2;
 let carryTimer=0;
 let nextActionTime=0; // sekunder — når bæreren skal handle neste gang
-let recentlyPassedFrom=null; // spiller-id som nettopp passet — ikke pickup igjen med en gang
-let recentlyPassedTimer=0;
+let blockedPlayerId=null;  // spiller-id som ikke kan plukke opp
+let blockedTeamName=null;  // lagnavn som ikke kan plukke opp
+let blockTimer=0;
 
 function updatePhysics(dt){
   // Oppdater recently-passed timer
-  if(recentlyPassedFrom!==null){
-    recentlyPassedTimer-=dt;
-    if(recentlyPassedTimer<=0) recentlyPassedFrom=null;
+  if(blockedPlayerId!==null||blockedTeamName!==null){
+    blockTimer-=dt;
+    if(blockTimer<=0){ blockedPlayerId=null; blockedTeamName=null; }
   }
 
   if(ballCarrier!==null){
@@ -653,21 +654,16 @@ function updatePhysics(dt){
       else{ball.x=PW-12;ball.vx=-Math.abs(ball.vx)*0.5;}
     }
 
-    // Pickup — nærmeste spiller (respekter blokkering)
     let nearest=null, nearDist=9999;
-    const blockedId = typeof recentlyPassedFrom==='number' ? recentlyPassedFrom :
-      (typeof recentlyPassedFrom==='string' ? parseInt(recentlyPassedFrom.split('|')[0]) : null);
-    const blockedTeam = typeof recentlyPassedFrom==='string' && recentlyPassedFrom.includes('team:')
-      ? recentlyPassedFrom.split('team:')[1] : null;
-
     footballers.forEach(f=>{
-      if(blockedId!==null && f.id===blockedId) return;
-      if(blockedTeam && f.team===blockedTeam) return;
+      if(blockedPlayerId!==null && f.id===blockedPlayerId) return;
+      if(blockedTeamName!==null && f.team===blockedTeamName) return;
       const d=Math.hypot(f.x-ball.x,f.y-ball.y);
-      if(d<nearDist){nearDist=d;nearest=f;}
+      const radius=f.role==='keeper' ? KICK_DIST*1.2 : KICK_DIST*3;
+      if(d<radius && d<nearDist){nearDist=d;nearest=f;}
     });
-    if(nearest&&nearDist<KICK_DIST*3){
-      console.log('PICKUP: '+nearest.name+' role='+nearest.role+' dist='+Math.round(nearDist)+' blocked='+recentlyPassedFrom);
+    if(nearest){
+      console.log('PICKUP: '+nearest.name+' team='+nearest.team+' dist='+Math.round(nearDist)+' blockedTeam='+blockedTeamName);
       ballCarrier=nearest.id; carryTimer=0;
       nextActionTime=nearest.role==='keeper'?0.2:MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY);
     }
@@ -713,10 +709,10 @@ function doCarrierAction(carrier){
     const t=candidates[Math.floor(Math.random()*candidates.length)];
     console.log('passing to '+(t?.name||'none')+' dist='+Math.round(Math.hypot((t?.x||0)-carrier.x,(t?.y||0)-carrier.y)));
     if(t){
-      // Blokker keeper selv OG hele motstanderlaget fra pickup
       const oppTeam=Object.keys(teams).find(tn=>tn!==carrier.team)||'';
-      recentlyPassedFrom=carrier.id+'|team:'+oppTeam;
-      recentlyPassedTimer=3.0;
+      blockedPlayerId=carrier.id;
+      blockedTeamName=oppTeam;
+      blockTimer=3.0;
       passTo(carrier,t);
     } else {
       nextActionTime=carryTimer+0.2;
@@ -756,24 +752,25 @@ function doCarrierAction(carrier){
 }
 
 function passTo(from,to){
-  recentlyPassedFrom=from.id;
-  recentlyPassedTimer=3.0;
-  ballCarrier=null; carryTimer=0; nextActionTime=99; // høy verdi så ingen handler umiddelbart
+  blockedPlayerId=from.id;
+  blockedTeamName=null;
+  blockTimer=3.0;
+  ballCarrier=null; carryTimer=0; nextActionTime=99;
   const dx=to.x-from.x, dy=to.y-from.y, dist=Math.hypot(dx,dy)||1;
   const spd=BALL_SPEED*(0.85+(from.energy||1)*0.3);
   const inaccuracy=(1.1-(from.energy||1))*35;
   ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
   ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
-  // Start ballen KICK_DIST*4 unna avsender slik at han ikke plukker opp igjen
   ball.x=from.x+(dx/dist)*KICK_DIST*4;
   ball.y=from.y+(dy/dist)*KICK_DIST*4;
   console.log('PASS from '+from.name+' to '+to.name+' ball='+Math.round(ball.x)+','+Math.round(ball.y));
 }
 
 function shoot(f){
-  recentlyPassedFrom=f.id;
-  recentlyPassedTimer=0.5;
-  ballCarrier=null; carryTimer=0; nextActionTime=0;
+  blockedPlayerId=f.id;
+  blockedTeamName=null;
+  blockTimer=1.0;
+  ballCarrier=null; carryTimer=0; nextActionTime=99;
   const attackRight=f.isLeft;
   const goalX=attackRight?PW:0;
   const aimY=PH/2+(Math.random()-0.5)*GOAL_W*0.7;
