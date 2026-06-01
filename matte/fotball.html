@@ -652,9 +652,9 @@ function updatePhysics(dt){
       const d=Math.hypot(f.x-ball.x,f.y-ball.y);
       if(d<nearDist){nearDist=d;nearest=f;}
     });
-    if(nearest&&nearDist<KICK_DIST*2){
+    if(nearest&&nearDist<KICK_DIST*3){
       ballCarrier=nearest.id; carryTimer=0;
-      nextActionTime=MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY);
+      nextActionTime=nearest.role==='keeper'?0.2:MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY);
     }
   }
 
@@ -679,15 +679,33 @@ function doCarrierAction(carrier){
   const goalX=attackRight?PW:0;
   const distToGoal=Math.hypot(carrier.x-goalX,carrier.y-PH/2);
 
+  // Keeper passer alltid umiddelbart til nærmeste medspiller fremover
+  if(carrier.role==='keeper'){
+    const teammates=footballers.filter(ff=>
+      ff.team===carrier.team && ff.id!==carrier.id && ff.role!=='keeper'
+    );
+    // Foretrekk forsvarsspillere
+    const defs=teammates.filter(ff=>ff.role==='def');
+    const t=(defs.length?defs:teammates)[Math.floor(Math.random()*(defs.length||teammates.length))];
+    if(t) passTo(carrier,t);
+    else { nextActionTime=carryTimer+0.2; }
+    return;
+  }
+
   // Skyt alltid hvis nær nok mål
   if(distToGoal<SHOT_DIST){
     shoot(carrier); return;
   }
 
-  // Tving skudd hvis har båret for lenge
+  // Tving handling hvis har båret for lenge
   if(carryTimer>MAX_CARRY){
-    // 50% sjanse skudd, 50% pass
-    if(Math.random()<0.5){ shoot(carrier); return; }
+    if(Math.random()<0.5){ shoot(carrier); }
+    else {
+      const tm=footballers.filter(ff=>ff.team===carrier.team&&ff.id!==carrier.id&&ff.role!=='keeper');
+      if(tm.length) passTo(carrier,tm[Math.floor(Math.random()*tm.length)]);
+      else shoot(carrier);
+    }
+    return;
   }
 
   // Pass til medspiller fremover
@@ -698,11 +716,9 @@ function doCarrierAction(carrier){
   const candidates=inFront.length>=1?inFront:teammates;
 
   if(candidates.length>0){
-    // Velg medspiller nærmest åpent rom (ikke klumpa mot motstander)
     const t=candidates[Math.floor(Math.random()*candidates.length)];
     passTo(carrier,t);
   } else {
-    // Ingen å passe til — prøv igjen snart
     nextActionTime=carryTimer+0.3;
   }
 }
@@ -767,6 +783,12 @@ function getTarget(f, hasBall){
 
   const myTeamHasBall=ballCarrier!==null&&
     footballers.find(ff=>ff.id===ballCarrier)?.team===f.team;
+
+  // Løp mot fri ball hvis ingen har den og du er nærmest
+  if(ballCarrier===null){
+    const myDist=Math.hypot(f.x-ball.x,f.y-ball.y);
+    if(myDist<120) return {x:ball.x,y:ball.y};
+  }
 
   let targetX=xBase[f.role]||PW/2;
 
