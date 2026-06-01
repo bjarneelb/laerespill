@@ -416,12 +416,16 @@ function initFootballers(){
 }
 
 function getStartPos(role,idx,total,isLeft,teamIdx,W,H){
-  const mx=isLeft?W*0.2:W*0.8;
+  // isLeft=true: lag starter venstre side, keeper nær venstre mål
   const spread=H*0.7;
   const yBase=H/2-spread/2+(idx+0.5)*(spread/total);
-  const xOff={'keeper':isLeft?0:-W*0.36,'def':isLeft?W*0.1:-W*0.1,
-    'mid':isLeft?W*0.22:-W*0.22,'fwd':isLeft?W*0.34:-W*0.34};
-  return {x:W/2+(xOff[role]||0),y:yBase};
+  const xPos={
+    'keeper': isLeft ? W*0.05  : W*0.95,
+    'def':    isLeft ? W*0.18  : W*0.82,
+    'mid':    isLeft ? W*0.38  : W*0.62,
+    'fwd':    isLeft ? W*0.58  : W*0.42,
+  };
+  return {x: xPos[role]||W/2, y: yBase};
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -722,51 +726,50 @@ function shoot(f){
 }
 
 function getTarget(f, hasBall){
-  // isLeft=true: laget starter på venstre side, angriper mot høyre (høy x)
-  const attackRight = f.isLeft;
-  const myGoalX  = attackRight ? 20      : PW-20;
-  const oppGoalX = attackRight ? PW-20   : 20;
+  const attackRight = f.isLeft; // isLeft=true angriper mot høyre
+  const myGoalX    = attackRight ? PW*0.05  : PW*0.95;
+  const oppGoalX   = attackRight ? PW*0.95  : PW*0.05;
 
+  // Keeper: hold seg ved eget mål, følg ballen vertikalt
   if(f.role==='keeper'){
-    return {x:myGoalX, y:Math.max(PH/2-GOAL_W/2+8, Math.min(PH/2+GOAL_W/2-8, ball.y))};
+    const clampY=Math.max(PH/2-GOAL_W/2+10, Math.min(PH/2+GOAL_W/2-10, ball.y));
+    return {x: myGoalX + (attackRight?10:-10), y: clampY};
   }
 
+  // Bæreren: løp mot motstanders mål
   if(hasBall){
-    // Dribble mot motstanders mål
-    const jitter=(Math.random()-0.5)*20;
-    return {x:oppGoalX+(Math.random()-0.5)*60, y:PH/2+jitter};
+    return {x: oppGoalX + (attackRight?-40:40), y: PH/2+(Math.random()-0.5)*60};
   }
 
-  const myTeamHasBall = ballCarrier!==null &&
+  // Baseposisjoner — matchende getStartPos
+  const xBase={
+    'def':  attackRight ? PW*0.18 : PW*0.82,
+    'mid':  attackRight ? PW*0.38 : PW*0.62,
+    'fwd':  attackRight ? PW*0.58 : PW*0.42,
+  };
+
+  const sameRole=footballers.filter(ff=>ff.team===f.team&&ff.role===f.role);
+  const idx=sameRole.indexOf(f);
+  const total=sameRole.length||1;
+  const spread=PH*0.65;
+  const baseY=PH/2-spread/2+(idx+0.5)*(spread/total);
+
+  const myTeamHasBall=ballCarrier!==null&&
     footballers.find(ff=>ff.id===ballCarrier)?.team===f.team;
 
-  // Baseposisjoner per rolle (normalisert 0-1 fra eget mål)
-  const xFrac = {'def':0.22, 'mid':0.45, 'fwd':0.72};
-  const frac  = xFrac[f.role] || 0.5;
-  const baseX = attackRight
-    ? 20 + frac*(PW-40)
-    : PW-20 - frac*(PW-40);
-
-  // Indeks blant spillere med samme rolle på samme lag
-  const sameRole = footballers.filter(ff=>ff.team===f.team&&ff.role===f.role);
-  const idx      = sameRole.indexOf(f);
-  const total    = sameRole.length||1;
-  const spread   = PH*0.65;
-  const baseY    = PH/2 - spread/2 + (idx+0.5)*(spread/total);
+  let targetX=xBase[f.role]||PW/2;
 
   if(myTeamHasBall){
-    // Løp fremover i posisjon
-    const pushX = attackRight ? Math.min(baseX+60, PW*0.85) : Math.max(baseX-60, PW*0.15);
-    return {x:pushX, y:baseY+(Math.random()-0.5)*10};
-  } else {
-    // Trekk tilbake i posisjon, press på ball hvis fwd
-    if(f.role==='fwd'){
-      const dx=ball.x-f.x, dy=ball.y-f.y;
-      const dist=Math.hypot(dx,dy);
-      if(dist<120) return {x:ball.x,y:ball.y};
-    }
-    return {x:baseX, y:baseY+(Math.random()-0.5)*8};
+    // Press fremover
+    const push=attackRight?60:-60;
+    targetX=Math.max(PW*0.1, Math.min(PW*0.9, targetX+push));
   }
+  // Legg til litt bevegelse mot ballen for å skape dynamikk
+  const ballPull=0.15;
+  const tx=targetX*(1-ballPull)+ball.x*ballPull;
+  const ty=baseY*(1-ballPull)+ball.y*ballPull;
+
+  return {x:tx, y:ty};
 }
 
 function goalScored(side){
