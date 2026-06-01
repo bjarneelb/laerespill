@@ -308,7 +308,6 @@ window.createRoom=function(){
   window._set(window._ref(window._db,'rooms/'+room+'/meta'),{
     created:Date.now(), type:'fotball'
   });
-  document.getElementById('roomDisplay').textContent=room;
   document.getElementById('roomDisplay2').textContent=room;
   document.getElementById('step1').style.display='none';
   document.getElementById('step2').style.display='block';
