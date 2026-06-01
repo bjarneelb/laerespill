@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.901</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.902</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -755,15 +755,17 @@ function doCarrierAction(carrier){
 
 function passTo(from,to){
   recentlyPassedFrom=from.id;
-  recentlyPassedTimer=0.8; // sekunder
-  ballCarrier=null; carryTimer=0; nextActionTime=0;
+  recentlyPassedTimer=3.0;
+  ballCarrier=null; carryTimer=0; nextActionTime=99; // høy verdi så ingen handler umiddelbart
   const dx=to.x-from.x, dy=to.y-from.y, dist=Math.hypot(dx,dy)||1;
   const spd=BALL_SPEED*(0.85+(from.energy||1)*0.3);
   const inaccuracy=(1.1-(from.energy||1))*35;
   ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
   ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
-  ball.x=from.x+dx/dist*15;
-  ball.y=from.y+dy/dist*15;
+  // Start ballen KICK_DIST*4 unna avsender slik at han ikke plukker opp igjen
+  ball.x=from.x+(dx/dist)*KICK_DIST*4;
+  ball.y=from.y+(dy/dist)*KICK_DIST*4;
+  console.log('PASS from '+from.name+' to '+to.name+' ball='+Math.round(ball.x)+','+Math.round(ball.y));
 }
 
 function shoot(f){
