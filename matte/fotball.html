@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.910</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.912</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -180,7 +180,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
       </div>
       <button class="btn-assign" onclick="assignTeams()">🎲 Fordel lag tilfeldig</button>
       <div class="team-display" id="teamDisplay"></div>
-      <button class="btn-primary" id="startMatchBtn" onclick="launchMatch()" disabled>⚽ START KAMP</button>
+      <button class="btn-primary" id="startMatchBtn" onclick="launchMatch()" disabled>✅ KLAR — VENT PÅ AVSPARK</button>
     </div>
   </div>
 </div>
@@ -503,8 +503,9 @@ window.triggerWhistle=function(){
   // Nullstill Firebase
   if(window._fbReady&&roomCode){
     window._update(window._ref(window._db,'rooms/'+roomCode),{
-      scores:JSON.stringify(scores), kickoff:null
+      scores:JSON.stringify(scores)
     });
+    window._set(window._ref(window._db,'rooms/'+roomCode+'/kickoff'),null);
   }
   initFootballers();
   updateRosters();
@@ -647,7 +648,7 @@ function updateEnergies(){
 // ═══════════════════════════════════════════════════════════
 const FRICTION=0.88, BALL_SPEED=280, PLAYER_BASE_SPEED=90;
 const KICK_DIST=20, SHOT_DIST=160;
-const GOAL_W=110, GOAL_DEPTH=14;
+const GOAL_W=90, GOAL_DEPTH=14;
 
 // Tidsstyrt: sett neste beslutning som et fast tidspunkt
 const MIN_CARRY=0.8, MAX_CARRY=2.2;
@@ -1071,8 +1072,10 @@ function startMatchFirebaseSync(room){
   if(!window._fbReady) return;
 
   let lastKickoff=0;
+  const connectTime=Date.now(); // ignorer kickoff-verdier fra før vi koblet til
   window._onValue(window._ref(window._db,'rooms/'+room+'/kickoff'),snap=>{
-    const ts=snap.val(); if(!ts||ts===lastKickoff) return;
+    const ts=snap.val();
+    if(!ts||ts===lastKickoff||ts<connectTime) return; // ignorer gamle verdier
     lastKickoff=ts;
     startCountdown(()=>startGame());
   });
