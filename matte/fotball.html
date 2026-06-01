@@ -371,10 +371,13 @@ window.launchMatch=function(){
   Object.keys(teams).forEach(t=>{scores[t]=0;});
   updateScoreDisplay();
   updateTimerDisplay();
-  initFootballers();
-  updateRosters();
-  // Start Firebase-lytting på kickoff og poeng (spillere lyttet på allerede)
-  startMatchFirebaseSync(roomCode);
+  // Vent én frame så canvas får riktig størrelse
+  requestAnimationFrame(()=>{
+    resizeCanvas();
+    initFootballers();
+    updateRosters();
+    startMatchFirebaseSync(roomCode);
+  });
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -412,7 +415,13 @@ function initFootballers(){
       }
     });
   });
-  ball.x=PW/2; ball.y=PH/2; ball.vx=0; ball.vy=0; ballCarrier=null;
+  ball.x=PW/2; ball.y=PH/2; ball.vx=0; ball.vy=0;
+  ballCarrier=null; carryTimer=0; nextActionTime=0;
+  recentlyPassedFrom=null; recentlyPassedTimer=0;
+  // Gi ballen til midtbanespiller fra LAG A
+  const kp=footballers.find(f=>f.team===TEAM_NAMES[0]&&f.role==='mid');
+  if(kp){ kp.x=PW/2; kp.y=PH/2; ballCarrier=kp.id; carryTimer=0;
+    nextActionTime=MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY); }
 }
 
 function getStartPos(role,idx,total,isLeft,teamIdx,W,H){
@@ -474,6 +483,10 @@ function startGame(){
   gameRunning=true; gamePaused=false;
   lastTime=performance.now();
   lastSubTime=0; subTimer=0;
+  console.log('startGame: footballers=',footballers.length,'PW=',PW,'PH=',PH);
+  console.log('ballCarrier=',ballCarrier,'nextActionTime=',nextActionTime);
+  const carrier=footballers.find(f=>f.id===ballCarrier);
+  console.log('carrier=',carrier?.name,'pos=',carrier?.x,carrier?.y);
   if(animId) cancelAnimationFrame(animId);
   animId=requestAnimationFrame(gameLoop);
 }
@@ -632,17 +645,15 @@ function updatePhysics(dt){
       else{ball.x=PW-12;ball.vx=-Math.abs(ball.vx)*0.5;}
     }
 
-    // Pickup — nærmeste spiller, men ikke den som nettopp passet
-    let nearest=null, nearDist=KICK_DIST*2;
+    // Pickup — nærmeste spiller plukker opp (ikke den som nettopp passet)
+    let nearest=null, nearDist=9999;
     footballers.forEach(f=>{
       if(f.id===recentlyPassedFrom) return;
       const d=Math.hypot(f.x-ball.x,f.y-ball.y);
       if(d<nearDist){nearDist=d;nearest=f;}
     });
-    if(nearest&&nearDist<KICK_DIST){
-      ballCarrier=nearest.id;
-      carryTimer=0;
-      // Sett neste handling om MIN_CARRY til MAX_CARRY sekunder
+    if(nearest&&nearDist<KICK_DIST*2){
+      ballCarrier=nearest.id; carryTimer=0;
       nextActionTime=MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY);
     }
   }
