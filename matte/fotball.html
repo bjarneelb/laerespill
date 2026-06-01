@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.6</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.8</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -215,6 +215,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div style="display:flex;align-items:center;gap:12px">
     <div class="timer-display" id="timerDisplay">10:00</div>
     <button class="btn-start" id="startBtn" onclick="triggerKickoff()" disabled>▶ AVSPARK</button>
+    <button class="btn-start" id="pauseBtn" onclick="togglePause()" disabled style="border-color:var(--yellow);color:var(--yellow)">⏸ PAUSE</button>
     <a href="/ligningsvekt/" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:4px 10px;border:1px solid var(--muted);border-radius:4px">← MENY</a>
   </div>
 </div>
@@ -480,14 +481,20 @@ function startCountdown(cb){
   },1000);
 }
 
+window.togglePause=function(){
+  if(!gameRunning) return;
+  gamePaused=!gamePaused;
+  const btn=document.getElementById('pauseBtn');
+  btn.textContent=gamePaused?'▶ FORTSETT':'⏸ PAUSE';
+  if(!gamePaused) lastTime=performance.now(); // reset lastTime for å unngå stort dt-hopp
+};
+
 function startGame(){
   gameRunning=true; gamePaused=false;
   lastTime=performance.now();
   lastSubTime=0; subTimer=0;
-  console.log('startGame: footballers=',footballers.length,'PW=',PW,'PH=',PH);
-  console.log('ballCarrier=',ballCarrier,'nextActionTime=',nextActionTime);
-  const carrier=footballers.find(f=>f.id===ballCarrier);
-  console.log('carrier=',carrier?.name,'pos=',carrier?.x,carrier?.y);
+  document.getElementById('pauseBtn').disabled=false;
+  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
   if(animId) cancelAnimationFrame(animId);
   animId=requestAnimationFrame(gameLoop);
 }
@@ -687,23 +694,23 @@ function doCarrierAction(carrier){
 
   // Keeper passer alltid umiddelbart til medspiller minst 25% av banen unna
   if(carrier.role==='keeper'){
-    const minDist=Math.max(200, PW*0.25); // minimum 200px uansett
-    console.log('Keeper pass: PW=',PW,'minDist=',minDist,'carrier=',carrier.x,carrier.y);
+    const minDist=PW*0.25; // 25% av faktisk banebredde — ingen hardkodet minimum
     const teammates=footballers.filter(ff=>
       ff.team===carrier.team && ff.id!==carrier.id
     );
-    const farEnough=teammates.filter(ff=>{
-      const d=Math.hypot(ff.x-carrier.x, ff.y-carrier.y);
-      console.log('  teammate',ff.name,'dist=',Math.round(d),'role=',ff.role);
-      return d>=minDist;
-    });
-    const safe=farEnough.filter(ff=>
-      !footballers.some(opp=>opp.team!==carrier.team&&Math.hypot(opp.x-ff.x,opp.y-ff.y)<70)
+    const farEnough=teammates.filter(ff=>
+      Math.hypot(ff.x-carrier.x, ff.y-carrier.y)>=minDist
     );
-    console.log('farEnough=',farEnough.length,'safe=',safe.length);
-    const candidates=safe.length?safe:(farEnough.length?farEnough:teammates);
+    const safe=farEnough.filter(ff=>
+      !footballers.some(opp=>opp.team!==carrier.team&&Math.hypot(opp.x-ff.x,opp.y-ff.y)<60)
+    );
+    const candidates=safe.length?safe:(farEnough.length?farEnough:
+      // Fallback: velg den som er lengst unna keeper
+      [teammates.sort((a,b)=>
+        Math.hypot(b.x-carrier.x,b.y-carrier.y)-Math.hypot(a.x-carrier.x,a.y-carrier.y)
+      )[0]]
+    );
     const t=candidates[Math.floor(Math.random()*candidates.length)];
-    console.log('passing to',t?.name,'at',t?.x,t?.y);
     if(t){
       recentlyPassedFrom='team:'+carrier.team;
       recentlyPassedTimer=2.0;
