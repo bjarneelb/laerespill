@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.8</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.9</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -694,23 +694,22 @@ function doCarrierAction(carrier){
 
   // Keeper passer alltid umiddelbart til medspiller minst 25% av banen unna
   if(carrier.role==='keeper'){
-    const minDist=PW*0.25; // 25% av faktisk banebredde — ingen hardkodet minimum
-    const teammates=footballers.filter(ff=>
-      ff.team===carrier.team && ff.id!==carrier.id
-    );
-    const farEnough=teammates.filter(ff=>
-      Math.hypot(ff.x-carrier.x, ff.y-carrier.y)>=minDist
-    );
+    const minDist=PW*0.25;
+    const teammates=footballers.filter(ff=>ff.team===carrier.team&&ff.id!==carrier.id);
+    console.log('Keeper PW='+Math.round(PW)+' minDist='+Math.round(minDist)+' pos='+Math.round(carrier.x)+','+Math.round(carrier.y));
+    teammates.forEach(ff=>console.log('  '+ff.name.split(' ')[0]+' dist='+Math.round(Math.hypot(ff.x-carrier.x,ff.y-carrier.y))));
+    const farEnough=teammates.filter(ff=>Math.hypot(ff.x-carrier.x,ff.y-carrier.y)>=minDist);
     const safe=farEnough.filter(ff=>
       !footballers.some(opp=>opp.team!==carrier.team&&Math.hypot(opp.x-ff.x,opp.y-ff.y)<60)
     );
+    console.log('farEnough='+farEnough.length+' safe='+safe.length);
     const candidates=safe.length?safe:(farEnough.length?farEnough:
-      // Fallback: velg den som er lengst unna keeper
       [teammates.sort((a,b)=>
         Math.hypot(b.x-carrier.x,b.y-carrier.y)-Math.hypot(a.x-carrier.x,a.y-carrier.y)
       )[0]]
     );
     const t=candidates[Math.floor(Math.random()*candidates.length)];
+    console.log('passing to '+(t?.name||'none')+' dist='+Math.round(Math.hypot((t?.x||0)-carrier.x,(t?.y||0)-carrier.y)));
     if(t){
       recentlyPassedFrom='team:'+carrier.team;
       recentlyPassedTimer=2.0;
