@@ -127,12 +127,13 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   font-weight:900;display:inline-block;margin-top:4px;}
 .proportional-badge.yes{background:#f0fdf4;color:var(--green);border:2px solid var(--green);}
 .proportional-badge.no{background:#fef2f2;color:var(--red);border:2px solid var(--red);}
-.prop-btn-row{display:flex;gap:6px;margin-top:4px;}
-.prop-choice{flex:1;padding:5px;border:2px solid var(--border);border-radius:6px;
+.prop-btn-row{display:flex;flex-direction:column;gap:5px;margin-top:4px;}
+.prop-choice{width:100%;padding:5px 8px;border:2px solid var(--border);border-radius:6px;
   background:white;font-family:'Nunito',sans-serif;font-size:0.78rem;
-  font-weight:800;cursor:pointer;transition:all 0.15s;}
+  font-weight:800;cursor:pointer;transition:all 0.15s;text-align:left;}
 .prop-choice.selected-yes{background:#f0fdf4;border-color:var(--green);color:var(--green);}
 .prop-choice.selected-no{background:#fef2f2;border-color:var(--red);color:var(--red);}
+.prop-choice:not(.selected-yes):not(.selected-no):hover{background:#f3f4f6;}
 
 /* CONTROLS */
 .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
@@ -189,7 +190,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.7</div>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.5</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -252,8 +253,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
         <div id="propCard">
           <div id="propDisplay" style="display:none"></div>
           <div class="prop-btn-row" id="propBtnRow" style="display:none">
-            <button class="prop-choice" id="btnProp" onclick="selectProp(true)">Prop.</button>
-            <button class="prop-choice" id="btnNotProp" onclick="selectProp(false)">Ikke prop.</button>
+            <button class="prop-choice" id="btnProp" onclick="selectProp(true)">✓ Proporsjonal</button>
+            <button class="prop-choice" id="btnNotProp" onclick="selectProp(false)">✗ Ikke proporsjonal</button>
           </div>
         </div>
       </div>
@@ -267,7 +268,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 
           <div class="expr-display" id="exprDisplay">
             <span class="expr-prefix">f(x) =</span>
-            <span class="expr-placeholder" id="exprPlaceholder">Dra blokker hit...</span>
+            <span class="expr-placeholder" id="exprPlaceholder">Bygg funksjonen...</span>
           </div>
 
           <div class="drop-zone" id="dropZone"
@@ -328,7 +329,7 @@ let placedBlocks=[];
 let propSelected=null;
 
 // ── ADAPTIVE LEVEL ──
-const MAX_LEVEL=6, MIN_LEVEL=1;
+const MAX_LEVEL=7, MIN_LEVEL=1;
 const EXPECTED_TIME=50; // sekunder per oppgave
 const UP_STREAK=3;      // riktige på rad → opp
 const DOWN_ERRORS=2;    // feil på rad → ned
@@ -380,6 +381,7 @@ const LEVELS={
   4:{name:'Nivå 4',desc:'Negative konstantledd',showProps:'input',needProps:true,needProp:false,inputMode:true},
   5:{name:'Nivå 5',desc:'Negative stigningstall',showProps:'input',needProps:true,needProp:false,inputMode:true},
   6:{name:'Nivå 6',desc:'Blanding + proporsjonal',showProps:'input',needProps:true,needProp:true,inputMode:true},
+  7:{name:'Nivå 7',desc:'Skriv funksjonsuttrykket direkte',showProps:'input',needProps:true,needProp:true,inputMode:false,exprMode:true},
 };
 
 // ── TASK TEMPLATES ──
@@ -411,6 +413,7 @@ function pickTask(level){
   else if(level===2) templates=[...positiveTemplates,...proportionalTemplates];
   else if(level===3) templates=[...positiveTemplates,...proportionalTemplates];
   else if(level===4) templates=[...positiveTemplates,...negBTemplates];
+  else if(level===6) templates=[...positiveTemplates,...proportionalTemplates,...negBTemplates,...negATemplates];
   else templates=[...positiveTemplates,...proportionalTemplates,...negBTemplates,...negATemplates];
 
   const t=templates[Math.floor(Math.random()*templates.length)];
@@ -468,7 +471,40 @@ function renderTask(){
   document.getElementById('newTaskBtn').style.display='none';
   taskStartTime=Date.now();
 
-  if(lv.inputMode){
+  if(lv.exprMode){
+    // N7: expr input in factory + props on left
+    document.getElementById('bankPanel').style.display='none';
+    document.getElementById('propsPanel').style.display='flex';
+    document.getElementById('slopeDisplay').style.display='none';
+    document.getElementById('interceptDisplay').style.display='none';
+    document.getElementById('slopeInput').style.display='';
+    document.getElementById('slopeInput').value='';
+    document.getElementById('slopeInput').className='prop-input';
+    document.getElementById('interceptInput').style.display='';
+    document.getElementById('interceptInput').value='';
+    document.getElementById('interceptInput').className='prop-input';
+    document.getElementById('propBtnRow').style.display='flex';
+    document.getElementById('propDisplay').style.display='none';
+    document.getElementById('btnProp').className='prop-choice';
+    document.getElementById('btnNotProp').className='prop-choice';
+    const dz=document.getElementById('dropZone');
+    dz.style.display='';
+    dz.innerHTML='';
+    dz.ondragover=null; dz.ondrop=null;
+    const inp=document.createElement('input');
+    inp.id='exprInput';
+    inp.type='text';
+    inp.placeholder='Skriv inn hele funksjonsuttrykket';
+    inp.style.cssText='width:100%;padding:8px 12px;background:transparent;border:none;'+
+      'border-bottom:2px solid rgba(255,255,255,0.5);color:#fef3c7;'+
+      "font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;"+
+      'outline:none;text-align:center;';
+    inp.addEventListener('input',()=>updateExprFromDirectInput(inp.value));
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter') checkSolution(); });
+    dz.appendChild(inp);
+    // Hide expr-display on N7 — user types full f(x)= expression
+    document.getElementById('exprDisplay').style.display='none';
+  } else if(lv.inputMode){
     // N3+: no blocks — show input fields immediately, hide bank
     document.getElementById('bankPanel').style.display='none';
     document.getElementById('propsPanel').style.display='flex';
@@ -488,8 +524,13 @@ function renderTask(){
     };
     document.getElementById('slopeInput').oninput=updateFromInput;
     document.getElementById('interceptInput').oninput=updateFromInput;
-    // Drop zone not used
-    document.getElementById('dropZone').style.display='none';
+    // Drop zone not used — update label
+    const dz=document.getElementById('dropZone');
+    dz.innerHTML='';
+    const lbl=document.createElement('span');
+    lbl.className='drop-zone-label';
+    lbl.textContent='Skriv inn stigningstall og konstantledd til venstre';
+    dz.appendChild(lbl);
     updateExprDisplay();
     if(lv.needProp){
       document.getElementById('propBtnRow').style.display='flex';
@@ -519,7 +560,7 @@ function renderTask(){
 
   placedBlocks=[];
   propSelected=null;
-  if(!lv.inputMode){
+  if(!lv.inputMode&&!lv.exprMode){
     updateDropZone();
     updateExprDisplay();
   }
@@ -654,12 +695,88 @@ function updateExprDisplay(){
   });
 }
 
-// ── CHECK SOLUTION ──
+function updateExprFromDirectInput(val){
+  const disp=document.getElementById('exprDisplay');
+  disp.innerHTML='';
+  const prefix=document.createElement('span');
+  prefix.className='expr-prefix';
+  prefix.textContent='f(x) =';
+  disp.appendChild(prefix);
+  const s=document.createElement('span');
+  s.style.cssText='font-weight:900;font-size:1rem;color:#fef3c7;padding-left:6px;';
+  s.textContent=val||'';
+  disp.appendChild(s);
+}
+
+// Parse expression like "3x+10", "-41x-5", "x+3", "-x+2", "5x"
+// Returns {a, b} or null if unparseable
+function parseExprInput(str){
+  const s=str.replace(/\s/g,'').replace(/−/g,'-');
+  // Match: [sign][coeff]x[sign][const] or [sign][coeff]x
+  const m=s.match(/^(-?)(\d*)x([+-]\d+)?$/);
+  if(!m) return null;
+  const aSign=m[1]==='-'?-1:1;
+  const aAbs=m[2]===''?1:parseInt(m[2]);
+  const a=aSign*aAbs;
+  const b=m[3]?parseInt(m[3]):0;
+  return {a,b};
+}
+
+function validateDirectExpr(str,ta,tb){
+  // Strip optional f(x)= prefix
+  let s=str.replace(/\s/g,'').replace(/−/g,'-');
+  s=s.replace(/^f\(x\)=/i,'');
+  const parsed=parseExprInput(s);
+  if(!parsed) return false;
+  return parsed.a===ta && parsed.b===tb;
+}
 function checkSolution(){
   const t=currentTask;
   const lv=LEVELS[currentLevel];
 
-  if(lv.inputMode){
+  if(lv.exprMode){
+    const inp=document.getElementById('exprInput');
+    const val=inp?inp.value.trim():'';
+    if(!val){ showToast('❌ Skriv inn et funksjonsuttrykk!','error'); return; }
+    if(!validateDirectExpr(val,t.a,t.b)){
+      inp.style.borderBottomColor='rgba(220,38,38,0.8)';
+      recordResult(false);
+      showToast('❌ Ikke riktig uttrykk — husk format: ax + b','error'); return;
+    }
+    inp.style.borderBottomColor='rgba(22,163,74,0.8)';
+    // Validate slope
+    const slopeVal=parseFloat(document.getElementById('slopeInput').value);
+    if(isNaN(slopeVal)||slopeVal!==t.a){
+      document.getElementById('slopeInput').classList.add('wrong');
+      recordResult(false); showToast('❌ Sjekk stigningstallet!','error'); return;
+    }
+    document.getElementById('slopeInput').classList.remove('wrong');
+    document.getElementById('slopeInput').classList.add('correct');
+    // Validate intercept
+    const intVal=parseFloat(document.getElementById('interceptInput').value);
+    if(isNaN(intVal)||intVal!==t.b){
+      document.getElementById('interceptInput').classList.add('wrong');
+      recordResult(false); showToast('❌ Sjekk konstantleddet!','error'); return;
+    }
+    document.getElementById('interceptInput').classList.remove('wrong');
+    document.getElementById('interceptInput').classList.add('correct');
+    // Validate proportional
+    if(propSelected===null){ showToast('❌ Velg proporsjonal eller ikke!','error'); return; }
+    if(propSelected!==(t.b===0)){ recordResult(false); showToast('❌ Sjekk proporsjonal-valget!','error'); return; }
+    // Show props as display after correct
+    document.getElementById('slopeDisplay').textContent='a = '+t.a;
+    document.getElementById('interceptDisplay').textContent='b = '+t.b;
+    document.getElementById('slopeDisplay').style.display='';
+    document.getElementById('interceptDisplay').style.display='';
+    document.getElementById('slopeInput').style.display='none';
+    document.getElementById('interceptInput').style.display='none';
+    const isProp=t.b===0;
+    const pd=document.getElementById('propDisplay');
+    pd.innerHTML=`<span class="proportional-badge ${isProp?'yes':'no'}">${isProp?'✓ Proporsjonal':'✗ Ikke proporsjonal'}</span>`+
+      `<br><span class="proportional-badge no" style="margin-top:4px;border-color:#6366f1;color:#6366f1;background:#eef2ff">📈 Lineær funksjon</span>`;
+    pd.style.display='';
+    document.getElementById('propBtnRow').style.display='none';
+  } else if(lv.inputMode){
     // Validate a and b directly from input fields
     const slopeVal=parseFloat(document.getElementById('slopeInput').value);
     const intVal=parseFloat(document.getElementById('interceptInput').value);
@@ -717,7 +834,7 @@ function checkSolution(){
   }
 
   // Show props auto if needed
-  if(!lv.needProps&&!lv.inputMode){
+  if(!lv.needProps&&!lv.inputMode&&!lv.exprMode){
     document.getElementById('slopeDisplay').textContent='a = '+t.a;
     document.getElementById('interceptDisplay').textContent='b = '+t.b;
     document.getElementById('slopeDisplay').style.display='';
@@ -989,7 +1106,11 @@ function resetFactory(){
   placedBlocks=[];
   propSelected=null;
   const lv=LEVELS[currentLevel];
-  if(lv.inputMode){
+  if(lv.exprMode){
+    document.getElementById('exprDisplay').style.display='none';
+    const inp=document.getElementById('exprInput');
+    if(inp){ inp.value=''; inp.style.borderBottomColor='rgba(255,255,255,0.5)'; }
+  } else if(lv.inputMode){
     document.getElementById('slopeInput').value='';
     document.getElementById('interceptInput').value='';
     document.getElementById('slopeInput').className='prop-input';
@@ -998,6 +1119,7 @@ function resetFactory(){
   } else {
     document.getElementById('bankPanel').style.display='';
     document.getElementById('propsPanel').style.display='none';
+    document.getElementById('dropZone').style.display='';
     currentTask.blocks.forEach(b=>{
       document.getElementById('block-'+b.id)?.classList.remove('used');
     });
@@ -1026,6 +1148,7 @@ function newTask(){
   document.getElementById('beltItemOut').textContent='';
   document.getElementById('calcCheck').style.display='none';
   document.getElementById('animDisplay').innerHTML='';
+  document.getElementById('exprDisplay').style.display='';
   document.getElementById('bankPanel').style.display='';
   document.getElementById('propsPanel').style.display='none';
   document.getElementById('btnSjekk').style.display='';
