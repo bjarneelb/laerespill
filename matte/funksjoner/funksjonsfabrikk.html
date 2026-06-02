@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funksjonsfabrikken</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f0f4ff;--panel:#ffffff;--border:#dde3f0;
+  --accent:#5b4fcf;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --factory:#78350f;--belt:#92400e;--r:12px;
+  --shadow:0 2px 12px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--accent);color:white;padding:10px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 8px rgba(91,79,207,0.3);}
+.header-title{font-size:1.2rem;font-weight:900;letter-spacing:1px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.level-badge{background:rgba(255,255,255,0.2);padding:3px 12px;
+  border-radius:20px;font-size:0.8rem;font-weight:800;}
+.score-badge{background:var(--yellow);color:#78350f;padding:3px 12px;
+  border-radius:20px;font-size:0.8rem;font-weight:900;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);
+  border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;
+  transition:background 0.2s;}
+.btn-menu:hover{background:rgba(255,255,255,0.25);}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:16px;gap:14px;max-width:900px;margin:0 auto;width:100%;}
+
+/* TASK CARD */
+.task-card{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);
+  padding:14px 20px;width:100%;box-shadow:var(--shadow);}
+.task-label{font-size:0.68rem;font-weight:800;color:var(--accent);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:4px;}
+.task-text{font-size:1rem;font-weight:700;color:var(--text);line-height:1.5;}
+.task-expr{font-size:1.1rem;font-weight:900;color:var(--accent);
+  margin-top:6px;font-family:monospace;}
+
+/* FACTORY */
+.factory-wrap{width:100%;position:relative;}
+
+.factory-building{
+  background:linear-gradient(180deg,#d97706 0%,#92400e 100%);
+  border:3px solid #78350f;border-radius:8px;padding:16px;
+  position:relative;box-shadow:0 4px 20px rgba(120,53,15,0.3);
+}
+.factory-roof{display:flex;justify-content:space-around;margin-bottom:8px;}
+.chimney{width:22px;height:36px;background:linear-gradient(180deg,#6b3a2a,#4a2317);
+  border-radius:3px 3px 0 0;position:relative;}
+.chimney::after{content:'💨';position:absolute;top:-18px;left:50%;
+  transform:translateX(-50%);font-size:0.9rem;animation:smoke 2s infinite;}
+@keyframes smoke{0%,100%{opacity:0.4;transform:translateX(-50%) translateY(0)}
+  50%{opacity:0.9;transform:translateX(-50%) translateY(-6px)}}
+.factory-sign{text-align:center;color:#fef3c7;font-size:0.75rem;font-weight:800;
+  letter-spacing:2px;margin-bottom:8px;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
+
+/* Expression display */
+.expr-display{background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;
+  padding:10px 16px;text-align:center;margin-bottom:10px;min-height:44px;
+  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;}
+.expr-prefix{font-size:1rem;font-weight:900;color:#92400e;}
+.expr-block{background:white;border:2px solid #f59e0b;border-radius:6px;
+  padding:4px 12px;font-size:1rem;font-weight:900;color:var(--accent);
+  cursor:grab;user-select:none;transition:transform 0.1s,box-shadow 0.1s;}
+.expr-block:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.15);}
+.expr-placeholder{color:#b45309;font-style:italic;font-size:0.9rem;}
+
+/* Drop zone */
+.drop-zone{background:rgba(0,0,0,0.2);border:2px dashed rgba(255,255,255,0.4);
+  border-radius:8px;min-height:56px;padding:8px;
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+  transition:background 0.2s,border-color 0.2s;}
+.drop-zone.drag-over{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.8);}
+.drop-zone-label{color:rgba(255,255,255,0.6);font-size:0.78rem;font-weight:700;
+  width:100%;text-align:center;pointer-events:none;}
+
+/* Belt */
+.belt-row{display:flex;align-items:center;gap:0;margin-top:10px;}
+.belt-label{color:#fef3c7;font-size:0.72rem;font-weight:800;width:70px;text-align:center;}
+.belt{flex:1;height:24px;background:repeating-linear-gradient(90deg,
+  #92400e 0px,#92400e 16px,#78350f 16px,#78350f 32px);
+  border-radius:4px;position:relative;overflow:hidden;}
+.belt-item{position:absolute;top:50%;transform:translateY(-50%);
+  background:#fef3c7;border:2px solid #f59e0b;border-radius:6px;
+  padding:2px 10px;font-size:0.85rem;font-weight:900;color:#92400e;
+  white-space:nowrap;transition:left 0.8s ease-in-out;}
+
+/* Animation display */
+.anim-display{background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;
+  padding:8px 14px;text-align:center;margin-top:8px;min-height:36px;
+  font-size:0.95rem;font-weight:900;color:#92400e;
+  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;}
+.anim-step{padding:2px 8px;border-radius:4px;transition:background 0.3s;}
+.anim-step.highlight{background:#f59e0b;color:white;}
+
+/* BANK */
+.bank{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);
+  padding:12px 16px;width:100%;box-shadow:var(--shadow);}
+.bank-label{font-size:0.68rem;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.bank-blocks{display:flex;flex-wrap:wrap;gap:8px;}
+.bank-block{background:white;border:2px solid var(--accent);border-radius:8px;
+  padding:6px 10px;font-size:1rem;font-weight:900;color:var(--accent);
+  cursor:grab;user-select:none;box-shadow:0 2px 6px rgba(91,79,207,0.15);
+  transition:transform 0.1s,box-shadow 0.1s;
+  display:inline-block;width:fit-content;white-space:nowrap;}
+.bank-block:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(91,79,207,0.25);}
+.bank-block:active{cursor:grabbing;}
+.bank-block.used{opacity:0.3;cursor:not-allowed;}
+
+/* PROPERTIES */
+.props-row{display:flex;gap:10px;width:100%;flex-wrap:wrap;}
+.prop-card{flex:1;min-width:120px;background:var(--panel);border:2px solid var(--border);
+  border-radius:var(--r);padding:10px 14px;box-shadow:var(--shadow);text-align:center;}
+.prop-label{font-size:0.65rem;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.prop-value{font-size:1.1rem;font-weight:900;color:var(--accent);}
+.prop-input{width:100%;padding:5px 8px;border:1.5px solid var(--border);
+  border-radius:6px;font-family:'Nunito',sans-serif;font-size:1rem;
+  font-weight:900;text-align:center;outline:none;color:var(--text);}
+.prop-input:focus{border-color:var(--accent);}
+.prop-input.correct{border-color:var(--green);background:#f0fdf4;color:var(--green);}
+.prop-input.wrong{border-color:var(--red);background:#fef2f2;color:var(--red);}
+.proportional-badge{padding:4px 12px;border-radius:20px;font-size:0.85rem;
+  font-weight:900;display:inline-block;margin-top:4px;}
+.proportional-badge.yes{background:#f0fdf4;color:var(--green);border:2px solid var(--green);}
+.proportional-badge.no{background:#fef2f2;color:var(--red);border:2px solid var(--red);}
+.prop-btn-row{display:flex;gap:6px;margin-top:4px;}
+.prop-choice{flex:1;padding:5px;border:2px solid var(--border);border-radius:6px;
+  background:white;font-family:'Nunito',sans-serif;font-size:0.78rem;
+  font-weight:800;cursor:pointer;transition:all 0.15s;}
+.prop-choice.selected-yes{background:#f0fdf4;border-color:var(--green);color:var(--green);}
+.prop-choice.selected-no{background:#fef2f2;border-color:var(--red);color:var(--red);}
+
+/* CONTROLS */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.btn{padding:9px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;
+  font-size:0.9rem;font-weight:800;cursor:pointer;transition:all 0.2s;}
+.btn-check{background:var(--accent);color:white;}
+.btn-check:hover{background:#4338ca;}
+.btn-reset{background:#f3f4f6;color:var(--muted);}
+.btn-reset:hover{background:#e5e7eb;}
+.btn-new{background:var(--green);color:white;}
+.btn-new:hover{background:#15803d;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  padding:10px 24px;border-radius:8px;font-weight:800;font-size:0.9rem;
+  opacity:0;transition:all 0.3s;z-index:100;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:#16a34a;color:white;}
+.toast.error{background:#dc2626;color:white;}
+
+/* START SCREEN */
+.overlay{position:fixed;inset:0;background:rgba(240,244,255,0.97);
+  display:flex;align-items:center;justify-content:center;z-index:200;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;
+  padding:32px 36px;width:460px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.1);}
+.start-card h1{font-size:1.6rem;color:var(--accent);margin-bottom:6px;}
+.start-card p{color:var(--muted);font-size:0.88rem;margin-bottom:20px;}
+.mode-row{display:flex;gap:8px;margin-bottom:14px;}
+.mode-btn{flex:1;padding:9px;background:white;border:2px solid var(--border);
+  border-radius:8px;color:var(--muted);font-family:'Nunito',sans-serif;
+  font-size:0.8rem;font-weight:800;cursor:pointer;transition:all 0.15s;}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px;}
+.level-btn{width:40px;height:40px;border:2px solid var(--border);border-radius:8px;
+  background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.9rem;
+  cursor:pointer;transition:all 0.15s;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;
+  font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:700;
+  outline:none;margin-bottom:10px;text-align:center;}
+.name-input:focus{border-color:var(--accent);}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;
+  border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;
+  cursor:pointer;transition:background 0.2s;}
+.start-btn:hover{background:#4338ca;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- START SCREEN -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <h1>🏭 Funksjonsfabrikken</h1>
+    <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
+    <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
+    <div class="mode-row">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
+      <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')">⏱️ Enkeltspiller</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">🏎️ Flerspiller</button>
+    </div>
+    <div id="soloOpts" style="display:none;margin-bottom:10px">
+      <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px">Tid (min)</div>
+      <input type="number" id="timedMin" value="5" min="1" max="30" style="width:80px;padding:6px;border:2px solid var(--border);border-radius:6px;font-family:'Nunito',sans-serif;font-weight:700;text-align:center;outline:none;">
+    </div>
+    <div id="multiOpts" style="display:none;margin-bottom:10px">
+      <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" style="text-transform:uppercase;letter-spacing:2px;">
+    </div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
+    <div class="level-select" id="levelSelect"></div>
+    <button class="start-btn" onclick="startGame()">🚀 Start!</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">🏭 FUNKSJONSFABRIKKEN</div>
+  <div class="header-right">
+    <span class="level-badge" id="levelBadge">Nivå 1</span>
+    <span class="score-badge" id="scoreBadge" style="display:none">0 p</span>
+    <span id="timerBadge" style="display:none;background:rgba(255,255,255,0.2);padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;color:white"></span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+
+  <!-- TASK -->
+  <div class="task-card">
+    <div class="task-label">📋 Oppgave</div>
+    <div class="task-text" id="taskText">–</div>
+    <div class="task-expr" id="taskExpr"></div>
+  </div>
+
+  <!-- FACTORY + BANK side by side -->
+  <div style="display:flex;gap:12px;width:100%;align-items:flex-start">
+
+    <!-- BANK left of factory -->
+    <div class="bank" style="width:180px;flex-shrink:0">
+      <div class="bank-label">📦 Blokker</div>
+      <div class="bank-blocks" id="bankBlocks" style="flex-direction:column"></div>
+    </div>
+
+    <!-- FACTORY -->
+    <div class="factory-wrap" style="flex:1">
+      <div class="factory-building">
+        <div class="factory-roof">
+          <div class="chimney"></div>
+          <div class="chimney"></div>
+          <div class="chimney"></div>
+        </div>
+        <div class="factory-sign">⚙️ FUNKSJONSFABRIKKEN ⚙️</div>
+
+        <div class="expr-display" id="exprDisplay">
+          <span class="expr-prefix">f(x) =</span>
+          <span class="expr-placeholder" id="exprPlaceholder">Dra blokker hit...</span>
+        </div>
+
+        <div class="drop-zone" id="dropZone"
+          ondragover="handleDragOver(event)"
+          ondragleave="handleDragLeave(event)"
+          ondrop="handleDrop(event)">
+          <span class="drop-zone-label" id="dropLabel">Slipp blokker her for å bygge funksjonen</span>
+        </div>
+
+        <div class="belt-row">
+          <div class="belt-label" style="font-size:0.65rem">x inn →</div>
+          <div class="belt" id="beltIn">
+            <div class="belt-item" id="beltItemIn" style="left:-80px"></div>
+          </div>
+          <div style="width:40px;text-align:center;color:#fef3c7;font-size:1.2rem">🏭</div>
+          <div class="belt" id="beltOut">
+            <div class="belt-item" id="beltItemOut" style="left:-80px"></div>
+          </div>
+          <div class="belt-label" style="font-size:0.65rem">→ f(x) ut</div>
+        </div>
+
+        <div class="anim-display" id="animDisplay" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROPERTIES -->
+  <div class="props-row" id="propsRow" style="display:none">
+    <div class="prop-card" id="slopeCard">
+      <div class="prop-label">Stigningstall (a)</div>
+      <div class="prop-value" id="slopeDisplay" style="display:none"></div>
+      <input class="prop-input" id="slopeInput" type="number" placeholder="?" style="display:none">
+    </div>
+    <div class="prop-card" id="interceptCard">
+      <div class="prop-label">Konstantledd (b)</div>
+      <div class="prop-value" id="interceptDisplay" style="display:none"></div>
+      <input class="prop-input" id="interceptInput" type="number" placeholder="?" style="display:none">
+    </div>
+    <div class="prop-card" id="propCard">
+      <div class="prop-label">Type funksjon</div>
+      <div id="propDisplay" style="display:none"></div>
+      <div class="prop-btn-row" id="propBtnRow" style="display:none">
+        <button class="prop-choice" id="btnProp" onclick="selectProp(true)">Proporsjonal</button>
+        <button class="prop-choice" id="btnNotProp" onclick="selectProp(false)">Ikke prop.</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="btn btn-reset" onclick="resetFactory()">↺ Nullstill</button>
+    <button class="btn btn-check" onclick="checkSolution()">✅ Sjekk svar</button>
+    <button class="btn btn-new" id="newTaskBtn" onclick="newTask()" style="display:none">➡️ Neste oppgave</button>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──
+let gameMode='practice', currentLevel=1, currentScore=0;
+let playerName='', timedMinutes=5, roomCode='';
+let timerSeconds=0, timerInterval=null;
+let currentTask=null; // {text, a, b, expr, blocks}
+let placedBlocks=[]; // [{id, label, type}]
+let propSelected=null; // true/false/null
+
+// ── LEVELS ──
+const LEVELS={
+  1:{name:'Nivå 1',desc:'ax+b, positive tall',showProps:'auto',showProp:'auto',needProps:false,needProp:false},
+  2:{name:'Nivå 2',desc:'Blanding, positive tall',showProps:'auto',needProps:false,needProp:false},
+  3:{name:'Nivå 3',desc:'Stigningstall og konstantledd',showProps:'input',needProps:true,needProp:false},
+  4:{name:'Nivå 4',desc:'Negative konstantledd',showProps:'input',needProps:true,needProp:false},
+  5:{name:'Nivå 5',desc:'Negative stigningstall',showProps:'input',needProps:true,needProp:false},
+  6:{name:'Nivå 6',desc:'Blanding + proporsjonal',showProps:'input',needProps:true,needProp:true},
+};
+
+// ── TASK TEMPLATES ──
+// Each: {textFn(a,b), a, b} — a=stigningstall, b=konstantledd (0 = proporsjonal)
+function pickTask(level){
+  const positiveTemplates=[
+    {textFn:(a,b)=>`Du leier en elsparkesykkel. Det koster ${a} kr per km og ${b} kr i oppstartsavgift. Skriv et funksjonsuttrykk for totalkostnaden f(x) der x er antall km.`, aRange:[2,5],bRange:[5,20]},
+    {textFn:(a,b)=>`En taxitur koster ${b} kr i grunnpris pluss ${a} kr per km. Skriv et uttrykk for prisen f(x) der x er antall km.`, aRange:[3,8],bRange:[20,50]},
+    {textFn:(a,b)=>`Du sparer ${a} kr per dag. Du har allerede ${b} kr på konto. Skriv et uttrykk for hvor mye du har etter x dager.`, aRange:[10,50],bRange:[50,200]},
+    {textFn:(a,b)=>`En butikk selger krus for ${a} kr stykket. Frakt koster ${b} kr uansett. Skriv et uttrykk for totalkostnaden f(x) der x er antall krus.`, aRange:[30,80],bRange:[30,100]},
+    {textFn:(a,b)=>`Du går tur i fjellet. Du stiger ${a} høydemeter per minutt og starter på ${b} meters høyde. Skriv et uttrykk for høyden f(x) etter x minutter.`, aRange:[3,10],bRange:[50,300]},
+  ];
+  const proportionalTemplates=[
+    {textFn:(a)=>`En taxi tar ${a} kr per km. Det er ingen oppstartsavgift. Skriv et uttrykk for prisen f(x) der x er antall km.`, aRange:[4,9],bRange:[0,0]},
+    {textFn:(a)=>`Du tjener ${a} kr per time. Skriv et uttrykk for hvor mye du tjener f(x) etter x timer.`, aRange:[150,250],bRange:[0,0]},
+    {textFn:(a)=>`Et tog kjører ${a} km i timen. Skriv et uttrykk for strekningen f(x) etter x timer.`, aRange:[60,120],bRange:[0,0]},
+  ];
+  const negBTemplates=[
+    {textFn:(a,b)=>`Et stearinlys er ${b} cm langt og brenner ned ${a} cm per time. Skriv et uttrykk for lengden f(x) etter x timer.`, aRange:[2,4],bRange:[10,20],negA:false,negB:true},
+    {textFn:(a,b)=>`Du har ${b} kr på konto. Du bruker ${a} kr om dagen. Skriv et uttrykk for beløpet f(x) etter x dager.`, aRange:[20,50],bRange:[200,500],negA:false,negB:true},
+  ];
+  const negATemplates=[
+    {textFn:(a,b)=>`Temperaturen synker med ${a} grader per time. Det er ${b} grader nå. Skriv et uttrykk for temperaturen f(x) etter x timer.`, aRange:[1,4],bRange:[5,20],negA:true,negB:false},
+    {textFn:(a,b)=>`En bil bremser og mister ${a} km/t per sekund. Farten er nå ${b} km/t. Skriv et uttrykk for farten f(x) etter x sekunder.`, aRange:[3,8],bRange:[40,80],negA:true,negB:false},
+  ];
+
+  let templates;
+  if(level===1) templates=positiveTemplates;
+  else if(level===2) templates=[...positiveTemplates,...proportionalTemplates];
+  else if(level===3) templates=[...positiveTemplates,...proportionalTemplates];
+  else if(level===4) templates=[...positiveTemplates,...negBTemplates];
+  else templates=[...positiveTemplates,...proportionalTemplates,...negBTemplates,...negATemplates];
+
+  const t=templates[Math.floor(Math.random()*templates.length)];
+  const randInt=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+
+  let a=randInt(t.aRange[0],t.aRange[1]);
+  let b=t.bRange[0]===0&&t.bRange[1]===0?0:randInt(t.bRange[0],t.bRange[1]);
+  if(t.negA) a=-a;
+  if(t.negB) b=-b;
+
+  const text=t.textFn(Math.abs(a),Math.abs(b));
+  let expr;
+  if(b===0)       expr=`f(x) = ${a}x`;
+  else if(a===1)  expr=b>0?`f(x) = x + ${b}`:`f(x) = x - ${Math.abs(b)}`;
+  else if(a===-1) expr=b>0?`f(x) = -x + ${b}`:`f(x) = -x - ${Math.abs(b)}`;
+  else            expr=b>0?`f(x) = ${a}x + ${b}`:`f(x) = ${a}x - ${Math.abs(b)}`;
+
+  // Generate blocks
+  const blocks=generateBlocks(a,b);
+  return {text,a,b,expr,blocks};
+}
+
+function generateBlocks(a,b){
+  const absA=Math.abs(a), absB=Math.abs(b);
+  const correct=[];
+  if(a===1)       correct.push({label:'x',      type:'x',  val:1,  correct:true});
+  else if(a===-1) correct.push({label:'-x',     type:'x',  val:-1, correct:true});
+  else            correct.push({label:`${a}x`,  type:'ax', val:a,  correct:true});
+  if(b!==0)       correct.push({label:`${absB}`,type:'b',  val:b,  correct:true});
+
+  // Always: a as plain number, b as ax-block
+  const fixed=[];
+  fixed.push({label:`${absA}`,   type:'num', val:absA,  correct:false});
+  if(absB!==0)
+    fixed.push({label:`${absB}x`,type:'ax',  val:absB,  correct:false});
+
+  // One random extra distractor
+  const extras=[];
+  const c1=absA+absB; if(c1!==absA&&c1!==absB&&c1>0) extras.push({label:`${c1}x`,type:'ax',val:c1,correct:false});
+  const c2=absA*2;    if(c2!==absA)                   extras.push({label:`${c2}x`,type:'ax',val:c2,correct:false});
+  const c3=absB+1;    if(c3!==absB&&c3!==absA)         extras.push({label:`${c3}`, type:'num',val:c3,correct:false});
+  const c4=absA+1;    if(c4!==absA&&c4!==absB)         extras.push({label:`${c4}x`,type:'ax',val:c4,correct:false});
+  const extra=extras.length?[extras[Math.floor(Math.random()*extras.length)]]:[];
+
+  const all=[...correct,...fixed,...extra].sort(()=>Math.random()-0.5);
+  return all.map((bl,i)=>({...bl,id:i}));
+}
+
+// ── RENDER TASK ──
+function renderTask(){
+  const t=currentTask;
+  document.getElementById('taskText').textContent=t.text;
+  document.getElementById('taskExpr').textContent='';
+  document.getElementById('newTaskBtn').style.display='none';
+
+  // Bank
+  const bank=document.getElementById('bankBlocks');
+  bank.innerHTML='';
+  t.blocks.forEach(b=>{
+    const el=document.createElement('div');
+    el.className='bank-block';
+    el.textContent=b.label;
+    el.id='block-'+b.id;
+    el.draggable=true;
+    el.addEventListener('dragstart',e=>{
+      e.dataTransfer.setData('blockId',b.id);
+      el.style.opacity='0.5';
+    });
+    el.addEventListener('dragend',()=>el.style.opacity='1');
+    bank.appendChild(el);
+  });
+
+  // Reset placed
+  placedBlocks=[];
+  propSelected=null;
+  updateDropZone();
+  updateExprDisplay();
+  updatePropsUI();
+  document.getElementById('animDisplay').style.display='none';
+}
+
+// ── DRAG & DROP ──
+function handleDragOver(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.add('drag-over');
+}
+function handleDragLeave(){
+  document.getElementById('dropZone').classList.remove('drag-over');
+}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const id=parseInt(e.dataTransfer.getData('blockId'));
+  const block=currentTask.blocks.find(b=>b.id===id);
+  if(!block) return;
+  if(placedBlocks.find(b=>b.id===id)) return; // already placed
+  placedBlocks.push(block);
+  document.getElementById('block-'+id)?.classList.add('used');
+  updateDropZone();
+  updateExprDisplay();
+}
+
+function removeFromDrop(id){
+  const idx=placedBlocks.findIndex(b=>b.id===id);
+  if(idx===-1) return;
+  placedBlocks.splice(idx,1);
+  document.getElementById('block-'+id)?.classList.remove('used');
+  updateDropZone();
+  updateExprDisplay();
+}
+
+function updateDropZone(){
+  const dz=document.getElementById('dropZone');
+  dz.innerHTML='';
+  if(placedBlocks.length===0){
+    const lbl=document.createElement('span');
+    lbl.id='dropLabel';
+    lbl.className='drop-zone-label';
+    lbl.textContent='Slipp blokker her for å bygge funksjonen';
+    dz.appendChild(lbl);
+    return;
+  }
+  placedBlocks.forEach((b,idx)=>{
+    if(idx>0){
+      const op=document.createElement('span');
+      op.style.cssText='color:rgba(255,255,255,0.8);font-weight:900;font-size:1.1rem;padding:0 2px;';
+      op.textContent=b.val<0?' −':' +';
+      dz.appendChild(op);
+    }
+    const el=document.createElement('div');
+    el.className='expr-block';
+    el.textContent=b.label;
+    el.title='Klikk for å fjerne';
+    el.onclick=()=>removeFromDrop(b.id);
+    dz.appendChild(el);
+  });
+}
+
+function updateExprDisplay(){
+  const disp=document.getElementById('exprDisplay');
+  disp.innerHTML='';
+  const prefix=document.createElement('span');
+  prefix.className='expr-prefix';
+  prefix.textContent='f(x) =';
+  disp.appendChild(prefix);
+  if(placedBlocks.length===0){
+    const ph=document.createElement('span');
+    ph.id='exprPlaceholder';
+    ph.className='expr-placeholder';
+    ph.textContent='Dra blokker hit...';
+    disp.appendChild(ph);
+    return;
+  }
+  placedBlocks.forEach((b,idx)=>{
+    if(idx>0){
+      const op=document.createElement('span');
+      op.style.cssText='font-weight:900;font-size:1rem;color:#92400e;padding:0 3px;';
+      op.textContent=b.val<0?' −':' +';
+      disp.appendChild(op);
+    }
+    const s=document.createElement('span');
+    s.style.cssText='font-weight:900;font-size:1rem;color:#92400e;';
+    s.textContent=' '+b.label;
+    disp.appendChild(s);
+  });
+}
+
+// ── CHECK SOLUTION ──
+function checkSolution(){
+  const t=currentTask;
+  // Build placed expression string
+  const placed=placedBlocks.map(b=>b.label).join(' ').trim();
+
+  // Build expected — flexible matching
+  const isCorrect=validateExpr(placedBlocks,t.a,t.b);
+  if(!isCorrect){ showToast('❌ Ikke helt riktig — prøv igjen!','error'); return; }
+
+  // Check props if needed
+  const lv=LEVELS[currentLevel];
+  if(lv.needProps){
+    const slopeVal=parseInt(document.getElementById('slopeInput').value);
+    const intVal  =parseInt(document.getElementById('interceptInput').value);
+    if(isNaN(slopeVal)||slopeVal!==t.a){
+      document.getElementById('slopeInput').classList.add('wrong');
+      showToast('❌ Sjekk stigningstallet!','error'); return;
+    }
+    document.getElementById('slopeInput').classList.remove('wrong');
+    document.getElementById('slopeInput').classList.add('correct');
+    if(isNaN(intVal)||intVal!==t.b){
+      document.getElementById('interceptInput').classList.add('wrong');
+      showToast('❌ Sjekk konstantleddet!','error'); return;
+    }
+    document.getElementById('interceptInput').classList.remove('wrong');
+    document.getElementById('interceptInput').classList.add('correct');
+  }
+  if(lv.needProp){
+    if(propSelected===null){ showToast('❌ Velg proporsjonal eller ikke!','error'); return; }
+    const correctProp=t.b===0;
+    if(propSelected!==correctProp){ showToast('❌ Sjekk proporsjonal-valget!','error'); return; }
+  }
+
+  // Correct!
+  document.getElementById('taskExpr').textContent=t.expr;
+  showToast('🎉 Riktig!','success');
+
+  // Award score
+  if(gameMode!=='practice'){
+    currentScore+=Math.max(10,50);
+    document.getElementById('scoreBadge').textContent=currentScore+' p';
+  }
+
+  // Show props auto if needed
+  if(!lv.needProps){
+    document.getElementById('slopeDisplay').textContent=t.a;
+    document.getElementById('interceptDisplay').textContent=t.b;
+    document.getElementById('slopeDisplay').style.display='';
+    document.getElementById('interceptDisplay').style.display='';
+    document.getElementById('slopeInput').style.display='none';
+    document.getElementById('interceptInput').style.display='none';
+  }
+  if(!lv.needProp){
+    const isProp=t.b===0;
+    const pd=document.getElementById('propDisplay');
+    pd.innerHTML=`<span class="proportional-badge ${isProp?'yes':'no'}">${isProp?'✓ Proporsjonal':'✗ Ikke proporsjonal'}</span>`;
+    pd.style.display='';
+    document.getElementById('propBtnRow').style.display='none';
+  }
+  document.getElementById('propsRow').style.display='flex';
+
+  document.getElementById('newTaskBtn').style.display='inline-block';
+
+  // Run animation
+  runAnimation(t);
+}
+
+function validateExpr(blocks,a,b){
+  // Remove operators from placed, look at term blocks
+  const terms=blocks.filter(bl=>bl.type!=='op');
+  // Must have correct ax block and correct b block (or just ax if b===0)
+  if(b===0){
+    if(terms.length!==1) return false;
+    const ax=terms[0];
+    if(ax.type!=='ax'&&ax.type!=='x') return false;
+    const val=ax.val!==undefined?ax.val:(ax.type==='x'?1:null);
+    return val===a;
+  }
+  if(terms.length!==2) return false;
+  const axBlock=terms.find(bl=>(bl.type==='ax'||bl.type==='x')&&(bl.val===a||(bl.type==='x'&&a===1)||(bl.type==='x'&&bl.val===a)));
+  const bBlock=terms.find(bl=>bl.type==='b'&&bl.val===b);
+  return !!axBlock&&!!bBlock;
+}
+
+// ── INTERACTIVE ANIMATION ──
+let animStep=0;
+let animXVal=0;
+
+function runAnimation(t){
+  animStep=0;
+  animXVal=Math.floor(Math.random()*8)+1;
+  const animDisp=document.getElementById('animDisplay');
+  animDisp.style.display='flex';
+  animDisp.innerHTML='';
+
+  const beltIn=document.getElementById('beltItemIn');
+  beltIn.textContent='x = '+animXVal;
+  beltIn.style.left='-80px';
+  beltIn.style.cursor='pointer';
+  beltIn.title='Klikk for å sende inn i fabrikken';
+  setTimeout(()=>beltIn.style.left='15%',100);
+  setAnimHint('👆 Klikk på pakken for å sende x = '+animXVal+' inn i fabrikken');
+
+  beltIn.onclick=()=>{
+    if(animStep!==0) return;
+    animStep=1;
+    beltIn.style.left='50%';
+    beltIn.style.cursor='default';
+    beltIn.onclick=null;
+    setTimeout(()=>showOperatorStep(t,animXVal,animDisp),600);
+  };
+}
+
+function showOperatorStep(t,xVal,animDisp){
+  animDisp.innerHTML='';
+  const mulResult=t.a*xVal;
+  const absA=Math.abs(t.a);
+
+  const numSpan=(txt)=>{ const s=document.createElement('span'); s.className='anim-step'; s.textContent=txt; return s; };
+  const opBtn=(sym,color,textColor)=>{
+    const b=document.createElement('button');
+    b.textContent=sym;
+    b.style.cssText='background:'+color+';border:none;border-radius:6px;padding:3px 10px;'+
+      'font-size:1.1rem;font-weight:900;color:'+(textColor||'white')+';cursor:pointer;margin:0 3px;';
+    return b;
+  };
+
+  if(t.b!==0){
+    const addSign=t.b>0?'+':'\u2212';
+    if(t.a!==1&&t.a!==-1){
+      const mulBtn=opBtn('\u00b7','#f59e0b');
+      const addBtn=opBtn(addSign,'#cbd5e1','#64748b');
+      animDisp.appendChild(numSpan(t.a<0?'\u2212'+absA:String(absA)));
+      animDisp.appendChild(mulBtn);
+      animDisp.appendChild(numSpan(String(xVal)));
+      animDisp.appendChild(addBtn);
+      animDisp.appendChild(numSpan(String(Math.abs(t.b))));
+      addBtn.onclick=()=>showToast('\u26a0\ufe0f Husk regnerekkef\u00f8lge! Multiplikasjon f\u00f8r addisjon og subtraksjon.','error');
+      setAnimHint('\ud83d\udc46 Klikk p\u00e5 \u00b7 for \u00e5 gange');
+      mulBtn.onclick=()=>{
+        mulBtn.onclick=null; addBtn.onclick=null;
+        animDisp.innerHTML='';
+        const addBtn2=opBtn(addSign,'#f59e0b');
+        animDisp.appendChild(numSpan(String(mulResult)));
+        animDisp.appendChild(addBtn2);
+        animDisp.appendChild(numSpan(String(Math.abs(t.b))));
+        setAnimHint('\ud83d\udc46 Klikk p\u00e5 '+addSign+' for \u00e5 legge sammen');
+        addBtn2.onclick=()=>{
+          addBtn2.onclick=null;
+          const total=mulResult+t.b;
+          animDisp.innerHTML='';
+          animDisp.appendChild(numSpan(String(total)));
+          setAnimHint('');
+          setTimeout(()=>doFinalStep(t,xVal,total),800);
+        };
+      };
+    } else {
+      const addBtn=opBtn(addSign,'#f59e0b');
+      animDisp.appendChild(numSpan(String(mulResult)));
+      animDisp.appendChild(addBtn);
+      animDisp.appendChild(numSpan(String(Math.abs(t.b))));
+      setAnimHint('\ud83d\udc46 Klikk p\u00e5 '+addSign+' for \u00e5 legge sammen');
+      addBtn.onclick=()=>{
+        addBtn.onclick=null;
+        const total=mulResult+t.b;
+        animDisp.innerHTML='';
+        animDisp.appendChild(numSpan(String(total)));
+        setAnimHint('');
+        setTimeout(()=>doFinalStep(t,xVal,total),800);
+      };
+    }
+  } else {
+    if(t.a!==1&&t.a!==-1){
+      const mulBtn=opBtn('\u00b7','#f59e0b');
+      animDisp.appendChild(numSpan(t.a<0?'\u2212'+absA:String(absA)));
+      animDisp.appendChild(mulBtn);
+      animDisp.appendChild(numSpan(String(xVal)));
+      setAnimHint('\ud83d\udc46 Klikk p\u00e5 \u00b7 for \u00e5 gange');
+      mulBtn.onclick=()=>{
+        mulBtn.onclick=null;
+        animDisp.innerHTML='';
+        animDisp.appendChild(numSpan(String(mulResult)));
+        setAnimHint('');
+        setTimeout(()=>doFinalStep(t,xVal,mulResult),800);
+      };
+    } else {
+      animDisp.appendChild(numSpan(String(mulResult)));
+      setAnimHint('');
+      setTimeout(()=>doFinalStep(t,xVal,mulResult),800);
+    }
+  }
+}
+
+function doFinalStep(t,xVal,result){
+  const beltOut=document.getElementById('beltItemOut');
+  beltOut.textContent='f('+xVal+') = '+result;
+  beltOut.style.left='-80px';
+  setTimeout(()=>beltOut.style.left='15%',200);
+  // Move belt-in item toward factory (right = 100%)
+  setTimeout(()=>document.getElementById('beltItemIn').style.left='100%',300);
+}
+
+function setAnimHint(msg){
+  let hint=document.getElementById('animHint');
+  if(!hint){
+    hint=document.createElement('div');
+    hint.id='animHint';
+    hint.style.cssText='font-size:0.78rem;color:#92400e;font-weight:700;'+
+      'text-align:center;margin-top:6px;width:100%;';
+    const ad=document.getElementById('animDisplay');
+    if(ad&&ad.parentElement) ad.parentElement.appendChild(hint);
+  }
+  hint.textContent=msg;
+}
+
+// ── PROPS UI ──
+function updatePropsUI(){
+  const lv=LEVELS[currentLevel];
+  const pr=document.getElementById('propsRow');
+  if(!pr) return;
+  pr.style.display='none';
+
+  const slopeDisp=document.getElementById('slopeDisplay');
+  const slopeInp=document.getElementById('slopeInput');
+  const intDisp=document.getElementById('interceptDisplay');
+  const intInp=document.getElementById('interceptInput');
+  const propDisp=document.getElementById('propDisplay');
+  const propBtns=document.getElementById('propBtnRow');
+
+  if(lv.needProps){
+    pr.style.display='flex';
+    if(slopeDisp) slopeDisp.style.display='none';
+    if(intDisp)   intDisp.style.display='none';
+    if(slopeInp){ slopeInp.style.display=''; slopeInp.value=''; slopeInp.className='prop-input'; }
+    if(intInp){   intInp.style.display='';   intInp.value='';   intInp.className='prop-input'; }
+  }
+  if(lv.needProp){
+    pr.style.display='flex';
+    if(propDisp) propDisp.style.display='none';
+    if(propBtns) propBtns.style.display='flex';
+    document.getElementById('btnProp')?.classList.remove('selected-yes','selected-no');
+    document.getElementById('btnNotProp')?.classList.remove('selected-yes','selected-no');
+  } else {
+    if(propDisp) propDisp.style.display='none';
+    if(propBtns) propBtns.style.display='none';
+  }
+}
+
+window.selectProp=function(val){
+  propSelected=val;
+  document.getElementById('btnProp').className='prop-choice'+(val===true?' selected-yes':'');
+  document.getElementById('btnNotProp').className='prop-choice'+(val===false?' selected-no':'');
+};
+
+// ── RESET ──
+function resetFactory(){
+  placedBlocks=[];
+  propSelected=null;
+  currentTask.blocks.forEach(b=>{
+    document.getElementById('block-'+b.id)?.classList.remove('used');
+  });
+  updateDropZone();
+  updateExprDisplay();
+  document.getElementById('animDisplay').style.display='none';
+  document.getElementById('taskExpr').textContent='';
+  document.getElementById('newTaskBtn').style.display='none';
+  if(LEVELS[currentLevel].needProps) updatePropsUI();
+}
+
+// ── NEW TASK ──
+function newTask(){
+  // Clear belts
+  document.getElementById('beltItemIn').style.left='-80px';
+  document.getElementById('beltItemOut').style.left='-80px';
+  document.getElementById('beltItemIn').textContent='';
+  document.getElementById('beltItemOut').textContent='';
+  const hint=document.getElementById('animHint');
+  if(hint) hint.textContent='';
+  currentTask=pickTask(currentLevel);
+  renderTask();
+}
+
+// ── MODE & START ──
+window.selectMode=function(mode){
+  gameMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  document.getElementById('soloOpts').style.display=mode==='solo'?'block':'none';
+  document.getElementById('multiOpts').style.display=mode==='multi'?'block':'none';
+};
+
+window.startGame=function(){
+  playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  if(gameMode==='solo') timedMinutes=parseInt(document.getElementById('timedMin').value)||5;
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  if(gameMode!=='practice') document.getElementById('scoreBadge').style.display='';
+  if(gameMode==='solo') startTimer();
+  newTask();
+};
+
+function startTimer(){
+  timerSeconds=timedMinutes*60;
+  document.getElementById('timerBadge').style.display='';
+  updateTimerDisplay();
+  timerInterval=setInterval(()=>{
+    timerSeconds--;
+    updateTimerDisplay();
+    if(timerSeconds<=0){ clearInterval(timerInterval); showToast('⏱️ Tiden er ute!','error'); }
+  },1000);
+}
+function updateTimerDisplay(){
+  const m=Math.floor(timerSeconds/60).toString().padStart(2,'0');
+  const s=(timerSeconds%60).toString().padStart(2,'0');
+  document.getElementById('timerBadge').textContent=m+':'+s;
+}
+
+// ── LEVEL SELECT ──
+function buildLevelSelect(){
+  const el=document.getElementById('levelSelect');
+  el.innerHTML='';
+  Object.keys(LEVELS).forEach(l=>{
+    const btn=document.createElement('button');
+    btn.className='level-btn'+(parseInt(l)===currentLevel?' active':'');
+    btn.textContent=l;
+    btn.title=LEVELS[l].desc;
+    btn.onclick=()=>{
+      currentLevel=parseInt(l);
+      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    el.appendChild(btn);
+  });
+}
+
+// ── TOAST ──
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type;
+  void t.offsetWidth; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── INIT ──
+buildLevelSelect();
+</script>
+</body>
+</html>
