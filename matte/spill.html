@@ -259,8 +259,7 @@
 
     <div class="level-selector-label">Velg startnivå</div>
     <div class="level-selector">
-      <label><input type="radio" name="sl" value="0" checked><div class="level-radio-btn"><span class="li">🎲</span>Auto</div></label>
-      <label><input type="radio" name="sl" value="1"><div class="level-radio-btn"><span class="li">1</span></div></label>
+      <label><input type="radio" name="sl" value="1" checked><div class="level-radio-btn"><span class="li">1</span></div></label>
       <label><input type="radio" name="sl" value="2"><div class="level-radio-btn"><span class="li">2</span></div></label>
       <label><input type="radio" name="sl" value="3"><div class="level-radio-btn"><span class="li">3</span></div></label>
       <label><input type="radio" name="sl" value="4"><div class="level-radio-btn"><span class="li">4</span></div></label>
@@ -525,12 +524,47 @@ const MAX_LEVEL=14, WIN_PER_LEVEL=3;
 
 // ── STATE ──
 let gameMode='practice', timedMinutes=5, timedSecondsLeft=0, timedInterval=null;
-let currentLevel=1, startLevel=0, winsOnLevel=0;
+let currentLevel=1, startLevel=1, winsOnLevel=0;
 let currentScore=0, totalWins=0;
 let sides={left:[],right:[]}, bankItems=[];
 let idCounter=0, activeMenuTarget=null, lastChangedId=null;
 let history=[], originalTask=null;
 let xValue=0;
+// ── ADAPTIVE LEVEL ──
+let lvStreak=0, lvErrorStreak=0, lvTaskStart=Date.now();
+const LV_UP=3, LV_DOWN=2, LV_TIME=50;
+
+function recordLevelResult(correct){
+  const elapsed=(Date.now()-lvTaskStart)/1000;
+  lvTaskStart=Date.now();
+  if(correct){
+    lvErrorStreak=0; lvStreak++;
+    if(elapsed>LV_TIME*2){lvStreak=Math.max(0,lvStreak-1);lvErrorStreak=1;}
+    if(lvStreak>=LV_UP&&currentLevel<MAX_LEVEL){currentLevel++;lvStreak=0;lvErrorStreak=0;showLevelChange('up');}
+  } else {
+    lvStreak=0; lvErrorStreak++;
+    if(lvErrorStreak>=LV_DOWN&&currentLevel>1){currentLevel--;lvStreak=0;lvErrorStreak=0;showLevelChange('down');}
+  }
+  updateLevelBadge();
+}
+function showLevelChange(dir){
+  const msg=dir==='up'?'⬆️ Nivå '+currentLevel+'!':'⬇️ Nivå '+currentLevel;
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);'+
+    'background:'+(dir==='up'?'#16a34a':'#d97706')+';color:white;padding:8px 20px;'+
+    'border-radius:20px;font-weight:800;font-size:1rem;z-index:999;';
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2000);
+}
+function updateLevelBadge(){
+  const b=document.getElementById('levelBadge');
+  if(b) b.textContent='Nivå '+currentLevel;
+  document.querySelectorAll('.level-radio-btn').forEach(btn=>{
+    const inp=btn.previousElementSibling;
+    btn.style.background=parseInt(inp?.value)===currentLevel?'var(--accent)':'';
+  });
+}
 let taskStartTime=Date.now();
 
 // ── MODE SELECTION ──
@@ -1189,7 +1223,9 @@ let incidentActive=false, incidentType=null, incidentTasksLeft=0;
 let speedRate=0, lastScoreTime=Date.now(), lastScoreValue=0;
 
 function maybeIncident(rate){
-  if(incidentActive||gameMode==='practice') return;
+  // Kun incidents i flerspiller når romkode er satt
+  if(incidentActive) return;
+  if(gameMode!=='multi'||!window.roomCode) return;
   const risk=Math.min(0.4, rate/500);
   if(Math.random()<risk){
     const r=Math.random();
@@ -1205,9 +1241,16 @@ function triggerIncident(type){
   const def=INCIDENT_TYPES[type];
   incidentTasksLeft=type==='crash'?2:type==='flat'?1:0;
   if(typeof window.syncIncident==='function') window.syncIncident(type);
-  showToast(def.title+' '+def.sub, 'error');
+  // Vis toast — for slide er det ingen straff, for flat/crash må de løse ekstra
+  showToast(def.title+' '+def.sub,'error');
   if(type==='slide'){
-    setTimeout(()=>{ incidentActive=false; incidentType=null; }, 3000);
+    setTimeout(()=>{ incidentActive=false; incidentType=null; },3000);
+  }
+  // Oppdater instruksjon i oppgavekortet
+  if(type!=='slide'){
+    const n=incidentTasksLeft;
+    document.getElementById('taskInstr').textContent=
+      '🔧 Løs '+n+' oppgave'+(n>1?'r':'')+' for å kjøre videre!';
   }
 }
 window.operate=function(t){
@@ -1318,12 +1361,29 @@ window.checkSolution=function(){
   const ok=xLeft||xRight;
 
   if(ok){
+    // ── STRAFFEMODUS ──
+    if(incidentActive && incidentTasksLeft>0){
+      incidentTasksLeft--;
+      if(incidentTasksLeft<=0){
+        incidentActive=false; incidentType=null;
+        showToast('✅ Bra! Du er tilbake i løpet!','success');
+        setTimeout(()=>newTask(),1400);
+      } else {
+        showToast('✅ Riktig! Én oppgave til…','success');
+        document.getElementById('taskInstr').textContent=
+          '🔧 Løs '+incidentTasksLeft+' oppgave'+(incidentTasksLeft>1?'r':'')+' til for å kjøre videre!';
+        setTimeout(()=>newTask(),1400);
+      }
+      return;
+    }
+
     totalWins++; winsOnLevel++;
     document.getElementById('winCount').textContent=totalWins;
+    recordLevelResult(true);
 
     let bonus=0;
     if(gameMode!=='practice'){
-      bonus=Math.max(10,Math.round(200-(Date.now()-taskStartTime)/1000*1.5));
+      bonus=Math.max(10,Math.round(200-(Date.now()-lvTaskStart)/1000*1.5));
       currentScore+=bonus;
       const now=Date.now();
       const dt=(now-lastScoreTime)/1000;
@@ -1337,14 +1397,9 @@ window.checkSolution=function(){
     }
 
     showToast('🎉 Riktig!'+(bonus>0?' +'+bonus+' p':''),'success');
-
-    // Level progression
-    if(winsOnLevel>=WIN_PER_LEVEL && currentLevel<MAX_LEVEL){
-      currentLevel++; winsOnLevel=0;
-      showToast('🚀 Nivå '+currentLevel+'!','success');
-    }
     setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) newTask(); },1400);
   } else {
+    recordLevelResult(false);
     showToast('❌ Ikke i balanse ennå – prøv igjen!','error');
   }
 };
@@ -1364,6 +1419,7 @@ function clearBuildMode(){
 function initGame(){
   currentLevel=startLevel>0?startLevel:1;
   winsOnLevel=0; currentScore=0; totalWins=0;
+  lvStreak=0; lvErrorStreak=0; lvTaskStart=Date.now();
   updateLevelUI();
   updateScaleTilt(); // initialiser snorer
   newTask();
