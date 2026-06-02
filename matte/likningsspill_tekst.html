@@ -345,8 +345,7 @@
 
     <div class="level-selector-label">Velg startnivå</div>
     <div class="level-selector">
-      <label><input type="radio" name="startLevel" value="0" checked><div class="level-radio-btn"><span class="lvl-icon">🎲</span>Auto</div></label>
-      <label><input type="radio" name="startLevel" value="1"><div class="level-radio-btn"><span class="lvl-icon">1️⃣</span>N1</div></label>
+      <label><input type="radio" name="startLevel" value="1" checked><div class="level-radio-btn"><span class="lvl-icon">1️⃣</span>N1</div></label>
       <label><input type="radio" name="startLevel" value="2"><div class="level-radio-btn"><span class="lvl-icon">2️⃣</span>N2</div></label>
       <label><input type="radio" name="startLevel" value="3"><div class="level-radio-btn"><span class="lvl-icon">3️⃣</span>N3</div></label>
       <label><input type="radio" name="startLevel" value="4"><div class="level-radio-btn"><span class="lvl-icon">4️⃣</span>N4</div></label>
@@ -528,11 +527,14 @@ const INCIDENT_MAX  = 0.28;   // 28% at max speed
 
 // ── STATE ──
 let sides = {left:[],right:[],bank:[]};
-let xValue = 0, idCounter = 0, currentLevel = 1, startLevel = 0;
+let xValue = 0, idCounter = 0, currentLevel = 1, startLevel = 1;
 let activeMenuTarget = null, lastChangedId = null, originalTask = null;
 let timerInterval = null, timerSeconds = 0, maxSeconds = 90;
 let currentScore = 0, totalCorrect = 0;
 let recentScores = [];
+let streakCorrect=0, streakError=0;
+let taskStartTime=Date.now();
+const EXPECTED_TIME_LB=50, UP_STREAK_LB=3, DOWN_ERRORS_LB=2;
 let builderActive = false, builderBlocks = [];
 let gameMode = 'solo';
 let timedMinutes = 3;
@@ -622,15 +624,20 @@ function showLevelChange(direction, newLevel) {
 }
 
 function adjustLevel(bonusScore) {
+  const elapsed=(Date.now()-taskStartTime)/1000;
   recentScores.push(bonusScore);
   if (recentScores.length > WINDOW_SIZE) recentScores.shift();
   updateProgressBar();
-  if (recentScores.length < WINDOW_SIZE) return;
-  const avg = recentScores.reduce((a,b)=>a+b,0)/recentScores.length;
-  const old = currentLevel;
-  if (avg>=UP_THRESHOLD && currentLevel<MAX_LEVEL) { currentLevel++; recentScores=[]; showLevelChange('up',currentLevel); }
-  else if (avg<=DOWN_THRESHOLD && currentLevel>1)  { currentLevel--; recentScores=[]; showLevelChange('down',currentLevel); }
-  if (currentLevel!==old) updateLevelUI();
+  const correct=bonusScore>0;
+  if(correct){
+    streakError=0; streakCorrect++;
+    if(elapsed>EXPECTED_TIME_LB*2){streakCorrect=Math.max(0,streakCorrect-1);streakError=1;}
+    if(streakCorrect>=UP_STREAK_LB&&currentLevel<MAX_LEVEL){currentLevel++;streakCorrect=0;streakError=0;showLevelChange('up',currentLevel);updateLevelUI();}
+  } else {
+    streakCorrect=0; streakError++;
+    if(streakError>=DOWN_ERRORS_LB&&currentLevel>1){currentLevel--;streakCorrect=0;streakError=0;showLevelChange('down',currentLevel);updateLevelUI();}
+  }
+  taskStartTime=Date.now();
 }
 
 // ── SPEED DISPLAY ──
@@ -1193,13 +1200,11 @@ window._startSession = function() {
     document.getElementById('scoreTitle').textContent='📊 Fremgang';
     document.getElementById('scoreList').innerHTML='<div style="color:var(--muted);font-size:0.85rem;text-align:center">Øvemodus – ingen poeng</div>';
     window.syncScore=()=>{};
-    window.syncIncident=()=>{};
   } else if (gameMode==='solo') {
     modeBadge.textContent='⏱️ Enkeltspiller';
     document.getElementById('scoreTitle').textContent='🏆 Poeng';
     document.getElementById('scoreList').innerHTML='<div style="font-size:2rem;font-weight:900;color:var(--accent);text-align:center">0</div>';
     window.syncScore=(s)=>{ updateSoloScore(); };
-    window.syncIncident=()=>{};
     startTimedCountdown();
   } else if (gameMode==='race') {
     modeBadge.textContent='🏎️ Flerspiller';
@@ -1234,7 +1239,6 @@ window.addEventListener('load',()=>{
       waitFb();
     } else {
       window.syncScore=gameMode==='solo'?(s)=>updateSoloScore():()=>{};
-      window.syncIncident=()=>{};
     }
     window._startSession();
   };
