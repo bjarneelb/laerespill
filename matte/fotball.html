@@ -217,7 +217,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
     <button class="btn-start" id="startBtn" onclick="triggerKickoff()" disabled>▶ AVSPARK</button>
     <button class="btn-start" id="pauseBtn" onclick="togglePause()" disabled style="border-color:var(--yellow);color:var(--yellow)">⏸ PAUSE</button>
     <button class="btn-start" id="whistleBtn" onclick="triggerWhistle()" disabled style="border-color:var(--red);color:var(--red)">🔴 BLÅS AV</button>
-    <a href="/ligningsvekt/" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:4px 10px;border:1px solid var(--muted);border-radius:4px">← MENY</a>
+    <a href="./" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:4px 10px;border:1px solid var(--muted);border-radius:4px">← MENY</a>
   </div>
 </div>
 
@@ -418,6 +418,10 @@ function initFootballers(){
           isAI:!onPitch[playerIdx-0]||!members.includes(name),
           energy:1.0, boost:0,
           color, isLeft,
+          // Individual wander — updated slowly so movement looks natural
+          wanderX: (Math.random()-0.5)*PW*0.08,
+          wanderY: (Math.random()-0.5)*PH*0.15,
+          wanderTimer: Math.random()*3, // stagger updates
         });
         playerIdx++;
       }
@@ -706,6 +710,16 @@ function updatePhysics(dt){
     }
   }
 
+  // Update individual wander offsets
+  footballers.forEach(f=>{
+    f.wanderTimer-=dt;
+    if(f.wanderTimer<=0){
+      f.wanderTimer=2+Math.random()*3; // change direction every 2-5 sec
+      f.wanderX=(Math.random()-0.5)*PW*0.10;
+      f.wanderY=(Math.random()-0.5)*PH*0.18;
+    }
+  });
+
   // Flytt alle spillere
   footballers.forEach(f=>{
     const spd=(PLAYER_BASE_SPEED+(f.energy||1)*30+(f.boost||0)*50)*dt;
@@ -850,9 +864,9 @@ function getTarget(f, hasBall){
     return {x: myGoalX + (attackRight?10:-10), y: clampY};
   }
 
-  // Bæreren: løp mot motstanders mål
+  // Bæreren: løp mot motstanders mål med litt wander
   if(hasBall){
-    return {x: oppGoalX + (attackRight?-40:40), y: PH/2+(Math.random()-0.5)*60};
+    return {x: oppGoalX + (attackRight?-40:40), y: PH/2+(f.wanderY||0)*0.5};
   }
 
   // Baseposisjoner — matchende getStartPos
@@ -880,14 +894,16 @@ function getTarget(f, hasBall){
   let targetX=xBase[f.role]||PW/2;
 
   if(myTeamHasBall){
-    // Press fremover
     const push=attackRight?60:-60;
     targetX=Math.max(PW*0.1, Math.min(PW*0.9, targetX+push));
   }
-  // Legg til litt bevegelse mot ballen for å skape dynamikk
-  const ballPull=0.15;
-  const tx=targetX*(1-ballPull)+ball.x*ballPull;
-  const ty=baseY*(1-ballPull)+ball.y*ballPull;
+
+  // Apply individual wander offset — gives each player unique movement
+  const wx=f.wanderX||0, wy=f.wanderY||0;
+  // Small ball pull so players react to game but don't all converge
+  const ballPull=0.06;
+  const tx=Math.max(PW*0.05, Math.min(PW*0.95, targetX+wx*(1-ballPull)+ball.x*ballPull - targetX*ballPull));
+  const ty=Math.max(PH*0.05, Math.min(PH*0.95, baseY+wy*(1-ballPull)+ball.y*ballPull - baseY*ballPull));
 
   return {x:tx, y:ty};
 }
