@@ -45,18 +45,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 .task-expr{font-size:1.1rem;font-weight:900;color:var(--accent);
   margin-top:6px;font-family:monospace;}
 
-/* FACTORY */
-.factory-wrap{width:100%;position:relative;}
-
-.factory-outer{position:relative;padding-top:44px;} /* space for chimneys above */
-.factory-chimneys{position:absolute;top:0;left:0;right:0;
-  display:flex;justify-content:space-around;padding:0 40px;pointer-events:none;}
-.chimney{width:22px;height:44px;background:linear-gradient(180deg,#6b3a2a,#4a2317);
-  border-radius:3px 3px 0 0;position:relative;flex-shrink:0;}
-.chimney::after{content:'💨';position:absolute;top:-20px;left:50%;
-  transform:translateX(-50%);font-size:0.9rem;animation:smoke 2s infinite;}
-@keyframes smoke{0%,100%{opacity:0.4;transform:translateX(-50%) translateY(0)}
-  50%{opacity:0.9;transform:translateX(-50%) translateY(-6px)}}
+.factory-outer{position:relative;}
 
 .factory-building{
   background:linear-gradient(180deg,#d97706 0%,#92400e 100%);
@@ -97,11 +86,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   padding:2px 10px;font-size:0.85rem;font-weight:900;color:#92400e;
   white-space:nowrap;transition:left 0.8s ease-in-out;}
 
-/* Animation display */
+/* Animation display — always visible, fixed height */
 .anim-display{background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;
-  padding:8px 14px;text-align:center;margin-top:8px;min-height:36px;
+  padding:8px 14px;text-align:center;margin-top:8px;height:48px;
   font-size:0.95rem;font-weight:900;color:#92400e;
-  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;}
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  flex-wrap:nowrap;overflow:hidden;flex-shrink:0;}
 .anim-step{padding:2px 8px;border-radius:4px;transition:background 0.3s;}
 .anim-step.highlight{background:#f59e0b;color:white;}
 
@@ -125,7 +115,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 .prop-card{flex:1;min-width:120px;background:var(--panel);border:2px solid var(--border);
   border-radius:var(--r);padding:10px 14px;box-shadow:var(--shadow);text-align:center;}
 .prop-label{font-size:0.65rem;font-weight:800;color:var(--muted);
-  text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+  letter-spacing:1px;margin-bottom:4px;}
 .prop-value{font-size:1.1rem;font-weight:900;color:var(--accent);}
 .prop-input{width:100%;padding:5px 8px;border:1.5px solid var(--border);
   border-radius:6px;font-family:'Nunito',sans-serif;font-size:1rem;
@@ -199,6 +189,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.3</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -238,24 +229,40 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
     <div class="task-expr" id="taskExpr"></div>
   </div>
 
-  <!-- FACTORY + BANK side by side -->
-  <div style="display:flex;gap:12px;width:100%;align-items:flex-start">
+  <!-- FACTORY + LEFT PANEL side by side -->
+  <div style="display:flex;gap:12px;width:100%;align-items:stretch">
 
-    <!-- BANK left of factory -->
-    <div class="bank" style="width:180px;flex-shrink:0">
-      <div class="bank-label">📦 Blokker</div>
-      <div class="bank-blocks" id="bankBlocks" style="flex-direction:column"></div>
+    <!-- LEFT PANEL: bank before check, props after -->
+    <div id="leftPanel" class="bank" style="width:180px;flex-shrink:0;display:flex;flex-direction:column;min-height:260px">
+      <div id="bankPanel">
+        <div class="bank-label">📦 Blokker</div>
+        <div class="bank-blocks" id="bankBlocks" style="flex-direction:column"></div>
+      </div>
+      <div id="propsPanel" style="display:none;flex-direction:column;gap:6px">
+        <div class="prop-card" id="slopeCard">
+          <div class="prop-label">Stigningstall</div>
+          <div class="prop-value" id="slopeDisplay" style="display:none;font-size:0.9rem"></div>
+          <input class="prop-input" id="slopeInput" type="number" placeholder="a = ?" style="display:none">
+        </div>
+        <div class="prop-card" id="interceptCard">
+          <div class="prop-label">Konstantledd</div>
+          <div class="prop-value" id="interceptDisplay" style="display:none;font-size:0.9rem"></div>
+          <input class="prop-input" id="interceptInput" type="number" placeholder="b = ?" style="display:none">
+        </div>
+        <div id="propCard">
+          <div id="propDisplay" style="display:none"></div>
+          <div class="prop-btn-row" id="propBtnRow" style="display:none">
+            <button class="prop-choice" id="btnProp" onclick="selectProp(true)">Prop.</button>
+            <button class="prop-choice" id="btnNotProp" onclick="selectProp(false)">Ikke prop.</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- FACTORY -->
-    <div class="factory-wrap" style="flex:1">
-      <div class="factory-outer">
-        <div class="factory-chimneys">
-          <div class="chimney"></div>
-          <div class="chimney"></div>
-          <div class="chimney"></div>
-        </div>
-        <div class="factory-building">
+    <div class="factory-wrap" style="flex:1;display:flex;flex-direction:column">
+      <div class="factory-outer" style="flex:1;display:flex;flex-direction:column">
+        <div class="factory-building" style="flex:1;display:flex;flex-direction:column">
           <div class="factory-sign">⚙️ FUNKSJONSFABRIKKEN ⚙️</div>
 
           <div class="expr-display" id="exprDisplay">
@@ -282,33 +289,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
             <div class="belt-label" style="font-size:0.65rem">→ f(x) ut</div>
           </div>
 
-          <div class="anim-display" id="animDisplay" style="display:none"></div>
+          <!-- Always visible, empty until animation -->
+          <div class="anim-display" id="animDisplay"></div>
         </div>
       </div>
     </div>
 
-  </div>
-
-  <!-- PROPERTIES -->
-  <div class="props-row" id="propsRow" style="display:none">
-    <div class="prop-card" id="slopeCard">
-      <div class="prop-label">Stigningstall (a)</div>
-      <div class="prop-value" id="slopeDisplay" style="display:none"></div>
-      <input class="prop-input" id="slopeInput" type="number" placeholder="?" style="display:none">
-    </div>
-    <div class="prop-card" id="interceptCard">
-      <div class="prop-label">Konstantledd (b)</div>
-      <div class="prop-value" id="interceptDisplay" style="display:none"></div>
-      <input class="prop-input" id="interceptInput" type="number" placeholder="?" style="display:none">
-    </div>
-    <div class="prop-card" id="propCard">
-      <div class="prop-label">Type funksjon</div>
-      <div id="propDisplay" style="display:none"></div>
-      <div class="prop-btn-row" id="propBtnRow" style="display:none">
-        <button class="prop-choice" id="btnProp" onclick="selectProp(true)">Proporsjonal</button>
-        <button class="prop-choice" id="btnNotProp" onclick="selectProp(false)">Ikke prop.</button>
-      </div>
-    </div>
   </div>
 
   <!-- CONTROLS -->
@@ -337,9 +323,54 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 let gameMode='practice', currentLevel=1, currentScore=0;
 let playerName='', timedMinutes=5, roomCode='';
 let timerSeconds=0, timerInterval=null;
-let currentTask=null; // {text, a, b, expr, blocks}
-let placedBlocks=[]; // [{id, label, type}]
-let propSelected=null; // true/false/null
+let currentTask=null;
+let placedBlocks=[];
+let propSelected=null;
+
+// ── ADAPTIVE LEVEL ──
+const MAX_LEVEL=6, MIN_LEVEL=1;
+const EXPECTED_TIME=50; // sekunder per oppgave
+const UP_STREAK=3;      // riktige på rad → opp
+const DOWN_ERRORS=2;    // feil på rad → ned
+const DOWN_TIME_FACTOR=2; // > 2x forventet tid → ned
+let streak=0;           // riktige på rad
+let errorStreak=0;      // feil på rad
+let taskStartTime=0;    // når oppgaven ble vist
+let recentResults=[];   // siste 5: true/false
+
+function recordResult(correct){
+  const elapsed=(Date.now()-taskStartTime)/1000;
+  recentResults.push(correct);
+  if(recentResults.length>5) recentResults.shift();
+
+  if(correct){
+    errorStreak=0;
+    streak++;
+    // For lang tid teller som halv fremgang
+    if(elapsed>EXPECTED_TIME*DOWN_TIME_FACTOR){
+      streak=Math.max(0,streak-1);
+      errorStreak=1; // myk nedtrekk
+    }
+    if(streak>=UP_STREAK) changeLevel(1);
+  } else {
+    streak=0;
+    errorStreak++;
+    if(errorStreak>=DOWN_ERRORS) changeLevel(-1);
+  }
+}
+
+function changeLevel(delta){
+  const newLevel=Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,currentLevel+delta));
+  if(newLevel===currentLevel) return;
+  currentLevel=newLevel;
+  streak=0; errorStreak=0;
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  showToast(delta>0?'⬆️ '+LEVELS[currentLevel].name+'!':'⬇️ '+LEVELS[currentLevel].name,'success');
+  // Rebuild level selector highlight
+  document.querySelectorAll('.level-btn').forEach(b=>{
+    b.classList.toggle('active',parseInt(b.textContent)===currentLevel);
+  });
+}
 
 // ── LEVELS ──
 const LEVELS={
@@ -434,6 +465,7 @@ function renderTask(){
   document.getElementById('taskText').textContent=t.text;
   document.getElementById('taskExpr').textContent='';
   document.getElementById('newTaskBtn').style.display='none';
+  taskStartTime=Date.now();
 
   // Bank
   const bank=document.getElementById('bankBlocks');
@@ -458,7 +490,7 @@ function renderTask(){
   updateDropZone();
   updateExprDisplay();
   updatePropsUI();
-  document.getElementById('animDisplay').style.display='none';
+  
 }
 
 // ── DRAG & DROP ──
@@ -555,7 +587,7 @@ function checkSolution(){
 
   // Build expected — flexible matching
   const isCorrect=validateExpr(placedBlocks,t.a,t.b);
-  if(!isCorrect){ showToast('❌ Ikke helt riktig — prøv igjen!','error'); return; }
+  if(!isCorrect){ recordResult(false); showToast('❌ Ikke helt riktig — prøv igjen!','error'); return; }
 
   // Check props if needed
   const lv=LEVELS[currentLevel];
@@ -564,13 +596,13 @@ function checkSolution(){
     const intVal  =parseInt(document.getElementById('interceptInput').value);
     if(isNaN(slopeVal)||slopeVal!==t.a){
       document.getElementById('slopeInput').classList.add('wrong');
-      showToast('❌ Sjekk stigningstallet!','error'); return;
+      recordResult(false); showToast('❌ Sjekk stigningstallet!','error'); return;
     }
     document.getElementById('slopeInput').classList.remove('wrong');
     document.getElementById('slopeInput').classList.add('correct');
     if(isNaN(intVal)||intVal!==t.b){
       document.getElementById('interceptInput').classList.add('wrong');
-      showToast('❌ Sjekk konstantleddet!','error'); return;
+      recordResult(false); showToast('❌ Sjekk konstantleddet!','error'); return;
     }
     document.getElementById('interceptInput').classList.remove('wrong');
     document.getElementById('interceptInput').classList.add('correct');
@@ -578,11 +610,11 @@ function checkSolution(){
   if(lv.needProp){
     if(propSelected===null){ showToast('❌ Velg proporsjonal eller ikke!','error'); return; }
     const correctProp=t.b===0;
-    if(propSelected!==correctProp){ showToast('❌ Sjekk proporsjonal-valget!','error'); return; }
+    if(propSelected!==correctProp){ recordResult(false); showToast('❌ Sjekk proporsjonal-valget!','error'); return; }
   }
 
   // Correct!
-  document.getElementById('taskExpr').textContent=t.expr;
+  recordResult(true);
   showToast('🎉 Riktig!','success');
 
   // Award score
@@ -593,8 +625,8 @@ function checkSolution(){
 
   // Show props auto if needed
   if(!lv.needProps){
-    document.getElementById('slopeDisplay').textContent=t.a;
-    document.getElementById('interceptDisplay').textContent=t.b;
+    document.getElementById('slopeDisplay').textContent='a = '+t.a;
+    document.getElementById('interceptDisplay').textContent='b = '+t.b;
     document.getElementById('slopeDisplay').style.display='';
     document.getElementById('interceptDisplay').style.display='';
     document.getElementById('slopeInput').style.display='none';
@@ -608,7 +640,10 @@ function checkSolution(){
     pd.style.display='';
     document.getElementById('propBtnRow').style.display='none';
   }
-  document.getElementById('propsRow').style.display='flex';
+  document.getElementById('propsRow') && (document.getElementById('propsRow').style.display='flex');
+  // Switch left panel: hide bank, show props
+  document.getElementById('bankPanel').style.display='none';
+  document.getElementById('propsPanel').style.display='flex';
 
   // Show calc check field — hide check/reset buttons
   const calcCheck=document.getElementById('calcCheck');
@@ -641,6 +676,7 @@ function checkCalc(){
   } else {
     input.style.borderColor='var(--red)';
     input.style.background='#fef2f2';
+    recordResult(false);
     showToast('❌ Ikke riktig — prøv igjen!','error');
   }
 }
@@ -679,6 +715,7 @@ function runAnimation(t){
   animDisp.style.display='flex';
   animDisp.innerHTML='';
 
+  beltStep=0;
   const beltIn=document.getElementById('beltItemIn');
   beltIn.textContent='x = '+animXVal;
   beltIn.style.left='-80px';
@@ -695,6 +732,14 @@ function runAnimation(t){
     beltIn.onclick=null;
     setTimeout(()=>showOperatorStep(t,animXVal,animDisp),600);
   };
+}
+
+// Advances belt-in one step closer to factory each time called
+let beltStep=0;
+const BELT_STEPS=['50%','70%','88%','100%'];
+function advanceBelt(){
+  beltStep=Math.min(beltStep+1,BELT_STEPS.length-1);
+  document.getElementById('beltItemIn').style.left=BELT_STEPS[beltStep];
 }
 
 function showOperatorStep(t,xVal,animDisp){
@@ -722,17 +767,19 @@ function showOperatorStep(t,xVal,animDisp){
       animDisp.appendChild(addBtn);
       animDisp.appendChild(numSpan(String(Math.abs(t.b))));
       addBtn.onclick=()=>showToast('\u26a0\ufe0f Husk regnerekkef\u00f8lge! Multiplikasjon f\u00f8r addisjon og subtraksjon.','error');
-      setAnimHint('\ud83d\udc46 Klikk p\u00e5 \u00b7 for \u00e5 gange');
+      setAnimHint('👆 Klikk på · og + i riktig rekkefølge for å regne ut');
       mulBtn.onclick=()=>{
         mulBtn.onclick=null; addBtn.onclick=null;
+        advanceBelt();
         animDisp.innerHTML='';
         const addBtn2=opBtn(addSign,'#f59e0b');
         animDisp.appendChild(numSpan(String(mulResult)));
         animDisp.appendChild(addBtn2);
         animDisp.appendChild(numSpan(String(Math.abs(t.b))));
-        setAnimHint('\ud83d\udc46 Klikk p\u00e5 '+addSign+' for \u00e5 legge sammen');
+        setAnimHint('👆 Klikk på symbolet for å fullføre utregningen');
         addBtn2.onclick=()=>{
           addBtn2.onclick=null;
+          advanceBelt();
           const total=mulResult+t.b;
           animDisp.innerHTML='';
           animDisp.appendChild(numSpan(String(total)));
@@ -745,9 +792,10 @@ function showOperatorStep(t,xVal,animDisp){
       animDisp.appendChild(numSpan(String(mulResult)));
       animDisp.appendChild(addBtn);
       animDisp.appendChild(numSpan(String(Math.abs(t.b))));
-      setAnimHint('\ud83d\udc46 Klikk p\u00e5 '+addSign+' for \u00e5 legge sammen');
+      setAnimHint('👆 Klikk på symbolet for å fullføre utregningen');
       addBtn.onclick=()=>{
         addBtn.onclick=null;
+        advanceBelt();
         const total=mulResult+t.b;
         animDisp.innerHTML='';
         animDisp.appendChild(numSpan(String(total)));
@@ -761,9 +809,10 @@ function showOperatorStep(t,xVal,animDisp){
       animDisp.appendChild(numSpan(t.a<0?'\u2212'+absA:String(absA)));
       animDisp.appendChild(mulBtn);
       animDisp.appendChild(numSpan(String(xVal)));
-      setAnimHint('\ud83d\udc46 Klikk p\u00e5 \u00b7 for \u00e5 gange');
+      setAnimHint('👆 Klikk på · og + i riktig rekkefølge for å regne ut');
       mulBtn.onclick=()=>{
         mulBtn.onclick=null;
+        advanceBelt();
         animDisp.innerHTML='';
         animDisp.appendChild(numSpan(String(mulResult)));
         setAnimHint('');
@@ -791,8 +840,8 @@ function setAnimHint(msg){
   if(!hint){
     hint=document.createElement('div');
     hint.id='animHint';
-    hint.style.cssText='font-size:0.78rem;color:#92400e;font-weight:700;'+
-      'text-align:center;margin-top:6px;width:100%;';
+    hint.style.cssText='font-size:0.82rem;color:#fef3c7;font-weight:800;'+
+      'text-align:center;margin-top:6px;width:100%;text-shadow:0 1px 2px rgba(0,0,0,0.4);';
     const ad=document.getElementById('animDisplay');
     if(ad&&ad.parentElement) ad.parentElement.appendChild(hint);
   }
@@ -802,10 +851,6 @@ function setAnimHint(msg){
 // ── PROPS UI ──
 function updatePropsUI(){
   const lv=LEVELS[currentLevel];
-  const pr=document.getElementById('propsRow');
-  if(!pr) return;
-  pr.style.display='none';
-
   const slopeDisp=document.getElementById('slopeDisplay');
   const slopeInp=document.getElementById('slopeInput');
   const intDisp=document.getElementById('interceptDisplay');
@@ -814,14 +859,12 @@ function updatePropsUI(){
   const propBtns=document.getElementById('propBtnRow');
 
   if(lv.needProps){
-    pr.style.display='flex';
     if(slopeDisp) slopeDisp.style.display='none';
     if(intDisp)   intDisp.style.display='none';
     if(slopeInp){ slopeInp.style.display=''; slopeInp.value=''; slopeInp.className='prop-input'; }
     if(intInp){   intInp.style.display='';   intInp.value='';   intInp.className='prop-input'; }
   }
   if(lv.needProp){
-    pr.style.display='flex';
     if(propDisp) propDisp.style.display='none';
     if(propBtns) propBtns.style.display='flex';
     document.getElementById('btnProp')?.classList.remove('selected-yes','selected-no');
@@ -842,6 +885,8 @@ window.selectProp=function(val){
 function resetFactory(){
   placedBlocks=[];
   propSelected=null;
+  document.getElementById('bankPanel').style.display='';
+  document.getElementById('propsPanel').style.display='none';
   document.getElementById('calcCheck').style.display='none';
   document.getElementById('calcInput').value='';
   document.getElementById('btnSjekk').style.display='';
@@ -851,7 +896,7 @@ function resetFactory(){
   });
   updateDropZone();
   updateExprDisplay();
-  document.getElementById('animDisplay').style.display='none';
+  
   document.getElementById('taskExpr').textContent='';
   document.getElementById('newTaskBtn').style.display='none';
   if(LEVELS[currentLevel].needProps) updatePropsUI();
@@ -864,7 +909,9 @@ function newTask(){
   document.getElementById('beltItemIn').textContent='';
   document.getElementById('beltItemOut').textContent='';
   document.getElementById('calcCheck').style.display='none';
-  document.getElementById('animDisplay').style.display='none';
+  document.getElementById('animDisplay').innerHTML='';
+  document.getElementById('bankPanel').style.display='';
+  document.getElementById('propsPanel').style.display='none';
   document.getElementById('btnSjekk').style.display='';
   document.getElementById('btnNullstill').style.display='';
   const hint=document.getElementById('animHint');
