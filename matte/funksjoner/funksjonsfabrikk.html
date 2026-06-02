@@ -189,7 +189,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.3</div>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.6</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -242,12 +242,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
         <div class="prop-card" id="slopeCard">
           <div class="prop-label">Stigningstall</div>
           <div class="prop-value" id="slopeDisplay" style="display:none;font-size:0.9rem"></div>
-          <input class="prop-input" id="slopeInput" type="number" placeholder="a = ?" style="display:none">
+          <input class="prop-input" id="slopeInput" type="text" inputmode="numeric" placeholder="a = ?" style="display:none">
         </div>
         <div class="prop-card" id="interceptCard">
           <div class="prop-label">Konstantledd</div>
           <div class="prop-value" id="interceptDisplay" style="display:none;font-size:0.9rem"></div>
-          <input class="prop-input" id="interceptInput" type="number" placeholder="b = ?" style="display:none">
+          <input class="prop-input" id="interceptInput" type="text" inputmode="numeric" placeholder="b = ?" style="display:none">
         </div>
         <div id="propCard">
           <div id="propDisplay" style="display:none"></div>
@@ -376,10 +376,10 @@ function changeLevel(delta){
 const LEVELS={
   1:{name:'Nivå 1',desc:'ax+b, positive tall',showProps:'auto',showProp:'auto',needProps:false,needProp:false},
   2:{name:'Nivå 2',desc:'Blanding, positive tall',showProps:'auto',needProps:false,needProp:false},
-  3:{name:'Nivå 3',desc:'Stigningstall og konstantledd',showProps:'input',needProps:true,needProp:false},
-  4:{name:'Nivå 4',desc:'Negative konstantledd',showProps:'input',needProps:true,needProp:false},
-  5:{name:'Nivå 5',desc:'Negative stigningstall',showProps:'input',needProps:true,needProp:false},
-  6:{name:'Nivå 6',desc:'Blanding + proporsjonal',showProps:'input',needProps:true,needProp:true},
+  3:{name:'Nivå 3',desc:'Skriv stigningstall og konstantledd',showProps:'input',needProps:true,needProp:false,inputMode:true},
+  4:{name:'Nivå 4',desc:'Negative konstantledd',showProps:'input',needProps:true,needProp:false,inputMode:true},
+  5:{name:'Nivå 5',desc:'Negative stigningstall',showProps:'input',needProps:true,needProp:false,inputMode:true},
+  6:{name:'Nivå 6',desc:'Blanding + proporsjonal',showProps:'input',needProps:true,needProp:true,inputMode:true},
 };
 
 // ── TASK TEMPLATES ──
@@ -462,35 +462,104 @@ function generateBlocks(a,b){
 // ── RENDER TASK ──
 function renderTask(){
   const t=currentTask;
+  const lv=LEVELS[currentLevel];
   document.getElementById('taskText').textContent=t.text;
   document.getElementById('taskExpr').textContent='';
   document.getElementById('newTaskBtn').style.display='none';
   taskStartTime=Date.now();
 
-  // Bank
-  const bank=document.getElementById('bankBlocks');
-  bank.innerHTML='';
-  t.blocks.forEach(b=>{
-    const el=document.createElement('div');
-    el.className='bank-block';
-    el.textContent=b.label;
-    el.id='block-'+b.id;
-    el.draggable=true;
-    el.addEventListener('dragstart',e=>{
-      e.dataTransfer.setData('blockId',b.id);
-      el.style.opacity='0.5';
+  if(lv.inputMode){
+    // N3+: no blocks — show input fields immediately, hide bank
+    document.getElementById('bankPanel').style.display='none';
+    document.getElementById('propsPanel').style.display='flex';
+    document.getElementById('slopeDisplay').style.display='none';
+    document.getElementById('interceptDisplay').style.display='none';
+    document.getElementById('slopeInput').style.display='';
+    document.getElementById('slopeInput').value='';
+    document.getElementById('slopeInput').className='prop-input';
+    document.getElementById('interceptInput').style.display='';
+    document.getElementById('interceptInput').value='';
+    document.getElementById('interceptInput').className='prop-input';
+    // Update expr display as user types
+    const updateFromInput=()=>{
+      const a=document.getElementById('slopeInput').value;
+      const b=document.getElementById('interceptInput').value;
+      buildExprFromInput(a,b);
+    };
+    document.getElementById('slopeInput').oninput=updateFromInput;
+    document.getElementById('interceptInput').oninput=updateFromInput;
+    // Drop zone not used
+    document.getElementById('dropZone').style.display='none';
+    updateExprDisplay();
+    if(lv.needProp){
+      document.getElementById('propBtnRow').style.display='flex';
+      document.getElementById('propDisplay').style.display='none';
+    }
+  } else {
+    // N1/N2: blocks
+    document.getElementById('bankPanel').style.display='';
+    document.getElementById('propsPanel').style.display='none';
+    document.getElementById('dropZone').style.display='';
+    const bank=document.getElementById('bankBlocks');
+    bank.innerHTML='';
+    t.blocks.forEach(b=>{
+      const el=document.createElement('div');
+      el.className='bank-block';
+      el.textContent=b.label;
+      el.id='block-'+b.id;
+      el.draggable=true;
+      el.addEventListener('dragstart',e=>{
+        e.dataTransfer.setData('blockId',b.id);
+        el.style.opacity='0.5';
+      });
+      el.addEventListener('dragend',()=>el.style.opacity='1');
+      bank.appendChild(el);
     });
-    el.addEventListener('dragend',()=>el.style.opacity='1');
-    bank.appendChild(el);
-  });
+  }
 
-  // Reset placed
   placedBlocks=[];
   propSelected=null;
-  updateDropZone();
-  updateExprDisplay();
+  if(!lv.inputMode){
+    updateDropZone();
+    updateExprDisplay();
+  }
   updatePropsUI();
-  
+}
+
+function buildExprFromInput(aStr,bStr){
+  const disp=document.getElementById('exprDisplay');
+  disp.innerHTML='';
+  const prefix=document.createElement('span');
+  prefix.className='expr-prefix';
+  prefix.textContent='f(x) =';
+  disp.appendChild(prefix);
+  const a=parseFloat(aStr), b=parseFloat(bStr);
+  if(isNaN(a)&&isNaN(b)){
+    const ph=document.createElement('span');
+    ph.className='expr-placeholder';
+    ph.textContent='Skriv a og b...';
+    disp.appendChild(ph);
+    return;
+  }
+  const s=document.createElement('span');
+  s.style.cssText='font-weight:900;font-size:1rem;color:#92400e;';
+  let expr='';
+  if(!isNaN(a)){
+    if(a===1) expr='x';
+    else if(a===-1) expr='-x';
+    else expr=a+'x';
+  }
+  if(!isNaN(b)&&b!==0){
+    if(!isNaN(a)){
+      expr+=b>0?' + '+b:' − '+Math.abs(b);
+    } else {
+      expr=String(b);
+    }
+  } else if(!isNaN(a)&&isNaN(b)){
+    // only a so far
+  }
+  s.textContent=' '+expr;
+  disp.appendChild(s);
 }
 
 // ── DRAG & DROP ──
@@ -535,15 +604,19 @@ function updateDropZone(){
     return;
   }
   placedBlocks.forEach((b,idx)=>{
+    // Vis operator mellom blokker, men bare fra blokk 2+
+    // Hvis blokken har negativt val, vis − og fjern ledende - fra label
+    const isNeg=(b.val!==undefined&&b.val<0);
+    const displayLabel=isNeg&&idx>0?b.label.replace(/^-/,''):b.label;
     if(idx>0){
       const op=document.createElement('span');
       op.style.cssText='color:rgba(255,255,255,0.8);font-weight:900;font-size:1.1rem;padding:0 2px;';
-      op.textContent=b.val<0?' −':' +';
+      op.textContent=isNeg?' −':' +';
       dz.appendChild(op);
     }
     const el=document.createElement('div');
     el.className='expr-block';
-    el.textContent=b.label;
+    el.textContent=displayLabel;
     el.title='Klikk for å fjerne';
     el.onclick=()=>removeFromDrop(b.id);
     dz.appendChild(el);
@@ -566,15 +639,17 @@ function updateExprDisplay(){
     return;
   }
   placedBlocks.forEach((b,idx)=>{
+    const isNeg=(b.val!==undefined&&b.val<0);
+    const displayLabel=isNeg&&idx>0?b.label.replace(/^-/,''):b.label;
     if(idx>0){
       const op=document.createElement('span');
       op.style.cssText='font-weight:900;font-size:1rem;color:#92400e;padding:0 3px;';
-      op.textContent=b.val<0?' −':' +';
+      op.textContent=isNeg?' −':' +';
       disp.appendChild(op);
     }
     const s=document.createElement('span');
     s.style.cssText='font-weight:900;font-size:1rem;color:#92400e;';
-    s.textContent=' '+b.label;
+    s.textContent=' '+displayLabel;
     disp.appendChild(s);
   });
 }
@@ -582,35 +657,53 @@ function updateExprDisplay(){
 // ── CHECK SOLUTION ──
 function checkSolution(){
   const t=currentTask;
-  // Build placed expression string
-  const placed=placedBlocks.map(b=>b.label).join(' ').trim();
-
-  // Build expected — flexible matching
-  const isCorrect=validateExpr(placedBlocks,t.a,t.b);
-  if(!isCorrect){ recordResult(false); showToast('❌ Ikke helt riktig — prøv igjen!','error'); return; }
-
-  // Check props if needed
   const lv=LEVELS[currentLevel];
-  if(lv.needProps){
-    const slopeVal=parseInt(document.getElementById('slopeInput').value);
-    const intVal  =parseInt(document.getElementById('interceptInput').value);
-    if(isNaN(slopeVal)||slopeVal!==t.a){
+
+  if(lv.inputMode){
+    // Validate a and b directly from input fields
+    const slopeVal=parseFloat(document.getElementById('slopeInput').value);
+    const intVal=parseFloat(document.getElementById('interceptInput').value);
+    const slopeOk=!isNaN(slopeVal)&&slopeVal===t.a;
+    const intOk=!isNaN(intVal)&&intVal===t.b;
+    if(!slopeOk){
       document.getElementById('slopeInput').classList.add('wrong');
       recordResult(false); showToast('❌ Sjekk stigningstallet!','error'); return;
     }
     document.getElementById('slopeInput').classList.remove('wrong');
     document.getElementById('slopeInput').classList.add('correct');
-    if(isNaN(intVal)||intVal!==t.b){
+    if(!intOk){
       document.getElementById('interceptInput').classList.add('wrong');
       recordResult(false); showToast('❌ Sjekk konstantleddet!','error'); return;
     }
     document.getElementById('interceptInput').classList.remove('wrong');
     document.getElementById('interceptInput').classList.add('correct');
-  }
-  if(lv.needProp){
-    if(propSelected===null){ showToast('❌ Velg proporsjonal eller ikke!','error'); return; }
-    const correctProp=t.b===0;
-    if(propSelected!==correctProp){ recordResult(false); showToast('❌ Sjekk proporsjonal-valget!','error'); return; }
+    if(lv.needProp){
+      if(propSelected===null){ showToast('❌ Velg proporsjonal eller ikke!','error'); return; }
+      if(propSelected!==(t.b===0)){ recordResult(false); showToast('❌ Sjekk proporsjonal-valget!','error'); return; }
+    }
+  } else {
+    const isCorrect=validateExpr(placedBlocks,t.a,t.b);
+    if(!isCorrect){ recordResult(false); showToast('❌ Ikke helt riktig — prøv igjen!','error'); return; }
+    if(lv.needProps){
+      const slopeVal=parseInt(document.getElementById('slopeInput').value);
+      const intVal=parseInt(document.getElementById('interceptInput').value);
+      if(isNaN(slopeVal)||slopeVal!==t.a){
+        document.getElementById('slopeInput').classList.add('wrong');
+        recordResult(false); showToast('❌ Sjekk stigningstallet!','error'); return;
+      }
+      document.getElementById('slopeInput').classList.remove('wrong');
+      document.getElementById('slopeInput').classList.add('correct');
+      if(isNaN(intVal)||intVal!==t.b){
+        document.getElementById('interceptInput').classList.add('wrong');
+        recordResult(false); showToast('❌ Sjekk konstantleddet!','error'); return;
+      }
+      document.getElementById('interceptInput').classList.remove('wrong');
+      document.getElementById('interceptInput').classList.add('correct');
+    }
+    if(lv.needProp){
+      if(propSelected===null){ showToast('❌ Velg proporsjonal eller ikke!','error'); return; }
+      if(propSelected!==(t.b===0)){ recordResult(false); showToast('❌ Sjekk proporsjonal-valget!','error'); return; }
+    }
   }
 
   // Correct!
@@ -624,7 +717,16 @@ function checkSolution(){
   }
 
   // Show props auto if needed
-  if(!lv.needProps){
+  if(!lv.needProps&&!lv.inputMode){
+    document.getElementById('slopeDisplay').textContent='a = '+t.a;
+    document.getElementById('interceptDisplay').textContent='b = '+t.b;
+    document.getElementById('slopeDisplay').style.display='';
+    document.getElementById('interceptDisplay').style.display='';
+    document.getElementById('slopeInput').style.display='none';
+    document.getElementById('interceptInput').style.display='none';
+  }
+  if(lv.inputMode){
+    // Show values as display after correct on N3+
     document.getElementById('slopeDisplay').textContent='a = '+t.a;
     document.getElementById('interceptDisplay').textContent='b = '+t.b;
     document.getElementById('slopeDisplay').style.display='';
@@ -640,10 +742,11 @@ function checkSolution(){
     pd.style.display='';
     document.getElementById('propBtnRow').style.display='none';
   }
-  document.getElementById('propsRow') && (document.getElementById('propsRow').style.display='flex');
-  // Switch left panel: hide bank, show props
-  document.getElementById('bankPanel').style.display='none';
-  document.getElementById('propsPanel').style.display='flex';
+  // Switch left panel: hide bank, show props (only needed for N1/N2)
+  if(!lv.inputMode){
+    document.getElementById('bankPanel').style.display='none';
+    document.getElementById('propsPanel').style.display='flex';
+  }
 
   // Show calc check field — hide check/reset buttons
   const calcCheck=document.getElementById('calcCheck');
@@ -885,10 +988,23 @@ window.selectProp=function(val){
 function resetFactory(){
   placedBlocks=[];
   propSelected=null;
-  document.getElementById('bankPanel').style.display='';
-  document.getElementById('propsPanel').style.display='none';
+  const lv=LEVELS[currentLevel];
+  if(lv.inputMode){
+    document.getElementById('slopeInput').value='';
+    document.getElementById('interceptInput').value='';
+    document.getElementById('slopeInput').className='prop-input';
+    document.getElementById('interceptInput').className='prop-input';
+    buildExprFromInput('','');
+  } else {
+    document.getElementById('bankPanel').style.display='';
+    document.getElementById('propsPanel').style.display='none';
+    currentTask.blocks.forEach(b=>{
+      document.getElementById('block-'+b.id)?.classList.remove('used');
+    });
+    updateDropZone();
+    updateExprDisplay();
+  }
   document.getElementById('calcCheck').style.display='none';
-  document.getElementById('calcInput').value='';
   document.getElementById('btnSjekk').style.display='';
   document.getElementById('btnNullstill').style.display='';
   currentTask.blocks.forEach(b=>{
