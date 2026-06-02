@@ -44,6 +44,9 @@
   .start-num:focus { border-color:var(--accent); }
   .btn-start { width:100%; padding:13px; background:var(--accent); color:white; border:none; border-radius:12px; font-family:'Nunito',sans-serif; font-size:1.05rem; font-weight:800; cursor:pointer; transition:transform 0.1s,background 0.15s; margin-top:4px; }
   .btn-start:hover { background:#4338ca; transform:translateY(-1px); }
+  .ls-lvl{padding:5px 12px;border:2px solid var(--border);border-radius:8px;background:white;
+    font-family:'Nunito',sans-serif;font-weight:800;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+  .ls-lvl.active{background:var(--accent);border-color:var(--accent);color:white;}
   .start-version { margin-top:10px; font-size:0.72rem; color:#9ca3af; font-weight:600; }
 
   .main { width:100%; max-width:900px; padding:16px; display:flex; flex-direction:column; gap:14px; }
@@ -218,6 +221,13 @@
     <div class="mode-options" id="opts-multi">
       <div class="opt-row"><span class="opt-label">Romkode:</span><input class="start-input" id="roomInput" placeholder="ROMKODE" maxlength="8"></div>
     </div>
+    <div style="font-size:0.75rem;font-weight:800;color:var(--muted);margin:8px 0 4px;letter-spacing:1px">STARTNIVÅ</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="lsLevelSelect">
+      <button class="ls-lvl active" data-lv="1" onclick="lsSetLevel(1)">N1</button>
+      <button class="ls-lvl" data-lv="2" onclick="lsSetLevel(2)">N2</button>
+      <button class="ls-lvl" data-lv="3" onclick="lsSetLevel(3)">N3</button>
+      <button class="ls-lvl" data-lv="4" onclick="lsSetLevel(4)">N4</button>
+    </div>
     <button class="btn-start" onclick="startGame()">Start! 🚀</button>
     <div class="start-version">v<span class="version-num"></span></div>
   </div>
@@ -375,6 +385,37 @@ window.selectMode=function(mode){ gameMode=mode; document.querySelectorAll('.mod
 
 // ── STATE ──
 let idCounter=0, currentScore=0, totalSolved=0, currentLevel=1, taskStartTime=Date.now();
+let lsStartLevel=1;
+// ── ADAPTIVE LEVEL ──
+const LS_MAX=4, LS_UP=3, LS_DOWN=2, LS_TIME=50;
+let lsStreak=0, lsErrorStreak=0;
+
+window.lsSetLevel=function(n){
+  lsStartLevel=n;
+  document.querySelectorAll('.ls-lvl').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.lv)===n));
+};
+
+function lsRecordResult(correct){
+  const elapsed=(Date.now()-taskStartTime)/1000;
+  taskStartTime=Date.now();
+  if(correct){
+    lsErrorStreak=0; lsStreak++;
+    if(elapsed>LS_TIME*2){lsStreak=Math.max(0,lsStreak-1);lsErrorStreak=1;}
+    if(lsStreak>=LS_UP&&currentLevel<LS_MAX){currentLevel++;lsStreak=0;lsErrorStreak=0;lsShowChange('up');}
+  } else {
+    lsStreak=0; lsErrorStreak++;
+    if(lsErrorStreak>=LS_DOWN&&currentLevel>1){currentLevel--;lsStreak=0;lsErrorStreak=0;lsShowChange('down');}
+  }
+}
+function lsShowChange(dir){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);'+
+    'background:'+(dir==='up'?'#16a34a':'#d97706')+';color:white;padding:8px 20px;'+
+    'border-radius:20px;font-weight:800;font-size:1rem;z-index:999;';
+  el.textContent=dir==='up'?'⬆️ Nivå '+currentLevel+'!':'⬇️ Nivå '+currentLevel;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2000);
+}
 let system=null;
 // Steg: 0=velg likning, 1=løs første likning, 2=løs andre likning, 3=løs siste likning, 4=skriv inn svar
 let step=0, firstEq=0, secondEq=0;
@@ -864,6 +905,7 @@ window.checkFinalAnswer=function(){
   document.getElementById('finalX').className='final-input'+(xOk?' correct':' wrong');
   document.getElementById('finalY').className='final-input'+(yOk?' correct':' wrong');
   if(xOk&&yOk){
+    lsRecordResult(true);
     totalSolved++; document.getElementById('solvedCount').textContent=totalSolved;
     const bonus=gameMode==='practice'?0:Math.max(50,Math.round(300-(Date.now()-taskStartTime)/1000*2));
     currentScore+=bonus;
@@ -871,7 +913,7 @@ window.checkFinalAnswer=function(){
     updateSoloScore();
     showToast('🎉 Riktig! x='+system.xVal+', y='+system.yVal+(bonus>0?' (+'+bonus+' p)':''),'success');
     setTimeout(()=>initGame(),2200);
-  } else { showToast('❌ Ikke helt riktig – prøv igjen!','error'); }
+  } else { lsRecordResult(false); showToast('❌ Ikke helt riktig – prøv igjen!','error'); }
 };
 
 // ── STEP DOTS ──
@@ -901,6 +943,8 @@ function guide(msg){ if(currentLevel<=1) showToast(msg,'success'); }
 
 // ── START GAME ──
 window.startGame=function(){
+  currentLevel=lsStartLevel;
+  lsStreak=0; lsErrorStreak=0; taskStartTime=Date.now();
   let room='';
   if(gameMode==='multi') room=document.getElementById('roomInput').value.trim().toUpperCase();
   if(gameMode==='solo')  timedMinutes=parseInt(document.getElementById('timedMinutes').value)||5;
