@@ -189,7 +189,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.6</div>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.7</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -398,8 +398,8 @@ function pickTask(level){
     {textFn:(a)=>`Et tog kjører ${a} km i timen. Skriv et uttrykk for strekningen f(x) etter x timer.`, aRange:[60,120],bRange:[0,0]},
   ];
   const negBTemplates=[
-    {textFn:(a,b)=>`Et stearinlys er ${b} cm langt og brenner ned ${a} cm per time. Skriv et uttrykk for lengden f(x) etter x timer.`, aRange:[2,4],bRange:[10,20],negA:false,negB:true},
-    {textFn:(a,b)=>`Du har ${b} kr på konto. Du bruker ${a} kr om dagen. Skriv et uttrykk for beløpet f(x) etter x dager.`, aRange:[20,50],bRange:[200,500],negA:false,negB:true},
+    {textFn:(a,b)=>`Et stearinlys er ${b} cm langt og brenner ned ${a} cm per time. Skriv et uttrykk for lengden f(x) etter x timer.`, aRange:[2,4],bRange:[10,20],negA:true,negB:false},
+    {textFn:(a,b)=>`Du har ${b} kr på konto. Du bruker ${a} kr om dagen. Skriv et uttrykk for beløpet f(x) etter x dager.`, aRange:[20,50],bRange:[200,500],negA:true,negB:false},
   ];
   const negATemplates=[
     {textFn:(a,b)=>`Temperaturen synker med ${a} grader per time. Det er ${b} grader nå. Skriv et uttrykk for temperaturen f(x) etter x timer.`, aRange:[1,4],bRange:[5,20],negA:true,negB:false},
