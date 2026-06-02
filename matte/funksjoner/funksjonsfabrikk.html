@@ -603,7 +603,8 @@ function checkSolution(){
   if(!lv.needProp){
     const isProp=t.b===0;
     const pd=document.getElementById('propDisplay');
-    pd.innerHTML=`<span class="proportional-badge ${isProp?'yes':'no'}">${isProp?'✓ Proporsjonal':'✗ Ikke proporsjonal'}</span>`;
+    pd.innerHTML=`<span class="proportional-badge ${isProp?'yes':'no'}">${isProp?'✓ Proporsjonal':'✗ Ikke proporsjonal'}</span>`+
+      `<br><span class="proportional-badge no" style="margin-top:4px;border-color:#6366f1;color:#6366f1;background:#eef2ff">📈 Lineær funksjon</span>`;
     pd.style.display='';
     document.getElementById('propBtnRow').style.display='none';
   }
