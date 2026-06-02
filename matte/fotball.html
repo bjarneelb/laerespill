@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.913</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.916</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -686,14 +686,13 @@ function updatePhysics(dt){
     if(ball.y>PH-12){ball.y=PH-12;ball.vy=-Math.abs(ball.vy)*0.5;}
 
     const goalTop=PH/2-GOAL_W/2, goalBot=PH/2+GOAL_W/2;
-    if(ball.x<12){
-      if(ball.y>goalTop&&ball.y<goalBot) goalScored('left');
-      else{ball.x=12;ball.vx=Math.abs(ball.vx)*0.5;}
-    }
-    if(ball.x>PW-12){
-      if(ball.y>goalTop&&ball.y<goalBot) goalScored('right');
-      else{ball.x=PW-12;ball.vx=-Math.abs(ball.vx)*0.5;}
-    }
+    const inGoalY=ball.y>goalTop&&ball.y<goalBot;
+
+    // Use crossing detection — goal if ball is past goal line
+    if(ball.x<=14 && inGoalY){ goalScored('left'); }
+    else if(ball.x>=PW-14 && inGoalY){ goalScored('right'); }
+    else if(ball.x<12){ ball.x=12; ball.vx=Math.abs(ball.vx)*0.5; }
+    else if(ball.x>PW-12){ ball.x=PW-12; ball.vx=-Math.abs(ball.vx)*0.5; }
 
     let nearest=null, nearDist=9999;
     footballers.forEach(f=>{
@@ -805,17 +804,16 @@ function doCarrierAction(carrier){
 
 function passTo(from,to){
   blockedPlayerId=from.id;
-  // Ikke nullstill blockedTeamName — keeper kan ha satt den allerede
   if(!blockedTeamName) blockedTeamName=null;
-  blockTimer=3.0;
+  blockTimer=4.0;
   ballCarrier=null; carryTimer=0; nextActionTime=99;
   const dx=to.x-from.x, dy=to.y-from.y, dist=Math.hypot(dx,dy)||1;
   const spd=BALL_SPEED*(0.85+(from.energy||1)*0.3);
   const inaccuracy=(1.1-(from.energy||1))*35;
   ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
   ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
-  ball.x=from.x+(dx/dist)*KICK_DIST*4;
-  ball.y=from.y+(dy/dist)*KICK_DIST*4;
+  ball.x=from.x;
+  ball.y=from.y;
   console.log('PASS from '+from.name+' to '+to.name+' ball='+Math.round(ball.x)+','+Math.round(ball.y));
 }
 
