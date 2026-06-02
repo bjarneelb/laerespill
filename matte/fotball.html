@@ -145,7 +145,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="setup-card">
     <h1>⚽ MATTEFOTBALL</h1>
     <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
-    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.916</div>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.917</div>
 
     <!-- STEG 1: Opprett rom -->
     <div id="step1">
@@ -719,6 +719,9 @@ function updatePhysics(dt){
     }
   });
 
+  const PLAYER_RADIUS=14;
+  const SEP_DIST=PLAYER_RADIUS*2.2; // min distance between player centers
+
   // Flytt alle spillere
   footballers.forEach(f=>{
     const spd=(PLAYER_BASE_SPEED+(f.energy||1)*30+(f.boost||0)*50)*dt;
@@ -730,6 +733,19 @@ function updatePhysics(dt){
       if(dist>6) f.x+=dx/dist*Math.min(spd,dist);
       if(dist>6) f.y+=dy/dist*Math.min(spd,dist);
     }
+
+    // Separation — push away from nearby players
+    footballers.forEach(other=>{
+      if(other.id===f.id) return;
+      const dx=f.x-other.x, dy=f.y-other.y;
+      const dist=Math.hypot(dx,dy)||1;
+      if(dist<SEP_DIST && dist>0){
+        const push=(SEP_DIST-dist)/SEP_DIST * 2.5;
+        f.x+=dx/dist*push;
+        f.y+=dy/dist*push;
+      }
+    });
+
     f.x=Math.max(14,Math.min(PW-14,f.x));
     f.y=Math.max(14,Math.min(PH-14,f.y));
   });
@@ -787,12 +803,14 @@ function doCarrierAction(carrier){
     return;
   }
 
-  // Pass til medspiller fremover
+  // Pass til medspiller fremover — foretrekk lengre pasninger
   const teammates=footballers.filter(ff=>
     ff.team===carrier.team && ff.id!==carrier.id && ff.role!=='keeper'
   );
-  const inFront=teammates.filter(ff=>attackRight?ff.x>carrier.x+30:ff.x<carrier.x-30);
-  const candidates=inFront.length>=1?inFront:teammates;
+  // Foretrekk spillere minst 25% av banen fremover
+  const longForward=teammates.filter(ff=>attackRight?ff.x>carrier.x+PW*0.25:ff.x<carrier.x-PW*0.25);
+  const shortForward=teammates.filter(ff=>attackRight?ff.x>carrier.x+30:ff.x<carrier.x-30);
+  const candidates=longForward.length>=1?longForward:(shortForward.length>=1?shortForward:teammates);
 
   if(candidates.length>0){
     const t=candidates[Math.floor(Math.random()*candidates.length)];
