@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fremdriftsbanen – Likningsspill</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --track-bg: #161b22;
+    --track-line: #21262d;
+    --border: #30363d;
+    --accent: #ffd60a;
+    --accent2: #e63946;
+    --green: #3fb950;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --panel: #161b22;
+    --r: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: #0d1117;
+    border-bottom: 2px solid var(--accent);
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 20px;
+  }
+  .topbar-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-shadow: 0 0 16px rgba(255,214,10,0.4);
+    white-space: nowrap;
+  }
+  .topbar-center {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    justify-content: center;
+  }
+  .goal-badge {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+  .room-badge {
+    background: var(--accent2);
+    color: white;
+    border-radius: 6px;
+    padding: 3px 12px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+  }
+  .player-count {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* ── RACE AREA ── */
+  .race-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .race-area::-webkit-scrollbar { width: 6px; }
+  .race-area::-webkit-scrollbar-track { background: var(--bg); }
+  .race-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── TRACK ROW ── */
+  .track-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 52px;
+    position: relative;
+  }
+
+  /* Position number */
+  .row-pos {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem;
+    width: 28px;
+    text-align: center;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .row-pos.p1 { color: #ffd60a; }
+  .row-pos.p2 { color: #c0c0c0; }
+  .row-pos.p3 { color: #cd7f32; }
+
+  /* Name */
+  .row-name {
+    width: 130px;
+    font-weight: 800;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    color: var(--text);
+  }
+  .row-name.is-leader { color: var(--accent); }
+
+  /* Track */
+  .row-track {
+    flex: 1;
+    height: 36px;
+    background: var(--track-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: visible;
+  }
+
+  /* Track surface lines */
+  .row-track::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 1px;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 18px,
+      rgba(255,255,255,0.06) 18px,
+      rgba(255,255,255,0.06) 19px
+    );
+    transform: translateY(-50%);
+  }
+
+  /* Progress fill */
+  .row-fill {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, rgba(91,79,207,0.3), rgba(91,79,207,0.15));
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    position: absolute;
+    top: 0; left: 0;
+    min-width: 0;
+  }
+
+  /* Car emoji */
+  .row-car {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    transition: left 0.8s cubic-bezier(.4,0,.2,1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    z-index: 2;
+    white-space: nowrap;
+  }
+  .row-car.winner-bounce {
+    animation: winBounce 0.4s ease-in-out infinite alternate;
+  }
+  @keyframes winBounce {
+    from { transform: translateY(-60%); }
+    to   { transform: translateY(-40%); }
+  }
+
+  /* Goal line */
+  .goal-line {
+    position: absolute;
+    right: 0; top: -6px; bottom: -6px;
+    width: 4px;
+    background: repeating-linear-gradient(
+      180deg,
+      white 0px, white 5px,
+      black 5px, black 10px
+    );
+    border-radius: 2px;
+    z-index: 1;
+  }
+
+  /* Score */
+  .row-score {
+    width: 56px;
+    text-align: right;
+    font-weight: 800;
+    font-size: 0.82rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    font-family: monospace;
+  }
+
+  /* ── SETUP OVERLAY ── */
+  #setupOverlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: linear-gradient(135deg, #0d1117, #161b22);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .setup-card {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,214,10,0.25);
+    border-radius: 24px;
+    padding: 48px 52px;
+    text-align: center;
+    width: 420px;
+    box-shadow: 0 0 60px rgba(255,214,10,0.08);
+  }
+  .setup-icon { font-size: 3.5rem; margin-bottom: 12px; }
+  .setup-card h1 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 2rem; color: var(--accent);
+    letter-spacing: 2px; margin-bottom: 6px;
+  }
+  .setup-card p { color: var(--muted); margin-bottom: 28px; font-size: 0.95rem; }
+  .setup-field {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 16px; text-align: left;
+  }
+  .setup-label {
+    font-size: 0.75rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .setup-input {
+    width: 100%; padding: 11px 16px;
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06);
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    text-align: center; text-transform: uppercase;
+    letter-spacing: 2px; outline: none;
+  }
+  .setup-input.num { letter-spacing: 0; }
+  .setup-input:focus { border-color: var(--accent); }
+  .btn-launch {
+    width: 100%; margin-top: 8px;
+    padding: 14px;
+    background: var(--accent); color: #0d1117;
+    border: none; border-radius: 12px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.05rem; letter-spacing: 2px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 24px rgba(255,214,10,0.3);
+  }
+  .btn-launch:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 36px rgba(255,214,10,0.5);
+  }
+
+  /* ── WINNER OVERLAY ── */
+  /* ── START BUTTON ── */
+  .btn-start-race {
+    padding: 8px 20px; background: var(--accent); border: none; border-radius: 8px;
+    color: #0d1117; font-family: 'Black Han Sans', sans-serif;
+    font-size: 0.95rem; letter-spacing: 2px; cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 12px rgba(255,214,10,0.4);
+  }
+  .btn-start-race:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,214,10,0.6); }
+  .btn-start-race:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── COUNTDOWN ── */
+  #countdownOverlay {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  #countdownOverlay.show { display: flex; }
+  #countdownNum {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 8rem; color: var(--accent);
+    text-shadow: 0 0 40px rgba(255,214,10,0.8);
+    animation: cPop 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes cPop { from{transform:scale(0.3);opacity:0} to{transform:scale(1);opacity:1} }
+
+  /* ── MODE TOGGLE ── */
+  .mode-toggle { display:flex; gap:8px; margin-bottom:12px; }
+  .mode-toggle-btn { flex:1; padding:8px 4px; background:transparent; border:2px solid #30363d; border-radius:8px; color:#8b949e; font-family:'Black Han Sans',sans-serif; font-size:0.75rem; letter-spacing:1px; cursor:pointer; transition:all 0.15s; }
+  .mode-toggle-btn.active { background:var(--accent); border-color:var(--accent); color:#0d1117; }
+  .team-setup { display:none; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .team-setup.visible { display:flex; }
+  .waiting-players { background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:10px; min-height:50px; }
+  .waiting-title { font-family:'Black Han Sans',sans-serif; font-size:0.65rem; color:#8b949e; letter-spacing:1px; margin-bottom:6px; }
+  .player-pill { display:inline-block; background:rgba(255,214,10,0.15); border:1px solid var(--accent); border-radius:20px; padding:2px 10px; font-size:0.72rem; color:var(--accent); margin:2px; }
+  .team-display { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+  .team-card { flex:1; min-width:80px; background:#0d1117; border-radius:8px; padding:8px; border:2px solid; }
+  .team-card-title { font-family:'Black Han Sans',sans-serif; font-size:0.75rem; letter-spacing:1px; margin-bottom:4px; }
+  .team-member { font-size:0.68rem; color:#8b949e; }
+  .btn-assign { width:100%; padding:7px; background:transparent; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-family:'Black Han Sans',sans-serif; font-size:0.75rem; cursor:pointer; margin-bottom:6px; }
+  .btn-assign:hover { background:rgba(255,214,10,0.1); }
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  #winnerOverlay.show { display: flex; }
+  .winner-card {
+    text-align: center;
+    animation: popIn 0.6s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn { from{transform:scale(0.6);opacity:0} to{transform:scale(1);opacity:1} }
+  .winner-trophy { font-size: 5rem; margin-bottom: 10px; }
+  .winner-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 2.8rem; color: var(--accent);
+    letter-spacing: 3px; margin-bottom: 8px;
+  }
+  .winner-name {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 2rem; color: white; margin-bottom: 6px;
+  }
+  .winner-score {
+    font-size: 1.1rem; color: var(--green); font-weight: 800;
+    margin-bottom: 28px;
+  }
+  .btn-restart {
+    padding: 13px 36px;
+    background: var(--accent2); color: white;
+    border: none; border-radius: 12px;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem; letter-spacing: 2px; cursor: pointer;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--muted); gap: 12px;
+    font-size: 1rem; font-weight: 700;
+  }
+  .empty-state .big { font-size: 3rem; }
+
+  /* ── CONFETTI ── */
+  .confetti-piece {
+    position: fixed;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+    z-index: 400;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div id="setupOverlay">
+  <div class="setup-card">
+    <div class="setup-icon">➡️</div>
+    <h1>FREMDRIFTSBANEN</h1>
+    <p>Koble til rommet og sett poengmål</p>
+    <div class="setup-field">
+      <div class="setup-label">Romkode</div>
+      <input class="setup-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
+    </div>
+    <div class="setup-field">
+      <div class="setup-label">Poengmål</div>
+      <input class="setup-input num" id="goalInput" type="number" value="300" min="50" max="9999" placeholder="300">
+    </div>
+    <div class="mode-toggle">
+      <button class="mode-toggle-btn active" id="btnFFA" onclick="selectMode('ffa')">🏃 Alle mot alle</button>
+      <button class="mode-toggle-btn" id="btnTeam" onclick="selectMode('team')">🤝 Lagmodus</button>
+    </div>
+    <div class="team-setup" id="teamSetup">
+      <div class="setup-field">
+        <div class="setup-label">Antall lag</div>
+        <input class="setup-input num" id="teamCount" type="number" value="2" min="2" max="4">
+      </div>
+      <div class="waiting-players">
+        <div class="waiting-title">TILKOBLEDE SPILLERE</div>
+        <div id="waitingPlayerList">Venter på spillere...</div>
+      </div>
+      <button class="btn-assign" onclick="assignTeams()">🎲 Fordel lag tilfeldig</button>
+      <div class="team-display" id="teamDisplay"></div>
+    </div>
+    <button class="btn-launch" onclick="launchRace()">🚀 KOBLE TIL</button>
+  </div>
+</div>
+
+<!-- COUNTDOWN OVERLAY -->
+<div id="countdownOverlay">
+  <div id="countdownNum">3</div>
+</div>
+
+<!-- WINNER OVERLAY -->
+<div id="winnerOverlay">
+  <div class="winner-card">
+    <div class="winner-trophy">🏆</div>
+    <div class="winner-title">VINNER!</div>
+    <div class="winner-name" id="winnerName">–</div>
+    <div class="winner-score" id="winnerScore">0 poeng</div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-title">➡️ FREMDRIFTSBANEN</div>
+  <div class="topbar-center">
+    <span class="goal-badge">MÅL: <span id="goalDisplay">300</span> POENG</span>
+    <span class="room-badge" id="roomDisplay">–</span>
+    <button class="btn-start-race" id="startRaceBtn" onclick="triggerStart()" disabled>🚦 START LØPET</button>
+    <span class="player-count"><span id="playerCount">0</span> spillere</span>
+  </div>
+  <div style="font-size:0.78rem;color:var(--muted)">Likningsspill v1.7</div>
+</div>
+
+<!-- RACE AREA -->
+<div class="race-area" id="raceArea" style="position:relative">
+  <div class="empty-state" id="emptyState">
+    <span class="big">⏳</span>
+    <span>Venter på spillere...</span>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, onValue, remove, update } from "./js/firebase-config.js";
+  window._db = database;
+  window._ref = ref;
+  window._onValue = onValue;
+  window._remove = remove;
+  window._update = update;
+  window._fbReady = true;
+</script>
+
+<script>
+// ── STATE ──
+let goalScore   = 300;
+let roomCode    = '';
+let players     = {};
+let winnerDeclared = false;
+let raceStarted = false;
+const MAX_INACTIVE_MS = 6 * 60 * 1000;
+
+// ── TEAM MODE ──
+let raceMode = 'ffa';
+const TEAM_COLORS = ['#e84393','#00d4ff','#00ff88','#ffd700'];
+const TEAM_NAMES  = ['LAG 1','LAG 2','LAG 3','LAG 4'];
+let teams = {};
+
+window.selectMode = function(mode) {
+  raceMode = mode;
+  document.getElementById('btnFFA').classList.toggle('active', mode==='ffa');
+  document.getElementById('btnTeam').classList.toggle('active', mode==='team');
+  document.getElementById('teamSetup').classList.toggle('visible', mode==='team');
+};
+
+window.assignTeams = function() {
+  const n = Math.min(4, Math.max(2, parseInt(document.getElementById('teamCount').value)||2));
+  const names = Object.keys(players);
+  if(names.length < n){ return; }
+  const shuffled = [...names].sort(()=>Math.random()-0.5);
+  teams = {};
+  TEAM_NAMES.slice(0,n).forEach(t=>{ teams[t]=[]; });
+  shuffled.forEach((name,i)=>{ teams[TEAM_NAMES[i%n]].push(name); });
+  renderTeamDisplay();
+  if(window._fbReady && roomCode)
+    window._update(window._ref(window._db,'rooms/'+roomCode),{teams:JSON.stringify(teams)});
+};
+
+function renderTeamDisplay(){
+  const el=document.getElementById('teamDisplay'); el.innerHTML='';
+  Object.entries(teams).forEach(([name,members],i)=>{
+    const card=document.createElement('div');
+    card.className='team-card'; card.style.borderColor=TEAM_COLORS[i];
+    card.innerHTML=`<div class="team-card-title" style="color:${TEAM_COLORS[i]}">${name}</div>`+
+      members.map(m=>`<div class="team-member">● ${m}</div>`).join('');
+    el.appendChild(card);
+  });
+}
+
+function updateWaitingList(){
+  const el=document.getElementById('waitingPlayerList'); if(!el) return;
+  const names=Object.keys(players);
+  el.innerHTML=names.length
+    ? names.map(n=>`<span class="player-pill">${n}</span>`).join('')
+    : '<span style="color:#8b949e;font-size:0.75rem">Venter på spillere...</span>';
+}
+
+// ── COUNTDOWN ──
+function runCountdown(onGo){
+  const overlay=document.getElementById('countdownOverlay');
+  const numEl=document.getElementById('countdownNum');
+  overlay.classList.add('show');
+  let n=3;
+  numEl.textContent=n;
+  // Force reflow to restart animation
+  void numEl.offsetWidth;
+  const tick=setInterval(()=>{
+    n--;
+    if(n>0){
+      numEl.style.animation='none'; void numEl.offsetWidth;
+      numEl.style.animation='';
+      numEl.textContent=n;
+    } else {
+      numEl.textContent='GÅ!';
+      clearInterval(tick);
+      setTimeout(()=>{ overlay.classList.remove('show'); onGo(); },600);
+    }
+  },1000);
+}
+
+// ── START ──
+window.triggerStart = function(){
+  document.getElementById('startRaceBtn').disabled=true;
+  // Nullstill poeng
+  Object.keys(players).forEach(name=>{
+    players[name].score=0;
+    if(window._fbReady && roomCode)
+      window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+name),{score:0,lastUpdated:Date.now()});
+  });
+  winnerDeclared=false;
+  document.getElementById('winnerOverlay').classList.remove('show');
+  if(roomCode && window._fbReady)
+    window._update(window._ref(window._db,'rooms/'+roomCode),{countdown:Date.now()});
+  else
+    runCountdown(()=>{ raceStarted=true; });
+};
+
+const CAR_EMOJIS = ['🔴','🔵','🟡','🟢','🟠','🟣','⚪','🟤',
+                    '🚗','🏎️','🚙','🚕','🚓','🚑','🚒','🛻',
+                    '🔺','🔷','🟥','🟦','🟨','🟩','🟧','🟪',
+                    '❤️','💙','💛','💚','🧡','💜'];
+
+const COLORS = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c',
+                '#9b59b6','#1abc9c','#e67e22','#3498db','#e91e63',
+                '#00bcd4','#8bc34a','#ff5722','#607d8b','#795548',
+                '#ff9800','#673ab7','#009688','#f44336','#2196f3',
+                '#4caf50','#ffeb3b','#ff5252','#40c4ff','#69f0ae',
+                '#ffd740','#ff6d00','#651fff','#00b0ff','#1de9b6'];
+
+// Tildel stabil bil og farge per spiller
+const playerMeta = {}; // { name: { car, color, idx } }
+let playerIdx = 0;
+
+function getPlayerMeta(name) {
+  if (!playerMeta[name]) {
+    playerMeta[name] = {
+      car:   CAR_EMOJIS[playerIdx % CAR_EMOJIS.length],
+      color: COLORS[playerIdx % COLORS.length],
+      idx:   playerIdx,
+    };
+    playerIdx++;
+  }
+  return playerMeta[name];
+}
+
+// ── RENDER ──
+function render() {
+  const now = Date.now();
+  const area = document.getElementById('raceArea');
+
+  const active = Object.entries(players)
+    .filter(([,p]) => !p.lastUpdated || (now - p.lastUpdated) < MAX_INACTIVE_MS)
+    .sort((a,b) => (b[1].score||0) - (a[1].score||0));
+
+  document.getElementById('playerCount').textContent = active.length;
+
+  if (!active.length) {
+    area.innerHTML = '<div class="empty-state" id="emptyState"><span class="big">⏳</span><span>Venter på spillere...</span></div>';
+    return;
+  }
+
+  if (raceMode === 'team' && Object.keys(teams).length >= 2) {
+    renderTeams(area, active);
+    return;
+  }
+
+  // ── FFA RENDER ──
+  area.innerHTML = '';
+  active.forEach(([name, data], i) => {
+    const score = raceStarted ? (data.score || 0) : 0;
+    const pct   = Math.min((score / goalScore) * 100, 100);
+    const meta  = getPlayerMeta(name);
+    const medals = ['🥇','🥈','🥉'];
+    const pos = medals[i] || (i+1)+'.';
+    const posClass = i===0?'p1':i===1?'p2':i===2?'p3':'';
+    const won = raceStarted && score >= goalScore;
+
+    const row = document.createElement('div');
+    row.className = 'track-row';
+    row.innerHTML = `
+      <div class="row-pos ${posClass}">${pos}</div>
+      <div class="row-name ${i===0?'is-leader':''}">${name}</div>
+      <div class="row-track">
+        <div class="row-fill" style="width:${pct}%"></div>
+        <div class="row-car ${won?'winner-bounce':''}" style="left:calc(${pct}% - 12px)">${meta.car}</div>
+        <div class="goal-line"></div>
+      </div>
+      <div class="row-score" style="color:${meta.color}">${score}</div>
+    `;
+    area.appendChild(row);
+
+    if (won && !winnerDeclared) {
+      winnerDeclared = true;
+      setTimeout(() => showWinner(name, score), 600);
+      document.getElementById('startRaceBtn').disabled = false;
+    }
+  });
+}
+
+function renderTeams(area, active) {
+  // Beregn gjennomsnittsscore per lag
+  const teamScores = {};
+  Object.entries(teams).forEach(([teamName, members], i) => {
+    const scores = members.map(m => players[m]?.score || 0);
+    const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+    teamScores[teamName] = { avg, members, color: TEAM_COLORS[i] };
+  });
+
+  const sorted = Object.entries(teamScores).sort((a,b)=>b[1].avg-a[1].avg);
+  area.innerHTML = '';
+  document.getElementById('playerCount').textContent = active.length;
+
+  sorted.forEach(([teamName, t], i) => {
+    const score = raceStarted ? t.avg : 0;
+    const pct = Math.min((score / goalScore) * 100, 100);
+    const medals = ['🥇','🥈','🥉'];
+    const pos = medals[i] || (i+1)+'.';
+    const won = raceStarted && score >= goalScore;
+
+    const row = document.createElement('div');
+    row.className = 'track-row';
+    row.innerHTML = `
+      <div class="row-pos ${i===0?'p1':i===1?'p2':i===2?'p3':''}">${pos}</div>
+      <div class="row-name ${i===0?'is-leader':''}" style="color:${t.color}">
+        ${teamName}<br><span style="font-size:0.7rem;color:#8b949e">${t.members.join(', ')}</span>
+      </div>
+      <div class="row-track">
+        <div class="row-fill" style="width:${pct}%;background:${t.color}"></div>
+        <div class="row-car ${won?'winner-bounce':''}" style="left:calc(${pct}% - 12px)">🏎️</div>
+        <div class="goal-line"></div>
+      </div>
+      <div class="row-score" style="color:${t.color}">${score}</div>
+    `;
+    area.appendChild(row);
+
+    if (won && !winnerDeclared) {
+      winnerDeclared = true;
+      setTimeout(() => showWinner(teamName, score), 600);
+      document.getElementById('startRaceBtn').disabled = false;
+    }
+  });
+}
+
+// ── WINNER ──
+function showWinner(name, score) {
+  document.getElementById('winnerName').textContent = name;
+  document.getElementById('winnerScore').textContent = score + ' poeng';
+  document.getElementById('winnerOverlay').classList.add('show');
+  launchConfetti();
+}
+
+function launchConfetti() {
+  const colors = ['#ffd60a','#e63946','#2ecc71','#3498db','#9b59b6','#e67e22'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = Math.random()*100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random()*colors.length)];
+      el.style.animationDuration = (1.5 + Math.random()*2) + 's';
+      el.style.animationDelay = '0s';
+      el.style.width = el.style.height = (6+Math.random()*8)+'px';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }, i * 30);
+  }
+}
+
+// ── FIREBASE ──
+function startFirebaseSync(room) {
+  if (!window._fbReady) return;
+
+  // Lytt på countdown-signal
+  let lastCountdown = 0;
+  window._onValue(window._ref(window._db, 'rooms/'+room+'/countdown'), snap => {
+    const ts = snap.val();
+    if (!ts || ts === lastCountdown) return;
+    lastCountdown = ts;
+    Object.keys(players).forEach(name => { players[name].score = 0; });
+    winnerDeclared = false;
+    document.getElementById('winnerOverlay').classList.remove('show');
+    runCountdown(() => { raceStarted = true; render(); });
+  });
+
+  window._onValue(window._ref(window._db, 'rooms/'+room+'/players'), snap => {
+    const data = snap.val();
+    if (!data) { players = {}; render(); return; }
+
+    const now = Date.now();
+    players = {};
+    Object.entries(data).forEach(([name, info]) => {
+      if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS) return;
+      players[name] = info;
+    });
+
+    updateWaitingList();
+    render();
+
+    Object.entries(data).forEach(([name, info]) => {
+      if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS)
+        window._remove(window._ref(window._db,'rooms/'+room+'/players/'+name));
+    });
+  });
+
+  setInterval(() => {
+    if (!players) return;
+    const now = Date.now();
+    Object.keys(players).forEach(name => {
+      const p = players[name];
+      if (p.lastUpdated && (now - p.lastUpdated) > MAX_INACTIVE_MS)
+        window._remove(window._ref(window._db,'rooms/'+roomCode+'/players/'+name));
+    });
+  }, 60000);
+}
+
+// Demo-modus uten Firebase
+function startDemo() {
+  raceStarted = false;
+  const names = ['Raske Gaupe','Lynraske Rev','Smarte Bjørn','Ville Ulv',
+                 'Modige Hauk','Gylne Ugle','Flinke Løve','Smidige Tiger'];
+  names.forEach(name => { players[name] = { score: 0, lastUpdated: Date.now() }; });
+  render();
+  setInterval(() => {
+    if (!raceStarted) return;
+    Object.keys(players).forEach(name => {
+      players[name].score = Math.min(goalScore+50, players[name].score + Math.floor(Math.random()*18));
+      players[name].lastUpdated = Date.now();
+    });
+    render();
+  }, 2000);
+}
+
+// ── LAUNCH ──
+window.launchRace = function() {
+  const room = document.getElementById('roomInput').value.trim().toUpperCase();
+  goalScore = parseInt(document.getElementById('goalInput').value) || 300;
+
+  document.getElementById('goalDisplay').textContent = goalScore;
+  document.getElementById('roomDisplay').textContent = room || 'DEMO';
+  document.getElementById('setupOverlay').style.display = 'none';
+
+  roomCode = room;
+
+  if (room && window._fbReady) {
+    startFirebaseSync(room);
+  } else {
+    startDemo();
+  }
+  document.getElementById('startRaceBtn').disabled = false;
+};
+</script>
+</body>
+</html>
