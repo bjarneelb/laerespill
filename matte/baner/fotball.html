@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mattefotball</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0f1e; --panel:#0d1628; --border:#1a3a5c;
+  --accent:#00d4ff; --green:#00ff88; --red:#ff3344;
+  --yellow:#ffd700; --muted:#4a6a8a; --text:#c8e0f0;
+  --font-mono:'Share Tech Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
+  height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOPBAR */
+.topbar{background:#060c18;border-bottom:2px solid var(--accent);
+  padding:8px 20px;display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;gap:16px;box-shadow:0 0 20px rgba(0,212,255,0.15);}
+.topbar-title{font-family:'Black Han Sans',sans-serif;font-size:1.2rem;
+  color:var(--accent);letter-spacing:2px;}
+.score-display{font-family:'Black Han Sans',sans-serif;font-size:1.8rem;
+  color:white;letter-spacing:4px;text-align:center;}
+.score-display span{color:var(--yellow);}
+.timer-display{font-family:'Black Han Sans',sans-serif;font-size:1rem;
+  color:var(--green);letter-spacing:2px;}
+.btn-start{padding:7px 18px;background:transparent;border:2px solid var(--accent);
+  border-radius:6px;color:var(--accent);font-family:'Black Han Sans',sans-serif;
+  font-size:0.85rem;letter-spacing:2px;cursor:pointer;transition:all 0.2s;}
+.btn-start:hover{background:rgba(0,212,255,0.1);}
+.btn-start:disabled{opacity:0.3;cursor:not-allowed;}
+.half-badge{font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);
+  padding:3px 10px;border:1px solid var(--muted);border-radius:4px;}
+
+/* MAIN */
+.main{flex:1;display:flex;gap:0;overflow:hidden;}
+
+/* SIDE PANELS */
+.side-panel{width:180px;flex-shrink:0;background:var(--panel);
+  border-right:1px solid var(--border);padding:10px;
+  display:flex;flex-direction:column;gap:8px;overflow-y:auto;}
+.side-panel.right{border-right:none;border-left:1px solid var(--border);}
+.panel-title{font-family:'Black Han Sans',sans-serif;font-size:0.72rem;
+  color:var(--accent);letter-spacing:2px;border-bottom:1px solid var(--border);
+  padding-bottom:4px;margin-bottom:4px;}
+.player-row{display:flex;align-items:center;gap:6px;padding:3px 0;
+  font-family:var(--font-mono);font-size:0.7rem;}
+.player-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.player-name-sm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);}
+.player-score-sm{color:var(--yellow);font-size:0.68rem;}
+.bench-badge{font-size:0.6rem;color:var(--muted);padding:1px 5px;
+  border:1px solid var(--muted);border-radius:3px;margin-left:2px;}
+.sub-msg{font-family:var(--font-mono);font-size:0.68rem;color:var(--green);
+  padding:4px 6px;background:rgba(0,255,136,0.08);border-radius:4px;
+  border-left:2px solid var(--green);animation:fadeIn 0.4s;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* CANVAS WRAP */
+.canvas-wrap{flex:1;position:relative;overflow:hidden;background:#1a4a2a;}
+#pitch{display:block;width:100%;height:100%;}
+
+/* OVERLAYS */
+.overlay-screen{position:absolute;inset:0;z-index:100;
+  background:rgba(6,12,24,0.96);display:flex;align-items:center;
+  justify-content:center;flex-direction:column;}
+.setup-card{background:var(--panel);border:2px solid var(--accent);
+  border-radius:12px;padding:32px 36px;width:440px;text-align:center;
+  box-shadow:0 0 40px rgba(0,212,255,0.15);}
+.setup-card h1{font-family:'Black Han Sans',sans-serif;font-size:1.6rem;
+  color:var(--accent);letter-spacing:3px;margin-bottom:6px;}
+.setup-card p{color:var(--muted);font-size:0.85rem;margin-bottom:18px;}
+.field-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;text-align:left;}
+.field-label{font-family:var(--font-mono);font-size:0.68rem;color:var(--muted);
+  letter-spacing:1px;text-transform:uppercase;}
+.field-input{width:100%;padding:9px 12px;background:#060c18;border:1px solid var(--border);
+  border-radius:6px;color:var(--text);font-family:var(--font-mono);font-size:0.9rem;
+  outline:none;text-transform:uppercase;letter-spacing:2px;text-align:center;}
+.field-input:focus{border-color:var(--accent);}
+.field-row{display:flex;gap:8px;}
+.field-row .field-group{flex:1;}
+.btn-primary{width:100%;padding:11px;background:transparent;border:2px solid var(--accent);
+  border-radius:6px;color:var(--accent);font-family:'Black Han Sans',sans-serif;
+  font-size:0.9rem;letter-spacing:2px;cursor:pointer;margin-top:6px;transition:all 0.2s;}
+.btn-primary:hover{background:rgba(0,212,255,0.1);box-shadow:0 0 20px rgba(0,212,255,0.3);}
+.waiting-list{background:#060c18;border:1px solid var(--border);border-radius:6px;
+  padding:8px;min-height:50px;margin:8px 0;}
+.w-title{font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);
+  letter-spacing:1px;margin-bottom:5px;}
+.player-pill{display:inline-block;background:rgba(0,212,255,0.1);border:1px solid var(--accent);
+  border-radius:20px;padding:2px 9px;font-family:var(--font-mono);font-size:0.72rem;
+  color:var(--accent);margin:2px;}
+.mode-row{display:flex;gap:8px;margin-bottom:10px;}
+.mode-btn{flex:1;padding:7px;background:transparent;border:2px solid var(--border);
+  border-radius:6px;color:var(--muted);font-family:'Black Han Sans',sans-serif;
+  font-size:0.72rem;letter-spacing:1px;cursor:pointer;transition:all 0.15s;}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:#060c18;}
+.team-display{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;}
+.team-card{flex:1;min-width:80px;background:#060c18;border-radius:6px;
+  padding:7px;border:2px solid;}
+.team-card-title{font-family:'Black Han Sans',sans-serif;font-size:0.72rem;
+  letter-spacing:1px;margin-bottom:3px;}
+.team-member-sm{font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);}
+.btn-assign{width:100%;padding:6px;background:transparent;border:1px solid var(--accent);
+  border-radius:5px;color:var(--accent);font-family:var(--font-mono);font-size:0.75rem;
+  cursor:pointer;margin-bottom:6px;}
+
+/* COUNTDOWN / HALFTIME */
+#countdownOverlay{position:absolute;inset:0;z-index:200;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(6,12,24,0.7);}
+#countdownOverlay.show{display:flex;}
+#countdownNum{font-family:'Black Han Sans',sans-serif;font-size:7rem;
+  color:var(--yellow);text-shadow:0 0 40px rgba(255,215,0,0.8);
+  animation:cPop 0.4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes cPop{from{transform:scale(0.3);opacity:0}to{transform:scale(1);opacity:1}}
+
+#halftimeOverlay{position:absolute;inset:0;z-index:200;
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;background:rgba(6,12,24,0.92);}
+#halftimeOverlay.show{display:flex;}
+.ht-title{font-family:'Black Han Sans',sans-serif;font-size:3rem;
+  color:var(--yellow);letter-spacing:4px;margin-bottom:8px;}
+.ht-score{font-family:'Black Han Sans',sans-serif;font-size:2rem;color:white;
+  margin-bottom:20px;}
+.ht-sub{font-family:var(--font-mono);font-size:0.85rem;color:var(--muted);}
+
+#winOverlay{position:absolute;inset:0;z-index:200;
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;background:rgba(6,12,24,0.95);}
+#winOverlay.show{display:flex;}
+.win-trophy{font-size:5rem;margin-bottom:8px;}
+.win-title{font-family:'Black Han Sans',sans-serif;font-size:2.5rem;
+  color:var(--yellow);letter-spacing:4px;margin-bottom:6px;}
+.win-score{font-family:'Black Han Sans',sans-serif;font-size:1.4rem;color:white;
+  margin-bottom:20px;}
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div class="overlay-screen" id="setupOverlay">
+  <div class="setup-card">
+    <h1>⚽ MATTEFOTBALL</h1>
+    <p id="setupSubtitle">Opprett rom og la elevene koble til</p>
+    <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:12px">v0.917</div>
+
+    <!-- STEG 1: Opprett rom -->
+    <div id="step1">
+      <div class="field-group">
+        <div class="field-label">Romkode</div>
+        <input class="field-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Kamptid (min)</div>
+          <input class="field-input" id="matchDuration" type="number" value="10" min="2" max="40" style="letter-spacing:0;text-align:center">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Bytteintervall (min)</div>
+          <input class="field-input" id="subInterval" type="number" value="2" min="1" max="10" style="letter-spacing:0;text-align:center">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="createRoom()">📡 OPPRETT ROM</button>
+      <div id="setupError" style="color:var(--red);font-family:var(--font-mono);font-size:0.75rem;margin-top:8px"></div>
+    </div>
+
+    <!-- STEG 2: Vent på spillere, fordel lag, start -->
+    <div id="step2" style="display:none">
+      <div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--green);
+           padding:8px;background:rgba(0,255,136,0.08);border-radius:6px;
+           border-left:2px solid var(--green);margin-bottom:10px">
+        ✅ ROM OPPRETTET: <span id="roomDisplay2" style="color:var(--yellow);font-size:1rem"></span>
+      </div>
+      <div class="waiting-list">
+        <div class="w-title">TILKOBLEDE SPILLERE (<span id="playerCountSetup">0</span>)</div>
+        <div id="waitingPlayerList">Venter på spillere...</div>
+      </div>
+      <button class="btn-assign" onclick="assignTeams()">🎲 Fordel lag tilfeldig</button>
+      <div class="team-display" id="teamDisplay"></div>
+      <button class="btn-primary" id="startMatchBtn" onclick="launchMatch()" disabled>✅ KLAR — VENT PÅ AVSPARK</button>
+    </div>
+  </div>
+</div>
+
+<!-- COUNTDOWN -->
+<div id="countdownOverlay">
+  <div id="countdownNum">3</div>
+</div>
+
+<!-- HALFTIME -->
+<div id="halftimeOverlay">
+  <div class="ht-title">⏸ HALVTID</div>
+  <div class="ht-score" id="htScore">0 – 0</div>
+  <div class="ht-sub">Andre omgang starter om 5 sekunder...</div>
+</div>
+
+<!-- WIN -->
+<div id="winOverlay">
+  <div class="win-trophy">🏆</div>
+  <div class="win-title" id="winTitle">VINNER!</div>
+  <div class="win-score" id="winScore">2 – 1</div>
+  <button class="btn-primary" style="width:200px;margin-top:8px" onclick="location.reload()">🔄 Ny kamp</button>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-title">⚽ MATTEFOTBALL</div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div class="score-display" id="scoreDisplay">0 – 0</div>
+    <div class="half-badge" id="halfBadge">1. OMGANG</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="timer-display" id="timerDisplay">10:00</div>
+    <button class="btn-start" id="startBtn" onclick="triggerKickoff()" disabled>▶ AVSPARK</button>
+    <button class="btn-start" id="pauseBtn" onclick="togglePause()" disabled style="border-color:var(--yellow);color:var(--yellow)">⏸ PAUSE</button>
+    <button class="btn-start" id="whistleBtn" onclick="triggerWhistle()" disabled style="border-color:var(--red);color:var(--red)">🔴 BLÅS AV</button>
+    <a href="./" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:4px 10px;border:1px solid var(--muted);border-radius:4px">← MENY</a>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT PANEL: LAG A -->
+  <div class="side-panel" id="panelA">
+    <div class="panel-title" id="titleA">LAG A</div>
+    <div id="rosterA"></div>
+  </div>
+
+  <!-- PITCH -->
+  <div class="canvas-wrap">
+    <canvas id="pitch"></canvas>
+    <div id="countdownOverlay" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:200;background:rgba(6,12,24,0.7)">
+      <div id="countdownNum" style="font-family:'Black Han Sans',sans-serif;font-size:7rem;color:var(--yellow);text-shadow:0 0 40px rgba(255,215,0,0.8)"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: LAG B -->
+  <div class="side-panel right" id="panelB">
+    <div class="panel-title" id="titleB">LAG B</div>
+    <div id="rosterB"></div>
+  </div>
+
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, onValue, update, set, remove } from "./js/firebase-config.js";
+  window._db=database; window._ref=ref;
+  window._onValue=onValue; window._update=update; window._set=set; window._remove=remove;
+  window._fbReady=true;
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const TEAM_COLORS=['#e84393','#00d4ff'];
+const TEAM_NAMES =['LAG A','LAG B'];
+const MAX_ON_PITCH=11;
+const BENCH_RATE_WEIGHT=0.5; // benk bidrar 50% til lagets gjennomsnitt
+
+let roomCode='', matchDuration=600, subIntervalSec=120;
+const MAX_INACTIVE_MS = 6 * 60 * 1000;
+let teams={}; // {lagA:[navn,...], lagB:[...]}
+let players={}; // {navn:{score,lastUpdated,energy,boostUntil}}
+let gameRunning=false, gamePaused=false;
+let half=1, matchTimeLeft=0, totalMatchTime=600;
+let scores={}; // {lagA:0, lagB:0}
+let subTimer=0;
+let lastSubTime=0;
+let subMessages=[];
+
+// Pitch dimensions (set on resize)
+let PW=800, PH=500;
+
+// Ball state
+const ball={x:400,y:250,vx:0,vy:0,owner:null};
+
+// Footballer state: array of {id, name, team, role, x,y,vx,vy, isAI, energy, boost}
+let footballers=[];
+let ballCarrier=null; // footballer id
+
+// Roles: keeper, def, mid, fwd (counts depend on team size)
+const FORMATIONS={
+  11:[{r:'keeper',n:1},{r:'def',n:4},{r:'mid',n:3},{r:'fwd',n:3}],
+  10:[{r:'keeper',n:1},{r:'def',n:4},{r:'mid',n:3},{r:'fwd',n:2}],
+  9: [{r:'keeper',n:1},{r:'def',n:3},{r:'mid',n:3},{r:'fwd',n:2}],
+  8: [{r:'keeper',n:1},{r:'def',n:3},{r:'mid',n:2},{r:'fwd',n:2}],
+  7: [{r:'keeper',n:1},{r:'def',n:2},{r:'mid',n:2},{r:'fwd',n:2}],
+};
+
+// Canvas/ctx
+let canvas, ctx, animId;
+let lastTime=0;
+
+// ═══════════════════════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════════════════════
+window.createRoom=function(){
+  const room=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(!room){setErr('Skriv inn romkode!');return;}
+  if(!window._fbReady){setErr('Firebase ikke klar, vent litt...');return;}
+  matchDuration=(parseInt(document.getElementById('matchDuration').value)||10)*60;
+  subIntervalSec=(parseInt(document.getElementById('subInterval').value)||2)*60;
+  totalMatchTime=matchDuration; matchTimeLeft=matchDuration;
+  roomCode=room;
+  // Opprett rommet i Firebase
+  window._set(window._ref(window._db,'rooms/'+room+'/meta'),{
+    created:Date.now(), type:'fotball'
+  });
+  document.getElementById('roomDisplay2').textContent=room;
+  document.getElementById('step1').style.display='none';
+  document.getElementById('step2').style.display='block';
+  document.getElementById('setupSubtitle').textContent='Del koden med elevene, fordel lag og start!';
+  // Start lytting på spillere
+  startPlayerListener(room);
+};
+
+function startPlayerListener(room){
+  window._onValue(window._ref(window._db,'rooms/'+room+'/players'),snap=>{
+    const data=snap.val()||{};
+    const now=Date.now();
+    players={};
+    Object.entries(data).forEach(([name,info])=>{
+      if(info.lastUpdated&&(now-info.lastUpdated)>MAX_INACTIVE_MS) return;
+      players[name]=info;
+    });
+    updateWaitingList();
+  });
+}
+
+window.assignTeams=function(){
+  const names=Object.keys(players);
+  if(names.length<2){setErr('Trenger minst 2 spillere!');return;}
+  const shuffled=[...names].sort(()=>Math.random()-0.5);
+  teams={'LAG A':[],'LAG B':[]};
+  shuffled.forEach((n,i)=>{teams[TEAM_NAMES[i%2]].push(n);});
+  renderTeamDisplay();
+  document.getElementById('startMatchBtn').disabled=false;
+};
+
+function renderTeamDisplay(){
+  const el=document.getElementById('teamDisplay'); el.innerHTML='';
+  Object.entries(teams).forEach(([name,members],i)=>{
+    const c=document.createElement('div');
+    c.className='team-card'; c.style.borderColor=TEAM_COLORS[i];
+    c.innerHTML=`<div class="team-card-title" style="color:${TEAM_COLORS[i]}">${name}</div>`+
+      members.map(m=>`<div class="team-member-sm">● ${m}</div>`).join('');
+    el.appendChild(c);
+  });
+}
+
+function setErr(msg){document.getElementById('setupError').textContent=msg;}
+
+function updateWaitingList(){
+  const el=document.getElementById('waitingPlayerList'); if(!el)return;
+  const names=Object.keys(players);
+  el.innerHTML=names.length
+    ?names.map(n=>`<span class="player-pill">${n}</span>`).join('')
+    :'<span style="color:var(--muted);font-size:0.75rem">Venter...</span>';
+  const cnt=document.getElementById('playerCountSetup');
+  if(cnt) cnt.textContent=names.length;
+}
+
+window.launchMatch=function(){
+  if(Object.keys(teams).length<2){setErr('Fordel lag først!');return;}
+  document.getElementById('setupOverlay').style.display='none';
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('whistleBtn').disabled=false;
+  scores={};
+  Object.keys(teams).forEach(t=>{scores[t]=0;});
+  updateScoreDisplay();
+  updateTimerDisplay();
+  requestAnimationFrame(()=>{
+    resizeCanvas();
+    initFootballers();
+    updateRosters();
+    startMatchFirebaseSync(roomCode);
+    // Start render-loop uten fysikk — venter på avspark
+    animId=requestAnimationFrame(function renderOnly(ts){
+      drawPitch(); drawFootballers(); drawBall();
+      if(!gameRunning) animId=requestAnimationFrame(renderOnly);
+    });
+  });
+};
+
+// ═══════════════════════════════════════════════════════════
+// FOOTBALLER INIT
+// ═══════════════════════════════════════════════════════════
+function getFormation(n){
+  const k=Math.min(11,Math.max(7,n));
+  return FORMATIONS[k]||FORMATIONS[7];
+}
+
+function initFootballers(){
+  footballers=[];
+  let id=0;
+  Object.entries(teams).forEach(([teamName,members],teamIdx)=>{
+    const color=TEAM_COLORS[teamIdx];
+    const isLeft=teamIdx%2===0; // LAG A attacks right, LAG B attacks left
+    const formation=getFormation(MAX_ON_PITCH);
+    // Assign human players first, rest are AI
+    const onPitch=members.slice(0,MAX_ON_PITCH);
+    while(onPitch.length<MAX_ON_PITCH) onPitch.push(null); // null = AI
+
+    let playerIdx=0;
+    formation.forEach(({r,n})=>{
+      for(let i=0;i<n;i++){
+        const name=onPitch[playerIdx]||('AI-'+r+'-'+(playerIdx));
+        const pos=getStartPos(r,i,n,isLeft,teamIdx,PW,PH);
+        footballers.push({
+          id:id++, name, team:teamName, role:r,
+          x:pos.x, y:pos.y, vx:0, vy:0,
+          isAI:!onPitch[playerIdx-0]||!members.includes(name),
+          energy:1.0, boost:0,
+          color, isLeft,
+          // Individual wander — updated slowly so movement looks natural
+          wanderX: (Math.random()-0.5)*PW*0.08,
+          wanderY: (Math.random()-0.5)*PH*0.15,
+          wanderTimer: Math.random()*3, // stagger updates
+        });
+        playerIdx++;
+      }
+    });
+  });
+  ball.x=PW/2; ball.y=PH/2; ball.vx=0; ball.vy=0;
+  ballCarrier=null; carryTimer=0; nextActionTime=0;
+  recentlyPassedFrom=null; recentlyPassedTimer=0;
+  // Gi ballen til midtbanespiller fra LAG A
+  const kp=footballers.find(f=>f.team===TEAM_NAMES[0]&&f.role==='mid');
+  if(kp){ kp.x=PW/2; kp.y=PH/2; ballCarrier=kp.id; carryTimer=0;
+    nextActionTime=MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY); }
+}
+
+function getStartPos(role,idx,total,isLeft,teamIdx,W,H){
+  // isLeft=true: lag starter venstre side, keeper nær venstre mål
+  const spread=H*0.7;
+  const yBase=H/2-spread/2+(idx+0.5)*(spread/total);
+  const xPos={
+    'keeper': isLeft ? W*0.05  : W*0.95,
+    'def':    isLeft ? W*0.18  : W*0.82,
+    'mid':    isLeft ? W*0.38  : W*0.62,
+    'fwd':    isLeft ? W*0.58  : W*0.42,
+  };
+  return {x: xPos[role]||W/2, y: yBase};
+}
+
+// ═══════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ═══════════════════════════════════════════════════════════
+function initCanvas(){
+  canvas=document.getElementById('pitch');
+  ctx=canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize',()=>{resizeCanvas();if(footballers.length)initFootballers();});
+}
+
+function resizeCanvas(){
+  const wrap=canvas.parentElement;
+  PW=wrap.clientWidth; PH=wrap.clientHeight;
+  canvas.width=PW; canvas.height=PH;
+}
+
+// ═══════════════════════════════════════════════════════════
+// KICK-OFF / COUNTDOWN
+// ═══════════════════════════════════════════════════════════
+window.triggerKickoff=function(){
+  document.getElementById('startBtn').disabled=true;
+  if(roomCode&&window._fbReady)
+    window._update(window._ref(window._db,'rooms/'+roomCode),{kickoff:Date.now()});
+  else startCountdown(()=>startGame());
+};
+
+function startCountdown(cb){
+  const overlay=document.getElementById('countdownOverlay');
+  const numEl=document.getElementById('countdownNum');
+  overlay.style.display='flex'; let n=3;
+  numEl.textContent=n;
+  const tick=setInterval(()=>{
+    n--;
+    if(n>0){numEl.style.animation='none';void numEl.offsetWidth;numEl.style.animation='';numEl.textContent=n;}
+    else{
+      numEl.textContent='⚽';
+      clearInterval(tick);
+      setTimeout(()=>{overlay.style.display='none';cb();},700);
+    }
+  },1000);
+}
+
+window.triggerWhistle=function(){
+  // Blås av — stopp kamp og tilbakestill
+  gameRunning=false; gamePaused=false;
+  if(animId){ cancelAnimationFrame(animId); animId=null; }
+  scores={}; Object.keys(teams).forEach(t=>{scores[t]=0;});
+  half=1; matchTimeLeft=totalMatchTime;
+  updateScoreDisplay(); updateTimerDisplay();
+  document.getElementById('halfBadge').textContent='1. OMGANG';
+  document.getElementById('winOverlay').style.display='none';
+  document.getElementById('halftimeOverlay').style.display='none';
+  document.getElementById('startBtn').disabled=false;
+  document.getElementById('pauseBtn').disabled=true;
+  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+  // Nullstill Firebase
+  if(window._fbReady&&roomCode){
+    window._update(window._ref(window._db,'rooms/'+roomCode),{
+      scores:JSON.stringify(scores)
+    });
+    window._set(window._ref(window._db,'rooms/'+roomCode+'/kickoff'),null);
+  }
+  initFootballers();
+  updateRosters();
+  // Start render-loop uten fysikk
+  animId=requestAnimationFrame(function renderOnly(ts){
+    drawPitch(); drawFootballers(); drawBall();
+    if(!gameRunning) animId=requestAnimationFrame(renderOnly);
+  });
+};
+
+window.togglePause=function(){
+  if(!gameRunning) return;
+  gamePaused=!gamePaused;
+  const btn=document.getElementById('pauseBtn');
+  btn.textContent=gamePaused?'▶ FORTSETT':'⏸ PAUSE';
+  if(!gamePaused) lastTime=performance.now(); // reset lastTime for å unngå stort dt-hopp
+};
+
+function startGame(){
+  gameRunning=true; gamePaused=false;
+  lastTime=performance.now();
+  lastSubTime=0; subTimer=0;
+  document.getElementById('pauseBtn').disabled=false;
+  document.getElementById('pauseBtn').textContent='⏸ PAUSE';
+  document.getElementById('whistleBtn').disabled=false;
+  document.getElementById('startBtn').disabled=true;
+  if(animId) cancelAnimationFrame(animId);
+  animId=requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════════════════════
+// GAME LOOP
+// ═══════════════════════════════════════════════════════════
+function gameLoop(ts){
+  const dt=Math.min((ts-lastTime)/1000,0.1);
+  lastTime=ts;
+  if(gameRunning&&!gamePaused){
+    updateTimer(dt);
+    updateEnergies();
+    updatePhysics(dt);
+    updateRosters();
+  }
+  drawPitch();
+  drawFootballers();
+  drawBall();
+  drawSubMessages();
+  animId=requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════════════════
+function updateTimer(dt){
+  matchTimeLeft-=dt;
+  subTimer+=dt;
+
+  // Halvtid
+  if(half===1&&matchTimeLeft<=totalMatchTime/2){
+    half=2; triggerHalftime(); return;
+  }
+  // Slutt
+  if(matchTimeLeft<=0){
+    matchTimeLeft=0; endMatch(); return;
+  }
+  // Bytte
+  if(subTimer>=subIntervalSec){subTimer=0;doSubstitutions();}
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay(){
+  const t=Math.max(0,Math.ceil(matchTimeLeft));
+  const m=Math.floor(t/60).toString().padStart(2,'0');
+  const s=(t%60).toString().padStart(2,'0');
+  document.getElementById('timerDisplay').textContent=m+':'+s;
+}
+
+function triggerHalftime(){
+  gameRunning=false; gamePaused=true;
+  document.getElementById('htScore').textContent=scoreStr();
+  document.getElementById('halftimeOverlay').style.display='flex';
+  // Sideskifte
+  footballers.forEach(f=>{f.isLeft=!f.isLeft;});
+  setTimeout(()=>{
+    document.getElementById('halftimeOverlay').style.display='none';
+    document.getElementById('halfBadge').textContent='2. OMGANG';
+    ball.x=PW/2; ball.y=PH/2; ball.vx=0; ball.vy=0; ballCarrier=null;
+    initFootballers(); // reset positions with swapped sides
+    startCountdown(()=>{gameRunning=true;gamePaused=false;});
+  },5000);
+}
+
+function endMatch(){
+  gameRunning=false;
+  document.getElementById('winTitle').textContent=winnerText();
+  document.getElementById('winScore').textContent=scoreStr();
+  document.getElementById('winOverlay').style.display='flex';
+}
+
+function scoreStr(){
+  const keys=Object.keys(scores);
+  if(keys.length===2) return `${scores[keys[0]]} – ${scores[keys[1]]}`;
+  return keys.map(k=>k+': '+scores[k]).join(' | ');
+}
+function winnerText(){
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  if(sorted[0][1]===sorted[1][1]) return '🤝 UAVGJORT!';
+  return sorted[0][0]+' VINNER!';
+}
+
+function updateScoreDisplay(){
+  document.getElementById('scoreDisplay').textContent=scoreStr();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ENERGI FRA FIREBASE
+// ═══════════════════════════════════════════════════════════
+function updateEnergies(){
+  const now=Date.now();
+  footballers.forEach(f=>{
+    if(f.isAI||!players[f.name]) return;
+    const p=players[f.name];
+    // Boost etter riktig svar (synkes via boostAt)
+    if(p.boostAt&&now-p.boostAt<4000) f.boost=Math.max(f.boost,1-(now-p.boostAt)/4000);
+    else f.boost=Math.max(0,f.boost-0.01);
+    // Energi basert på score-rate
+    const rate=p.scoreRate||0;
+    f.energy=Math.min(1.2,0.5+rate/300);
+  });
+  // AI-spillere bruker lagets gjennomsnitt
+  Object.keys(teams).forEach(teamName=>{
+    const members=teams[teamName];
+    const avg=members.length
+      ?members.reduce((t,m)=>t+(players[m]?.energy||0.8),0)/members.length:0.8;
+    footballers.filter(f=>f.team===teamName&&f.isAI).forEach(f=>{f.energy=avg*0.9;});
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// PHYSICS
+// ═══════════════════════════════════════════════════════════
+const FRICTION=0.82, BALL_SPEED=180, PLAYER_BASE_SPEED=90;
+const KICK_DIST=20, SHOT_DIST=160;
+const GOAL_W=90, GOAL_DEPTH=14;
+
+// Tidsstyrt: sett neste beslutning som et fast tidspunkt
+const MIN_CARRY=0.8, MAX_CARRY=2.2;
+let carryTimer=0;
+let nextActionTime=0; // sekunder — når bæreren skal handle neste gang
+let blockedPlayerId=null;  // spiller-id som ikke kan plukke opp
+let blockedTeamName=null;  // lagnavn som ikke kan plukke opp
+let blockTimer=0;
+
+function updatePhysics(dt){
+  // Oppdater recently-passed timer
+  if(blockedPlayerId!==null||blockedTeamName!==null){
+    blockTimer-=dt;
+    if(blockTimer<=0){ blockedPlayerId=null; blockedTeamName=null; }
+  }
+
+  if(ballCarrier!==null){
+    const carrier=footballers.find(f=>f.id===ballCarrier);
+    if(!carrier){ ballCarrier=null; nextActionTime=0; }
+    else {
+      ball.x=carrier.x; ball.y=carrier.y;
+      carryTimer+=dt;
+      // Handle når det er tid
+      if(carryTimer>=nextActionTime) doCarrierAction(carrier);
+    }
+  } else {
+    ball.x+=ball.vx*dt; ball.y+=ball.vy*dt;
+    ball.vx*=Math.pow(FRICTION,dt*60); ball.vy*=Math.pow(FRICTION,dt*60);
+
+    if(ball.y<12){ball.y=12;ball.vy=Math.abs(ball.vy)*0.5;}
+    if(ball.y>PH-12){ball.y=PH-12;ball.vy=-Math.abs(ball.vy)*0.5;}
+
+    const goalTop=PH/2-GOAL_W/2, goalBot=PH/2+GOAL_W/2;
+    const inGoalY=ball.y>goalTop&&ball.y<goalBot;
+
+    // Use crossing detection — goal if ball is past goal line
+    if(ball.x<=14 && inGoalY){ goalScored('left'); }
+    else if(ball.x>=PW-14 && inGoalY){ goalScored('right'); }
+    else if(ball.x<12){ ball.x=12; ball.vx=Math.abs(ball.vx)*0.5; }
+    else if(ball.x>PW-12){ ball.x=PW-12; ball.vx=-Math.abs(ball.vx)*0.5; }
+
+    let nearest=null, nearDist=9999;
+    footballers.forEach(f=>{
+      if(blockedPlayerId!==null && f.id===blockedPlayerId) return;
+      if(blockedTeamName!==null && f.team===blockedTeamName) return;
+      const d=Math.hypot(f.x-ball.x,f.y-ball.y);
+      const radius=f.role==='keeper' ? KICK_DIST*1.2 : KICK_DIST*3;
+      if(d<radius && d<nearDist){nearDist=d;nearest=f;}
+    });
+    if(nearest){
+      console.log('PICKUP: '+nearest.name+'(id='+nearest.id+') team='+nearest.team+' dist='+Math.round(nearDist)+' | blockedId='+blockedPlayerId+' blockedTeam="'+blockedTeamName+'" teams='+JSON.stringify(Object.keys(teams)));
+      ballCarrier=nearest.id; carryTimer=0;
+      nextActionTime=nearest.role==='keeper'?0.2:MIN_CARRY+Math.random()*(MAX_CARRY-MIN_CARRY);
+    }
+  }
+
+  // Update individual wander offsets
+  footballers.forEach(f=>{
+    f.wanderTimer-=dt;
+    if(f.wanderTimer<=0){
+      f.wanderTimer=2+Math.random()*3; // change direction every 2-5 sec
+      f.wanderX=(Math.random()-0.5)*PW*0.10;
+      f.wanderY=(Math.random()-0.5)*PH*0.18;
+    }
+  });
+
+  const PLAYER_RADIUS=14;
+  const SEP_DIST=PLAYER_RADIUS*2.2; // min distance between player centers
+
+  // Flytt alle spillere
+  footballers.forEach(f=>{
+    const spd=(PLAYER_BASE_SPEED+(f.energy||1)*30+(f.boost||0)*50)*dt;
+    const hasball=ballCarrier===f.id;
+    const target=getTarget(f,hasball);
+    if(target){
+      const dx=target.x-f.x, dy=target.y-f.y;
+      const dist=Math.hypot(dx,dy)||1;
+      if(dist>6) f.x+=dx/dist*Math.min(spd,dist);
+      if(dist>6) f.y+=dy/dist*Math.min(spd,dist);
+    }
+
+    // Separation — push away from nearby players
+    footballers.forEach(other=>{
+      if(other.id===f.id) return;
+      const dx=f.x-other.x, dy=f.y-other.y;
+      const dist=Math.hypot(dx,dy)||1;
+      if(dist<SEP_DIST && dist>0){
+        const push=(SEP_DIST-dist)/SEP_DIST * 2.5;
+        f.x+=dx/dist*push;
+        f.y+=dy/dist*push;
+      }
+    });
+
+    f.x=Math.max(14,Math.min(PW-14,f.x));
+    f.y=Math.max(14,Math.min(PH-14,f.y));
+  });
+}
+
+function doCarrierAction(carrier){
+  const attackRight=carrier.isLeft;
+  const goalX=attackRight?PW:0;
+  const distToGoal=Math.hypot(carrier.x-goalX,carrier.y-PH/2);
+
+  // Keeper passer alltid umiddelbart til medspiller minst 25% av banen unna
+  if(carrier.role==='keeper'){
+    const minDist=PW*0.25;
+    const teammates=footballers.filter(ff=>ff.team===carrier.team&&ff.id!==carrier.id);
+    console.log('Keeper PW='+Math.round(PW)+' minDist='+Math.round(minDist)+' pos='+Math.round(carrier.x)+','+Math.round(carrier.y));
+    teammates.forEach(ff=>console.log('  '+ff.name.split(' ')[0]+' dist='+Math.round(Math.hypot(ff.x-carrier.x,ff.y-carrier.y))));
+    const farEnough=teammates.filter(ff=>Math.hypot(ff.x-carrier.x,ff.y-carrier.y)>=minDist);
+    const safe=farEnough.filter(ff=>
+      !footballers.some(opp=>opp.team!==carrier.team&&Math.hypot(opp.x-ff.x,opp.y-ff.y)<60)
+    );
+    console.log('farEnough='+farEnough.length+' safe='+safe.length);
+    const candidates=safe.length?safe:(farEnough.length?farEnough:
+      [teammates.sort((a,b)=>
+        Math.hypot(b.x-carrier.x,b.y-carrier.y)-Math.hypot(a.x-carrier.x,a.y-carrier.y)
+      )[0]]
+    );
+    const t=candidates[Math.floor(Math.random()*candidates.length)];
+    console.log('passing to '+(t?.name||'none')+' dist='+Math.round(Math.hypot((t?.x||0)-carrier.x,(t?.y||0)-carrier.y)));
+    if(t){
+      const oppTeam=Object.keys(teams).find(tn=>tn!==carrier.team)||'';
+      blockedPlayerId=carrier.id;
+      blockedTeamName=oppTeam;
+      blockTimer=3.0;
+      console.log('KEEPER PASS: id='+carrier.id+' team='+carrier.team+' oppTeam='+oppTeam+' blockedPlayerId='+blockedPlayerId+' blockedTeamName='+blockedTeamName);
+      passTo(carrier,t);
+    } else {
+      nextActionTime=carryTimer+0.2;
+    }
+    return;
+  }
+
+  // Skyt alltid hvis nær nok mål
+  if(distToGoal<SHOT_DIST){
+    shoot(carrier); return;
+  }
+
+  // Tving handling hvis har båret for lenge
+  if(carryTimer>MAX_CARRY){
+    if(Math.random()<0.5){ shoot(carrier); }
+    else {
+      const tm=footballers.filter(ff=>ff.team===carrier.team&&ff.id!==carrier.id&&ff.role!=='keeper');
+      if(tm.length) passTo(carrier,tm[Math.floor(Math.random()*tm.length)]);
+      else shoot(carrier);
+    }
+    return;
+  }
+
+  // Pass til medspiller fremover — foretrekk lengre pasninger
+  const teammates=footballers.filter(ff=>
+    ff.team===carrier.team && ff.id!==carrier.id && ff.role!=='keeper'
+  );
+  // Foretrekk spillere minst 25% av banen fremover
+  const longForward=teammates.filter(ff=>attackRight?ff.x>carrier.x+PW*0.25:ff.x<carrier.x-PW*0.25);
+  const shortForward=teammates.filter(ff=>attackRight?ff.x>carrier.x+30:ff.x<carrier.x-30);
+  const candidates=longForward.length>=1?longForward:(shortForward.length>=1?shortForward:teammates);
+
+  if(candidates.length>0){
+    const t=candidates[Math.floor(Math.random()*candidates.length)];
+    passTo(carrier,t);
+  } else {
+    nextActionTime=carryTimer+0.3;
+  }
+}
+
+function passTo(from,to){
+  blockedPlayerId=from.id;
+  if(!blockedTeamName) blockedTeamName=null;
+  blockTimer=4.0;
+  ballCarrier=null; carryTimer=0; nextActionTime=99;
+  const dx=to.x-from.x, dy=to.y-from.y, dist=Math.hypot(dx,dy)||1;
+  const spd=BALL_SPEED*(0.85+(from.energy||1)*0.3);
+  const inaccuracy=(1.1-(from.energy||1))*35;
+  ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
+  ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
+  ball.x=from.x;
+  ball.y=from.y;
+  console.log('PASS from '+from.name+' to '+to.name+' ball='+Math.round(ball.x)+','+Math.round(ball.y));
+}
+
+function shoot(f){
+  blockedPlayerId=f.id;
+  blockedTeamName=null;
+  blockTimer=1.0;
+  ballCarrier=null; carryTimer=0; nextActionTime=99;
+  const attackRight=f.isLeft;
+  const goalX=attackRight?PW:0;
+  const goalTop=PH/2-GOAL_W/2;
+  const goalBot=PH/2+GOAL_W/2;
+
+  // Finn keeper for dette målet
+  const keeper=footballers.find(ff=>ff.role==='keeper'&&ff.team!==f.team);
+  let aimY;
+  if(keeper){
+    // Sikt på den halvdelen av målet som er LENGST fra keeper
+    const keeperY=keeper.y;
+    const topHalfMid=(goalTop+PH/2)/2;
+    const botHalfMid=(PH/2+goalBot)/2;
+    aimY=Math.abs(keeperY-topHalfMid)<Math.abs(keeperY-botHalfMid)?botHalfMid:topHalfMid;
+    // Legg til litt variasjon
+    aimY+=( Math.random()-0.5)*GOAL_W*0.3;
+  } else {
+    aimY=goalTop+Math.random()*GOAL_W;
+  }
+
+  const dx=goalX-f.x, dy=aimY-f.y, dist=Math.hypot(dx,dy)||1;
+  const spd=BALL_SPEED*(1.3+(f.energy||1)*0.3);
+  const inaccuracy=(1.2-(f.energy||1))*20;
+  ball.vx=(dx/dist)*spd+(Math.random()-0.5)*inaccuracy;
+  ball.vy=(dy/dist)*spd+(Math.random()-0.5)*inaccuracy;
+  ball.x=f.x+(dx/dist)*KICK_DIST*4;
+  ball.y=f.y+(dy/dist)*KICK_DIST*4;
+}
+
+function getTarget(f, hasBall){
+  const attackRight = f.isLeft; // isLeft=true angriper mot høyre
+  const myGoalX    = attackRight ? PW*0.05  : PW*0.95;
+  const oppGoalX   = attackRight ? PW*0.95  : PW*0.05;
+
+  // Keeper: hold seg ved eget mål, følg ballen vertikalt
+  if(f.role==='keeper'){
+    const clampY=Math.max(PH/2-GOAL_W/2+10, Math.min(PH/2+GOAL_W/2-10, ball.y));
+    return {x: myGoalX + (attackRight?10:-10), y: clampY};
+  }
+
+  // Bæreren: løp mot motstanders mål med litt wander
+  if(hasBall){
+    return {x: oppGoalX + (attackRight?-40:40), y: PH/2+(f.wanderY||0)*0.5};
+  }
+
+  // Baseposisjoner — matchende getStartPos
+  const xBase={
+    'def':  attackRight ? PW*0.18 : PW*0.82,
+    'mid':  attackRight ? PW*0.38 : PW*0.62,
+    'fwd':  attackRight ? PW*0.58 : PW*0.42,
+  };
+
+  const sameRole=footballers.filter(ff=>ff.team===f.team&&ff.role===f.role);
+  const idx=sameRole.indexOf(f);
+  const total=sameRole.length||1;
+  const spread=PH*0.65;
+  const baseY=PH/2-spread/2+(idx+0.5)*(spread/total);
+
+  const myTeamHasBall=ballCarrier!==null&&
+    footballers.find(ff=>ff.id===ballCarrier)?.team===f.team;
+
+  // Løp mot fri ball hvis ingen har den og du er nærmest
+  if(ballCarrier===null){
+    const myDist=Math.hypot(f.x-ball.x,f.y-ball.y);
+    if(myDist<120) return {x:ball.x,y:ball.y};
+  }
+
+  let targetX=xBase[f.role]||PW/2;
+
+  if(myTeamHasBall){
+    const push=attackRight?60:-60;
+    targetX=Math.max(PW*0.1, Math.min(PW*0.9, targetX+push));
+  }
+
+  // Apply individual wander offset — gives each player unique movement
+  const wx=f.wanderX||0, wy=f.wanderY||0;
+  // Small ball pull so players react to game but don't all converge
+  const ballPull=0.06;
+  const tx=Math.max(PW*0.05, Math.min(PW*0.95, targetX+wx*(1-ballPull)+ball.x*ballPull - targetX*ballPull));
+  const ty=Math.max(PH*0.05, Math.min(PH*0.95, baseY+wy*(1-ballPull)+ball.y*ballPull - baseY*ballPull));
+
+  return {x:tx, y:ty};
+}
+
+function goalScored(side){
+  // side='left': ball gikk i venstre mål → laget som angriper høyre (isLeft=true) scorer
+  // side='right': ball gikk i høyre mål → laget som angriper venstre (isLeft=false) scorer
+  const scoringTeam = footballers.find(f=>
+    f.role==='fwd' && (side==='right' ? f.isLeft : !f.isLeft)
+  )?.team;
+
+  if(scoringTeam && scores[scoringTeam]!==undefined){
+    scores[scoringTeam]++;
+    updateScoreDisplay();
+    // Reset ball og flytt spillere til startposisjon
+    ball.x=PW/2; ball.y=PH/2; ball.vx=0; ball.vy=0; ballCarrier=null;
+    footballers.forEach((f,i)=>{
+      const sameRole=footballers.filter(ff=>ff.team===f.team&&ff.role===f.role);
+      const idx=sameRole.indexOf(f);
+      const total=sameRole.length||1;
+      const pos=getStartPos(f.role,idx,total,f.isLeft,0,PW,PH);
+      f.x=pos.x; f.y=pos.y;
+    });
+    if(window._fbReady&&roomCode)
+      window._update(window._ref(window._db,'rooms/'+roomCode),{scores:JSON.stringify(scores)});
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUBSTITUTIONS
+// ═══════════════════════════════════════════════════════════
+function doSubstitutions(){
+  subMessages=[];
+  Object.keys(teams).forEach(teamName=>{
+    const members=teams[teamName];
+    if(members.length<=MAX_ON_PITCH) return;
+    // Find current on-pitch human players for this team
+    const onPitch=footballers.filter(f=>f.team===teamName&&!f.isAI).map(f=>f.name);
+    const bench=members.filter(m=>!onPitch.includes(m));
+    if(!bench.length) return;
+    // Sub out player with lowest recent score
+    const byScore=[...onPitch].sort((a,b)=>(players[a]?.score||0)-(players[b]?.score||0));
+    const out=byScore[0];
+    const inPlayer=bench[Math.floor(Math.random()*bench.length)];
+    // Swap
+    const ff=footballers.find(f=>f.name===out&&f.team===teamName);
+    if(ff){ff.name=inPlayer;ff.isAI=false;}
+    subMessages.push(`⬆️ ${inPlayer} inn · ${out} ut (${teamName})`);
+  });
+  updateRosters();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAW
+// ═══════════════════════════════════════════════════════════
+function drawPitch(){
+  if(!ctx) return;
+  // Grass
+  ctx.fillStyle='#1e6b3a'; ctx.fillRect(0,0,PW,PH);
+  // Stripes
+  for(let i=0;i<10;i++){
+    ctx.fillStyle=i%2===0?'#1e6b3a':'#1a5f34';
+    ctx.fillRect(i*(PW/10),0,PW/10,PH);
+  }
+  // Lines
+  ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=2;
+  // Border
+  ctx.strokeRect(15,15,PW-30,PH-30);
+  // Centre circle
+  ctx.beginPath(); ctx.arc(PW/2,PH/2,PH*0.15,0,Math.PI*2); ctx.stroke();
+  // Centre spot
+  ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(PW/2,PH/2,4,0,Math.PI*2); ctx.fill();
+  // Halfway line
+  ctx.beginPath(); ctx.moveTo(PW/2,15); ctx.lineTo(PW/2,PH-15); ctx.stroke();
+  // Goals
+  const gTop=PH/2-GOAL_W/2, gBot=PH/2+GOAL_W/2;
+  ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=3;
+  // Left goal
+  ctx.strokeRect(15,gTop,GOAL_DEPTH,GOAL_W);
+  // Right goal
+  ctx.strokeRect(PW-15-GOAL_DEPTH,gTop,GOAL_DEPTH,GOAL_W);
+  // Penalty areas
+  ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,0.5)';
+  const paW=PW*0.12, paH=PH*0.45, paY=PH/2-paH/2;
+  ctx.strokeRect(15,paY,paW,paH);
+  ctx.strokeRect(PW-15-paW,paY,paW,paH);
+}
+
+function drawFootballers(){
+  if(!ctx) return;
+  const now=Date.now();
+  footballers.forEach(f=>{
+    const r=14;
+    // Boost glow
+    if(f.boost>0.1){
+      ctx.save();
+      ctx.beginPath(); ctx.arc(f.x,f.y,r+6,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,215,0,${f.boost*0.5})`; ctx.fill();
+      ctx.restore();
+    }
+    // Energy ring
+    ctx.beginPath(); ctx.arc(f.x,f.y,r+3,0,Math.PI*2*Math.min(1,f.energy));
+    ctx.strokeStyle=f.color+'88'; ctx.lineWidth=2; ctx.stroke();
+    // Body
+    ctx.beginPath(); ctx.arc(f.x,f.y,r,0,Math.PI*2);
+    ctx.fillStyle=f.color; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1.5; ctx.stroke();
+    // Initials
+    ctx.fillStyle='white'; ctx.font=`bold ${f.isAI?9:10}px Nunito,sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    const initials=f.name.split(/[\s-]/g).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    ctx.fillText(initials,f.x,f.y);
+    // Keeper indicator
+    if(f.role==='keeper'){
+      ctx.strokeStyle='rgba(255,215,0,0.8)'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(f.x,f.y,r+5,0,Math.PI*2); ctx.stroke();
+    }
+  });
+}
+
+function drawBall(){
+  if(!ctx) return;
+  // Shadow
+  ctx.beginPath(); ctx.ellipse(ball.x+2,ball.y+3,7,5,0,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fill();
+  // Ball
+  ctx.beginPath(); ctx.arc(ball.x,ball.y,7,0,Math.PI*2);
+  ctx.fillStyle='#f0f0f0'; ctx.fill();
+  ctx.strokeStyle='#333'; ctx.lineWidth=1; ctx.stroke();
+}
+
+function drawSubMessages(){
+  if(!ctx||!subMessages.length) return;
+  subMessages.forEach((msg,i)=>{
+    ctx.fillStyle='rgba(0,0,0,0.7)';
+    ctx.roundRect(PW/2-160,20+i*30,320,24,6);
+    ctx.fill();
+    ctx.fillStyle='#00ff88'; ctx.font='bold 12px Nunito,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(msg,PW/2,32+i*30);
+  });
+  // Fade out after 3 sec
+  if(!window._subMsgTimer) window._subMsgTimer=setTimeout(()=>{subMessages=[];window._subMsgTimer=null;},3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROSTERS
+// ═══════════════════════════════════════════════════════════
+function updateRosters(){
+  const teamKeys=Object.keys(teams);
+  if(!teamKeys.length) return;
+  const tA=teamKeys[0], tB=teamKeys[1]||teamKeys[0];
+  const colA=TEAM_COLORS[0], colB=TEAM_COLORS[1];
+  document.getElementById('titleA').textContent=tA;
+  document.getElementById('titleA').style.color=colA;
+  document.getElementById('titleB').textContent=tB;
+  document.getElementById('titleB').style.color=colB;
+  renderRoster('rosterA',tA,colA);
+  renderRoster('rosterB',tB,colB);
+}
+
+function renderRoster(elId,teamName,color){
+  const el=document.getElementById(elId); if(!el) return;
+  el.innerHTML='';
+  const members=teams[teamName]||[];
+  const onPitch=new Set(footballers.filter(f=>f.team===teamName&&!f.isAI).map(f=>f.name));
+  members.forEach(name=>{
+    const p=players[name]||{score:0};
+    const isOn=onPitch.has(name);
+    const row=document.createElement('div');
+    row.className='player-row';
+    row.innerHTML=`<div class="player-dot" style="background:${isOn?color:'#333'}"></div>
+      <div class="player-name-sm">${name.split(' ')[0]}</div>
+      ${isOn?'':'<span class="bench-badge">benk</span>'}
+      <div class="player-score-sm">${p.score||0}</div>`;
+    el.appendChild(row);
+  });
+}
+
+// Lytter kun på kickoff og poeng — spillere lyttes på allerede fra createRoom
+function startMatchFirebaseSync(room){
+  if(!window._fbReady) return;
+
+  let lastKickoff=0;
+  const connectTime=Date.now(); // ignorer kickoff-verdier fra før vi koblet til
+  window._onValue(window._ref(window._db,'rooms/'+room+'/kickoff'),snap=>{
+    const ts=snap.val();
+    if(!ts||ts===lastKickoff||ts<connectTime) return; // ignorer gamle verdier
+    lastKickoff=ts;
+    startCountdown(()=>startGame());
+  });
+
+  window._onValue(window._ref(window._db,'rooms/'+room+'/scores'),snap=>{
+    const data=snap.val(); if(!data) return;
+    try{const s=JSON.parse(data); Object.assign(scores,s); updateScoreDisplay();}catch(e){}
+  });
+
+  // Fortsett å lytte på spillerpoeng under kampen
+  window._onValue(window._ref(window._db,'rooms/'+room+'/players'),snap=>{
+    const data=snap.val(); if(!data) return;
+    const now=Date.now();
+    Object.entries(data).forEach(([name,info])=>{
+      if(!players[name]) players[name]={score:0,scoreRate:0,energy:0.8,boost:0};
+      const prev=players[name].score||0;
+      const dt=(now-(players[name].lastUpdated||now))/1000||1;
+      players[name].scoreRate=Math.max(0,(info.score-prev)/dt*60);
+      players[name].score=info.score||0;
+      players[name].lastUpdated=now;
+      if(info.score>prev) players[name].boostAt=now;
+    });
+    updateRosters();
+  });
+
+  setInterval(()=>{
+    if(!players) return;
+    const now=Date.now();
+    Object.keys(players).forEach(name=>{
+      const p=players[name];
+      if(p.lastUpdated&&(now-p.lastUpdated)>MAX_INACTIVE_MS)
+        window._remove(window._ref(window._db,'rooms/'+room+'/players/'+name));
+    });
+  },60000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// STARTUP
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  initCanvas();
+  drawPitch();
+});
+</script>
+</body>
+</html>
