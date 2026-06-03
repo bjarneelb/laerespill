@@ -6,97 +6,141 @@
 <title>Lærerside – Likningsspill</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f0f4ff; --border: #d0d8f0; --accent: #5b4fcf; --accent2: #e84393;
-    --green: #22c55e; --red: #ef4444; --yellow: #eab308;
-    --text: #1e1b4b; --muted: #6b7280;
-    --shadow: 0 4px 24px rgba(91,79,207,0.10); --r: 16px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+:root {
+  --bg:#f0f4ff;--border:#d0d8f0;--accent:#5b4fcf;--accent2:#e84393;
+  --green:#22c55e;--red:#ef4444;--yellow:#eab308;
+  --text:#1e1b4b;--muted:#6b7280;
+  --shadow:0 4px 24px rgba(91,79,207,0.10);--r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;}
 
-  .header { width: 100%; background: var(--accent); color: white; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(91,79,207,0.25); }
-  .header-title { font-size: 1.3rem; font-weight: 900; }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .btn-logout { padding: 6px 16px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; color: white; font-family: 'Nunito',sans-serif; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
-  .btn-logout:hover { background: rgba(255,255,255,0.25); }
-  .btn-menu { padding: 6px 16px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; color: white; font-family: 'Nunito',sans-serif; font-weight: 700; font-size: 0.82rem; cursor: pointer; text-decoration: none; }
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#4338ca,#7c3aed 60%,#e84393);z-index:1000;display:flex;align-items:center;justify-content:center;}
+.login-card{background:white;border-radius:24px;padding:48px 44px;width:380px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.3);}
+.login-icon{font-size:3rem;margin-bottom:10px;}
+.login-card h1{font-size:1.7rem;font-weight:900;color:var(--accent);margin-bottom:6px;}
+.login-card p{color:var(--muted);font-size:0.9rem;margin-bottom:24px;}
+.login-input{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;text-align:center;outline:none;margin-bottom:14px;}
+.login-input:focus{border-color:var(--accent);}
+.btn-login{width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;cursor:pointer;}
+.btn-login:hover{background:#4338ca;}
+.login-error{color:var(--red);font-size:0.85rem;font-weight:700;margin-top:10px;display:none;}
 
-  #loginScreen { position: fixed; inset: 0; background: linear-gradient(135deg,#4338ca,#7c3aed 60%,#e84393); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-  .login-card { background: white; border-radius: 24px; padding: 48px 44px; width: 380px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
-  .login-icon { font-size: 3rem; margin-bottom: 10px; }
-  .login-card h1 { font-size: 1.7rem; font-weight: 900; color: var(--accent); margin-bottom: 6px; }
-  .login-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
-  .login-input { width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 12px; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 700; text-align: center; outline: none; margin-bottom: 14px; }
-  .login-input:focus { border-color: var(--accent); }
-  .btn-login { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 1rem; cursor: pointer; }
-  .btn-login:hover { background: #4338ca; }
-  .login-error { color: var(--red); font-size: 0.85rem; font-weight: 700; margin-top: 10px; display: none; }
+/* HEADER */
+.header{width:100%;background:var(--accent);color:white;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(91,79,207,0.25);}
+.header-title{font-size:1.3rem;font-weight:900;}
+.header-right{display:flex;align-items:center;gap:12px;}
+.btn-logout{padding:6px 16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;color:white;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer;}
+.btn-menu{padding:6px 16px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;color:white;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.82rem;text-decoration:none;}
 
-  .main { width: 100%; max-width: 860px; padding: 28px 20px 48px; display: flex; flex-direction: column; gap: 20px; }
-  .page-title { font-size: 1.4rem; font-weight: 900; }
-  .page-sub { font-size: 0.85rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+/* TABS */
+.tabs{width:100%;max-width:960px;padding:20px 20px 0;display:flex;gap:4px;}
+.tab{padding:10px 20px;border:none;border-radius:12px 12px 0 0;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;background:#e0e7ff;color:var(--muted);transition:all 0.15s;}
+.tab.active{background:var(--accent);color:white;}
+.tab:hover:not(.active){background:#c7d2fe;color:var(--text);}
 
-  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .btn-danger { padding: 9px 20px; background: var(--red); color: white; border: none; border-radius: 10px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-  .btn-danger:hover { filter: brightness(0.9); }
-  .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
-  .select-all-wrap { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; color: var(--muted); }
-  .select-all-wrap input { cursor: pointer; width: 16px; height: 16px; }
-  .rooms-count { margin-left: auto; font-size: 0.82rem; font-weight: 700; color: var(--muted); }
+/* MAIN */
+.main{width:100%;max-width:960px;background:white;border-radius:0 16px 16px 16px;box-shadow:var(--shadow);padding:28px 24px 40px;display:flex;flex-direction:column;gap:20px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:flex;flex-direction:column;gap:20px;}
 
-  .room-card { background: white; border-radius: var(--r); border: 2px solid var(--border); box-shadow: var(--shadow); overflow: hidden; transition: border-color 0.2s; }
-  .room-card.selected { border-color: var(--accent); }
-  .room-header { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; transition: background 0.15s; }
-  .room-header:hover { background: #f8f8ff; }
-  .room-check { flex-shrink: 0; width: 18px; height: 18px; cursor: pointer; }
-  .room-code { font-family: monospace; font-size: 1.2rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; flex-shrink: 0; min-width: 90px; }
-  .room-meta { flex: 1; }
-  .room-player-count { font-weight: 800; font-size: 0.9rem; }
-  .room-last-active { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
-  .room-leader { font-size: 0.82rem; font-weight: 700; color: var(--green); }
-  .room-chevron { font-size: 1rem; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
-  .room-chevron.open { transform: rotate(90deg); }
+.panel-title{font-size:1.2rem;font-weight:900;}
+.panel-sub{font-size:0.85rem;color:var(--muted);font-weight:600;margin-top:2px;}
 
-  .room-detail { border-top: 1px solid var(--border); padding: 0 20px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
-  .room-detail.open { max-height: 600px; padding: 16px 20px; }
+/* CARDS */
+.card{background:var(--bg);border-radius:var(--r);border:2px solid var(--border);padding:20px 24px;}
+.card.green{border-color:var(--green);background:#f0fdf4;}
+.card-label{font-size:0.7rem;font-weight:800;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
 
-  .player-table { width: 100%; border-collapse: collapse; }
-  .player-table th { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-align: left; padding: 6px 10px; border-bottom: 2px solid var(--border); }
-  .player-table td { padding: 8px 10px; font-size: 0.88rem; font-weight: 700; border-bottom: 1px solid #f3f4f6; }
-  .player-table tr:last-child td { border-bottom: none; }
-  .player-table tr.is-leader td { color: var(--accent); }
-  .score-pill { background: #f0f4ff; color: var(--accent); border-radius: 20px; padding: 2px 10px; font-size: 0.8rem; }
-  .is-leader .score-pill { background: var(--accent); color: white; }
-  .active-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-  .active-dot.active   { background: var(--green); }
-  .active-dot.inactive { background: var(--muted); }
+/* TIMECODE */
+.tc-code{font-family:monospace;font-size:2.2rem;font-weight:900;color:var(--accent);letter-spacing:6px;}
+.tc-timer{font-family:monospace;font-size:1rem;font-weight:800;color:var(--green);padding:4px 12px;background:#dcfce7;border-radius:20px;display:inline-block;}
+.tc-timer.expiring{color:var(--red);background:#fee2e2;}
+.tc-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px;}
+.tc-meta{font-size:0.82rem;color:var(--muted);font-weight:600;}
+.input-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+.input-group{display:flex;flex-direction:column;gap:4px;}
+.input-label{font-size:0.7rem;font-weight:800;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.styled-input{padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:700;outline:none;}
+.styled-input:focus{border-color:var(--accent);}
 
-  .room-actions { display: flex; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
-  .btn-close-room { padding: 8px 18px; background: #fef2f2; color: var(--red); border: 2px solid #fecaca; border-radius: 10px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.85rem; cursor: pointer; }
-  .btn-close-room:hover { background: #fee2e2; }
+/* BUTTONS */
+.btn{padding:10px 22px;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;transition:filter 0.15s;}
+.btn:hover{filter:brightness(0.9);}
+.btn-primary{background:var(--accent);color:white;}
+.btn-danger{background:var(--red);color:white;}
+.btn-ghost{background:#f3f4f6;color:var(--text);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;filter:none;}
 
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-  .empty-state p { font-size: 1rem; font-weight: 700; }
+/* LIVE OVERVIEW */
+.live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+.live-card{background:white;border:2px solid var(--border);border-radius:12px;padding:14px 16px;transition:border-color 0.2s;}
+.live-card.active{border-color:var(--green);}
+.live-name{font-weight:800;font-size:0.95rem;margin-bottom:4px;}
+.live-game{font-size:0.7rem;color:var(--muted);font-weight:600;margin-bottom:8px;}
+.live-stats{display:flex;gap:8px;flex-wrap:wrap;}
+.live-stat{font-size:0.72rem;font-weight:800;padding:2px 8px;border-radius:20px;}
+.stat-level{background:#ede9fe;color:#5b4fcf;}
+.stat-correct{background:#dcfce7;color:#16a34a;}
+.stat-wrong{background:#fee2e2;color:#dc2626;}
+.stat-score{background:#f0f4ff;color:var(--accent);}
+.live-bar-wrap{margin-top:8px;background:#e5e7eb;border-radius:4px;height:6px;}
+.live-bar{height:6px;border-radius:4px;background:var(--accent);transition:width 0.5s;}
 
-  #confirmOverlay { position: fixed; inset: 0; z-index: 900; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; }
-  #confirmOverlay.show { display: flex; }
-  .confirm-card { background: white; border-radius: 20px; padding: 36px 40px; width: 380px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.25); }
-  .confirm-icon { font-size: 2.5rem; margin-bottom: 10px; }
-  .confirm-card h2 { font-size: 1.3rem; font-weight: 900; margin-bottom: 8px; }
-  .confirm-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5; }
-  .confirm-btns { display: flex; gap: 10px; }
-  .btn-confirm-cancel { flex: 1; padding: 11px; background: #f3f4f6; color: var(--text); border: none; border-radius: 10px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
-  .btn-confirm-ok { flex: 1; padding: 11px; background: var(--red); color: white; border: none; border-radius: 10px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
+/* ROOMS */
+.room-card{background:white;border-radius:var(--r);border:2px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+.room-card.selected{border-color:var(--accent);}
+.room-header{display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer;}
+.room-header:hover{background:#f8f8ff;}
+.room-check{flex-shrink:0;width:18px;height:18px;cursor:pointer;}
+.room-code{font-family:monospace;font-size:1.2rem;font-weight:900;color:var(--accent);letter-spacing:2px;flex-shrink:0;min-width:90px;}
+.room-meta{flex:1;}
+.room-player-count{font-weight:800;font-size:0.9rem;}
+.room-last-active{font-size:0.78rem;color:var(--muted);font-weight:600;}
+.room-chevron{font-size:1rem;color:var(--muted);transition:transform 0.2s;}
+.room-chevron.open{transform:rotate(90deg);}
+.room-detail{border-top:1px solid var(--border);padding:0 20px;max-height:0;overflow:hidden;transition:max-height 0.3s ease,padding 0.3s ease;}
+.room-detail.open{max-height:600px;padding:16px 20px;}
+.player-table{width:100%;border-collapse:collapse;}
+.player-table th{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;padding:6px 10px;border-bottom:2px solid var(--border);}
+.player-table td{padding:8px 10px;font-size:0.88rem;font-weight:700;border-bottom:1px solid #f3f4f6;}
+.player-table tr:last-child td{border-bottom:none;}
+.active-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+.active-dot.active{background:var(--green);}
+.active-dot.inactive{background:var(--muted);}
+.room-actions{display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.select-all-wrap{display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.88rem;cursor:pointer;color:var(--muted);}
+.select-all-wrap input{cursor:pointer;width:16px;height:16px;}
+.rooms-count{margin-left:auto;font-size:0.82rem;font-weight:700;color:var(--muted);}
 
-  .loading { text-align: center; padding: 40px; color: var(--muted); font-weight: 700; animation: pulse 1.2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+/* RAPPORT */
+.rapport-elev{background:white;border:2px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px;}
+.rapport-elev-name{font-weight:900;font-size:1rem;margin-bottom:4px;}
+.rapport-elev-stats{font-size:0.8rem;color:var(--muted);font-weight:600;margin-bottom:10px;}
+.rapport-text{font-size:0.88rem;line-height:1.6;color:var(--text);background:#f8f8ff;border-radius:8px;padding:12px;border-left:3px solid var(--accent);}
+.rapport-loading{color:var(--muted);font-size:0.85rem;font-weight:700;font-style:italic;}
 
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px); padding: 12px 24px; border-radius: 50px; font-weight: 800; font-size: 0.95rem; color: white; z-index: 500; transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.success { background: var(--green); }
-  .toast.error   { background: var(--red); }
+/* MISC */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .icon{font-size:3rem;margin-bottom:12px;}
+.empty-state p{font-size:1rem;font-weight:700;}
+#confirmOverlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;}
+#confirmOverlay.show{display:flex;}
+.confirm-card{background:white;border-radius:20px;padding:36px 40px;width:380px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.25);}
+.confirm-icon{font-size:2.5rem;margin-bottom:10px;}
+.confirm-card h2{font-size:1.3rem;font-weight:900;margin-bottom:8px;}
+.confirm-card p{color:var(--muted);font-size:0.9rem;margin-bottom:24px;line-height:1.5;}
+.confirm-btns{display:flex;gap:10px;}
+.btn-confirm-cancel{flex:1;padding:11px;background:#f3f4f6;color:var(--text);border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;}
+.btn-confirm-ok{flex:1;padding:11px;background:var(--red);color:white;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.9rem;cursor:pointer;}
+.loading{text-align:center;padding:40px;color:var(--muted);font-weight:700;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);padding:12px 24px;border-radius:50px;font-weight:800;font-size:0.95rem;color:white;z-index:500;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);}
+.toast.error{background:var(--red);}
 </style>
 </head>
 <body>
@@ -106,7 +150,7 @@
 <div id="confirmOverlay">
   <div class="confirm-card">
     <div class="confirm-icon">⚠️</div>
-    <h2 id="confirmTitle">Avslutt rom?</h2>
+    <h2 id="confirmTitle">Er du sikker?</h2>
     <p id="confirmText">Dette vil fjerne alle spillere fra rommet.</p>
     <div class="confirm-btns">
       <button class="btn-confirm-cancel" onclick="closeConfirm()">Avbryt</button>
@@ -120,252 +164,459 @@
     <div class="login-icon">🔐</div>
     <h1>Lærerside</h1>
     <p>Logg inn for å administrere spillrom</p>
-    <input class="login-input" type="password" id="passwordInput" placeholder="Passord">
+    <input class="login-input" type="password" id="passwordInput" placeholder="Passord"
+      onkeydown="if(event.key==='Enter') doLogin()">
     <button class="btn-login" onclick="doLogin()">Logg inn</button>
     <div class="login-error" id="loginError">Feil passord – prøv igjen</div>
   </div>
 </div>
 
 <div class="header">
-  <div class="header-title">🏫 Lærerside – Likningsspill</div>
+  <div class="header-title">🏫 Lærerside</div>
   <div class="header-right">
-    <a class="btn-menu" href="/ligningsvekt/">← Meny</a>
+    <a class="btn-menu" href="./">← Meny</a>
     <button class="btn-logout" onclick="doLogout()">Logg ut</button>
   </div>
 </div>
 
-<div class="main">
-  <div>
-    <div class="page-title">📋 Aktive spillrom</div>
-    <div class="page-sub">Oppdateres automatisk i sanntid</div>
-  </div>
-  <div class="toolbar">
-    <label class="select-all-wrap">
-      <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)">
-      Velg alle
-    </label>
-    <button class="btn-danger" id="closeSelectedBtn" onclick="confirmCloseSelected()" disabled>
-      🗑️ Avslutt valgte rom
-    </button>
-    <span class="rooms-count" id="roomsCount">Laster...</span>
-  </div>
-  <div id="roomList"><div class="loading">Henter rom...</div></div>
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('timekode')">⏱️ Timekode</button>
+  <button class="tab" onclick="showTab('live')">👥 Live-oversikt</button>
+  <button class="tab" onclick="showTab('rom')">🏁 Spillrom</button>
+  <button class="tab" onclick="showTab('rapport')">📊 Rapport</button>
 </div>
 
+<div class="main">
+
+  <!-- ── TIMEKODE ── -->
+  <div class="tab-panel active" id="tab-timekode">
+    <div>
+      <div class="panel-title">⏱️ Timekode</div>
+      <div class="panel-sub">Opprett en kode elevene bruker for å logge aktiviteten denne timen</div>
+    </div>
+
+    <div class="card green" id="tcActiveCard" style="display:none">
+      <div class="card-label">Aktiv timekode</div>
+      <div class="tc-row">
+        <div class="tc-code" id="tcCode">–</div>
+        <div class="tc-timer" id="tcTimer">–</div>
+        <button class="btn btn-danger" onclick="stopTimecode()">⏹ Avslutt kode</button>
+      </div>
+      <div class="tc-meta" id="tcMeta"></div>
+      <div style="margin-top:14px">
+        <div class="card-label">Tilkoblede elever</div>
+        <div id="tcPlayers" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+          <span style="color:var(--muted);font-size:0.82rem">Ingen elever ennå...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="tcCreateCard">
+      <div class="card-label">Opprett ny timekode</div>
+      <div class="input-row">
+        <div class="input-group">
+          <div class="input-label">Kode (tom = tilfeldig)</div>
+          <input class="styled-input" id="tcCodeInput" placeholder="f.eks. MATTE3" maxlength="10"
+            style="text-transform:uppercase;letter-spacing:2px;width:160px" autocomplete="off">
+        </div>
+        <div class="input-group">
+          <div class="input-label">Varighet (min)</div>
+          <input class="styled-input" id="tcMinutes" type="number" value="60" min="5" max="240" style="width:100px">
+        </div>
+        <button class="btn btn-primary" onclick="createTimecode()">🔑 Opprett</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LIVE-OVERSIKT ── -->
+  <div class="tab-panel" id="tab-live">
+    <div>
+      <div class="panel-title">👥 Live-oversikt</div>
+      <div class="panel-sub">Elever tilkoblet via aktiv timekode — oppdateres automatisk</div>
+    </div>
+    <div id="liveGrid" class="live-grid">
+      <div class="empty-state"><div class="icon">👥</div><p>Ingen aktiv timekode</p></div>
+    </div>
+  </div>
+
+  <!-- ── SPILLROM ── -->
+  <div class="tab-panel" id="tab-rom">
+    <div>
+      <div class="panel-title">🏁 Aktive spillrom</div>
+      <div class="panel-sub">Oppdateres automatisk i sanntid</div>
+    </div>
+    <div class="toolbar">
+      <label class="select-all-wrap">
+        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)">
+        Velg alle
+      </label>
+      <button class="btn btn-danger" id="closeSelectedBtn" onclick="confirmCloseSelected()" disabled>
+        🗑️ Avslutt valgte rom
+      </button>
+      <span class="rooms-count" id="roomsCount">Laster...</span>
+    </div>
+    <div id="roomList"><div class="loading">Henter rom...</div></div>
+  </div>
+
+  <!-- ── RAPPORT ── -->
+  <div class="tab-panel" id="tab-rapport">
+    <div>
+      <div class="panel-title">📊 Rapport</div>
+      <div class="panel-sub">AI-generert vurdering av elever basert på data fra timekoden</div>
+    </div>
+    <div class="card" id="rapportControls">
+      <div class="card-label">Velg timekode for rapport</div>
+      <div class="input-row" style="margin-top:0">
+        <div class="input-group">
+          <div class="input-label">Timekode</div>
+          <input class="styled-input" id="rapportCode" placeholder="Timekode" maxlength="12"
+            style="text-transform:uppercase;letter-spacing:2px;width:160px">
+        </div>
+        <button class="btn btn-primary" onclick="generateRapport()">🤖 Generer rapport</button>
+      </div>
+      <div id="rapportStatus" style="margin-top:10px;font-size:0.82rem;color:var(--muted)"></div>
+    </div>
+    <div id="rapportOutput"></div>
+  </div>
+
+</div>
+
+<!-- FIREBASE -->
 <script type="module">
-  import { database, ref, onValue, remove } from "./js/firebase-config.js";
-  window._db = database; window._ref = ref;
-  window._onValue = onValue; window._remove = remove;
-  window._fbReady = true;
+  import { database, ref, onValue, remove, set, update, get } from "./js/firebase-config.js";
+  window._db=database; window._ref=ref;
+  window._onValue=onValue; window._remove=remove;
+  window._set=set; window._update=update; window._get=get;
+  window._fbReady=true;
 </script>
 
 <script>
-// ── PASSORD — bytt ut DITT_PASSORD_HER med ditt eget passord i GitHub ──
-const TEACHER_PASSWORD = '9bTT_(733£';
-const SESSION_KEY = 'teacher_auth_ok';
-
 // ── AUTH ──
-if (sessionStorage.getItem(SESSION_KEY) === 'true') {
-  document.getElementById('loginScreen').style.display = 'none';
+const SESSION_KEY='teacher_auth_v1';
+const TEACHER_PASSWORD=(typeof TEACHER_AUTH_PASSWORD!=='undefined')?TEACHER_AUTH_PASSWORD:'matte2024';
+
+if(sessionStorage.getItem(SESSION_KEY)==='true'){
+  document.getElementById('loginScreen').style.display='none';
   waitForFirebase();
 }
 
-function doLogin() {
-  const pw = document.getElementById('passwordInput').value;
-  if (pw === TEACHER_PASSWORD) {
-    sessionStorage.setItem(SESSION_KEY, 'true');
-    document.getElementById('loginScreen').style.display = 'none';
+function doLogin(){
+  const pw=document.getElementById('passwordInput').value;
+  if(pw===TEACHER_PASSWORD){
+    sessionStorage.setItem(SESSION_KEY,'true');
+    document.getElementById('loginScreen').style.display='none';
     waitForFirebase();
   } else {
-    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginError').style.display='block';
   }
 }
-
-function doLogout() {
+function doLogout(){
   sessionStorage.removeItem(SESSION_KEY);
   location.reload();
 }
 
-document.getElementById('passwordInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
-
-function waitForFirebase() {
-  if (window._fbReady) { initDashboard(); return; }
-  setTimeout(waitForFirebase, 100);
+function waitForFirebase(){
+  if(window._fbReady){ initDashboard(); return; }
+  setTimeout(waitForFirebase,100);
 }
 
-// ── DASHBOARD ──
-let roomsData = {}, openRooms = new Set(), selectedRooms = new Set();
+// ── TABS ──
+window.showTab=function(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const panels=['timekode','live','rom','rapport'];
+    t.classList.toggle('active',panels[i]===name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>{
+    p.classList.toggle('active',p.id==='tab-'+name);
+  });
+};
 
-function initDashboard() {
-  window._onValue(window._ref(window._db, 'rooms'), snap => {
-    roomsData = snap.val() || {};
-    renderRoomList();
+// ── INIT ──
+function initDashboard(){
+  loadRooms();
+  checkExistingTimecode();
+}
+
+// ── TIMECODE ──
+let tcInterval=null, tcLiveUnsub=null, activeCode=null;
+
+function randomCode(){
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
+}
+
+window.createTimecode=async function(){
+  let code=document.getElementById('tcCodeInput').value.trim().toUpperCase()||randomCode();
+  const minutes=Math.max(5,Math.min(240,parseInt(document.getElementById('tcMinutes').value)||60));
+  const expires=Date.now()+minutes*60*1000;
+  activeCode=code;
+  await window._set(window._ref(window._db,'timecodes/'+code),{
+    created:Date.now(),expires,minutes,active:true
+  });
+  showActiveTimecode(code,expires,minutes);
+};
+
+window.stopTimecode=async function(){
+  if(!activeCode) return;
+  await window._remove(window._ref(window._db,'timecodes/'+activeCode));
+  activeCode=null;
+  if(tcInterval){clearInterval(tcInterval);tcInterval=null;}
+  if(tcLiveUnsub){tcLiveUnsub();tcLiveUnsub=null;}
+  document.getElementById('tcActiveCard').style.display='none';
+  document.getElementById('tcCreateCard').style.display='';
+  document.getElementById('liveGrid').innerHTML='<div class="empty-state"><div class="icon">👥</div><p>Ingen aktiv timekode</p></div>';
+};
+
+function showActiveTimecode(code,expires,minutes){
+  activeCode=code;
+  document.getElementById('tcCode').textContent=code;
+  document.getElementById('tcMeta').textContent=
+    'Varighet: '+minutes+' min · Utløper: '+new Date(expires).toLocaleTimeString('no');
+  document.getElementById('tcActiveCard').style.display='';
+  document.getElementById('tcCreateCard').style.display='none';
+
+  if(tcInterval) clearInterval(tcInterval);
+  tcInterval=setInterval(()=>{
+    const left=expires-Date.now();
+    const el=document.getElementById('tcTimer');
+    if(left<=0){el.textContent='UTLØPT';el.className='tc-timer expiring';clearInterval(tcInterval);return;}
+    const m=Math.floor(left/60000),s=Math.floor((left%60000)/1000);
+    el.textContent=m+':'+String(s).padStart(2,'0');
+    el.className='tc-timer'+(left<5*60000?' expiring':'');
+  },1000);
+
+  // Live players
+  if(tcLiveUnsub) tcLiveUnsub();
+  tcLiveUnsub=window._onValue(window._ref(window._db,'timecodes/'+code+'/players'),snap=>{
+    const data=snap.val()||{};
+    updateTcPlayers(data);
+    updateLiveGrid(data);
   });
 }
 
-function relativeTime(ms) {
-  if (!ms) return 'ukjent';
-  const sec = Math.round((Date.now() - ms) / 1000);
-  if (sec < 60)   return sec + ' sek siden';
-  if (sec < 3600) return Math.floor(sec/60) + ' min siden';
-  return Math.floor(sec/3600) + ' t siden';
+function updateTcPlayers(data){
+  const el=document.getElementById('tcPlayers');
+  const names=Object.keys(data);
+  if(!names.length){el.innerHTML='<span style="color:var(--muted);font-size:0.82rem">Ingen elever ennå...</span>';return;}
+  el.innerHTML=names.map(n=>`
+    <span style="padding:3px 10px;background:white;border:1.5px solid var(--border);border-radius:20px;font-size:0.78rem;font-weight:700">
+      👤 ${n}
+    </span>`).join('');
 }
 
-function isActive(lastUpdated) {
-  return lastUpdated && (Date.now() - lastUpdated) < 6*60*1000;
-}
-
-function renderRoomList() {
-  const list = document.getElementById('roomList');
-  const codes = Object.keys(roomsData);
-  document.getElementById('roomsCount').textContent =
-    codes.length === 0 ? 'Ingen aktive rom' :
-    codes.length === 1 ? '1 aktivt rom' : codes.length + ' aktive rom';
-
-  if (!codes.length) {
-    list.innerHTML = `<div class="empty-state"><div class="icon">🏁</div><p>Ingen aktive rom</p></div>`;
+function updateLiveGrid(data){
+  const el=document.getElementById('liveGrid');
+  const names=Object.keys(data);
+  if(!names.length){
+    el.innerHTML='<div class="empty-state"><div class="icon">👥</div><p>Ingen elever tilkoblet ennå</p></div>';
     return;
   }
-
-  list.innerHTML = '';
-  codes.sort().forEach(code => {
-    const room = roomsData[code] || {};
-    const players = room.players || {};
-    const playerList = Object.entries(players);
-    const count = playerList.length;
-    const sorted = playerList.sort((a,b) => (b[1].score||0)-(a[1].score||0));
-    const leader = sorted[0];
-    const lastActive = Math.max(...playerList.map(([,p]) => p.lastUpdated||0));
-    const isOpen = openRooms.has(code);
-    const isSelected = selectedRooms.has(code);
-    const medals = ['🥇','🥈','🥉'];
-
-    const rows = sorted.map(([name, data], i) => {
-      const active = isActive(data.lastUpdated);
-      return `<tr class="${i===0?'is-leader':''}">
-        <td>${medals[i]||i+1+'.'}</td>
-        <td><span class="active-dot ${active?'active':'inactive'}"></span>${name}</td>
-        <td><span class="score-pill">${data.score||0} p</span></td>
-        <td style="color:var(--muted);font-size:0.78rem">${relativeTime(data.lastUpdated)}</td>
-      </tr>`;
-    }).join('');
-
-    const card = document.createElement('div');
-    card.className = `room-card${isSelected?' selected':''}`;
-    card.id = 'room-'+code;
-    card.innerHTML = `
-      <div class="room-header" onclick="toggleRoom('${code}', event)">
-        <input type="checkbox" class="room-check" ${isSelected?'checked':''}
-               onclick="toggleSelect('${code}', event)">
-        <div class="room-code">${code}</div>
-        <div class="room-meta">
-          <div class="room-player-count">${count} spiller${count!==1?'e':''}</div>
-          <div class="room-last-active">Sist aktiv: ${relativeTime(lastActive)}</div>
-          ${leader ? `<div class="room-leader">🏆 Leder: ${leader[0]} (${leader[1].score||0} p)</div>` : ''}
-        </div>
-        <div class="room-chevron ${isOpen?'open':''}">›</div>
+  const sorted=[...names].sort((a,b)=>(data[b].score||0)-(data[a].score||0));
+  el.innerHTML=sorted.map(name=>{
+    const p=data[name];
+    const now=Date.now();
+    const isActive=p.lastUpdated&&(now-p.lastUpdated)<60000;
+    const maxLevel=7;
+    const pct=((p.level||1)/maxLevel)*100;
+    return `<div class="live-card ${isActive?'active':''}">
+      <div class="live-name">${name}</div>
+      <div class="live-game">${p.game||'–'}</div>
+      <div class="live-stats">
+        <span class="live-stat stat-level">N${p.level||'?'}</span>
+        <span class="live-stat stat-correct">✓ ${p.correct||0}</span>
+        <span class="live-stat stat-wrong">✗ ${p.wrong||0}</span>
+        <span class="live-stat stat-score">${p.score||0} p</span>
       </div>
-      <div class="room-detail ${isOpen?'open':''}">
-        <table class="player-table">
-          <thead><tr><th>#</th><th>Spiller</th><th>Poeng</th><th>Sist aktiv</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <div class="room-actions">
-          <button class="btn-close-room" onclick="confirmCloseRoom('${code}')">🗑️ Avslutt dette rommet</button>
-        </div>
-      </div>`;
-    list.appendChild(card);
+      <div class="live-bar-wrap"><div class="live-bar" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function checkExistingTimecode(){
+  window._onValue(window._ref(window._db,'timecodes'),snap=>{
+    const data=snap.val()||{};
+    const now=Date.now();
+    Object.entries(data).forEach(([code,tc])=>{
+      if(tc.active&&tc.expires>now&&!activeCode){
+        showActiveTimecode(code,tc.expires,tc.minutes);
+      }
+      // Clean up codes older than 48h
+      if(tc.expires<now-48*60*60*1000){
+        window._remove(window._ref(window._db,'timecodes/'+code));
+      }
+    });
   });
-  updateCloseBtn();
 }
 
-function toggleRoom(code, event) {
-  if (event.target.type === 'checkbox') return;
-  if (openRooms.has(code)) openRooms.delete(code);
-  else openRooms.add(code);
-  renderRoomList();
+// ── ROOMS ──
+let roomsData={}, openRooms=new Set(), selectedRooms=new Set();
+
+function loadRooms(){
+  window._onValue(window._ref(window._db,'rooms'),snap=>{
+    roomsData=snap.val()||{};
+    renderRooms();
+  });
 }
 
-function toggleSelect(code, event) {
-  event.stopPropagation();
-  if (selectedRooms.has(code)) selectedRooms.delete(code);
-  else selectedRooms.add(code);
-  updateCloseBtn(); updateSelectAllCheckbox();
-  const card = document.getElementById('room-'+code);
-  if (card) card.classList.toggle('selected', selectedRooms.has(code));
-  const cb = card?.querySelector('.room-check');
-  if (cb) cb.checked = selectedRooms.has(code);
+function renderRooms(){
+  const el=document.getElementById('roomList');
+  const codes=Object.keys(roomsData).filter(c=>roomsData[c]&&roomsData[c].players);
+  document.getElementById('roomsCount').textContent=codes.length+' aktive rom';
+  if(!codes.length){
+    el.innerHTML='<div class="empty-state"><div class="icon">🎮</div><p>Ingen aktive spillrom</p></div>';
+    return;
+  }
+  const sorted=codes.sort((a,b)=>{
+    const la=Object.values(roomsData[a].players||{}).reduce((t,p)=>Math.max(t,p.lastUpdated||0),0);
+    const lb=Object.values(roomsData[b].players||{}).reduce((t,p)=>Math.max(t,p.lastUpdated||0),0);
+    return lb-la;
+  });
+  el.innerHTML=sorted.map(code=>renderRoomCard(code,roomsData[code])).join('');
 }
 
-function toggleSelectAll(checked) {
-  const codes = Object.keys(roomsData);
-  if (checked) codes.forEach(c => selectedRooms.add(c));
-  else selectedRooms.clear();
-  renderRoomList();
+function renderRoomCard(code,room){
+  const players=Object.entries(room.players||{});
+  const now=Date.now();
+  const isOpen=openRooms.has(code);
+  const isSelected=selectedRooms.has(code);
+  const leader=players.sort((a,b)=>(b[1].score||0)-(a[1].score||0))[0];
+  const lastActive=players.reduce((t,[,p])=>Math.max(t,p.lastUpdated||0),0);
+  const ago=lastActive?Math.floor((now-lastActive)/1000)+'s siden':'–';
+  return `<div class="room-card${isSelected?' selected':''}" id="room-${code}">
+    <div class="room-header" onclick="toggleRoom('${code}')">
+      <input type="checkbox" class="room-check" ${isSelected?'checked':''} onclick="event.stopPropagation();toggleSelect('${code}',this.checked)">
+      <div class="room-code">${code}</div>
+      <div class="room-meta">
+        <div class="room-player-count">${players.length} spiller${players.length!==1?'e':''}</div>
+        <div class="room-last-active">Sist aktiv: ${ago}</div>
+        ${leader?`<div style="font-size:0.82rem;font-weight:700;color:var(--green)">🏆 ${leader[0]}: ${leader[1].score||0} p</div>`:''}
+      </div>
+      <div class="room-chevron${isOpen?' open':''}">›</div>
+    </div>
+    <div class="room-detail${isOpen?' open':''}" id="detail-${code}">
+      <table class="player-table">
+        <tr><th>Spiller</th><th>Poeng</th><th>Status</th></tr>
+        ${players.sort((a,b)=>(b[1].score||0)-(a[1].score||0)).map(([name,p])=>{
+          const active=p.lastUpdated&&(now-p.lastUpdated)<60000;
+          return `<tr><td><span class="active-dot ${active?'active':'inactive'}"></span>${name}</td>
+            <td><span style="background:#f0f4ff;color:var(--accent);border-radius:20px;padding:2px 10px;font-size:0.8rem">${p.score||0}</span></td>
+            <td style="color:var(--muted);font-size:0.8rem">${active?'Aktiv':'Inaktiv'}</td></tr>`;
+        }).join('')}
+      </table>
+      <div class="room-actions">
+        <button class="btn btn-danger" onclick="confirmCloseRoom('${code}')">🗑️ Avslutt rom</button>
+      </div>
+    </div>
+  </div>`;
 }
 
-function updateSelectAllCheckbox() {
-  const cb = document.getElementById('selectAll');
-  const codes = Object.keys(roomsData);
-  cb.checked = codes.length > 0 && codes.every(c => selectedRooms.has(c));
-  cb.indeterminate = selectedRooms.size > 0 && selectedRooms.size < codes.length;
-}
-
-function updateCloseBtn() {
-  const btn = document.getElementById('closeSelectedBtn');
-  btn.disabled = selectedRooms.size === 0;
-  btn.textContent = selectedRooms.size > 0
-    ? `🗑️ Avslutt ${selectedRooms.size} valgte rom`
-    : '🗑️ Avslutt valgte rom';
-}
+window.toggleRoom=function(code){
+  openRooms.has(code)?openRooms.delete(code):openRooms.add(code);
+  renderRooms();
+};
+window.toggleSelect=function(code,checked){
+  checked?selectedRooms.add(code):selectedRooms.delete(code);
+  document.getElementById('closeSelectedBtn').disabled=selectedRooms.size===0;
+  renderRooms();
+};
+window.toggleSelectAll=function(checked){
+  selectedRooms.clear();
+  if(checked) Object.keys(roomsData).filter(c=>roomsData[c]?.players).forEach(c=>selectedRooms.add(c));
+  document.getElementById('closeSelectedBtn').disabled=selectedRooms.size===0;
+  renderRooms();
+};
 
 // ── CONFIRM / DELETE ──
-function showConfirm(title, text, onOk) {
-  document.getElementById('confirmTitle').textContent = title;
-  document.getElementById('confirmText').textContent  = text;
+let pendingAction=null;
+function confirmCloseRoom(code){
+  pendingAction=()=>deleteRoom(code);
+  document.getElementById('confirmTitle').textContent='Avslutt rom '+code+'?';
+  document.getElementById('confirmText').textContent='Alle spillere fjernes fra rommet.';
+  document.getElementById('confirmOkBtn').onclick=()=>{pendingAction&&pendingAction();closeConfirm();};
   document.getElementById('confirmOverlay').classList.add('show');
-  document.getElementById('confirmOkBtn').onclick = () => { closeConfirm(); onOk(); };
 }
-function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('show'); }
-
-function confirmCloseRoom(code) {
-  showConfirm(
-    `Avslutt rom ${code}?`,
-    `Dette fjerner alle ${Object.keys(roomsData[code]?.players||{}).length} spillere fra rommet.`,
-    () => closeRoom(code)
-  );
+window.confirmCloseSelected=function(){
+  if(!selectedRooms.size) return;
+  pendingAction=()=>{ selectedRooms.forEach(c=>deleteRoom(c)); selectedRooms.clear(); };
+  document.getElementById('confirmTitle').textContent='Avslutt '+selectedRooms.size+' rom?';
+  document.getElementById('confirmText').textContent='Alle valgte rom og spillere fjernes.';
+  document.getElementById('confirmOkBtn').onclick=()=>{pendingAction&&pendingAction();closeConfirm();};
+  document.getElementById('confirmOverlay').classList.add('show');
+};
+function deleteRoom(code){
+  window._remove(window._ref(window._db,'rooms/'+code));
+  showToast('Rom '+code+' avsluttet','success');
 }
+window.closeConfirm=function(){ document.getElementById('confirmOverlay').classList.remove('show'); };
 
-function confirmCloseSelected() {
-  showConfirm(
-    `Avslutt ${selectedRooms.size} rom?`,
-    `Dette fjerner alle spillere fra de valgte rommene.`,
-    () => { selectedRooms.forEach(code => closeRoom(code)); selectedRooms.clear(); updateCloseBtn(); }
-  );
-}
+// ── RAPPORT ──
+window.generateRapport=async function(){
+  const code=document.getElementById('rapportCode').value.trim().toUpperCase()||activeCode;
+  if(!code){ showToast('Skriv inn timekode','error'); return; }
+  const status=document.getElementById('rapportStatus');
+  const output=document.getElementById('rapportOutput');
+  status.textContent='Henter data...';
+  output.innerHTML='';
 
-async function closeRoom(code) {
+  const snap=await window._get(window._ref(window._db,'timecodes/'+code+'/players'));
+  const data=snap.val();
+  if(!data){ status.textContent='Ingen data funnet for kode: '+code; return; }
+
+  const names=Object.keys(data);
+  status.textContent='Genererer rapport for '+names.length+' elever...';
+
+  for(const name of names){
+    const p=data[name];
+    const div=document.createElement('div');
+    div.className='rapport-elev';
+    div.innerHTML=`<div class="rapport-elev-name">👤 ${name}</div>
+      <div class="rapport-elev-stats">Nivå: ${p.level||'?'} · Riktige: ${p.correct||0} · Feil: ${p.wrong||0} · Poeng: ${p.score||0}</div>
+      <div class="rapport-loading" id="rapport-${name.replace(/\s/g,'_')}">Genererer vurdering...</div>`;
+    output.appendChild(div);
+    generateAIRapport(name,p);
+  }
+  status.textContent='';
+};
+
+async function generateAIRapport(name,p){
+  const elId='rapport-'+name.replace(/\s/g,'_');
+  const prompt=`Du er en matematikklærer. Gi en kort, konstruktiv og oppmuntrende vurdering på norsk (2-3 setninger) av følgende elevs prestasjoner i funksjonsfabrikken:
+Elev: ${name}
+Nivå oppnådd: ${p.level||1} av 7
+Riktige svar: ${p.correct||0}
+Feil svar: ${p.wrong||0}
+Poeng: ${p.score||0}
+Spill: ${p.game||'funksjonsfabrikk'}
+Fokuser på hva eleven mestrer og hva som kan forbedres. Ikke nevn tallene direkte.`;
+
   try {
-    await window._remove(window._ref(window._db, 'rooms/'+code));
-    openRooms.delete(code);
-    showToast('✅ Rom '+code+' er avsluttet', 'success');
-  } catch(e) {
-    showToast('❌ Feil ved sletting av '+code, 'error');
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:200,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await resp.json();
+    const text=data.content?.[0]?.text||'Kunne ikke generere vurdering.';
+    const el=document.getElementById(elId);
+    if(el){ el.className='rapport-text'; el.textContent=text; }
+  } catch(e){
+    const el=document.getElementById(elId);
+    if(el){ el.className='rapport-text'; el.textContent='Feil ved generering. Sjekk API-tilkobling.'; }
   }
 }
 
 // ── TOAST ──
-function showToast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast '+type;
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type;
   void t.offsetWidth; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  setTimeout(()=>t.classList.remove('show'),2200);
 }
-
-// Oppdater relative tider hvert 30. sek
-setInterval(() => { if (Object.keys(roomsData).length) renderRoomList(); }, 30000);
 </script>
 </body>
 </html>
