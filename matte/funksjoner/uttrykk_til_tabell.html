@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fra uttrykk til tabell</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f4ff;--panel:#ffffff;--border:#dde3f0;
+  --accent:#5b4fcf;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --factory:#92400e;--r:12px;
+  --shadow:0 2px 12px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:16px;box-shadow:0 0 20px rgba(91,79,207,0.3);}
+.header-title{font-size:1rem;font-weight:900;letter-spacing:1px;line-height:1.2;}
+.header-sub{font-size:0.7rem;opacity:0.8;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.level-badge{background:rgba(255,255,255,0.2);padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.score-badge{background:var(--yellow);color:#78350f;padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:900;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px;gap:14px;max-width:900px;margin:0 auto;width:100%;}
+
+/* EXPR CARD */
+.expr-card{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:16px 20px;width:100%;box-shadow:var(--shadow);text-align:center;}
+.expr-label{font-size:0.68rem;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.expr-display{font-size:1.6rem;font-weight:900;color:var(--text);}
+.expr-display .frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;vertical-align:middle;font-size:1.2rem;}
+.expr-display .frac .num{border-bottom:2px solid var(--text);padding:0 4px;}
+.expr-display .frac .den{padding:0 4px;}
+
+/* MINI FACTORY */
+.factory-section{background:linear-gradient(180deg,#d97706,#92400e);border:3px solid #78350f;border-radius:var(--r);padding:14px 16px;width:100%;box-shadow:0 4px 20px rgba(120,53,15,0.3);}
+.factory-sign{text-align:center;color:#fef3c7;font-size:0.72rem;font-weight:800;letter-spacing:2px;margin-bottom:10px;}
+.anim-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.belt{flex:1;height:22px;background:repeating-linear-gradient(90deg,#92400e 0,#92400e 14px,#78350f 14px,#78350f 28px);border-radius:4px;position:relative;overflow:hidden;}
+.belt-item{position:absolute;top:50%;transform:translateY(-50%);background:#fef3c7;border:2px solid #f59e0b;border-radius:6px;padding:2px 8px;font-size:0.82rem;font-weight:900;color:#92400e;white-space:nowrap;transition:left 0.8s ease-in-out;}
+.factory-icon{color:#fef3c7;font-size:1.2rem;flex-shrink:0;}
+.calc-display{background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:7px 14px;text-align:center;min-height:38px;height:38px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.95rem;font-weight:900;color:#92400e;}
+.calc-display button{background:#f59e0b;border:none;border-radius:6px;padding:2px 10px;font-size:1rem;font-weight:900;color:white;cursor:pointer;}
+.calc-display button.inactive{background:#cbd5e1;color:#64748b;}
+.hint-text{color:#fef3c7;font-size:0.75rem;font-weight:800;text-align:center;min-height:18px;}
+
+/* TABLE */
+.table-card{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:16px 20px;width:100%;box-shadow:var(--shadow);}
+.table-label{font-size:0.68rem;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+table.vtable{width:100%;border-collapse:collapse;}
+table.vtable th{background:#f0f4ff;font-size:0.78rem;font-weight:800;color:var(--accent);padding:8px 14px;text-align:center;border:1px solid var(--border);}
+table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border);font-size:0.95rem;font-weight:800;}
+.cell-fixed{color:var(--accent);background:#f8f9ff;}
+.cell-input{padding:4px;}
+.cell-input input{width:80px;padding:5px 8px;border:2px solid var(--border);border-radius:6px;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:800;text-align:center;outline:none;}
+.cell-input input:focus{border-color:var(--accent);}
+.cell-input input.correct{border-color:var(--green);background:#f0fdf4;color:var(--green);}
+.cell-input input.wrong{border-color:var(--red);background:#fef2f2;color:var(--red);}
+.cell-expr input{width:160px;}
+.cell-auto{color:var(--green);font-weight:900;}
+
+/* CALCULATOR */
+.calc-widget{background:#1e293b;border-radius:var(--r);padding:14px;width:220px;box-shadow:var(--shadow);}
+.calc-screen{background:#0f172a;color:#22d3ee;font-family:monospace;font-size:1.2rem;font-weight:700;padding:10px 12px;border-radius:8px;text-align:right;margin-bottom:10px;min-height:44px;word-break:break-all;}
+.calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.calc-key{padding:9px 4px;border:none;border-radius:7px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.85rem;cursor:pointer;transition:filter 0.1s;}
+.calc-key:hover{filter:brightness(1.15);}
+.calc-key.num{background:#334155;color:white;}
+.calc-key.op{background:#5b4fcf;color:white;}
+.calc-key.eq{background:#16a34a;color:white;}
+.calc-key.cls{background:#dc2626;color:white;}
+.calc-key.del{background:#92400e;color:white;}
+
+/* CONTROLS */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.btn{padding:9px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:800;cursor:pointer;transition:all 0.2s;}
+.btn-check{background:var(--accent);color:white;}
+.btn-next{background:var(--green);color:white;display:none;}
+.btn-reset{background:#f3f4f6;color:var(--muted);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:8px;font-weight:800;font-size:0.9rem;opacity:0;transition:all 0.3s;z-index:100;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:#16a34a;color:white;}
+.toast.error{background:#dc2626;color:white;}
+
+/* START SCREEN */
+.overlay{position:fixed;inset:0;background:rgba(240,244,255,0.97);display:flex;align-items:center;justify-content:center;z-index:200;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:32px 36px;width:460px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.1);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card h2{font-size:0.95rem;color:var(--muted);font-weight:700;margin-bottom:16px;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:700;outline:none;margin-bottom:10px;text-align:center;}
+.name-input:focus{border-color:var(--accent);}
+.mode-row{display:flex;gap:8px;margin-bottom:12px;}
+.mode-btn{flex:1;padding:8px;background:white;border:2px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:0.78rem;font-weight:800;cursor:pointer;transition:all 0.15s;}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px;}
+.level-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;transition:all 0.15s;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.start-btn:hover{background:#4338ca;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- START SCREEN -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <h1>📋 Lineære funksjoner</h1>
+    <h2>Fra uttrykk til tabell</h2>
+    <div class="version">v1.0</div>
+    <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
+    <div class="mode-row">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
+      <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')">⏱️ Enkeltspiller</button>
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
+    <div class="level-select" id="levelSelect"></div>
+    <button class="start-btn" onclick="startGame()">🚀 Start!</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">📋 Lineære funksjoner</div>
+    <div class="header-sub">Fra uttrykk til tabell</div>
+  </div>
+  <div class="header-right">
+    <span class="level-badge" id="levelBadge">Nivå 1</span>
+    <span class="score-badge" id="scoreBadge" style="display:none">0 p</span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+
+  <!-- EXPRESSION -->
+  <div class="expr-card">
+    <div class="expr-label">📐 Funksjonsuttrykk</div>
+    <div class="expr-display" id="exprDisplay">–</div>
+  </div>
+
+  <!-- MINI FACTORY + CALCULATOR -->
+  <div style="display:flex;gap:12px;width:100%;align-items:flex-start">
+
+    <!-- FACTORY -->
+    <div class="factory-section" style="flex:1" id="factorySection">
+      <div class="factory-sign">⚙️ FUNKSJONSFABRIKKEN ⚙️</div>
+      <div class="anim-row">
+        <div class="belt" id="beltIn"><div class="belt-item" id="beltItemIn" style="left:-80px"></div></div>
+        <div class="factory-icon">🏭</div>
+        <div class="belt" id="beltOut"><div class="belt-item" id="beltItemOut" style="left:-80px"></div></div>
+      </div>
+      <div class="calc-display" id="calcDisplay"></div>
+      <div class="hint-text" id="hintText"></div>
+    </div>
+
+    <!-- CALCULATOR WIDGET (N7+) -->
+    <div class="calc-widget" id="calcWidget" style="display:none">
+      <div class="calc-screen" id="calcScreen">0</div>
+      <div class="calc-keys">
+        <button class="calc-key cls" onclick="calcClear()">C</button>
+        <button class="calc-key del" onclick="calcDel()">⌫</button>
+        <button class="calc-key op" onclick="calcInput('(')">(</button>
+        <button class="calc-key op" onclick="calcInput(')')">)</button>
+        <button class="calc-key num" onclick="calcInput('7')">7</button>
+        <button class="calc-key num" onclick="calcInput('8')">8</button>
+        <button class="calc-key num" onclick="calcInput('9')">9</button>
+        <button class="calc-key op" onclick="calcInput('/')">÷</button>
+        <button class="calc-key num" onclick="calcInput('4')">4</button>
+        <button class="calc-key num" onclick="calcInput('5')">5</button>
+        <button class="calc-key num" onclick="calcInput('6')">6</button>
+        <button class="calc-key op" onclick="calcInput('*')">×</button>
+        <button class="calc-key num" onclick="calcInput('1')">1</button>
+        <button class="calc-key num" onclick="calcInput('2')">2</button>
+        <button class="calc-key num" onclick="calcInput('3')">3</button>
+        <button class="calc-key op" onclick="calcInput('-')">−</button>
+        <button class="calc-key num" onclick="calcInput('0')">0</button>
+        <button class="calc-key num" onclick="calcInput('.')">.</button>
+        <button class="calc-key op" onclick="calcInput('+')">+</button>
+        <button class="calc-key eq" onclick="calcEquals()" style="grid-column:span 1">=</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="table-label">📊 Verditabell</div>
+    <table class="vtable">
+      <tr>
+        <th>x</th>
+        <th id="th-expr">f(x)</th>
+      </tr>
+      <tr id="row0"></tr>
+      <tr id="row1"></tr>
+      <tr id="row2"></tr>
+    </table>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="btn btn-reset" onclick="resetTask()">↺ Nullstill</button>
+    <button class="btn btn-check" id="checkBtn" onclick="checkTable()">✅ Sjekk tabell</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextTask()">➡️ Neste oppgave</button>
+  </div>
+
+</div>
+
+<script>
+// ── LEVELS ──
+const LEVELS={
+  1:{name:'Nivå 1',mode:'factory',nums:'pos_int',desc:'Positive heltall, fabrikk'},
+  2:{name:'Nivå 2',mode:'factory',nums:'neg_int',desc:'Negative heltall, fabrikk'},
+  3:{name:'Nivå 3',mode:'factory',nums:'decimal',desc:'Heltall + desimaltall, fabrikk'},
+  4:{name:'Nivå 4',mode:'expr_input',nums:'pos_int',desc:'Skriv regnestykke, positive heltall'},
+  5:{name:'Nivå 5',mode:'expr_input',nums:'mixed',desc:'Skriv regnestykke, alle tall'},
+  6:{name:'Nivå 6',mode:'expr_input',nums:'frac',desc:'Skriv regnestykke, inkl brøker'},
+  7:{name:'Nivå 7',mode:'calc',nums:'pos_int',desc:'Kalkulator, positive heltall'},
+  8:{name:'Nivå 8',mode:'calc',nums:'mixed',desc:'Kalkulator, alle tall'},
+  9:{name:'Nivå 9',mode:'calc',nums:'frac',desc:'Kalkulator, inkl brøker'},
+};
+const MAX_LEVEL=9, MIN_LEVEL=1;
+
+// ── STATE ──
+let currentLevel=1, currentScore=0, gameMode='practice', playerName='';
+let currentTask=null; // {a, b, xs, expr, fracA}
+let animStep=0, currentXIdx=0;
+let beltStep=0;
+let streak=0, errorStreak=0, taskStartTime=0;
+
+// Adaptive
+const UP_STREAK=3, DOWN_ERRORS=2, EXPECTED_TIME=60;
+function recordResult(correct){
+  const elapsed=(Date.now()-taskStartTime)/1000;
+  if(correct){errorStreak=0;streak++;if(elapsed>EXPECTED_TIME*2){streak=Math.max(0,streak-1);errorStreak=1;}if(streak>=UP_STREAK) changeLevel(1);}
+  else{streak=0;errorStreak++;if(errorStreak>=DOWN_ERRORS) changeLevel(-1);}
+}
+function changeLevel(d){
+  const n=Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,currentLevel+d));
+  if(n===currentLevel) return;
+  currentLevel=n; streak=0; errorStreak=0;
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  showToast(d>0?'⬆️ '+LEVELS[currentLevel].name+'!':'⬇️ '+LEVELS[currentLevel].name,'success');
+  document.querySelectorAll('.level-btn').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===currentLevel));
+}
+
+// ── TASK GENERATION ──
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function randDec(min,max){return Math.round((Math.random()*(max-min)+min)*10)/10;}
+function randFrac(){
+  // Returns {n,d} representing n/d as coefficient, e.g. x/2 = {n:1,d:2}
+  const denoms=[2,3,4,5];
+  const d=denoms[Math.floor(Math.random()*denoms.length)];
+  const n=randInt(1,4);
+  return {n,d};
+}
+
+function genTask(level){
+  const lv=LEVELS[level];
+  let a,b,fracA=null,xs;
+
+  if(lv.nums==='pos_int'){
+    a=randInt(1,8); b=randInt(0,15);
+    xs=[randInt(1,5),randInt(6,10),randInt(11,15)];
+  } else if(lv.nums==='neg_int'){
+    a=randInt(-6,6)||1; b=randInt(-10,10);
+    xs=[randInt(-5,-1),randInt(0,4),randInt(5,9)];
+  } else if(lv.nums==='decimal'){
+    a=randDec(-5,5)||1; b=randDec(-8,8);
+    xs=[randDec(-3,0),randDec(1,4),randDec(5,8)];
+  } else if(lv.nums==='mixed'){
+    a=randDec(-6,6)||1; b=randDec(-10,10);
+    xs=[randDec(-4,-1),randDec(0,3),randDec(4,7)];
+  } else { // frac
+    fracA=randFrac(); // {n,d}
+    a=fracA.n/fracA.d;
+    b=randInt(-8,8);
+    xs=[randInt(1,4)*fracA.d, randInt(5,8)*fracA.d, randInt(-3,-1)*fracA.d];
+  }
+
+  const expr=buildExpr(a,b,fracA);
+  return {a,b,fracA,xs,expr};
+}
+
+function buildExpr(a,b,fracA){
+  // Returns HTML string
+  let axPart;
+  if(fracA){
+    // x/2 or 3x/4
+    if(fracA.n===1) axPart=`<span class="frac"><span class="num">x</span><span class="den">${fracA.d}</span></span>`;
+    else axPart=`<span class="frac"><span class="num">${fracA.n}x</span><span class="den">${fracA.d}</span></span>`;
+  } else {
+    if(a===1) axPart='x';
+    else if(a===-1) axPart='−x';
+    else axPart=`${a}x`;
+  }
+  const bPart=b===0?'':(b>0?` + ${b}`:` − ${Math.abs(b)}`);
+  return `f(x) = ${axPart}${bPart}`;
+}
+
+function fval(task,x){
+  return Math.round((task.a*x+task.b)*1000)/1000;
+}
+
+function formatNum(n){
+  // Format number nicely
+  if(Number.isInteger(n)) return String(n);
+  return String(n);
+}
+
+// ── RENDER TASK ──
+function renderTask(){
+  const t=currentTask;
+  const lv=LEVELS[currentLevel];
+  taskStartTime=Date.now();
+
+  // Expr display
+  document.getElementById('exprDisplay').innerHTML=t.expr;
+
+  // Table header
+  document.getElementById('th-expr').textContent='f(x)';
+
+  // Reset belt
+  document.getElementById('beltItemIn').style.left='-80px';
+  document.getElementById('beltItemOut').style.left='-80px';
+  document.getElementById('calcDisplay').innerHTML='';
+  document.getElementById('hintText').textContent='';
+
+  // Show/hide factory and calculator
+  const showFactory=lv.mode==='factory';
+  const showCalc=lv.mode==='calc';
+  document.getElementById('factorySection').style.display=showFactory||lv.mode==='expr_input'?'':'none';
+  document.getElementById('calcWidget').style.display=showCalc?'block':'none';
+
+  // Render table rows
+  currentXIdx=0;
+  animStep=0;
+  t.xs.forEach((x,i)=>{
+    const row=document.getElementById('row'+i);
+    row.innerHTML='';
+    const xCell=document.createElement('td');
+    xCell.className='cell-fixed';
+    xCell.textContent=formatNum(x);
+    row.appendChild(xCell);
+
+    if(lv.mode==='factory'){
+      // f(x) input only
+      const fCell=document.createElement('td');
+      fCell.className='cell-input';
+      fCell.innerHTML=`<input type="text" inputmode="decimal" id="fx${i}" placeholder="?">`;
+      row.appendChild(fCell);
+    } else if(lv.mode==='expr_input'){
+      // Expression input + auto f(x)
+      const exprCell=document.createElement('td');
+      exprCell.className='cell-input cell-expr';
+      exprCell.innerHTML=`<input type="text" inputmode="decimal" id="ei${i}" placeholder="Skriv regnestykket" style="width:180px">`;
+      row.appendChild(exprCell);
+      const fCell=document.createElement('td');
+      fCell.className='cell-auto';
+      fCell.id='fa'+i;
+      fCell.textContent='?';
+      row.appendChild(fCell);
+    } else {
+      // calc mode: f(x) input
+      const fCell=document.createElement('td');
+      fCell.className='cell-input';
+      fCell.innerHTML=`<input type="text" inputmode="decimal" id="fx${i}" placeholder="?">`;
+      row.appendChild(fCell);
+    }
+  });
+
+  // Extra column header for expr_input
+  if(lv.mode==='expr_input'){
+    document.getElementById('th-expr').textContent='Regnestykke';
+    // Add f(x) header
+    const thRow=document.querySelector('.vtable tr');
+    if(!document.getElementById('th-fx')){
+      const th=document.createElement('th');
+      th.id='th-fx'; th.textContent='f(x)';
+      thRow.appendChild(th);
+    }
+  } else {
+    const extra=document.getElementById('th-fx');
+    if(extra) extra.remove();
+  }
+
+  // Expr input: wire up auto-calc
+  if(lv.mode==='expr_input'){
+    t.xs.forEach((x,i)=>{
+      const inp=document.getElementById('ei'+i);
+      if(inp) inp.addEventListener('input',()=>evalExprInput(i,x));
+    });
+  }
+
+  // Factory: start animation for first x
+  if(lv.mode==='factory') startBeltAnim(0);
+
+  document.getElementById('checkBtn').style.display='';
+  document.getElementById('nextBtn').style.display='none';
+}
+
+// ── FACTORY ANIMATION ──
+let nextActionTime=0, beltTimer=0, animXVal=0;
+let blockedPlayerId=null, blockTimer=0;
+
+function startBeltAnim(xIdx){
+  if(xIdx>=currentTask.xs.length) return;
+  currentXIdx=xIdx;
+  animStep=0;
+  animXVal=currentTask.xs[xIdx];
+  beltStep=0;
+
+  const beltIn=document.getElementById('beltItemIn');
+  beltIn.textContent='x = '+formatNum(animXVal);
+  beltIn.style.left='-80px';
+  beltIn.style.cursor='pointer';
+  beltIn.title='Klikk for å sende inn';
+  document.getElementById('calcDisplay').innerHTML='';
+  document.getElementById('hintText').textContent='👆 Klikk på pakken for å sende x = '+formatNum(animXVal)+' inn i fabrikken';
+  setTimeout(()=>beltIn.style.left='15%',100);
+
+  beltIn.onclick=()=>{
+    beltIn.style.left='50%'; beltIn.style.cursor='default'; beltIn.onclick=null;
+    setTimeout(()=>showOperatorStep(),600);
+  };
+}
+
+function advanceBelt(){
+  beltStep=Math.min(beltStep+1,3);
+  const pcts=['50%','70%','88%','100%'];
+  document.getElementById('beltItemIn').style.left=pcts[beltStep];
+}
+
+function showOperatorStep(){
+  const t=currentTask;
+  const x=animXVal;
+  const mulResult=Math.round(t.a*x*1000)/1000;
+  const absA=Math.abs(t.a);
+  const disp=document.getElementById('calcDisplay');
+  disp.innerHTML='';
+  setHint('');
+
+  const numSpan=(txt)=>{const s=document.createElement('span');s.textContent=txt;return s;};
+  const opBtn=(sym,color,cb)=>{
+    const b=document.createElement('button');
+    b.textContent=sym;
+    b.style.cssText=`background:${color};border:none;border-radius:6px;padding:3px 10px;font-size:1rem;font-weight:900;color:white;cursor:pointer;margin:0 3px;`;
+    if(cb) b.onclick=cb; else b.className='inactive';
+    return b;
+  };
+
+  if(t.b!==0){
+    const addSign=t.b>0?'+':'−';
+    if(Math.abs(t.a)!==1){
+      const mulBtn=opBtn('·','#f59e0b',()=>{
+        mulBtn.onclick=null; addBtn.onclick=()=>showToast('⚠️ Husk regnerekkefølge!','error');
+        advanceBelt();
+        disp.innerHTML='';
+        disp.appendChild(numSpan(String(mulResult)));
+        const addBtn2=opBtn(addSign,'#f59e0b',()=>{
+          addBtn2.onclick=null; advanceBelt();
+          const total=Math.round((mulResult+t.b)*1000)/1000;
+          disp.innerHTML=''; disp.appendChild(numSpan(String(total)));
+          setHint('');
+          setTimeout(()=>doFinalStep(x,total),800);
+        });
+        disp.appendChild(addBtn2);
+        disp.appendChild(numSpan(String(Math.abs(t.b))));
+        setHint('👆 Klikk på symbolet for å fullføre');
+      });
+      const addBtn=opBtn(addSign,'#cbd5e1',()=>showToast('⚠️ Husk regnerekkefølge! Multiplikasjon først.','error'));
+      disp.appendChild(numSpan(t.a<0?'−'+absA:String(absA)));
+      disp.appendChild(mulBtn);
+      disp.appendChild(numSpan(String(x)));
+      disp.appendChild(addBtn);
+      disp.appendChild(numSpan(String(Math.abs(t.b))));
+      setHint('👆 Klikk på · og + i riktig rekkefølge');
+    } else {
+      // a=1 or -1
+      disp.appendChild(numSpan(String(mulResult)));
+      const addBtn=opBtn(addSign,'#f59e0b',()=>{
+        addBtn.onclick=null; advanceBelt();
+        const total=Math.round((mulResult+t.b)*1000)/1000;
+        disp.innerHTML=''; disp.appendChild(numSpan(String(total)));
+        setHint('');
+        setTimeout(()=>doFinalStep(x,total),800);
+      });
+      disp.appendChild(addBtn);
+      disp.appendChild(numSpan(String(Math.abs(t.b))));
+      setHint('👆 Klikk på symbolet for å fullføre');
+    }
+  } else {
+    // b=0
+    if(Math.abs(t.a)!==1){
+      const mulBtn=opBtn('·','#f59e0b',()=>{
+        mulBtn.onclick=null; advanceBelt();
+        disp.innerHTML=''; disp.appendChild(numSpan(String(mulResult)));
+        setHint('');
+        setTimeout(()=>doFinalStep(x,mulResult),800);
+      });
+      disp.appendChild(numSpan(t.a<0?'−'+absA:String(absA)));
+      disp.appendChild(mulBtn);
+      disp.appendChild(numSpan(String(x)));
+      setHint('👆 Klikk på · for å gange');
+    } else {
+      disp.innerHTML=''; disp.appendChild(numSpan(String(mulResult)));
+      setTimeout(()=>doFinalStep(x,mulResult),800);
+    }
+  }
+}
+
+function doFinalStep(x,result){
+  const beltOut=document.getElementById('beltItemOut');
+  beltOut.textContent='f('+formatNum(x)+') = '+result;
+  beltOut.style.left='-80px';
+  setTimeout(()=>beltOut.style.left='15%',200);
+  setTimeout(()=>document.getElementById('beltItemIn').style.left='100%',300);
+  setHint('✏️ Skriv f(x) = '+result+' i tabellen');
+
+  // Show button to load next x if there are more
+  const nextXIdx=currentXIdx+1;
+  if(nextXIdx<currentTask.xs.length){
+    setTimeout(()=>{
+      const hint=document.getElementById('hintText');
+      hint.innerHTML='✏️ Skriv f(x) = '+result+' i tabellen, så ';
+      const btn=document.createElement('button');
+      btn.textContent='send neste x inn →';
+      btn.style.cssText='background:#f59e0b;border:none;border-radius:6px;padding:2px 10px;font-size:0.82rem;font-weight:800;color:white;cursor:pointer;margin-left:4px;';
+      btn.onclick=()=>{ startBeltAnim(nextXIdx); };
+      hint.appendChild(btn);
+    },900);
+  }
+}
+
+function setHint(msg){ document.getElementById('hintText').textContent=msg; }
+
+// ── EXPR INPUT MODE ──
+function evalExprInput(i,x){
+  const inp=document.getElementById('ei'+i);
+  const fa=document.getElementById('fa'+i);
+  if(!inp||!fa) return;
+  const raw=inp.value.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+  try {
+    // Replace x with value
+    const expr=raw.replace(/x/gi,String(x));
+    const result=Function('"use strict";return ('+expr+')')();
+    if(isFinite(result)){
+      fa.textContent=Math.round(result*1000)/1000;
+      fa.style.color='var(--green)';
+    } else { fa.textContent='?'; fa.style.color='var(--muted)'; }
+  } catch(e){ fa.textContent='?'; fa.style.color='var(--muted)'; }
+}
+
+// ── CALCULATOR ──
+let calcExpr='';
+function calcInput(v){ calcExpr+=v; document.getElementById('calcScreen').textContent=calcExpr||'0'; }
+function calcClear(){ calcExpr=''; document.getElementById('calcScreen').textContent='0'; }
+function calcDel(){ calcExpr=calcExpr.slice(0,-1); document.getElementById('calcScreen').textContent=calcExpr||'0'; }
+function calcEquals(){
+  try {
+    const result=Function('"use strict";return ('+calcExpr+')')();
+    calcExpr=isFinite(result)?String(Math.round(result*1000)/1000):'Feil';
+  } catch(e){ calcExpr='Feil'; }
+  document.getElementById('calcScreen').textContent=calcExpr;
+}
+
+// ── CHECK TABLE ──
+window.checkTable=function(){
+  const t=currentTask;
+  const lv=LEVELS[currentLevel];
+  let allOk=true;
+
+  t.xs.forEach((x,i)=>{
+    const expected=fval(t,x);
+    if(lv.mode==='factory'||lv.mode==='calc'){
+      const inp=document.getElementById('fx'+i);
+      if(!inp) return;
+      const val=parseFloat(inp.value);
+      const ok=Math.abs(val-expected)<0.01;
+      inp.className=ok?'correct':'wrong';
+      if(!ok) allOk=false;
+    } else if(lv.mode==='expr_input'){
+      // Check expr
+      const inp=document.getElementById('ei'+i);
+      if(!inp) return;
+      const raw=inp.value.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+      let exprOk=false;
+      try {
+        const expr=raw.replace(/x/gi,String(x));
+        const result=Function('"use strict";return ('+expr+')')();
+        exprOk=Math.abs(result-expected)<0.01;
+      } catch(e){}
+      inp.className=exprOk?'correct':'wrong';
+      if(!exprOk) allOk=false;
+    }
+  });
+
+  if(allOk){
+    recordResult(true);
+    showToast('🎉 Riktig tabell!','success');
+    if(gameMode!=='practice'){ currentScore+=50; document.getElementById('scoreBadge').textContent=currentScore+' p'; }
+    document.getElementById('checkBtn').style.display='none';
+    document.getElementById('nextBtn').style.display='inline-block';
+  } else {
+    recordResult(false);
+    showToast('❌ Noen verdier er feil — prøv igjen!','error');
+  }
+};
+
+// ── NEXT / RESET ──
+window.nextTask=function(){
+  currentTask=genTask(currentLevel);
+  document.getElementById('beltItemIn').style.left='-80px';
+  document.getElementById('beltItemOut').style.left='-80px';
+  renderTask();
+};
+
+window.resetTask=function(){
+  document.getElementById('beltItemIn').style.left='-80px';
+  document.getElementById('beltItemOut').style.left='-80px';
+  document.getElementById('calcDisplay').innerHTML='';
+  setHint('');
+  const lv=LEVELS[currentLevel];
+  currentTask.xs.forEach((x,i)=>{
+    if(lv.mode==='factory'||lv.mode==='calc'){
+      const inp=document.getElementById('fx'+i);
+      if(inp){inp.value='';inp.className='';}
+    } else {
+      const inp=document.getElementById('ei'+i);
+      if(inp){inp.value='';inp.className='';}
+      const fa=document.getElementById('fa'+i);
+      if(fa){fa.textContent='?';fa.style.color='var(--muted)';}
+    }
+  });
+  if(lv.mode==='factory') startBeltAnim(0);
+  document.getElementById('checkBtn').style.display='';
+  document.getElementById('nextBtn').style.display='none';
+};
+
+// ── START ──
+window.selectMode=function(mode){
+  gameMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+};
+
+window.startGame=function(){
+  playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  if(gameMode!=='practice') document.getElementById('scoreBadge').style.display='';
+  currentTask=genTask(currentLevel);
+  renderTask();
+};
+
+function buildLevelSelect(){
+  const el=document.getElementById('levelSelect');
+  Object.keys(LEVELS).forEach(l=>{
+    const btn=document.createElement('button');
+    btn.className='level-btn'+(parseInt(l)===currentLevel?' active':'');
+    btn.textContent=l;
+    btn.title=LEVELS[l].desc;
+    btn.onclick=()=>{
+      currentLevel=parseInt(l);
+      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    el.appendChild(btn);
+  });
+}
+
+// ── TOAST ──
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type;
+  void t.offsetWidth; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+buildLevelSelect();
+</script>
+</body>
+</html>
