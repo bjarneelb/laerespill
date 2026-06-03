@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Likningsløpet – Bilbane</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --asphalt: #1a1a2e;
+    --asphalt2: #16213e;
+    --track: #2d2d2d;
+    --track-line: #f5f5f5;
+    --grass: #2d5a27;
+    --grass2: #3a7a32;
+    --barrier: #e63946;
+    --barrier2: #f1faee;
+    --gold: #ffd60a;
+    --silver: #c0c0c0;
+    --bronze: #cd7f32;
+    --accent: #e63946;
+    --neon: #00f5d4;
+    --text: #f1faee;
+    --muted: #8d99ae;
+    --panel: rgba(22,33,62,0.92);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--asphalt);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  /* ── HEADER BAR ── */
+  .topbar {
+    background: linear-gradient(90deg, #0d0d1a, #1a1a2e, #0d0d1a);
+    border-bottom: 3px solid var(--accent);
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 100; flex-shrink: 0;
+  }
+  .topbar-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.6rem; letter-spacing: 2px; color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,214,10,0.5);
+  }
+  .topbar-center { display: flex; align-items: center; gap: 20px; }
+  .lap-goal {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem; color: var(--neon); letter-spacing: 1px;
+  }
+  .room-badge {
+    background: var(--accent); color: white;
+    border-radius: 6px; padding: 4px 12px;
+    font-weight: 800; font-size: 0.85rem; letter-spacing: 2px;
+  }
+  .player-count { color: var(--muted); font-size: 0.85rem; font-weight: 700; }
+
+  /* ── MAIN AREA ── */
+  .main-area {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* ── SIDE PANELS ── */
+  .side-panel {
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    padding: 14px 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+  }
+  .side-panel.right { border-right: none; border-left: 1px solid rgba(255,255,255,0.05); }
+  .panel-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 0.85rem; letter-spacing: 2px;
+    color: var(--gold); text-transform: uppercase;
+    border-bottom: 1px solid rgba(255,214,10,0.2);
+    padding-bottom: 6px; margin-bottom: 2px;
+  }
+
+  /* LEADERBOARD ENTRIES */
+  .lb-entry {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    transition: background 0.3s;
+    font-size: 0.82rem;
+  }
+  .lb-entry.is-leader { background: rgba(255,214,10,0.12); }
+  .lb-pos { font-family: 'Black Han Sans', sans-serif; font-size: 0.9rem; width: 22px; text-align: center; }
+  .lb-car { font-size: 1rem; }
+  .lb-name { flex: 1; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lb-laps { font-weight: 800; color: var(--neon); font-size: 0.85rem; white-space: nowrap; }
+  .lb-incident { font-size: 0.75rem; margin-left: 2px; }
+
+  /* SPEED LIST */
+  .speed-entry {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    font-size: 0.82rem;
+  }
+  .speed-bar-wrap { flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; }
+  .speed-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg,var(--neon),var(--gold)); transition: width 0.8s; }
+  .speed-val { font-weight: 800; color: var(--gold); font-size: 0.8rem; width: 36px; text-align: right; }
+
+  /* ── TRACK CANVAS ── */
+  #trackCanvas {
+    width: 100%; height: 100%;
+    display: block;
+  }
+
+  /* ── INCIDENT FEED ── */
+  .incident-feed {
+    position: absolute;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    pointer-events: none; z-index: 50;
+    width: 500px;
+  }
+  .incident-toast {
+    background: rgba(10,10,20,0.92);
+    border: 2px solid var(--accent);
+    border-radius: 30px;
+    padding: 7px 20px;
+    font-weight: 800; font-size: 0.9rem;
+    animation: incidentIn 0.4s cubic-bezier(.34,1.56,.64,1), incidentOut 0.4s ease-in 2.6s forwards;
+    white-space: nowrap;
+  }
+  @keyframes incidentIn  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes incidentOut { to{opacity:0;transform:translateY(-12px)} }
+
+  /* ── SETUP OVERLAY ── */
+  #setupOverlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: linear-gradient(135deg,#0d0d1a,#1a1a2e);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .setup-card {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,214,10,0.3);
+    border-radius: 24px; padding: 48px 56px;
+    text-align: center; width: 440px;
+    box-shadow: 0 0 60px rgba(255,214,10,0.1);
+  }
+  .setup-icon { font-size: 4rem; margin-bottom: 12px; }
+  .setup-card h1 { font-family: 'Black Han Sans', sans-serif; font-size: 2.2rem; color: var(--gold); letter-spacing: 2px; margin-bottom: 6px; }
+  .setup-card p { color: var(--muted); margin-bottom: 24px; }
+  .setup-input {
+    width: 100%; padding: 12px 16px; border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07);
+    color: white; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 700;
+    text-align: center; text-transform: uppercase; letter-spacing: 2px;
+    outline: none; margin-bottom: 12px;
+  }
+  .setup-input:focus { border-color: var(--gold); }
+  .setup-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .setup-label { color: var(--muted); font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+  .setup-num { width: 70px; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07); color: white; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 800; text-align: center; outline: none; }
+  .setup-num:focus { border-color: var(--gold); }
+  .btn-launch {
+    width: 100%; padding: 14px; background: var(--gold); color: #0d0d1a;
+    border: none; border-radius: 12px; font-family: 'Black Han Sans',sans-serif;
+    font-size: 1.1rem; letter-spacing: 2px; cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 24px rgba(255,214,10,0.4);
+  }
+  .btn-launch:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(255,214,10,0.6); }
+
+  /* ── WINNER OVERLAY ── */
+  #winnerOverlay {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-60%) scale(0.8);
+    z-index: 300;
+    background: rgba(10,10,26,0.96);
+    border: 3px solid var(--gold);
+    border-radius: 20px;
+    padding: 28px 44px;
+    display: none; flex-direction: column; align-items: center;
+    box-shadow: 0 0 60px rgba(255,214,10,0.3);
+    transition: transform 0.5s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+    opacity: 0;
+  }
+  #winnerOverlay.show {
+    display: flex;
+    transform: translate(-50%,-60%) scale(1);
+    opacity: 1;
+  }
+  .btn-start-race {
+    padding: 10px 22px;
+    background: var(--neon); border: none; border-radius: 8px;
+    color: #0a0a1a; font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem; letter-spacing: 2px; cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 16px rgba(0,245,212,0.4);
+  }
+  .btn-start-race:hover { transform: scale(1.05); box-shadow: 0 0 24px rgba(0,245,212,0.6); }
+  .btn-start-race:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── TRAFFIC LIGHTS ── */
+  /* ── TRAFFIC LIGHTS ── */
+  #trafficLights {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    display: none; flex-direction: column; align-items: center; gap: 8px;
+    background: rgba(0,0,0,0.85); border: 3px solid #333;
+    border-radius: 16px; padding: 20px 28px; z-index: 200;
+  }
+  #trafficLights.show { display: flex; }
+  .tl-light {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #1a1a1a; border: 2px solid #333;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .tl-light.red-on    { background: #ff2222; box-shadow: 0 0 20px #ff2222; }
+  .tl-light.yellow-on { background: #ffcc00; box-shadow: 0 0 20px #ffcc00; }
+  .tl-light.green-on  { background: #00ee44; box-shadow: 0 0 20px #00ee44; }
+  .tl-label { font-family: 'Black Han Sans',sans-serif; font-size: 0.8rem; color: var(--muted); letter-spacing: 2px; margin-top: 4px; }
+
+  /* ── WINNER POPUP ── */
+  #winnerOverlay {
+    position: absolute; top: 38%; left: 50%;
+    transform: translate(-50%,-50%) scale(0.8);
+    z-index: 300; display: none; flex-direction: column; align-items: center;
+    background: rgba(10,10,26,0.96); border: 3px solid var(--gold);
+    border-radius: 20px; padding: 24px 40px;
+    box-shadow: 0 0 60px rgba(255,214,10,0.3);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #winnerOverlay.show { display: flex; transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  .winner-trophy { font-size: 3.5rem; margin-bottom: 6px; }
+  .winner-title { font-family: 'Black Han Sans', sans-serif; font-size: 2rem; color: var(--gold); letter-spacing: 3px; margin-bottom: 4px; }
+  .winner-name  { font-family: 'Black Han Sans', sans-serif; font-size: 1.4rem; color: white; margin-bottom: 16px; }
+  .btn-restart { padding: 10px 28px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Black Han Sans',sans-serif; font-size: 0.95rem; letter-spacing: 2px; cursor: pointer; }
+
+  /* ── TEAM MODE ── */
+  .mode-toggle { display:flex; gap:8px; margin-bottom:12px; }
+  .mode-toggle-btn { flex:1; padding:8px; background:transparent; border:2px solid var(--border); border-radius:8px; color:var(--muted); font-family:'Black Han Sans',sans-serif; font-size:0.8rem; letter-spacing:1px; cursor:pointer; transition:all 0.15s; }
+  .mode-toggle-btn.active { background:var(--accent); border-color:var(--accent); color:white; box-shadow:0 0 12px rgba(91,79,207,0.4); }
+  .team-setup { display:none; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .team-setup.visible { display:flex; }
+  .waiting-players { background:#0a0f1e; border:1px solid var(--border); border-radius:8px; padding:10px; min-height:60px; margin-bottom:8px; }
+  .waiting-title { font-family:var(--font-mono); font-size:0.68rem; color:var(--muted); letter-spacing:1px; margin-bottom:6px; }
+  .player-pill { display:inline-block; background:rgba(91,79,207,0.2); border:1px solid var(--accent); border-radius:20px; padding:2px 10px; font-family:var(--font-mono); font-size:0.75rem; color:var(--accent); margin:2px; }
+  .team-display { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+  .team-card { flex:1; min-width:100px; background:#0a0f1e; border-radius:8px; padding:8px; border:2px solid; }
+  .team-card-title { font-family:'Black Han Sans',sans-serif; font-size:0.8rem; letter-spacing:1px; margin-bottom:4px; }
+  .team-member { font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); padding:1px 0; }
+  .btn-assign { width:100%; padding:8px; background:transparent; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-family:var(--font-mono); font-size:0.8rem; cursor:pointer; margin-bottom:6px; }
+  .btn-assign:hover { background:rgba(91,79,207,0.15); }
+
+  /* Team colors on track */
+  .team-label-svg { font-family:'Black Han Sans',sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div id="setupOverlay">
+  <div class="setup-card">
+    <div class="setup-icon">🏁</div>
+    <h1>LIGNINGSLØPET</h1>
+    <p>Koble til rommet og still inn løpet</p>
+    <input class="setup-input" id="roomInput" placeholder="ROMKODE" maxlength="8">
+    <div class="setup-row">
+      <span class="setup-label">Antall runder:</span>
+      <input class="setup-num" id="lapGoal" type="number" value="5" min="1" max="20">
+    </div>
+
+    <!-- Modus-valg -->
+    <div class="mode-toggle">
+      <button class="mode-toggle-btn active" id="btnFFA" onclick="selectRaceMode('ffa')">🏎️ Alle mot alle</button>
+      <button class="mode-toggle-btn" id="btnTeam" onclick="selectRaceMode('team')">🤝 Lagmodus</button>
+    </div>
+
+    <!-- Lagmodus-oppsett -->
+    <div class="team-setup" id="teamSetup">
+      <div class="setup-row">
+        <span class="setup-label">Antall lag:</span>
+        <input class="setup-num" id="teamCount" type="number" value="2" min="2" max="4">
+      </div>
+      <div class="waiting-players">
+        <div class="waiting-title">TILKOBLEDE SPILLERE</div>
+        <div id="waitingPlayerList">Venter på spillere...</div>
+      </div>
+      <button class="btn-assign" onclick="assignTeams()">🎲 Fordel lag tilfeldig</button>
+      <div class="team-display" id="teamDisplay"></div>
+    </div>
+
+    <button class="btn-launch" onclick="launchRace()">🚦 START LØPET</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="topbar">
+  <div class="topbar-title">🏎️ LIKNINGSLØPET</div>
+  <div class="topbar-center">
+    <span class="lap-goal">MÅL: <span id="lapGoalDisplay">5</span> RUNDER</span>
+    <span class="room-badge" id="roomDisplay">–</span>
+    <button class="btn-start-race" id="startRaceBtn" onclick="triggerStart()">🚦 START LØPET</button>
+    <span class="player-count"><span id="playerCount">0</span> kjørere</span>
+  </div>
+  <div style="font-size:0.8rem;color:var(--muted)">Ligningsbyggeren v1.5</div>
+</div>
+
+<!-- MAIN -->
+<div class="main-area">
+
+  <!-- LEFT: LEADERBOARD -->
+  <div class="side-panel">
+    <div class="panel-title">🏆 Ledere</div>
+    <div id="leaderList"></div>
+    <div class="panel-title" style="margin-top:8px">⚡ Raskest nå</div>
+    <div id="speedList"></div>
+  </div>
+
+  <!-- CENTER: TRACK -->
+  <div id="trackWrap" style="position:relative;overflow:hidden;height:100%">
+    <canvas id="trackCanvas"></canvas>
+    <div class="incident-feed" id="incidentFeed"></div>
+
+    <!-- WINNER OVERLAY — inne i banen -->
+    <div id="winnerOverlay">
+      <div class="winner-trophy">🏆</div>
+      <div class="winner-title">VINNER!</div>
+      <div class="winner-name" id="winnerName">–</div>
+    </div>
+
+    <!-- TRAFFIC LIGHTS — inne i banen -->
+    <div id="trafficLights">
+      <div class="tl-light" id="tl-red"></div>
+      <div class="tl-light" id="tl-yellow"></div>
+      <div class="tl-light" id="tl-green"></div>
+      <div class="tl-label" id="tl-label">KLAR</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: FULL STANDINGS -->
+  <div class="side-panel right">
+    <div class="panel-title">📋 Alle kjørere</div>
+    <div id="standingsList" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex:1"></div>
+  </div>
+
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, set, onValue, update } from "./js/firebase-config.js";
+  window._db = database; window._ref = ref;
+  window._set = set; window._onValue = onValue;
+  window._update = update;
+  window._fbReady = true;
+</script>
+
+<script>
+// ── CONSTANTS ──
+const CAR_EMOJIS = ['🔴','🔵','🟡','🟢','🟠','🟣','⚪','🟤',
+                    '🚗','🏎️','🚙','🚕','🚓','🚑','🚒','🛻',
+                    '🔺','🔷','🟥','🟦','🟨','🟩','🟧','🟪'];
+const INCIDENT_TYPES = [
+  { emoji:'💥', label:'krasjet', duration:4000 },
+  { emoji:'🔧', label:'punkterte', duration:3500 },
+  { emoji:'🌀', label:'skled ut', duration:3000 },
+];
+const BASE_RISK    = 0.003; // 0.3% per sekund ved lav fart
+const MAX_RISK     = 0.025; // 2.5% per sekund ved maks fart
+const INCIDENT_COOLDOWN = 15000; // min 15 sek mellom hendelser per bil
+
+// ── STATE ──
+let players = {};       // { name: { score, lastUpdated, laps, dist, speed, incident, car, color } }
+let lapGoal = 5;
+let raceStarted = false;
+let roomCode = '';
+let winnerDeclared = false;
+let lastScores = {};    // for å beregne poengrate
+let animFrame = null;
+
+// ── TRACK — koordinater hentet fra SVG-banen (bane.svg), normalisert 0-1 ──
+// SVG viewBox: 0 0 680 480 — x/680, y/480
+const TRACK_CTRL = [
+  // Start/mål — bunn, venstre del av langstreken
+  {x:110/680, y:408/480},
+  {x:200/680, y:408/480},
+  {x:330/680, y:408/480},
+  {x:450/680, y:408/480},
+  {x:545/680, y:408/480},
+  // Stor sving høyre nede
+  {x:600/680, y:400/480},
+  {x:635/680, y:370/480},
+  {x:643/680, y:340/480},
+  {x:645/680, y:310/480},
+  {x:643/680, y:282/480},
+  // Sving øvre høyre
+  {x:638/680, y:250/480},
+  {x:625/680, y:220/480},
+  {x:616/680, y:204/480},
+  {x:590/680, y:185/480},
+  {x:568/680, y:174/480},
+  // Topp langstrekk
+  {x:535/680, y:158/480},
+  {x:500/680, y:153/480},
+  {x:470/680, y:152/480},
+  {x:452/680, y:151/480},
+  // Chicane/knekk ned
+  {x:430/680, y:140/480},
+  {x:415/680, y:128/480},
+  {x:405/680, y:108/480},
+  {x:395/680, y:88/480},
+  {x:384/680, y:72/480},
+  {x:354/680, y:65/480},
+  // Topp langstrekk venstre
+  {x:320/680, y:62/480},
+  {x:282/680, y:61/480},
+  {x:245/680, y:62/480},
+  {x:210/680, y:70/480},
+  {x:194/680, y:82/480},
+  // Sving øvre venstre
+  {x:175/680, y:96/480},
+  {x:163/680, y:107/480},
+  {x:148/680, y:128/480},
+  {x:138/680, y:148/480},
+  {x:136/680, y:162/480},
+  {x:134/680, y:185/480},
+  {x:133/680, y:208/480},
+  // Venstre langstrekk ned
+  {x:120/680, y:232/480},
+  {x:107/680, y:259/480},
+  {x:90/680, y:272/480},
+  {x:82/680, y:279/480},
+  // Sving bunn venstre
+  {x:65/680, y:298/480},
+  {x:56/680, y:318/480},
+  {x:55/680, y:338/480},
+  {x:58/680, y:360/480},
+  {x:72/680, y:382/480},
+  {x:95/680, y:398/480},
+  {x:110/680, y:408/480},
+];
+
+let trackPoints  = [];   // flattede Catmull-Rom punkter (piksel)
+let trackLengths = [];   // kumulativ burlengde
+let totalTrackLength = 0;
+const TRACK_WIDTH   = 54;
+const SPLINE_STEPS  = 20; // punkter per segment — jevn kurve
+
+// ── CATMULL-ROM HELPERS ──
+function catmullRomPoint(p0,p1,p2,p3,t) {
+  const t2=t*t, t3=t2*t;
+  return {
+    x: 0.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+    y: 0.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3),
+  };
+}
+
+function buildCatmullRom(ctrlPx) {
+  // Lukket spline: dupliser første/siste punkter for å wrappe
+  const n = ctrlPx.length - 1; // siste punkt = første (lukket)
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const p0 = ctrlPx[(i-1+n)%n];
+    const p1 = ctrlPx[i];
+    const p2 = ctrlPx[(i+1)%n];
+    const p3 = ctrlPx[(i+2)%n];
+    for (let s = 0; s < SPLINE_STEPS; s++) {
+      pts.push(catmullRomPoint(p0,p1,p2,p3, s/SPLINE_STEPS));
+    }
+  }
+  pts.push({...pts[0]}); // lukk løkken
+  return pts;
+}
+
+// ── CANVAS SETUP ──
+const canvas = document.getElementById('trackCanvas');
+const ctx = canvas.getContext('2d');
+
+// roundRect polyfill
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+    r=Math.min(r,w/2,h/2); this.beginPath();
+    this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.arcTo(x+w,y,x+w,y+r,r);
+    this.lineTo(x+w,y+h-r); this.arcTo(x+w,y+h,x+w-r,y+h,r);
+    this.lineTo(x+r,y+h); this.arcTo(x,y+h,x,y+h-r,r);
+    this.lineTo(x,y+r); this.arcTo(x,y,x+r,y,r);
+    this.closePath(); return this;
+  };
+}
+
+function resizeCanvas() {
+  const parent = canvas.parentElement;
+  canvas.width  = parent.clientWidth;
+  canvas.height = parent.clientHeight;
+  buildTrack();
+}
+
+function buildTrack() {
+  const W=canvas.width, H=canvas.height;
+  const mx=W*0.06, my=H*0.06, pw=W-mx*2, ph=H-my*2;
+
+  // Skaler kontrollpunkter til piksel
+  const ctrlPx = TRACK_CTRL.map(p=>({x:mx+p.x*pw, y:my+p.y*ph}));
+
+  // Bygg Catmull-Rom spline
+  trackPoints = buildCatmullRom(ctrlPx);
+
+  // Kumulativ burlengde
+  trackLengths = [0];
+  for (let i=1; i<trackPoints.length; i++) {
+    const dx=trackPoints[i].x-trackPoints[i-1].x;
+    const dy=trackPoints[i].y-trackPoints[i-1].y;
+    trackLengths.push(trackLengths[i-1]+Math.sqrt(dx*dx+dy*dy));
+  }
+  totalTrackLength = trackLengths[trackLengths.length-1];
+}
+
+// ── INTERPOLER POSISJON PÅ BANEN ──
+function getPosOnTrack(dist) {
+  const d=((dist%totalTrackLength)+totalTrackLength)%totalTrackLength;
+  let seg=0;
+  for (let i=1; i<trackLengths.length; i++) {
+    if (trackLengths[i]>=d) { seg=i-1; break; }
+  }
+  const segLen=trackLengths[seg+1]-trackLengths[seg];
+  const t=segLen>0?(d-trackLengths[seg])/segLen:0;
+  const p0=trackPoints[seg], p1=trackPoints[Math.min(seg+1,trackPoints.length-1)];
+  // Look-ahead for angle (smoother)
+  const pa=trackPoints[Math.min(seg+3,trackPoints.length-1)];
+  return {
+    x: p0.x+(p1.x-p0.x)*t,
+    y: p0.y+(p1.y-p0.y)*t,
+    angle: Math.atan2(pa.y-p0.y, pa.x-p0.x),
+  };
+}
+
+// ── TEGN BANEN ──
+function drawTrack() {
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  if (window._trackImage && window._trackImage.complete) {
+    ctx.drawImage(window._trackImage, 0, 0, W, H);
+  } else {
+    // Fallback: grønn bakgrunn mens bildet laster
+    ctx.fillStyle='#4a8040';
+    ctx.fillRect(0,0,W,H);
+  }
+}
+
+
+// ── DRAW CARS ──
+function drawCars() {
+  const names = Object.keys(players);
+  names.forEach((name, idx) => {
+    const p = players[name];
+    if (p.dist === undefined) return;
+
+    const pos = getPosOnTrack(p.dist);
+
+    // Incident effect: wobble
+    let drawX = pos.x, drawY = pos.y;
+    if (p.incident) {
+      drawX += (Math.random()-0.5)*8;
+      drawY += (Math.random()-0.5)*8;
+    }
+
+    ctx.save();
+    ctx.translate(drawX, drawY);
+    ctx.rotate(pos.angle + Math.PI/2);
+
+    // Glow for leading car
+    if (idx === 0 || p.laps === Math.max(...names.map(n=>players[n].laps||0))) {
+      ctx.shadowColor = '#ffd60a';
+      ctx.shadowBlur = 18;
+    }
+
+    // Car body
+    const carW = 14, carH = 22;
+    ctx.fillStyle = p.color || '#e63946';
+    ctx.beginPath();
+    ctx.roundRect(-carW/2, -carH/2, carW, carH, 4);
+    ctx.fill();
+
+    // Windshield
+    ctx.fillStyle = 'rgba(150,220,255,0.6)';
+    ctx.fillRect(-carW/2+2, -carH/2+3, carW-4, 6);
+
+    // Wheels
+    ctx.fillStyle = '#111';
+    [[-carW/2-2,-carH/4],[carW/2-2,-carH/4],[-carW/2-2,carH/4],[carW/2-2,carH/4]].forEach(([wx,wy])=>{
+      ctx.fillRect(wx, wy-3, 4, 6);
+    });
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Name label — vis fullt navn
+    ctx.save();
+    ctx.font = 'bold 10px Nunito';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'white';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(name, drawX, drawY - 18);
+    ctx.restore();
+
+    // Incident emoji
+    if (p.incident) {
+      ctx.save();
+      ctx.font = '18px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.incident.emoji, drawX, drawY - 32);
+      ctx.restore();
+    }
+  });
+}
+
+// ── MAIN RENDER LOOP ──
+let lastTime = 0;
+function gameLoop(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.1);
+  lastTime = ts;
+
+  updateCars(dt);
+  if(raceMode==='team') updateTeamCars(dt);
+  drawTrack();
+  if(raceMode==='team') drawTeamCars();
+  else drawCars();
+  updateSidePanels();
+  if (raceStarted) checkWinner();
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ── UPDATE CAR POSITIONS ──
+function updateCars(dt) {
+  const now = Date.now();
+  Object.keys(players).forEach(name => {
+    const p = players[name];
+    if (!p) return;
+
+    // Frys bilen hvis løpet ikke har startet
+    if (!raceStarted) {
+      p.speed = 0; p.targetSpeed = 0;
+      return;
+    }
+
+    // Glir jevnt mot targetSpeed (akselerasjon/bremsing)
+    const target = p.targetSpeed || 0;
+    const diff   = target - (p.speed || 0);
+    // Akselererer raskt (0.5s til full fart), bremser litt tregere (1.5s)
+    const lerpRate = diff > 0 ? 2.0 : 0.7;
+    p.speed = (p.speed || 0) + diff * Math.min(lerpRate * dt, 1);
+
+    // Pikselhastighet: 0–140 px/s, ingen minimumsfart
+    let px = p.speed * 1.4;
+
+    // Incident: stopp bilen
+    if (p.incident) {
+      if (now > p.incident.endsAt) { p.incident = null; }
+      else { px = 0; }
+    } else {
+      // Tilfeldig hendelse basert på fart
+      const risk = BASE_RISK + (p.speed/100) * (MAX_RISK - BASE_RISK);
+      const cooldownOk = !p.lastIncident || (now - p.lastIncident > INCIDENT_COOLDOWN);
+      if (cooldownOk && Math.random() < risk * dt) {
+        const type = INCIDENT_TYPES[Math.floor(Math.random()*INCIDENT_TYPES.length)];
+        p.incident = { emoji: type.emoji, endsAt: now + type.duration };
+        p.lastIncident = now;
+        showIncident(name, type);
+      }
+    }
+
+    // Flytt langs banen
+    const prevDist = p.dist || 0;
+    p.dist = prevDist + px * dt;
+
+    // Tell runder
+    const prevLap = Math.floor(prevDist / totalTrackLength);
+    const currLap = Math.floor(p.dist  / totalTrackLength);
+    if (currLap > prevLap) p.laps = (p.laps || 0) + 1;
+  });
+}
+
+// ── SIDE PANELS ──
+function updateSidePanels() {
+  if(raceMode==='team'){ updateTeamSidePanels(); updateWaitingList(); return; }
+  const names = Object.keys(players);
+  if (!names.length) return;
+
+  // Sort by laps desc then dist desc
+  const sorted = [...names].sort((a,b) => {
+    const la = players[a].laps||0, lb = players[b].laps||0;
+    if (lb !== la) return lb-la;
+    return (players[b].dist||0)-(players[a].dist||0);
+  });
+
+  // Top 5 leaders
+  const leaderEl = document.getElementById('leaderList');
+  leaderEl.innerHTML = '';
+  sorted.slice(0,5).forEach((name,i) => {
+    const p = players[name];
+    const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+    const inc = p.incident ? p.incident.emoji : '';
+    leaderEl.innerHTML += `
+      <div class="lb-entry ${i===0?'is-leader':''}">
+        <span class="lb-pos">${medals[i]}</span>
+        <span class="lb-car" style="color:${p.color}">■</span>
+        <span class="lb-name">${name}</span>
+        <span class="lb-laps">${p.laps||0}r</span>
+        <span class="lb-incident">${inc}</span>
+      </div>`;
+  });
+
+  // Speed list: top 5 by current speed
+  const bySpeed = [...names].sort((a,b)=>(players[b].speed||0)-(players[a].speed||0));
+  const maxSpd  = players[bySpeed[0]]?.speed || 1;
+  const speedEl = document.getElementById('speedList');
+  speedEl.innerHTML = '';
+  bySpeed.slice(0,5).forEach(name => {
+    const p = players[name];
+    const spd = p.speed || 0;
+    const pct = Math.round((spd/Math.max(maxSpd,1))*100);
+    speedEl.innerHTML += `
+      <div class="speed-entry">
+        <span style="font-size:0.8rem;font-weight:700;color:${p.color};width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+        <div class="speed-bar-wrap"><div class="speed-bar" style="width:${pct}%"></div></div>
+        <span class="speed-val">${Math.round(spd)}</span>
+      </div>`;
+  });
+
+  // Full standings (right panel)
+  const standEl = document.getElementById('standingsList');
+  standEl.innerHTML = '';
+  sorted.forEach((name,i) => {
+    const p = players[name];
+    const inc = p.incident ? p.incident.emoji : '';
+    standEl.innerHTML += `
+      <div class="lb-entry">
+        <span class="lb-pos" style="font-size:0.75rem;color:var(--muted)">${i+1}</span>
+        <span style="color:${p.color};font-size:0.85rem">■</span>
+        <span class="lb-name" style="font-size:0.78rem">${name}</span>
+        <span class="lb-laps" style="font-size:0.78rem">${p.laps||0}r</span>
+        <span class="lb-incident">${inc}</span>
+      </div>`;
+  });
+
+  // Player/lap counts
+  document.getElementById('playerCount').textContent = names.length;
+}
+
+// ── INCIDENTS ──
+function showIncident(name, type) {
+  const feed = document.getElementById('incidentFeed');
+  const toast = document.createElement('div');
+  toast.className = 'incident-toast';
+  toast.innerHTML = `${type.emoji} <strong>${name}</strong> ${type.label}!`;
+  feed.appendChild(toast);
+  setTimeout(()=>{ if(toast.parentNode) toast.parentNode.removeChild(toast); }, 3200);
+}
+
+// ── TEAM MODE STATE ──
+let raceMode = 'ffa'; // 'ffa' or 'team'
+const TEAM_COLORS = ['#e84393','#00d4ff','#00ff88','#ffd700'];
+const TEAM_NAMES  = ['LAG 1','LAG 2','LAG 3','LAG 4'];
+let teams = {}; // { 'LAG 1': ['Emma','Ali'], 'LAG 2': ['Noah','Sofia'] }
+let teamPlayers = {}; // live: for scoring
+let teamCars = {}; // { 'LAG 1': {dist, speed, laps, color} }
+
+window.selectRaceMode = function(mode) {
+  raceMode = mode;
+  document.getElementById('btnFFA').classList.toggle('active', mode==='ffa');
+  document.getElementById('btnTeam').classList.toggle('active', mode==='team');
+  document.getElementById('teamSetup').classList.toggle('visible', mode==='team');
+};
+
+window.assignTeams = function() {
+  const n = Math.min(4, Math.max(2, parseInt(document.getElementById('teamCount').value)||2));
+  const names = Object.keys(players);
+  if(names.length < n){ showSetupMsg('For få spillere til '+n+' lag!'); return; }
+  // Stokk og fordel
+  const shuffled = [...names].sort(()=>Math.random()-0.5);
+  teams = {};
+  TEAM_NAMES.slice(0,n).forEach((t,i)=>{ teams[t]=[]; });
+  shuffled.forEach((name,i)=>{ teams[TEAM_NAMES[i%n]].push(name); });
+  renderTeamDisplay();
+  // Lagre i Firebase
+  if(window._fbReady && roomCode){
+    window._update(window._ref(window._db,'rooms/'+roomCode),{teams:JSON.stringify(teams)});
+  }
+};
+
+function showSetupMsg(msg){
+  const d=document.getElementById('teamDisplay');
+  d.innerHTML=`<div style="color:var(--red);font-family:var(--font-mono);font-size:0.8rem">${msg}</div>`;
+}
+
+function renderTeamDisplay(){
+  const el=document.getElementById('teamDisplay');
+  el.innerHTML='';
+  const n=Object.keys(teams).length;
+  Object.entries(teams).forEach(([name,members],i)=>{
+    const card=document.createElement('div');
+    card.className='team-card';
+    card.style.borderColor=TEAM_COLORS[i];
+    card.innerHTML=`<div class="team-card-title" style="color:${TEAM_COLORS[i]}">${name}</div>`+
+      members.map(m=>`<div class="team-member">● ${m}</div>`).join('');
+    el.appendChild(card);
+  });
+}
+
+// Oppdater spillerlisten i setup mens vi venter
+function updateWaitingList(){
+  const el=document.getElementById('waitingPlayerList');
+  if(!el) return;
+  const names=Object.keys(players);
+  el.innerHTML=names.length
+    ? names.map(n=>`<span class="player-pill">${n}</span>`).join('')
+    : '<span style="color:var(--muted);font-family:var(--font-mono);font-size:0.75rem">Venter på spillere...</span>';
+}
+function updateTeamCars(dt){
+  if(raceMode!=='team'||!raceStarted) return;
+  Object.entries(teams).forEach(([teamName, members])=>{
+    const car=teamCars[teamName]; if(!car) return;
+    // Gjennomsnitts targetSpeed for lagets spillere
+    const speeds=members.map(m=>players[m]?players[m].targetSpeed||0:0);
+    const avg=speeds.length?speeds.reduce((a,b)=>a+b,0)/speeds.length:0;
+    car.targetSpeed=avg;
+    const diff=car.targetSpeed-(car.speed||0);
+    const lerpRate=diff>0?1.2:2.5;
+    car.speed=(car.speed||0)+diff*Math.min(lerpRate*dt,1);
+    car.speed=Math.max(0,car.speed);
+    // Fremdrift
+    const px=car.speed*1.4;
+    car.dist=(car.dist||0)+px*dt;
+    // Runde-sjekk
+    if(car.dist>=totalTrackLength){
+      car.dist-=totalTrackLength;
+      car.laps=(car.laps||0)+1;
+    }
+  });
+}
+
+function triggerStart() {
+  document.getElementById('startRaceBtn').disabled = true;
+  if (roomCode && window._fbReady) {
+    // Flerspiller: signal via Firebase
+    window._update(window._ref(window._db, 'rooms/'+roomCode), { countdown: Date.now() });
+  } else {
+    // Demo/solo: kjør trafikklys direkte
+    runTrafficLights(() => resetForNewRace());
+  }
+}
+
+function runTrafficLights(onGo) {
+  const lights = document.getElementById('trafficLights');
+  const red    = document.getElementById('tl-red');
+  const yellow = document.getElementById('tl-yellow');
+  const green  = document.getElementById('tl-green');
+  const label  = document.getElementById('tl-label');
+  lights.classList.add('show');
+  red.className='tl-light'; yellow.className='tl-light'; green.className='tl-light';
+  label.textContent='KLAR';
+
+  setTimeout(()=>{ red.classList.add('red-on');    label.textContent='KLAR'; }, 200);
+  setTimeout(()=>{ yellow.classList.add('yellow-on'); label.textContent='SET'; },  1200);
+  setTimeout(()=>{
+    red.classList.remove('red-on');
+    yellow.classList.remove('yellow-on');
+    green.classList.add('green-on');
+    label.textContent='GÅ!';
+  }, 2200);
+  setTimeout(()=>{
+    lights.classList.remove('show');
+    onGo();
+  }, 3400);
+}
+
+function resetForNewRace() {
+  document.getElementById('winnerOverlay').classList.remove('show');
+  // Nullstill alle biler lokalt
+  Object.keys(players).forEach(name => {
+    players[name].laps = 0;
+    players[name].dist = 0;
+    players[name].speed = 0;
+    players[name].targetSpeed = 0;
+    players[name].peakSpeed = 0;
+  });
+  Object.keys(lastScores).forEach(name => {
+    lastScores[name] = { score: 0, time: Date.now() };
+  });
+  // Nullstill poeng i Firebase
+  if (window._fbReady && roomCode) {
+    Object.keys(players).forEach(name => {
+      window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+name), { score: 0, lastUpdated: Date.now() });
+    });
+  }
+  // Nullstill lagbiler
+  Object.keys(teamCars).forEach(name=>{
+    teamCars[name].laps=0; teamCars[name].dist=0;
+    teamCars[name].speed=0; teamCars[name].targetSpeed=0;
+  });
+  raceStarted = true;
+  winnerDeclared = false;
+  document.getElementById('winnerOverlay').classList.remove('show');
+}
+
+// ── DRAW TEAM CARS ──
+function drawTeamCars(){
+  const W=canvas.width, H=canvas.height;
+  Object.entries(teamCars).forEach(([name,car],idx)=>{
+    const pos=getPosOnTrack(car.dist||0);
+    const next=getPosOnTrack((car.dist||0)+2);
+    const angle=Math.atan2(next.y-pos.y,next.x-pos.x);
+    ctx.save();
+    ctx.translate(pos.x,pos.y);
+    ctx.rotate(angle);
+    // Bil-kropp
+    ctx.fillStyle=car.color;
+    ctx.shadowColor=car.color;
+    ctx.shadowBlur=16;
+    ctx.beginPath();
+    ctx.roundRect(-14,-6,28,12,4);
+    ctx.fill();
+    // Lagnavn
+    ctx.shadowBlur=0;
+    ctx.fillStyle='white';
+    ctx.font='bold 9px Black Han Sans, sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(name, 0, -10);
+    // Runder
+    ctx.font='bold 8px monospace';
+    ctx.fillStyle='rgba(255,255,255,0.7)';
+    ctx.fillText('R'+(car.laps||0), 0, 20);
+    ctx.restore();
+  });
+}
+
+// ── TEAM WINNER ──
+function checkTeamWinner(){
+  if(!raceStarted||raceMode!=='team') return;
+  const winner=Object.values(teamCars).find(c=>(c.laps||0)>=lapGoal);
+  if(winner&&!winnerDeclared){
+    winnerDeclared=true; raceStarted=false;
+    document.getElementById('winnerName').textContent=winner.name;
+    document.getElementById('winnerOverlay').classList.add('show');
+    document.getElementById('startRaceBtn').disabled=false;
+  }
+}
+
+// ── TEAM SCOREBOARD ──
+function updateTeamSidePanels(){
+  const sorted=Object.values(teamCars).sort((a,b)=>(b.laps||0)-(a.laps||0)||(b.speed||0)-(a.speed||0));
+  let html='';
+  sorted.forEach((car,i)=>{
+    const members=(teams[car.name]||[]);
+    const avgScore=members.length
+      ? Math.round(members.reduce((t,m)=>t+(players[m]?.score||0),0)/members.length)
+      : 0;
+    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+      <div style="width:12px;height:12px;border-radius:50%;background:${car.color};flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-family:'Black Han Sans',sans-serif;font-size:0.85rem;color:${car.color}">${car.name}</div>
+        <div style="font-size:0.68rem;color:var(--muted)">${members.join(', ')}</div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text)">R${car.laps||0} · ⌀${avgScore}p</div>
+    </div>`;
+  });
+  document.getElementById('leaderList').innerHTML=html;
+  document.getElementById('speedList').innerHTML='';
+  document.getElementById('playerCount').textContent=Object.keys(players).length;
+}
+function checkWinner() {
+  if(raceMode==='team'){ checkTeamWinner(); return; }
+  if (winnerDeclared || !raceStarted) return;
+  const winner = Object.entries(players).find(([,p])=>(p.laps||0)>=lapGoal);
+  if (winner) {
+    winnerDeclared = true;
+    raceStarted = false;
+    const name = winner[0];
+    document.getElementById('winnerName').textContent = name;
+    document.getElementById('winnerOverlay').classList.add('show');
+    document.getElementById('startRaceBtn').disabled = false;
+  }
+}
+
+// ── FIREBASE SYNC ──
+function startFirebaseSync(room) {
+  if (!window._fbReady) return;
+
+  // Lytt på countdown-signal
+  let lastCountdown = 0;
+  window._onValue(window._ref(window._db, 'rooms/'+room+'/countdown'), snap => {
+    const ts = snap.val();
+    if (!ts || ts === lastCountdown) return;
+    lastCountdown = ts;
+    // Biler skal stå stille under nedtelling
+    Object.keys(players).forEach(n => {
+      players[n].targetSpeed = 0;
+      players[n].speed = 0;
+      players[n].peakSpeed = 0;
+    });
+    runTrafficLights(() => resetForNewRace());
+  });
+
+  const COLORS = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c',
+                  '#9b59b6','#1abc9c','#e67e22','#3498db','#e91e63',
+                  '#00bcd4','#8bc34a','#ff5722','#607d8b','#795548',
+                  '#ff9800','#673ab7','#009688','#f44336','#2196f3'];
+
+  window._onValue(window._ref(window._db, 'rooms/'+room+'/players'), snap => {
+    const data = snap.val();
+    if (!data) return;
+    const now = Date.now();
+    const MAX_INACTIVE_MS = 6 * 60 * 1000; // 6 minutter
+
+    Object.entries(data).forEach(([name, info]) => {
+      // Hopp over inaktive spillere
+      if (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS) return;
+
+      if (!players[name]) {
+        const idx = Object.keys(players).length;
+        // Start ved begynnelsen av spline — start/mål-streken
+        const startDist = 0;
+        players[name] = {
+          laps: 0, dist: startDist,
+          targetSpeed: 0, speed: 0,
+          color: COLORS[idx % COLORS.length],
+          incident: null, lastIncident: 0,
+          lastScore: info.score || 0,
+          lastScoreTime: now, peakSpeed: 0,
+        };
+        lastScores[name] = { score: info.score||0, time: now };
+      }
+
+      const p = players[name];
+      const prev = lastScores[name];
+      const newScore = info.score || 0;
+      const scoreDiff = newScore - (prev?.score || 0);
+      const rawTime   = info.lastUpdated || now;
+      const timeDiff  = rawTime - (prev?.time || rawTime);
+
+      if (scoreDiff > 0 && timeDiff > 0) {
+        const rate = scoreDiff / (timeDiff / 1000);
+        const newTarget = Math.min(rate * 10, 100);
+        p.targetSpeed = p.targetSpeed * 0.3 + newTarget * 0.7;
+        p.peakSpeed   = Math.max(p.peakSpeed, p.targetSpeed);
+        p.lastScoreTime = now;
+      }
+
+      lastScores[name] = { score: newScore, time: rawTime };
+    });
+
+    // Fjern lokalt spillere som er blitt inaktive i Firebase
+    Object.keys(players).forEach(name => {
+      const info = data[name];
+      if (!info || (info.lastUpdated && (now - info.lastUpdated) > MAX_INACTIVE_MS)) {
+        delete players[name];
+        delete lastScores[name];
+      }
+    });
+  });
+
+  // Rydd opp i Firebase hvert minutt
+  setInterval(() => {
+    if (!window._fbReady || !room) return;
+    const now = Date.now();
+    Object.keys(players).forEach(name => {
+      const p = players[name];
+      if (p.lastUpdated && (now - p.lastUpdated) > 6*60*1000) {
+        window._set(window._ref(window._db,'rooms/'+room+'/players/'+name), null);
+        delete players[name];
+        delete lastScores[name];
+      }
+    });
+  }, 60000);
+} // end startFirebaseSync
+
+// ── SPEED DECAY (kjøres hvert sekund uavhengig av Firebase) ──
+function applySpeedDecay() {
+  const now = Date.now();
+  const HOLD_MS   =  5000; // 0–5 sek: full fart
+  const DECAY_MS  = 30000; // 5–30 sek: bremser lineært ned til 20%
+  const MIN_PCT   =  0.20; // 20% av toppfart
+  const STOP_MS   = 60000; // 60 sek: full stopp
+
+  Object.keys(players).forEach(name => {
+    const p = players[name];
+    if (!p) return;
+    const idle = now - (p.lastScoreTime || now);
+
+    let decayFactor;
+    if (idle < HOLD_MS) {
+      decayFactor = 1.0;
+    } else if (idle < HOLD_MS + DECAY_MS) {
+      // Lineær nedbremsing fra 100% til MIN_PCT over DECAY_MS
+      const t = (idle - HOLD_MS) / DECAY_MS; // 0→1
+      decayFactor = 1.0 - t * (1.0 - MIN_PCT);
+    } else if (idle < STOP_MS) {
+      decayFactor = MIN_PCT;
+    } else {
+      decayFactor = 0;
+    }
+
+    p.targetSpeed = (p.peakSpeed || 0) * decayFactor;
+  });
+}
+setInterval(applySpeedDecay, 1000);
+
+// ── DEMO MODE (ingen Firebase) ──
+function startDemo() {
+  const demoNames = ['Raske Gaupe','Lynraske Rev','Smarte Bjørn','Ville Ulv','Modige Hauk',
+                     'Gylne Ugle','Flinke Løve','Smidige Tiger'];
+  const colors = ['#e63946','#457b9d','#f1c40f','#2ecc71','#e74c3c','#9b59b6','#1abc9c','#e67e22'];
+  demoNames.forEach((name,i) => {
+    players[name] = { laps:0, dist:i*(totalTrackLength/demoNames.length), speed:20+Math.random()*60, color:colors[i], incident:null, lastIncident:0 };
+  });
+  // Simulate score updates
+  setInterval(() => {
+    Object.keys(players).forEach(name => {
+      players[name].speed = Math.max(10, Math.min(100, (players[name].speed||30) + (Math.random()-0.4)*15));
+    });
+  }, 3000);
+}
+
+// ── LAUNCH RACE ──
+window.launchRace = function() {
+  const room = document.getElementById('roomInput').value.trim().toUpperCase();
+  lapGoal = parseInt(document.getElementById('lapGoal').value) || 5;
+
+  document.getElementById('lapGoalDisplay').textContent = lapGoal;
+  document.getElementById('roomDisplay').textContent = room || 'DEMO';
+  document.getElementById('setupOverlay').style.display = 'none';
+
+  roomCode = room;
+  window.roomCode = room;
+  raceStarted = false;
+
+  if(raceMode==='team' && Object.keys(teams).length>=2){
+    // Init lagbiler
+    Object.entries(teams).forEach(([name,members],i)=>{
+      teamCars[name]={ dist:0, speed:0, targetSpeed:0, laps:0, color:TEAM_COLORS[i], name };
+    });
+  }
+
+  if (room && window._fbReady) {
+    startFirebaseSync(room);
+  } else {
+    startDemo();
+  }
+  document.getElementById('startRaceBtn').disabled = false;
+};
+
+// ── STARTUP ──
+window.addEventListener('load', () => {
+  resizeCanvas();
+  window.addEventListener('resize', () => { resizeCanvas(); });
+
+  // Last inn SVG-bakgrunn
+  const img = new Image();
+  img.src = './bane.svg';
+  img.onload = () => { window._trackImage = img; };
+  window._trackImage = img;
+
+  requestAnimationFrame(gameLoop);
+});
+</script>
+</body>
+</html>
