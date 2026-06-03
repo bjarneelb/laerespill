@@ -176,8 +176,17 @@ body {
   padding: 14px 16px;
   display: flex; flex-direction: column; gap: 12px;
 }
-.boards-row { display: flex; gap: 16px; align-items: flex-start; }
-.board-wrap { flex: 1; }
+.boards-row {
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.fleet-panel {
+  width: 130px; flex-shrink: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 10px;
+  align-self: stretch;
+}
+.board-wrap { flex: 1; min-width: 0; }
 .board-label {
   font-family: var(--font-mono);
   font-size: 0.72rem; color: var(--muted);
@@ -403,31 +412,36 @@ body {
 <div id="gameScreen" style="display:none">
   <div class="game-screen">
     <div class="boards-row">
+
+      <!-- Min flåte — venstre -->
+      <div class="fleet-panel">
+        <div class="section-title" style="font-size:0.65rem;margin-bottom:6px">🛡️ Min flåte</div>
+        <div id="myFleetPanel"></div>
+      </div>
+
+      <!-- Mitt brett -->
       <div class="board-wrap">
         <div class="board-label">🛡️ MITT BRETT — <span id="myNameLabel">–</span></div>
         <svg class="grid-svg" id="myGrid" viewBox="-20 -20 440 440"></svg>
       </div>
+
+      <!-- Fiendens brett -->
       <div class="board-wrap">
         <div class="board-label">🎯 FIENDTLIG FARVANN — <span id="oppNameLabel">–</span></div>
         <svg class="grid-svg" id="oppGrid" viewBox="-20 -20 440 440"></svg>
       </div>
+
+      <!-- Motstanderens flåte — høyre -->
+      <div class="fleet-panel">
+        <div class="section-title" style="font-size:0.65rem;margin-bottom:6px">🎯 Motstander</div>
+        <div id="oppFleetPanel"></div>
+      </div>
+
     </div>
 
     <!-- STATUS -->
     <div class="status-bar">
       <div class="status-msg" id="statusMsg">–</div>
-    </div>
-
-    <!-- FLEET PANELS -->
-    <div style="display:flex;gap:16px">
-      <div class="fleet-panel">
-        <div class="section-title">🛡️ Min flåte</div>
-        <div id="myFleetPanel"></div>
-      </div>
-      <div class="fleet-panel">
-        <div class="section-title">🎯 Motstanderens flåte</div>
-        <div id="oppFleetPanel"></div>
-      </div>
     </div>
 
     <!-- SHOT INPUT -->
