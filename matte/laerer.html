@@ -294,16 +294,22 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 <script>
 // ── AUTH ──
 const SESSION_KEY='teacher_auth_v1';
-const TEACHER_PASSWORD=(typeof TEACHER_AUTH_PASSWORD!=='undefined')?TEACHER_AUTH_PASSWORD:'matte2024';
+const PW_HASH='cf136f81c10d80345b81648ca0dda7c2b6e59b43f9e3e6eba358984f983be0ac';
 
 if(sessionStorage.getItem(SESSION_KEY)==='true'){
   document.getElementById('loginScreen').style.display='none';
   waitForFirebase();
 }
 
-function doLogin(){
+async function hashPassword(pw){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin(){
   const pw=document.getElementById('passwordInput').value;
-  if(pw===TEACHER_PASSWORD){
+  const hash=await hashPassword(pw);
+  if(hash===PW_HASH){
     sessionStorage.setItem(SESSION_KEY,'true');
     document.getElementById('loginScreen').style.display='none';
     waitForFirebase();
@@ -452,6 +458,15 @@ function checkExistingTimecode(){
 // ── ROOMS ──
 let roomsData={}, openRooms=new Set(), selectedRooms=new Set();
 
+function formatAgo(ms){
+  const s=Math.floor(ms/1000);
+  if(s<60) return s+'s siden';
+  const m=Math.floor(s/60);
+  if(m<60) return m+'min siden';
+  const h=Math.floor(m/60);
+  return h+'t siden';
+}
+
 function loadRooms(){
   window._onValue(window._ref(window._db,'rooms'),snap=>{
     roomsData=snap.val()||{};
@@ -482,7 +497,7 @@ function renderRoomCard(code,room){
   const isSelected=selectedRooms.has(code);
   const leader=players.sort((a,b)=>(b[1].score||0)-(a[1].score||0))[0];
   const lastActive=players.reduce((t,[,p])=>Math.max(t,p.lastUpdated||0),0);
-  const ago=lastActive?Math.floor((now-lastActive)/1000)+'s siden':'–';
+  const ago=lastActive?formatAgo(now-lastActive):'–';
   return `<div class="room-card${isSelected?' selected':''}" id="room-${code}">
     <div class="room-header" onclick="toggleRoom('${code}')">
       <input type="checkbox" class="room-check" ${isSelected?'checked':''} onclick="event.stopPropagation();toggleSelect('${code}',this.checked)">
