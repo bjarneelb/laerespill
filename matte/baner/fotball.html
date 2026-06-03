@@ -217,7 +217,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
     <button class="btn-start" id="startBtn" onclick="triggerKickoff()" disabled>▶ AVSPARK</button>
     <button class="btn-start" id="pauseBtn" onclick="togglePause()" disabled style="border-color:var(--yellow);color:var(--yellow)">⏸ PAUSE</button>
     <button class="btn-start" id="whistleBtn" onclick="triggerWhistle()" disabled style="border-color:var(--red);color:var(--red)">🔴 BLÅS AV</button>
-    <a href="./" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:4px 10px;border:1px solid var(--muted);border-radius:4px">← MENY</a>
+    <a href="../" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);text-decoration:none;padding:4px 10px;border:1px solid var(--muted);border-radius:4px">← MENY</a>
   </div>
 </div>
 
@@ -248,7 +248,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, onValue, update, set, remove } from "./js/firebase-config.js";
+  import { database, ref, onValue, update, set, remove } from "../js/firebase-config.js";
   window._db=database; window._ref=ref;
   window._onValue=onValue; window._update=update; window._set=set; window._remove=remove;
   window._fbReady=true;
