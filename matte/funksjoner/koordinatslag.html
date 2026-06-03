@@ -179,13 +179,6 @@ body {
 .boards-row {
   display: flex; gap: 8px; align-items: flex-start;
 }
-.fleet-panel {
-  width: 130px; flex-shrink: 0;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px 10px;
-  align-self: stretch;
-}
 .board-wrap { flex: 1; min-width: 0; }
 .board-label {
   font-family: var(--font-mono);
@@ -251,24 +244,25 @@ body {
 .ship-badge.alive { border-color: var(--green); color: var(--green); }
 .ship-badge.sunk  { border-color: var(--muted); color: var(--muted); text-decoration: line-through; }
 
-/* ── FLEET PANELS ── */
 .fleet-panel {
-  flex: 1; background: var(--panel);
+  width: 90px; flex-shrink: 0;
+  background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 8px; padding: 12px 16px;
+  border-radius: 8px; padding: 8px 6px;
+  align-self: stretch;
 }
 .fleet-row {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
   padding: 5px 0; border-bottom: 1px solid #0a1a2a;
-  font-family: var(--font-mono); font-size: 0.8rem;
+  font-family: var(--font-mono); font-size: 0.7rem;
 }
 .fleet-row:last-child { border-bottom: none; }
 .fleet-row.sunk { opacity: 0.45; }
-.fleet-name { flex: 1; color: var(--text); }
+.fleet-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 78px; }
 .fleet-row.sunk .fleet-name { text-decoration: line-through; color: var(--muted); }
-.fleet-hits { display: flex; gap: 3px; align-items: center; }
+.fleet-hits { display: flex; gap: 2px; align-items: center; flex-wrap: wrap; }
 .hit-dot {
-  width: 10px; height: 10px; border-radius: 50%;
+  width: 8px; height: 8px; border-radius: 50%;
   border: 1px solid var(--muted);
   background: transparent;
 }
@@ -359,6 +353,7 @@ body {
   <div class="screen-card">
     <h1>⚓ KOORDINATSLAG</h1>
     <p>Senk motstanderens flåte ved å skyte på koordinater!</p>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.1</div>
     <div class="field-group">
       <div class="field-label">Ditt navn</div>
       <input class="field-input" id="playerNameInput" placeholder="KAPTEIN..." maxlength="16">
