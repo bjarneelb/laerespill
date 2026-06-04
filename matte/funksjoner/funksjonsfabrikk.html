@@ -190,7 +190,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.5</div>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.7</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -319,6 +319,14 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 
 </div>
 
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, update, onValue, set } from "../js/firebase-config.js";
+  window._db=database; window._ref=ref;
+  window._update=update; window._onValue=onValue; window._set=set;
+  window._fbReady=true;
+</script>
+
 <script>
 // ── STATE ──
 let gameMode='practice', currentLevel=1, currentScore=0;
@@ -327,6 +335,61 @@ let timerSeconds=0, timerInterval=null;
 let currentTask=null;
 let placedBlocks=[];
 let propSelected=null;
+
+// ── SESSION STATS ──
+let sessionCorrect=0, sessionWrong=0, sessionStartTime=Date.now();
+
+// ── SESSION ──
+function getActiveSession(){
+  try{
+    const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
+    if(!s||s.skipped||s.noCode) return null;
+    if(s.expires&&Date.now()>s.expires) return null;
+    return s;
+  }catch(e){return null;}
+}
+
+// ── FIREBASE SYNC ──
+function fbPath(){
+  const session=getActiveSession();
+  if(session&&session.code&&session.name){
+    return 'timecodes/'+session.code+'/players/'+session.name;
+  }
+  if(roomCode&&gameMode!=='practice'){
+    return 'rooms/'+roomCode+'/players/'+playerName;
+  }
+  return null;
+}
+
+function syncToFirebase(){
+  const path=fbPath();
+  if(!window._fbReady||!path) return;
+  window._update(window._ref(window._db, path), {
+    score:      currentScore,
+    level:      currentLevel,
+    correct:    sessionCorrect,
+    wrong:      sessionWrong,
+    game:       'funksjonsfabrikk',
+    name:       playerName,
+    lastUpdated: Date.now(),
+    sessionStart: sessionStartTime,
+  });
+}
+
+function registerPlayer(){
+  const path=fbPath();
+  if(!window._fbReady||!path) return;
+  window._update(window._ref(window._db, path), {
+    score:       0,
+    level:       currentLevel,
+    correct:     0,
+    wrong:       0,
+    game:        'funksjonsfabrikk',
+    name:        playerName,
+    lastUpdated: Date.now(),
+    sessionStart: sessionStartTime,
+  });
+}
 
 // ── ADAPTIVE LEVEL ──
 const MAX_LEVEL=7, MIN_LEVEL=1;
@@ -341,6 +404,8 @@ let recentResults=[];   // siste 5: true/false
 
 function recordResult(correct){
   const elapsed=(Date.now()-taskStartTime)/1000;
+  if(correct) sessionCorrect++; else sessionWrong++;
+  syncToFirebase();
   recentResults.push(correct);
   if(recentResults.length>5) recentResults.shift();
 
@@ -371,6 +436,7 @@ function changeLevel(delta){
   document.querySelectorAll('.level-btn').forEach(b=>{
     b.classList.toggle('active',parseInt(b.textContent)===currentLevel);
   });
+  syncToFirebase();
 }
 
 // ── LEVELS ──
@@ -831,6 +897,7 @@ function checkSolution(){
   if(gameMode!=='practice'){
     currentScore+=Math.max(10,50);
     document.getElementById('scoreBadge').textContent=currentScore+' p';
+    syncToFirebase();
   }
 
   // Show props auto if needed
@@ -1168,13 +1235,20 @@ window.selectMode=function(mode){
 };
 
 window.startGame=function(){
-  playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  const session=getActiveSession();
+  playerName=session?.name||document.getElementById('nameInput').value.trim()||'Spiller';
+  if(session?.name) document.getElementById('nameInput').value=session.name;
   if(gameMode==='solo') timedMinutes=parseInt(document.getElementById('timedMin').value)||5;
+  if(gameMode==='multi') roomCode=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(gameMode==='solo') roomCode='SOLO-'+playerName.replace(/\s+/g,'-').toUpperCase().slice(0,10);
+  sessionCorrect=0; sessionWrong=0; sessionStartTime=Date.now();
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainArea').style.display='flex';
   document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
   if(gameMode!=='practice') document.getElementById('scoreBadge').style.display='';
   if(gameMode==='solo') startTimer();
+  const doRegister=()=>{ if(window._fbReady) registerPlayer(); else setTimeout(doRegister,200); };
+  doRegister();
   newTask();
 };
 
