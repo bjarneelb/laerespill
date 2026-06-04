@@ -2,7 +2,7 @@
   directory = "netlify/functions"
 
 [build]
-  ignore = "exit 0"
+  publish = "."
 
 [build.environment]
   SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIza"
