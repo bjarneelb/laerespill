@@ -606,7 +606,7 @@ Spill: ${p.game||'funksjonsfabrikk'}
 Fokuser på hva eleven mestrer og hva som kan forbedres. Ikke nevn tallene direkte.`;
 
   try {
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch('/.netlify/functions/ai-proxy',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
