@@ -1380,6 +1380,7 @@ window.checkSolution=function(){
     totalWins++; winsOnLevel++;
     document.getElementById('winCount').textContent=totalWins;
     recordLevelResult(true);
+    tcCorrect++; syncToTimecode();
 
     let bonus=0;
     if(gameMode!=='practice'){
@@ -1400,6 +1401,7 @@ window.checkSolution=function(){
     setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) newTask(); },1400);
   } else {
     recordLevelResult(false);
+    tcWrong++; syncToTimecode();
     showToast('❌ Ikke i balanse ennå – prøv igjen!','error');
   }
 };
@@ -1439,6 +1441,27 @@ function updCD(){ const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60;
 function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
 
 // ── START GAME ──
+// ── TIMECODE SYNC ──
+function getActiveSession(){
+  try{const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
+    if(!s||s.skipped||s.noCode||s.expired) return null;
+    if(s.expires&&Date.now()>s.expires) return null;
+    return s;
+  }catch(e){return null;}
+}
+let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0;
+function syncToTimecode(extra={}){
+  const s=getActiveSession(); if(!s) return;
+  const name=s.name||window.playerName; if(!name) return;
+  const waitFb=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),
+      {game:'ligningsvekt',level:currentLevel,score:currentScore,
+       correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
+       sessionStart:tcSyncSessionStart,...extra});
+    else setTimeout(waitFb,200);
+  }; waitFb();
+}
+
 window.startGame=function(){
   let room='';
   if(gameMode==='multi') room=document.getElementById('roomInput').value.trim().toUpperCase();
