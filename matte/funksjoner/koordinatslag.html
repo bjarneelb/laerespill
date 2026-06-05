@@ -1129,6 +1129,12 @@ function syncToTimecode(won=null){
     if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),data);
     else setTimeout(waitFb,200);
   }; waitFb();
+  // Update root
+  const root='timecodes/'+s.code+'/players/'+name;
+  const waitRoot=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
+    else setTimeout(waitRoot,200);
+  }; waitRoot();
 }
 
 function waitFb(cb){ if(window._fbReady){cb();}else{setTimeout(()=>waitFb(cb),50);} }
