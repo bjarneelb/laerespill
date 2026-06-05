@@ -172,7 +172,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 </div>
 
 <div class="header">
-  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v1.4</span></div>
+  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v1.5</span></div>
   <div class="header-right">
     <a class="btn-menu" href="./">← Meny</a>
     <button class="btn-logout" onclick="doLogout()">Logg ut</button>
@@ -746,12 +746,11 @@ window.generateRapport=async function(){
 async function generateAIRapport(name,p){
   const elId='rapport-'+name.replace(/[\s.]/g,'_');
   const games=p.games||{};
+  const gameNames=Object.keys(games);
   const now=Date.now();
   const lastSeen=p.lastSeen||0;
-  const sessionStart=Math.min(...gameNames.map(g=>games[g].sessionStart||now).filter(Boolean));
+  const sessionStart=gameNames.length?Math.min(...gameNames.map(g=>games[g].sessionStart||now)):now;
   const sessionMinutes=sessionStart?Math.round((now-sessionStart)/60000):null;
-  const inactiveMinutes=lastSeen?Math.round((now-lastSeen)/60000):null;
-  const longPause=inactiveMinutes&&inactiveMinutes>=10;
 
   const gameSummary=gameNames.map(g=>{
     const gd=games[g];
