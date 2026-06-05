@@ -403,23 +403,30 @@ function getActiveSession(){
     return s;
   }catch(e){return null;}
 }
-let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0;
+let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0, tcMaxLevel=1, tcStartLevel=1;
 function syncToTimecode(){
   const s=getActiveSession(); if(!s) return;
   const name=s.name||window.playerName; if(!name) return;
   const waitFb=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),
-      {game:'likningssett',level:currentLevel,score:currentScore,
+    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name+'/games/likningssett'),
+      {level:currentLevel,maxLevel:Math.max(currentLevel,tcMaxLevel),startLevel:tcStartLevel,score:currentScore,
        correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
        sessionStart:tcSyncSessionStart});
     else setTimeout(waitFb,200);
   }; waitFb();
+  // Update root
+  const root='timecodes/'+s.code+'/players/'+name;
+  const waitRoot=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
+    else setTimeout(waitRoot,200);
+  }; waitRoot();
 }
 
 function lsRecordResult(correct){
   const elapsed=(Date.now()-taskStartTime)/1000;
   taskStartTime=Date.now();
   if(correct) tcCorrect++; else tcWrong++;
+  tcMaxLevel=Math.max(tcMaxLevel,currentLevel);
   syncToTimecode();
   if(correct){
     lsErrorStreak=0; lsStreak++;
