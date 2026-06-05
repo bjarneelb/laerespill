@@ -490,7 +490,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '2.1';
+const VERSION = '2.2';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
@@ -907,6 +907,8 @@ KRITISKE REGLER:
 9. Sparepenger og beløp MÅ være realistiske: bruk 50, 100, 150, 200 kr per uke – ALDRI under 20 kr per uke.
 10. Negative tall beskrives ALLTID naturlig: "skylder X kr" (gjeld), "X grader under null" (temperatur), "X meter under havnivå" (høyde), "underskudd på X kr" – ALDRI bare et negativt tall i teksten.
 11. Sørg for variasjon: unngå å alltid bruke penger og alder – bruk også fart, vekt, temperatur, antall gjenstander.
+12. KRITISK for malen "${template.split('.')[0]}": Likningen MÅ stemme nøyaktig med JSON-strukturen. Hvis malen er x + b = c, skal left ha KUN én x-blokk og én num-blokk. Lag IKKE en historie som egentlig krever 2x (f.eks. "to personer der begge er ukjente") – da trengs koeffisient 2, ikke 1.
+13. FEIL EKSEMPEL (x + b = c): "Mia har 12 kr mer enn Jonas. Til sammen har de 48 kr." — dette er 2x + 12 = 48, ikke x + 12 = 48. RIKTIG: "Jonas har 12 kr. Han får litt mer og har nå 48 kr." — dette er x + 12 = 48.
 
 Svar KUN med gyldig JSON (ingen markdown):
 {
