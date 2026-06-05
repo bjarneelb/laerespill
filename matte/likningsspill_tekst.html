@@ -623,12 +623,35 @@ function showLevelChange(direction, newLevel) {
   setTimeout(()=>overlay.classList.remove('show'), 2400);
 }
 
+// ── TIMECODE SYNC ──
+function getActiveSession(){
+  try{const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
+    if(!s||s.skipped||s.noCode||s.expired) return null;
+    if(s.expires&&Date.now()>s.expires) return null;
+    return s;
+  }catch(e){return null;}
+}
+let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0;
+function syncToTimecode(){
+  const s=getActiveSession(); if(!s) return;
+  const name=s.name||window.playerName; if(!name) return;
+  const waitFb=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),
+      {game:'likningsbygger',level:currentLevel,score:currentScore,
+       correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
+       sessionStart:tcSyncSessionStart});
+    else setTimeout(waitFb,200);
+  }; waitFb();
+}
+
 function adjustLevel(bonusScore) {
   const elapsed=(Date.now()-taskStartTime)/1000;
   recentScores.push(bonusScore);
   if (recentScores.length > WINDOW_SIZE) recentScores.shift();
   updateProgressBar();
   const correct=bonusScore>0;
+  if(correct) tcCorrect++; else tcWrong++;
+  syncToTimecode();
   if(correct){
     streakError=0; streakCorrect++;
     if(elapsed>EXPECTED_TIME_LB*2){streakCorrect=Math.max(0,streakCorrect-1);streakError=1;}
