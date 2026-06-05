@@ -1108,6 +1108,29 @@ function aiPickTarget(){
   while(playerHits.some(h=>h.x===x&&h.y===y));
   return {x,y};
 }
+// ── TIMECODE SYNC ──
+function getActiveSession(){
+  try{const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
+    if(!s||s.skipped||s.noCode||s.expired) return null;
+    if(s.expires&&Date.now()>s.expires) return null;
+    return s;
+  }catch(e){return null;}
+}
+let tcShots=0, tcHits=0, tcSessionStart=Date.now();
+function syncToTimecode(won=null){
+  const s=getActiveSession(); if(!s) return;
+  const rawName=document.getElementById('playerNameInput')?.value.trim()||s.name||'Spiller';
+  const name=s.name||rawName; if(!name) return;
+  const data={game:'koordinatslag',level:null,score:tcHits*10,
+    correct:tcHits,wrong:tcShots-tcHits,lastUpdated:Date.now(),
+    sessionStart:tcSessionStart};
+  if(won!==null) data.won=won;
+  const waitFb=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),data);
+    else setTimeout(waitFb,200);
+  }; waitFb();
+}
+
 function waitFb(cb){ if(window._fbReady){cb();}else{setTimeout(()=>waitFb(cb),50);} }
 
 function createRoom(){
@@ -1325,6 +1348,10 @@ function fireShot(){
     if(hitShip)  newHit.hitShip=hitShip;
     if(sunkShip){ newHit.sunkShip=sunkShip; newHit.sunkCoords=sunkCoords; }
 
+    tcShots++;
+    if(hit) tcHits++;
+    syncToTimecode();
+
     const updatedHits=JSON.stringify([...oppHits,newHit]);
     const nextTurn=mySlot==='p1'?'p2':'p1';
     window._update(window._ref(window._db,'rooms/'+roomCode),{
@@ -1414,6 +1441,7 @@ function setStatus(msg){ document.getElementById('statusMsg').textContent=msg; }
 
 function showResult(won){
   if(gameOver) return; gameOver=true;
+  syncToTimecode(won);
   document.getElementById('fireBtn').disabled=true;
   document.getElementById('winTitle').textContent=won?'SEIER!':'NEDERLAGET...';
   document.getElementById('winSub').textContent=won?'Du senket alle motstanderens skip!':'Alle dine skip er senket!';
