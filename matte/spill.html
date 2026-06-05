@@ -1380,7 +1380,7 @@ window.checkSolution=function(){
     totalWins++; winsOnLevel++;
     document.getElementById('winCount').textContent=totalWins;
     recordLevelResult(true);
-    tcCorrect++; syncToTimecode();
+    tcCorrect++; tcMaxLevel=Math.max(tcMaxLevel,currentLevel); syncToTimecode();
 
     let bonus=0;
     if(gameMode!=='practice'){
@@ -1449,17 +1449,23 @@ function getActiveSession(){
     return s;
   }catch(e){return null;}
 }
-let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0;
+let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0, tcMaxLevel=1, tcStartLevel=1;
 function syncToTimecode(extra={}){
   const s=getActiveSession(); if(!s) return;
   const name=s.name||window.playerName; if(!name) return;
   const waitFb=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),
-      {game:'ligningsvekt',level:currentLevel,score:currentScore,
+    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name+'/games/ligningsvekt'),
+      {level:currentLevel,score:currentScore,
        correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
        sessionStart:tcSyncSessionStart,...extra});
     else setTimeout(waitFb,200);
   }; waitFb();
+  // Update root
+  const root='timecodes/'+s.code+'/players/'+name;
+  const waitRoot=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
+    else setTimeout(waitRoot,200);
+  }; waitRoot();
 }
 
 window.startGame=function(){
