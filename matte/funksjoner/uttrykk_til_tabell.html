@@ -114,7 +114,7 @@ table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border
   <div class="start-card">
     <h1>📋 Lineære funksjoner</h1>
     <h2>Fra uttrykk til tabell</h2>
-    <div class="version">v1.0</div>
+    <div class="version">v1.1</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -215,6 +215,27 @@ table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border
 </div>
 
 <script>
+// ── TIMECODE SYNC ──
+function getActiveSession(){
+  try{const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
+    if(!s||s.skipped||s.noCode||s.expired) return null;
+    if(s.expires&&Date.now()>s.expires) return null;
+    return s;
+  }catch(e){return null;}
+}
+let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0;
+function syncToTimecode(){
+  const s=getActiveSession(); if(!s) return;
+  const name=s.name||playerName; if(!name) return;
+  const waitFb=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),
+      {game:'uttrykk-til-tabell',level:currentLevel,score:currentScore,
+       correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
+       sessionStart:tcSyncSessionStart});
+    else setTimeout(waitFb,200);
+  }; waitFb();
+}
+
 // ── LEVELS ──
 const LEVELS={
   1:{name:'Nivå 1',mode:'factory',nums:'pos_int',desc:'Positive heltall, fabrikk'},
@@ -604,13 +625,17 @@ window.checkTable=function(){
   });
 
   if(allOk){
-    recordResult(true);
+    recordResult(true); tcCorrect++; syncToTimecode();
     showToast('🎉 Riktig tabell!','success');
-    if(gameMode!=='practice'){ currentScore+=50; document.getElementById('scoreBadge').textContent=currentScore+' p'; }
+    const elapsed=(Date.now()-taskStartTime)/1000;
+    const levelMult=1+((currentLevel-1)*0.1);
+    const bonus=Math.round(Math.max(50,200-elapsed)*levelMult);
+    currentScore+=bonus;
+    document.getElementById('scoreBadge').textContent=currentScore+' p';
     document.getElementById('checkBtn').style.display='none';
     document.getElementById('nextBtn').style.display='inline-block';
   } else {
-    recordResult(false);
+    recordResult(false); tcWrong++; syncToTimecode();
     showToast('❌ Noen verdier er feil — prøv igjen!','error');
   }
 };
@@ -656,7 +681,8 @@ window.startGame=function(){
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainArea').style.display='flex';
   document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
-  if(gameMode!=='practice') document.getElementById('scoreBadge').style.display='';
+  document.getElementById('scoreBadge').style.display='';
+  document.getElementById('scoreBadge').textContent='0 p';
   currentTask=genTask(currentLevel);
   renderTask();
 };
@@ -688,5 +714,9 @@ function showToast(msg,type){
 buildLevelSelect();
 </script>
 <script src="../js/touch-dnd.js"></script>
+<script type="module">
+  import { database, ref, update } from "../js/firebase-config.js";
+  window._db=database; window._ref=ref; window._update=update; window._fbReady=true;
+</script>
 </body>
 </html>
