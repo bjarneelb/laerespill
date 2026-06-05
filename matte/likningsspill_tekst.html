@@ -490,7 +490,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '2.0';
+const VERSION = '2.1';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
@@ -1170,7 +1170,8 @@ window.checkSolution=function(){
     document.getElementById('streakCount').textContent=totalCorrect;
     if(typeof syncScore==='function') syncScore(currentScore);
     if(gameMode!=='practice') updateSpeedDisplay();
-    adjustLevel(bonus);
+    // Pass 1 for practice mode correct so streak logic triggers
+    adjustLevel(gameMode==='practice'?1:bonus);
     const msg=gameMode==='practice'?'🎉 Riktig!':builderActive?'🎉 Riktig! +'+bonus+' poeng (🔧 ×1.2 bonus!)':'🎉 Riktig! +'+bonus+' poeng!';
     showToast(msg,'success');
     builderBlocks=[];
