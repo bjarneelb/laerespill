@@ -228,12 +228,18 @@ function syncToTimecode(){
   const s=getActiveSession(); if(!s) return;
   const name=s.name||playerName; if(!name) return;
   const waitFb=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),
-      {game:'uttrykk-til-tabell',level:currentLevel,score:currentScore,
+    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name+'/games/uttrykk-til-tabell'),
+      {level:currentLevel,score:currentScore,
        correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
        sessionStart:tcSyncSessionStart});
     else setTimeout(waitFb,200);
   }; waitFb();
+  // Update root
+  const root='timecodes/'+s.code+'/players/'+name;
+  const waitRoot=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
+    else setTimeout(waitRoot,200);
+  }; waitRoot();
 }
 
 // ── LEVELS ──
