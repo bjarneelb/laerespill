@@ -263,20 +263,34 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="tab-panel" id="tab-rapport">
     <div>
       <div class="panel-title">📊 Rapport</div>
-      <div class="panel-sub">AI-generert vurdering av elever basert på data fra timekoden</div>
+      <div class="panel-sub">Velg elever og generer AI-vurdering basert på data fra timen</div>
     </div>
+
     <div class="card" id="rapportControls">
-      <div class="card-label">Velg timekode for rapport</div>
+      <div class="card-label">Timekode</div>
       <div class="input-row" style="margin-top:0">
         <div class="input-group">
-          <div class="input-label">Timekode</div>
           <input class="styled-input" id="rapportCode" placeholder="Timekode" maxlength="12"
             style="text-transform:uppercase;letter-spacing:2px;width:160px">
         </div>
-        <button class="btn btn-primary" onclick="generateRapport()">🤖 Generer rapport</button>
+        <button class="btn btn-ghost" onclick="loadRapportStudents()">🔍 Hent elever</button>
       </div>
-      <div id="rapportStatus" style="margin-top:10px;font-size:0.82rem;color:var(--muted)"></div>
     </div>
+
+    <div id="rapportStudentCard" style="display:none">
+      <div class="card">
+        <div class="card-label">Velg elever for rapport</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:700;font-size:0.88rem;cursor:pointer">
+            <input type="checkbox" id="rapportSelectAll" onchange="toggleRapportAll(this.checked)"> Velg alle
+          </label>
+          <button class="btn btn-primary" onclick="generateRapport()" id="rapportGenBtn" disabled>🤖 Generer rapport</button>
+          <span id="rapportStatus" style="font-size:0.82rem;color:var(--muted)"></span>
+        </div>
+        <div id="rapportStudentList" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+
     <div id="rapportOutput"></div>
   </div>
 
@@ -377,6 +391,7 @@ window.stopTimecode=async function(){
 function showActiveTimecode(code,expires,minutes){
   activeCode=code;
   document.getElementById('tcCode').textContent=code;
+  document.getElementById('rapportCode').value=code;
   document.getElementById('tcMeta').textContent=
     'Varighet: '+minutes+' min · Utløper: '+new Date(expires).toLocaleTimeString('no');
   document.getElementById('tcActiveCard').style.display='';
@@ -566,27 +581,125 @@ function deleteRoom(code){
 window.closeConfirm=function(){ document.getElementById('confirmOverlay').classList.remove('show'); };
 
 // ── RAPPORT ──
-window.generateRapport=async function(){
+const GAME_LEVELS={
+  'funksjonsfabrikk':{
+    1:'bygge funksjonsuttrykk av blokker (positive heltall)',
+    2:'bygge funksjonsuttrykk med negative heltall',
+    3:'bygge funksjonsuttrykk med desimaltall',
+    4:'negative konstantledd',
+    5:'negative stigningstall',
+    6:'blanding av alle typer med proporsjonal-vurdering',
+    7:'skrive funksjonsuttrykket direkte med stigningstall og konstantledd',
+  },
+  'likningsbygger':{
+    1:'enkle ligninger (x + b = c)',
+    2:'ligninger med koeffisient (ax = c)',
+    3:'ligninger med ledd på begge sider',
+    4:'ligninger med negative tall',
+    5:'ligninger med desimaltall',
+    6:'sammensatte ligninger',
+    7:'avanserte ligninger med tekstoppgaver',
+  },
+  'likningssett':{
+    1:'enkle likningssett (positive heltall)',
+    2:'likningssett med negative tall',
+    3:'likningssett med desimaltall',
+    4:'avanserte likningssett',
+  },
+  'ligningsvekt':{
+    1:'balansere enkle vektligninger',
+    7:'balansere ligninger med negative tall',
+    14:'balansere avanserte ligninger med brøker',
+  },
+  'uttrykk-til-tabell':{
+    1:'fylle ut verditabell med fabrikk-animasjon (positive heltall)',
+    4:'skrive regnestykket selv for positive heltall',
+    7:'bruke kalkulator for å fylle ut verditabell',
+    9:'verditabell med brøkkoeffisienter',
+  },
+  'koordinatslag':{
+    null:'koordinatlag (skyte på koordinater i et koordinatsystem)',
+  },
+};
+
+function getLevelDesc(game,level){
+  const g=GAME_LEVELS[game];
+  if(!g) return game||'ukjent spill';
+  if(level===null||level===undefined) return g[null]||g[Object.keys(g)[0]]||game;
+  // Find closest level description
+  const keys=Object.keys(g).map(Number).filter(k=>!isNaN(k)).sort((a,b)=>a-b);
+  let best=keys[0];
+  for(const k of keys){ if(k<=level) best=k; }
+  return g[best]||game;
+}
+
+let rapportStudentData={};
+let selectedRapportStudents=new Set();
+
+window.loadRapportStudents=async function(){
   const code=document.getElementById('rapportCode').value.trim().toUpperCase()||activeCode;
   if(!code){ showToast('Skriv inn timekode','error'); return; }
-  const status=document.getElementById('rapportStatus');
-  const output=document.getElementById('rapportOutput');
-  status.textContent='Henter data...';
-  output.innerHTML='';
-
+  document.getElementById('rapportCode').value=code;
   const snap=await window._get(window._ref(window._db,'timecodes/'+code+'/players'));
   const data=snap.val();
-  if(!data){ status.textContent='Ingen data funnet for kode: '+code; return; }
+  const card=document.getElementById('rapportStudentCard');
+  const list=document.getElementById('rapportStudentList');
+  if(!data){
+    showToast('Ingen elever funnet for kode: '+code,'error');
+    card.style.display='none'; return;
+  }
+  rapportStudentData=data;
+  selectedRapportStudents.clear();
+  card.style.display='';
+  list.innerHTML='';
+  Object.entries(data).forEach(([name,p])=>{
+    const gameDesc=getLevelDesc(p.game,p.level);
+    const div=document.createElement('label');
+    div.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;cursor:pointer;';
+    div.innerHTML=`
+      <input type="checkbox" class="rapport-check" data-name="${name}" onchange="toggleRapportStudent('${name}',this.checked)"
+        style="width:16px;height:16px;cursor:pointer">
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:0.9rem">${name}</div>
+        <div style="font-size:0.75rem;color:var(--muted)">${p.game||'?'} · N${p.level||'?'} · ${p.correct||0} riktige · ${p.wrong||0} feil · ${p.score||0} p</div>
+        <div style="font-size:0.72rem;color:var(--accent)">${gameDesc}</div>
+      </div>`;
+    list.appendChild(div);
+  });
+};
 
-  const names=Object.keys(data);
-  status.textContent='Genererer rapport for '+names.length+' elever...';
+window.toggleRapportStudent=function(name,checked){
+  checked?selectedRapportStudents.add(name):selectedRapportStudents.delete(name);
+  document.getElementById('rapportGenBtn').disabled=selectedRapportStudents.size===0;
+  document.getElementById('rapportSelectAll').checked=
+    selectedRapportStudents.size===Object.keys(rapportStudentData).length;
+};
 
-  for(const name of names){
-    const p=data[name];
+window.toggleRapportAll=function(checked){
+  selectedRapportStudents.clear();
+  document.querySelectorAll('.rapport-check').forEach(cb=>{
+    cb.checked=checked;
+    if(checked) selectedRapportStudents.add(cb.dataset.name);
+  });
+  document.getElementById('rapportGenBtn').disabled=selectedRapportStudents.size===0;
+};
+
+window.generateRapport=async function(){
+  if(!selectedRapportStudents.size) return;
+  const output=document.getElementById('rapportOutput');
+  const status=document.getElementById('rapportStatus');
+  output.innerHTML='';
+  status.textContent='Genererer rapport for '+selectedRapportStudents.size+' elever...';
+
+  for(const name of selectedRapportStudents){
+    const p=rapportStudentData[name];
     const div=document.createElement('div');
     div.className='rapport-elev';
-    div.innerHTML=`<div class="rapport-elev-name">👤 ${name}</div>
-      <div class="rapport-elev-stats">Nivå: ${p.level||'?'} · Riktige: ${p.correct||0} · Feil: ${p.wrong||0} · Poeng: ${p.score||0}</div>
+    div.innerHTML=`
+      <div class="rapport-elev-name">👤 ${name}</div>
+      <div class="rapport-elev-stats">
+        ${p.game||'?'} · Nivå ${p.level||'?'} · ${p.correct||0} riktige · ${p.wrong||0} feil · ${p.score||0} p
+      </div>
       <div class="rapport-loading" id="rapport-${name.replace(/\s/g,'_')}">Genererer vurdering...</div>`;
     output.appendChild(div);
     generateAIRapport(name,p);
@@ -596,32 +709,39 @@ window.generateRapport=async function(){
 
 async function generateAIRapport(name,p){
   const elId='rapport-'+name.replace(/\s/g,'_');
-  const prompt=`Du er en matematikklærer. Gi en kort, konstruktiv og oppmuntrende vurdering på norsk (2-3 setninger) av følgende elevs prestasjoner i funksjonsfabrikken:
-Elev: ${name}
-Nivå oppnådd: ${p.level||1} av 7
-Riktige svar: ${p.correct||0}
-Feil svar: ${p.wrong||0}
-Poeng: ${p.score||0}
-Spill: ${p.game||'funksjonsfabrikk'}
-Fokuser på hva eleven mestrer og hva som kan forbedres. Ikke nevn tallene direkte.`;
+  const gameDesc=getLevelDesc(p.game,p.level);
+  const correct=p.correct||0, wrong=p.wrong||0;
+  const total=correct+wrong;
+  const pct=total>0?Math.round(correct/total*100):0;
+  const prompt=`Du er matematikklærer og skal skrive en kort faglig vurdering på norsk for ${name}.
 
-  try {
+Eleven har jobbet med: ${gameDesc}
+Spill: ${p.game||'ukjent'}
+Nivå oppnådd: ${p.level||1}
+Riktige svar: ${correct} av ${total} (${pct}%)
+Poeng: ${p.score||0}
+
+Skriv 2-3 setninger som:
+1. Beskriver konkret hva eleven har jobbet med og mestrer på dette nivået
+2. Kommenterer innsats/progresjon (${pct}% riktige, nivå ${p.level||1})
+3. Gir ett konkret tips til videre arbeid
+
+Vær konstruktiv og oppmuntrende. Ikke nevn eksakte tall fra dataene.`;
+
+  try{
     const resp=await fetch('/.netlify/functions/ai-proxy',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-5',
-        max_tokens:200,
-        messages:[{role:'user',content:prompt}]
-      })
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:250,
+        messages:[{role:'user',content:prompt}]})
     });
     const data=await resp.json();
     const text=data.content?.[0]?.text||'Kunne ikke generere vurdering.';
     const el=document.getElementById(elId);
-    if(el){ el.className='rapport-text'; el.textContent=text; }
-  } catch(e){
+    if(el){el.className='rapport-text';el.textContent=text;}
+  }catch(e){
     const el=document.getElementById(elId);
-    if(el){ el.className='rapport-text'; el.textContent='Feil ved generering. Sjekk API-tilkobling.'; }
+    if(el){el.className='rapport-text';el.textContent='Feil ved generering.';}
   }
 }
 
