@@ -172,7 +172,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 </div>
 
 <div class="header">
-  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v1.0</span></div>
+  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v1.4</span></div>
   <div class="header-right">
     <a class="btn-menu" href="./">← Meny</a>
     <button class="btn-logout" onclick="doLogout()">Logg ut</button>
@@ -439,28 +439,50 @@ function updateTcPlayers(data){
 
 function updateLiveGrid(data){
   const el=document.getElementById('liveGrid');
-  const names=Object.keys(data);
+  const names=Object.keys(data).filter(n=>data[n]&&typeof data[n]==='object');
   if(!names.length){
     el.innerHTML='<div class="empty-state"><div class="icon">👥</div><p>Ingen elever tilkoblet ennå</p></div>';
     return;
   }
-  const sorted=[...names].sort((a,b)=>(data[b].score||0)-(data[a].score||0));
+  const now=Date.now();
+  const sorted=[...names].sort((a,b)=>(data[b].lastSeen||0)-(data[a].lastSeen||0));
   el.innerHTML=sorted.map(name=>{
     const p=data[name];
-    const now=Date.now();
-    const isActive=p.lastUpdated&&(now-p.lastUpdated)<60000;
-    const maxLevel=7;
-    const pct=((p.level||1)/maxLevel)*100;
-    return `<div class="live-card ${isActive?'active':''}">
-      <div class="live-name">${name}</div>
-      <div class="live-game">${p.game||'–'}</div>
-      <div class="live-stats">
-        <span class="live-stat stat-level">N${p.level||'?'}</span>
-        <span class="live-stat stat-correct">✓ ${p.correct||0}</span>
-        <span class="live-stat stat-wrong">✗ ${p.wrong||0}</span>
-        <span class="live-stat stat-score">${p.score||0} p</span>
+    const games=p.games||{};
+    const gameNames=Object.keys(games);
+    const lastSeen=p.lastSeen||0;
+    const isActive=lastSeen&&(now-lastSeen)<60000;
+    const agoMs=lastSeen?now-lastSeen:null;
+    const agoMin=agoMs?Math.floor(agoMs/60000):null;
+    const inactive=agoMin!==null&&agoMin>=10;
+
+    const gameRows=gameNames.map(g=>{
+      const gd=games[g];
+      const tot=(gd.correct||0)+(gd.wrong||0);
+      const pct=tot>0?Math.round((gd.correct||0)/tot*100):0;
+      const progressed=(gd.maxLevel||1)>(gd.startLevel||1);
+      return `<div style="display:flex;align-items:center;gap:5px;margin-top:5px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:4px">
+        <span style="font-size:0.7rem;font-weight:800;color:var(--text);min-width:90px">${g}</span>
+        <span class="live-stat stat-level">N${gd.startLevel||'?'}${progressed?'→'+gd.maxLevel:''}</span>
+        <span class="live-stat stat-correct">✓${gd.correct||0}</span>
+        <span class="live-stat stat-wrong">✗${gd.wrong||0}</span>
+        ${tot>0?`<span class="live-stat" style="background:#f0f4ff;color:var(--accent)">${pct}%</span>`:''}
+      </div>`;
+    }).join('');
+
+    const statusLine=inactive
+      ? `<div style="font-size:0.72rem;color:var(--red);font-weight:700;margin-top:5px">⚠️ Inaktiv ${agoMin>=60?Math.floor(agoMin/60)+'t':agoMin+'min'}</div>`
+      : !isActive&&agoMin!==null
+        ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">Sist aktiv: ${agoMin}min siden</div>`
+        : '';
+
+    return `<div class="live-card ${isActive?'active':''}" ${inactive?'style="border-color:#fca5a5"':''}>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="live-name" style="flex:1">${name}</div>
+        <div class="active-dot ${isActive?'active':'inactive'}"></div>
       </div>
-      <div class="live-bar-wrap"><div class="live-bar" style="width:${pct}%"></div></div>
+      ${gameNames.length?gameRows:'<div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Ingen spill ennå</div>'}
+      ${statusLine}
     </div>`;
   }).join('');
 }
@@ -724,9 +746,13 @@ window.generateRapport=async function(){
 async function generateAIRapport(name,p){
   const elId='rapport-'+name.replace(/[\s.]/g,'_');
   const games=p.games||{};
-  const gameNames=Object.keys(games);
+  const now=Date.now();
+  const lastSeen=p.lastSeen||0;
+  const sessionStart=Math.min(...gameNames.map(g=>games[g].sessionStart||now).filter(Boolean));
+  const sessionMinutes=sessionStart?Math.round((now-sessionStart)/60000):null;
+  const inactiveMinutes=lastSeen?Math.round((now-lastSeen)/60000):null;
+  const longPause=inactiveMinutes&&inactiveMinutes>=10;
 
-  // Build game summary for prompt
   const gameSummary=gameNames.map(g=>{
     const gd=games[g];
     const startDesc=getLevelDesc(g,gd.startLevel);
@@ -741,18 +767,28 @@ async function generateAIRapport(name,p){
   const totalTasks=totalCorrect+totalWrong;
   const totalPct=totalTasks>0?Math.round(totalCorrect/totalTasks*100):0;
 
+  const sessionDurationMin=sessionMinutes||0;
+  const lastActivityMin=gameNames.length
+    ? Math.round((now-Math.max(...gameNames.map(g=>games[g].lastUpdated||0)))/60000)
+    : null;
+  const lowActivity=totalTasks<3&&sessionDurationMin>10;
+
+  const activityNote=lowActivity
+    ? `\nMerk: Eleven løste svært få oppgaver (${totalTasks}) i løpet av timen. Det kan indikere lav aktivitet eller at eleven trengte mye hjelp.`
+    : '';
+
   const prompt=`Du er matematikklærer og skriver en kort faglig vurdering til læreren om eleven ${name}.
 
 Eleven jobbet med følgende i denne timen:
 ${gameSummary||'Ingen data tilgjengelig'}
 
-Totalt: ${totalCorrect} riktige av ${totalTasks} oppgaver (${totalPct}%)
+Totalt: ${totalCorrect} riktige av ${totalTasks} oppgaver (${totalPct}%)${activityNote}
 
 Skriv 3-4 setninger i tredje person til læreren som:
 1. Oppsummerer hvilke emner eleven jobbet med og i hvilken rekkefølge
 2. Vurderer mestring og progresjon på tvers av spillene
 3. Peker på hva eleven viser forståelse for faglig
-4. Foreslår ett konkret neste steg
+4. Foreslår ett konkret neste steg${lowActivity?'\n5. Nevn at eleven løste få oppgaver og at det kan være verdt å følge opp':''}
 
 Vær faglig og konkret. Skriv til læreren, ikke til eleven.`;
 
