@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fra tekst til uttrykk</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f4ff;--panel:#fff;--border:#dde3f0;
+  --accent:#5b4fcf;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --r:14px;--shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(91,79,207,0.3);}
+.header-left{display:flex;flex-direction:column;}
+.header-title{font-size:1rem;font-weight:900;letter-spacing:0.5px;}
+.header-sub{font-size:0.7rem;opacity:0.8;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.level-badge{background:rgba(255,255,255,0.2);}
+.score-badge{background:var(--yellow);color:#78350f;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+/* START */
+.overlay{position:fixed;inset:0;background:rgba(240,244,255,0.97);display:flex;align-items:center;justify-content:center;z-index:200;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:32px 36px;width:440px;text-align:center;box-shadow:var(--shadow);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card h2{font-size:0.95rem;color:var(--muted);font-weight:700;margin-bottom:16px;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:700;outline:none;margin-bottom:10px;text-align:center;}
+.name-input:focus{border-color:var(--accent);}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px;}
+.level-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px;gap:14px;max-width:820px;margin:0 auto;width:100%;}
+
+/* SCENARIO CARD */
+.scenario-card{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:20px;width:100%;box-shadow:var(--shadow);display:flex;gap:20px;align-items:flex-start;}
+.scenario-emoji{font-size:5rem;flex-shrink:0;line-height:1;filter:drop-shadow(2px 4px 6px rgba(0,0,0,0.1));}
+.scenario-text{flex:1;}
+.scenario-label{font-size:0.68rem;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.scenario-story{font-size:1rem;font-weight:700;line-height:1.6;color:var(--text);}
+
+/* STEPS */
+.steps-card{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:20px;width:100%;box-shadow:var(--shadow);}
+.step{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+.step:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--accent);color:white;border-radius:50%;font-size:0.75rem;font-weight:900;margin-right:8px;flex-shrink:0;}
+.step-q{font-size:0.95rem;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;}
+.step-hint{font-size:0.8rem;color:var(--muted);font-weight:600;margin-bottom:10px;padding:6px 10px;background:#f8f9ff;border-radius:6px;border-left:3px solid var(--accent);}
+
+/* CHOICES */
+.choices{display:flex;flex-wrap:wrap;gap:8px;}
+.choice-btn{padding:8px 16px;background:white;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:800;cursor:pointer;transition:all 0.15s;color:var(--text);}
+.choice-btn:hover:not(:disabled){background:#f0f4ff;border-color:var(--accent);}
+.choice-btn.correct{background:#f0fdf4;border-color:var(--green);color:var(--green);}
+.choice-btn.wrong{background:#fef2f2;border-color:var(--red);color:var(--red);}
+.choice-btn:disabled{cursor:default;}
+
+/* TEXT INPUT */
+.text-input-wrap{display:flex;gap:8px;align-items:center;}
+.step-input{padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:700;outline:none;flex:1;max-width:260px;}
+.step-input:focus{border-color:var(--accent);}
+.step-input.correct{border-color:var(--green);background:#f0fdf4;}
+.step-input.wrong{border-color:var(--red);background:#fef2f2;}
+.btn-check{padding:8px 16px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.88rem;cursor:pointer;}
+.btn-check:disabled{opacity:0.4;cursor:default;}
+
+/* FEEDBACK */
+.feedback{font-size:0.85rem;font-weight:800;margin-top:8px;min-height:20px;}
+.feedback.ok{color:var(--green);}
+.feedback.err{color:var(--red);}
+.step-done{opacity:0.6;}
+.checkmark{color:var(--green);font-size:1rem;margin-left:6px;}
+
+/* EXPRESSION BUILDER */
+.expr-build{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.expr-part{background:#f0f4ff;border:2px solid var(--accent);border-radius:8px;padding:6px 14px;font-size:1rem;font-weight:900;color:var(--accent);}
+.expr-part.correct{background:#f0fdf4;border-color:var(--green);color:var(--green);}
+.expr-sep{font-size:1.1rem;font-weight:900;color:var(--muted);}
+.final-expr{font-size:1.3rem;font-weight:900;color:var(--accent);text-align:center;padding:12px;background:#f0f4ff;border-radius:var(--r);border:2px solid var(--accent);margin-top:8px;}
+
+/* CONTROLS */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.btn{padding:9px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:800;cursor:pointer;}
+.btn-next{background:var(--green);color:white;display:none;}
+.btn-reset{background:#f3f4f6;color:var(--muted);}
+
+/* PROGRESS */
+.progress-bar{width:100%;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width 0.4s;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:8px;font-weight:800;font-size:0.9rem;opacity:0;transition:all 0.3s;z-index:100;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);color:white;}
+.toast.error{background:var(--red);color:white;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- START -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <h1>📖 Fra tekst til uttrykk</h1>
+    <h2>Les situasjonen og finn funksjonsuttrykket</h2>
+    <div class="version">v1.0</div>
+    <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
+    <div class="level-select" id="levelSelect"></div>
+    <button class="start-btn" onclick="startGame()">🚀 Start!</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-title">📖 Fra tekst til uttrykk</div>
+  </div>
+  <div class="header-right">
+    <span class="badge level-badge" id="levelBadge">Nivå 1</span>
+    <span class="badge score-badge" id="scoreBadge">0 p</span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <!-- SCENARIO -->
+  <div class="scenario-card">
+    <div class="scenario-emoji" id="scenarioEmoji">🏔️</div>
+    <div class="scenario-text">
+      <div class="scenario-label">📋 Les situasjonen</div>
+      <div class="scenario-story" id="scenarioStory">–</div>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <div class="steps-card" id="stepsCard"></div>
+
+  <div class="controls">
+    <button class="btn btn-reset" onclick="resetTask()">↺ Prøv igjen</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextTask()">➡️ Neste oppgave</button>
+  </div>
+
+</div>
+
+<script>
+// ── SCENARIOS ──
+const SCENARIOS=[
+  // N1 — positive stigningstall, positive konstantledd
+  {
+    level:1,
+    emoji:'🏔️',
+    story:'Du går tur i fjellet. Du stiger 9 høydemeter per minutt og starter på 77 meters høyde. Skriv et uttrykk for høyden f(x) etter x minutter.',
+    a:9, b:77,
+    xMeans:'minutter',
+    fMeans:'høyde i meter',
+    changePerX:'9 høydemeter per minutt',
+    startValue:'77 meter',
+    choices_x:['minutter','meter','høydemeter','turer'],
+    choices_f:['høyden i meter','antall minutter','farten','antall turer'],
+    choices_change:['9 høydemeter','77 høydemeter','1 meter','9 minutter'],
+    choices_start:['77 meter','9 meter','77 minutter','0 meter'],
+  },
+  {
+    level:1,
+    emoji:'🚗',
+    story:'En bil kjører i 70 km/t og har allerede tilbakelagt 30 km. Skriv et uttrykk for total distanse f(x) etter x timer.',
+    a:70, b:30,
+    xMeans:'timer',
+    fMeans:'distanse i km',
+    changePerX:'70 km per time',
+    startValue:'30 km',
+    choices_x:['timer','km','minutter','km/t'],
+    choices_f:['distanse i km','antall timer','farten','startpunktet'],
+    choices_change:['70 km','30 km','1 km','100 km'],
+    choices_start:['30 km','70 km','0 km','100 km'],
+  },
+  {
+    level:1,
+    emoji:'💰',
+    story:'Lena sparer 150 kr per uke. Hun har allerede 400 kr på konto. Skriv et uttrykk for beløpet f(x) etter x uker.',
+    a:150, b:400,
+    xMeans:'uker',
+    fMeans:'beløp i kroner',
+    changePerX:'150 kr per uke',
+    startValue:'400 kr',
+    choices_x:['uker','kroner','måneder','dager'],
+    choices_f:['beløp i kroner','antall uker','spareraten','rentenivået'],
+    choices_change:['150 kr','400 kr','50 kr','15 kr'],
+    choices_start:['400 kr','150 kr','0 kr','550 kr'],
+  },
+  {
+    level:1,
+    emoji:'🕯️',
+    story:'Et lys brenner ned 2 cm per time og er 24 cm langt til å begynne med. Skriv et uttrykk for lengden f(x) etter x timer.',
+    a:-2, b:24,
+    xMeans:'timer',
+    fMeans:'lengde i cm',
+    changePerX:'−2 cm per time',
+    startValue:'24 cm',
+    choices_x:['timer','cm','minutter','lys'],
+    choices_f:['lengde i cm','antall timer','brennhastigheten','temperaturen'],
+    choices_change:['-2 cm','2 cm','24 cm','-24 cm'],
+    choices_start:['24 cm','2 cm','12 cm','0 cm'],
+  },
+  // N2 — negative stigningstall
+  {
+    level:2,
+    emoji:'❄️',
+    story:'Temperaturen synker med 3 grader per time. Akkurat nå er det 15 grader. Skriv et uttrykk for temperaturen f(x) om x timer.',
+    a:-3, b:15,
+    xMeans:'timer',
+    fMeans:'temperatur i grader',
+    changePerX:'−3 grader per time',
+    startValue:'15 grader',
+    choices_x:['timer','grader','minutter','dager'],
+    choices_f:['temperatur i grader','antall timer','nedkjølingen','vinden'],
+    choices_change:['-3 grader','3 grader','15 grader','-15 grader'],
+    choices_start:['15 grader','3 grader','0 grader','-3 grader'],
+  },
+  {
+    level:2,
+    emoji:'🏊',
+    story:'Et basseng tømmes med 200 liter per minutt. Det er 5000 liter igjen i bassenget. Skriv et uttrykk for mengden f(x) etter x minutter.',
+    a:-200, b:5000,
+    xMeans:'minutter',
+    fMeans:'liter i bassenget',
+    changePerX:'−200 liter per minutt',
+    startValue:'5000 liter',
+    choices_x:['minutter','liter','timer','basseng'],
+    choices_f:['liter i bassenget','antall minutter','tømmehastigheten','startmengden'],
+    choices_change:['-200 liter','200 liter','5000 liter','-5000 liter'],
+    choices_start:['5000 liter','200 liter','0 liter','4800 liter'],
+  },
+  {
+    level:2,
+    emoji:'🔋',
+    story:'Batteriet på telefonen lader ut med 8% per time. Akkurat nå er det 92% batteri igjen. Skriv et uttrykk for batterikapasiteten f(x) etter x timer.',
+    a:-8, b:92,
+    xMeans:'timer',
+    fMeans:'batteri i prosent',
+    changePerX:'−8% per time',
+    startValue:'92%',
+    choices_x:['timer','prosent','minutter','lader'],
+    choices_f:['batteri i prosent','antall timer','ladekapasiteten','strømbruket'],
+    choices_change:['-8%','8%','92%','-92%'],
+    choices_start:['92%','8%','100%','0%'],
+  },
+  // N3 — fritekst i stedet for flervalg
+  {
+    level:3,
+    emoji:'🚀',
+    story:'En rakett stiger 120 meter per sekund. Den befinner seg allerede 500 meter over bakken. Skriv et uttrykk for høyden f(x) etter x sekunder.',
+    a:120, b:500,
+    xMeans:'sekunder',
+    fMeans:'høyde i meter',
+    changePerX:'120 meter per sekund',
+    startValue:'500 meter',
+  },
+  {
+    level:3,
+    emoji:'🎮',
+    story:'Du spiller et spill og tjener 45 poeng per runde. Du startet med 200 poeng. Skriv et uttrykk for poengsum f(x) etter x runder.',
+    a:45, b:200,
+    xMeans:'runder',
+    fMeans:'poeng',
+    changePerX:'45 poeng per runde',
+    startValue:'200 poeng',
+  },
+  {
+    level:3,
+    emoji:'🌊',
+    story:'Vannet i en tank synker med 15 liter per minutt. Det er 800 liter i tanken nå. Skriv et uttrykk for mengden f(x) etter x minutter.',
+    a:-15, b:800,
+    xMeans:'minutter',
+    fMeans:'liter i tanken',
+    changePerX:'−15 liter per minutt',
+    startValue:'800 liter',
+  },
+  // N4 — mer avanserte, tvetydig tekst
+  {
+    level:4,
+    emoji:'🏃',
+    story:'Maja løper et maratonløp. Hun holder 12 km/t og har allerede løpt 4 km. Skriv et uttrykk for total distanse f(x) etter x timer.',
+    a:12, b:4,
+    xMeans:'timer',
+    fMeans:'distanse i km',
+    changePerX:'12 km per time',
+    startValue:'4 km',
+  },
+  {
+    level:4,
+    emoji:'📈',
+    story:'En bedrift øker omsetningen med 50 000 kr per måned. I januar var omsetningen 120 000 kr. Skriv et uttrykk for omsetningen f(x) etter x måneder fra januar.',
+    a:50000, b:120000,
+    xMeans:'måneder',
+    fMeans:'omsetning i kr',
+    changePerX:'50 000 kr per måned',
+    startValue:'120 000 kr',
+  },
+  {
+    level:4,
+    emoji:'☀️',
+    story:'Temperaturen stiger 2,5 grader per time fra kl. 06. Klokken 06 er det −4 grader. Skriv et uttrykk for temperaturen f(x) etter x timer fra kl. 06.',
+    a:2.5, b:-4,
+    xMeans:'timer etter kl. 06',
+    fMeans:'temperatur i grader',
+    changePerX:'2,5 grader per time',
+    startValue:'−4 grader',
+  },
+];
+
+// ── LEVELS ──
+const LEVELS={
+  1:{name:'Nivå 1',desc:'Positive tall, flervalg'},
+  2:{name:'Nivå 2',desc:'Negative tall, flervalg'},
+  3:{name:'Nivå 3',desc:'Alle tall, fritekst'},
+  4:{name:'Nivå 4',desc:'Avanserte situasjoner, fritekst'},
+};
+const MAX_LEVEL=4, MIN_LEVEL=1;
+
+// ── STATE ──
+let currentLevel=1, currentScore=0, playerName='';
+let currentTask=null;
+let streak=0, errorStreak=0, taskStartTime=0;
+let stepsCompleted=0, totalSteps=4;
+let usedScenarios=[];
+
+// ── ADAPTIVE ──
+const UP_STREAK=3, DOWN_ERRORS=2, EXPECTED_TIME=60;
+function recordResult(correct){
+  if(correct){errorStreak=0;streak++;if(streak>=UP_STREAK) changeLevel(1);}
+  else{streak=0;errorStreak++;if(errorStreak>=DOWN_ERRORS) changeLevel(-1);}
+}
+function changeLevel(d){
+  const n=Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,currentLevel+d));
+  if(n===currentLevel) return;
+  currentLevel=n; streak=0; errorStreak=0;
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  showToast(d>0?'⬆️ '+LEVELS[currentLevel].name+'!':'⬇️ '+LEVELS[currentLevel].name,'success');
+  document.querySelectorAll('.level-btn').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===currentLevel));
+}
+
+// ── PICK TASK ──
+function pickTask(level){
+  const pool=SCENARIOS.filter(s=>s.level<=level&&!usedScenarios.includes(s));
+  if(!pool.length){ usedScenarios=[]; return pickTask(level); }
+  const t=pool[Math.floor(Math.random()*pool.length)];
+  usedScenarios.push(t);
+  return t;
+}
+
+// ── RENDER ──
+function renderTask(){
+  const t=currentTask;
+  const lv=LEVELS[currentLevel];
+  const freetext=currentLevel>=3;
+  taskStartTime=Date.now();
+  stepsCompleted=0;
+
+  document.getElementById('scenarioEmoji').textContent=t.emoji;
+  document.getElementById('scenarioStory').textContent=t.story;
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('progressFill').style.width='0%';
+
+  const steps=[
+    {
+      id:'step-x',
+      q:'Hva står x for i denne situasjonen?',
+      hint:'Se etter hva som endrer seg — hva teller vi opp?',
+      answer:t.xMeans,
+      choices:t.choices_x,
+    },
+    {
+      id:'step-f',
+      q:'Hva måler f(x)?',
+      hint:'Hva er det vi ønsker å finne ut av?',
+      answer:t.fMeans,
+      choices:t.choices_f,
+    },
+    {
+      id:'step-change',
+      q:'Hvor mye endrer f(x) seg for hver x?',
+      hint:'Dette blir stigningstallet a i f(x) = ax + b',
+      answer:freetext?String(t.a):t.changePerX,
+      choices:t.choices_change,
+      isA:true,
+    },
+    {
+      id:'step-start',
+      q:'Hva er startverdien (når x = 0)?',
+      hint:'Dette blir konstantleddet b i f(x) = ax + b',
+      answer:freetext?String(t.b):t.startValue,
+      choices:t.choices_start,
+      isB:true,
+    },
+  ];
+
+  const card=document.getElementById('stepsCard');
+  card.innerHTML='';
+
+  steps.forEach((step,idx)=>{
+    const div=document.createElement('div');
+    div.className='step';
+    div.id=step.id;
+
+    const qRow=document.createElement('div');
+    qRow.className='step-q';
+    qRow.innerHTML=`<span class="step-num">${idx+1}</span>${step.q}`;
+    div.appendChild(qRow);
+
+    const hint=document.createElement('div');
+    hint.className='step-hint';
+    hint.textContent=step.hint;
+    div.appendChild(hint);
+
+    const fb=document.createElement('div');
+    fb.className='feedback';
+    fb.id='fb-'+step.id;
+
+    if(freetext){
+      // Text input
+      const wrap=document.createElement('div');
+      wrap.className='text-input-wrap';
+      const inp=document.createElement('input');
+      inp.type='text'; inp.className='step-input';
+      inp.id='inp-'+step.id;
+      inp.placeholder='Skriv svaret ditt...';
+      inp.disabled=idx>0;
+      const btn=document.createElement('button');
+      btn.className='btn-check'; btn.textContent='✓ Sjekk';
+      btn.id='btn-'+step.id;
+      btn.disabled=idx>0;
+      btn.onclick=()=>checkFreetext(step,idx,steps);
+      inp.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!btn.disabled) btn.click(); });
+      wrap.appendChild(inp); wrap.appendChild(btn);
+      div.appendChild(wrap);
+    } else {
+      // Choices
+      const choicesDiv=document.createElement('div');
+      choicesDiv.className='choices';
+      choicesDiv.id='choices-'+step.id;
+      (step.choices||[]).sort(()=>Math.random()-0.5).forEach(c=>{
+        const btn=document.createElement('button');
+        btn.className='choice-btn';
+        btn.textContent=c;
+        btn.disabled=idx>0;
+        btn.onclick=()=>checkChoice(step,c,choicesDiv,idx,steps);
+        choicesDiv.appendChild(btn);
+      });
+      div.appendChild(choicesDiv);
+    }
+
+    div.appendChild(fb);
+    card.appendChild(div);
+  });
+}
+
+// ── CHECK CHOICE ──
+function checkChoice(step,chosen,choicesDiv,idx,steps){
+  const correct=chosen===step.answer;
+  const btns=choicesDiv.querySelectorAll('.choice-btn');
+  btns.forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===step.answer) b.classList.add('correct');
+    else if(b.textContent===chosen&&!correct) b.classList.add('wrong');
+  });
+  const fb=document.getElementById('fb-'+step.id);
+  if(correct){
+    fb.className='feedback ok'; fb.textContent='✓ Riktig!';
+    advanceStep(idx,steps,true);
+  } else {
+    fb.className='feedback err'; fb.textContent='✗ Feil — riktig svar er markert';
+    advanceStep(idx,steps,false);
+  }
+}
+
+// ── CHECK FREETEXT ──
+function checkFreetext(step,idx,steps){
+  const inp=document.getElementById('inp-'+step.id);
+  const val=inp.value.trim().replace(/\s+/g,'').replace(/−/g,'-');
+  const expected=String(step.answer).replace(/\s+/g,'').replace(/−/g,'-');
+  // Also accept numeric equivalents
+  const numVal=parseFloat(val), numExp=parseFloat(expected);
+  const correct=val.toLowerCase()===expected.toLowerCase()||(isFinite(numVal)&&isFinite(numExp)&&Math.abs(numVal-numExp)<0.001);
+  const fb=document.getElementById('fb-'+step.id);
+  const btn=document.getElementById('btn-'+step.id);
+  inp.disabled=true; btn.disabled=true;
+  if(correct){
+    inp.className='step-input correct'; fb.className='feedback ok'; fb.textContent='✓ Riktig!';
+    advanceStep(idx,steps,true);
+  } else {
+    inp.className='step-input wrong'; fb.className='feedback err';
+    fb.textContent='✗ Svaret er: '+step.answer;
+    advanceStep(idx,steps,false);
+  }
+}
+
+// ── ADVANCE STEP ──
+function advanceStep(idx,steps,correct){
+  if(!correct){
+    // Mark step done but don't award full points
+  }
+  stepsCompleted++;
+  const pct=(stepsCompleted/totalSteps)*100;
+  document.getElementById('progressFill').style.width=pct+'%';
+
+  // Unlock next step
+  if(idx+1<steps.length){
+    const nextStep=steps[idx+1];
+    const freetext=currentLevel>=3;
+    if(freetext){
+      const inp=document.getElementById('inp-'+nextStep.id);
+      const btn=document.getElementById('btn-'+nextStep.id);
+      if(inp) inp.disabled=false;
+      if(btn) btn.disabled=false;
+      if(inp) inp.focus();
+    } else {
+      const btns=document.querySelectorAll('#choices-'+nextStep.id+' .choice-btn');
+      btns.forEach(b=>b.disabled=false);
+    }
+  }
+
+  // All steps done
+  if(stepsCompleted===totalSteps){
+    setTimeout(()=>showExpression(),400);
+  }
+}
+
+// ── SHOW FINAL EXPRESSION ──
+function showExpression(){
+  const t=currentTask;
+  const elapsed=(Date.now()-taskStartTime)/1000;
+  const bonus=Math.round(Math.max(50,200-elapsed));
+  currentScore+=bonus;
+  document.getElementById('scoreBadge').textContent=currentScore+' p';
+  recordResult(true);
+
+  const card=document.getElementById('stepsCard');
+  const div=document.createElement('div');
+  div.style.cssText='margin-top:14px;padding-top:14px;border-top:2px solid var(--border);';
+
+  const aStr=t.a===1?'x':t.a===-1?'−x':(t.a<0?'−'+Math.abs(t.a)+'x':t.a+'x');
+  const bStr=t.b===0?'':(t.b>0?' + '+t.b:' − '+Math.abs(t.b));
+  const expr='f(x) = '+aStr+bStr;
+
+  div.innerHTML=`
+    <div style="font-size:0.75rem;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🎉 Funksjonsuttrykket er:</div>
+    <div class="final-expr">${expr}</div>
+    <div style="font-size:0.82rem;color:var(--muted);font-weight:700;margin-top:8px;text-align:center">
+      a = ${t.a} (stigningstall) &nbsp;·&nbsp; b = ${t.b} (konstantledd)
+    </div>`;
+  card.appendChild(div);
+
+  showToast('🎉 +'+bonus+' poeng!','success');
+  document.getElementById('nextBtn').style.display='inline-block';
+}
+
+// ── NEXT / RESET ──
+window.nextTask=function(){
+  currentTask=pickTask(currentLevel);
+  renderTask();
+};
+window.resetTask=function(){
+  stepsCompleted=0;
+  renderTask();
+};
+
+// ── START ──
+window.startGame=function(){
+  playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  currentTask=pickTask(currentLevel);
+  renderTask();
+};
+
+function buildLevelSelect(){
+  const el=document.getElementById('levelSelect');
+  Object.keys(LEVELS).forEach(l=>{
+    const btn=document.createElement('button');
+    btn.className='level-btn'+(parseInt(l)===currentLevel?' active':'');
+    btn.textContent=l;
+    btn.title=LEVELS[l].desc;
+    btn.onclick=()=>{
+      currentLevel=parseInt(l);
+      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    el.appendChild(btn);
+  });
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type;
+  void t.offsetWidth; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+buildLevelSelect();
+</script>
+<script src="../js/touch-dnd.js"></script>
+</body>
+</html>
