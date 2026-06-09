@@ -172,7 +172,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 </div>
 
 <div class="header">
-  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v1.5</span></div>
+  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v1.8</span></div>
   <div class="header-right">
     <a class="btn-menu" href="./">← Meny</a>
     <button class="btn-logout" onclick="doLogout()">Logg ut</button>
@@ -197,19 +197,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
     </div>
 
     <div class="card green" id="tcActiveCard" style="display:none">
-      <div class="card-label">Aktiv timekode</div>
-      <div class="tc-row">
-        <div class="tc-code" id="tcCode">–</div>
-        <div class="tc-timer" id="tcTimer">–</div>
-        <button class="btn btn-danger" onclick="stopTimecode()">⏹ Avslutt kode</button>
-      </div>
-      <div class="tc-meta" id="tcMeta"></div>
-      <div style="margin-top:14px">
-        <div class="card-label">Tilkoblede elever</div>
-        <div id="tcPlayers" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
-          <span style="color:var(--muted);font-size:0.82rem">Ingen elever ennå...</span>
-        </div>
-      </div>
+      <div class="card-label">Aktive timekoder</div>
+      <div id="tcActiveList" style="display:flex;flex-direction:column;gap:12px"></div>
     </div>
 
     <div class="card" id="tcCreateCard">
@@ -371,7 +360,10 @@ function initDashboard(){
 }
 
 // ── TIMECODE ──
-let tcInterval=null, tcLiveUnsub=null, activeCode=null;
+let tcIntervals={}, tcLiveUnsubs={};
+let activeCodes={};
+let tcPlayersCache={};
+let activeCode=null;
 
 function randomCode(){
   const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -380,111 +372,98 @@ function randomCode(){
 
 window.createTimecode=async function(){
   let code=document.getElementById('tcCodeInput').value.trim().toUpperCase()||randomCode();
+  document.getElementById('tcCodeInput').value='';
   const minutes=Math.max(5,Math.min(240,parseInt(document.getElementById('tcMinutes').value)||60));
   const expires=Date.now()+minutes*60*1000;
   activeCode=code;
+  document.getElementById('rapportCode').value=code;
   await window._set(window._ref(window._db,'timecodes/'+code),{
     created:Date.now(),expires,minutes,active:true
   });
-  showActiveTimecode(code,expires,minutes);
+  addActiveTimecode(code,expires,minutes);
 };
 
-window.stopTimecode=async function(){
-  if(!activeCode) return;
-  await window._remove(window._ref(window._db,'timecodes/'+activeCode));
-  activeCode=null;
-  if(tcInterval){clearInterval(tcInterval);tcInterval=null;}
-  if(tcLiveUnsub){tcLiveUnsub();tcLiveUnsub=null;}
-  document.getElementById('tcActiveCard').style.display='none';
-  document.getElementById('liveGrid').innerHTML='<div class="empty-state"><div class="icon">👥</div><p>Ingen aktiv timekode</p></div>';
+window.stopTimecode=async function(code){
+  await window._remove(window._ref(window._db,'timecodes/'+code));
+  delete activeCodes[code];
+  delete tcPlayersCache[code];
+  if(tcIntervals[code]){clearInterval(tcIntervals[code]);delete tcIntervals[code];}
+  if(tcLiveUnsubs[code]){tcLiveUnsubs[code]();delete tcLiveUnsubs[code];}
+  if(!Object.keys(activeCodes).length){
+    document.getElementById('tcActiveCard').style.display='none';
+    document.getElementById('liveGrid').innerHTML='<div class="empty-state"><div class="icon">👥</div><p>Ingen aktiv timekode</p></div>';
+  } else {
+    renderActiveTimecodes();
+  }
 };
 
-function showActiveTimecode(code,expires,minutes){
-  activeCode=code;
-  document.getElementById('tcCode').textContent=code;
-  document.getElementById('rapportCode').value=code;
-  document.getElementById('tcMeta').textContent=
-    'Varighet: '+minutes+' min · Utløper: '+new Date(expires).toLocaleTimeString('no');
+function addActiveTimecode(code,expires,minutes){
+  activeCodes[code]={expires,minutes};
   document.getElementById('tcActiveCard').style.display='';
-  document.getElementById('tcCreateCard').style.display='';
+  renderActiveTimecodes();
 
-  if(tcInterval) clearInterval(tcInterval);
-  tcInterval=setInterval(()=>{
+  if(tcIntervals[code]) clearInterval(tcIntervals[code]);
+  tcIntervals[code]=setInterval(()=>{
+    const el=document.getElementById('tc-timer-'+code);
+    if(!el){clearInterval(tcIntervals[code]);return;}
     const left=expires-Date.now();
-    const el=document.getElementById('tcTimer');
-    if(left<=0){el.textContent='UTLØPT';el.className='tc-timer expiring';clearInterval(tcInterval);return;}
+    if(left<=0){el.textContent='UTLØPT';el.className='tc-timer expiring';clearInterval(tcIntervals[code]);return;}
     const m=Math.floor(left/60000),s=Math.floor((left%60000)/1000);
     el.textContent=m+':'+String(s).padStart(2,'0');
     el.className='tc-timer'+(left<5*60000?' expiring':'');
   },1000);
 
-  // Live players
-  if(tcLiveUnsub) tcLiveUnsub();
-  tcLiveUnsub=window._onValue(window._ref(window._db,'timecodes/'+code+'/players'),snap=>{
-    const data=snap.val()||{};
-    updateTcPlayers(data);
-    updateLiveGrid(data);
+  if(tcLiveUnsubs[code]) tcLiveUnsubs[code]();
+  tcLiveUnsubs[code]=window._onValue(window._ref(window._db,'timecodes/'+code+'/players'),snap=>{
+    tcPlayersCache[code]=snap.val()||{};
+    renderTcPlayers(code,tcPlayersCache[code]);
+    mergeAndUpdateLiveGrid();
   });
 }
 
-function updateTcPlayers(data){
-  const el=document.getElementById('tcPlayers');
-  const names=Object.keys(data);
-  if(!names.length){el.innerHTML='<span style="color:var(--muted);font-size:0.82rem">Ingen elever ennå...</span>';return;}
-  el.innerHTML=names.map(n=>`
-    <span style="padding:3px 10px;background:white;border:1.5px solid var(--border);border-radius:20px;font-size:0.78rem;font-weight:700">
-      👤 ${n}
-    </span>`).join('');
+function renderActiveTimecodes(){
+  const list=document.getElementById('tcActiveList');
+  list.innerHTML='';
+  Object.entries(activeCodes).forEach(([code,tc])=>{
+    const div=document.createElement('div');
+    div.id='tc-entry-'+code;
+    div.style.cssText='padding-bottom:12px;border-bottom:1px solid rgba(0,0,0,0.1);';
+    div.innerHTML=`
+      <div class="tc-row">
+        <div class="tc-code">${code}</div>
+        <div class="tc-timer" id="tc-timer-${code}">–</div>
+        <button class="btn btn-danger" onclick="stopTimecode('${code}')">⏹ Avslutt</button>
+      </div>
+      <div style="font-size:0.78rem;color:#166534;font-weight:600">
+        Varighet: ${tc.minutes} min · Utløper: ${new Date(tc.expires).toLocaleTimeString('no')}
+      </div>
+      <div id="tc-players-${code}" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">
+        <span style="color:#166534;font-size:0.78rem">Ingen elever ennå...</span>
+      </div>`;
+    list.appendChild(div);
+  });
 }
 
-function updateLiveGrid(data){
-  const el=document.getElementById('liveGrid');
-  const names=Object.keys(data).filter(n=>data[n]&&typeof data[n]==='object');
-  if(!names.length){
-    el.innerHTML='<div class="empty-state"><div class="icon">👥</div><p>Ingen elever tilkoblet ennå</p></div>';
-    return;
-  }
-  const now=Date.now();
-  const sorted=[...names].sort((a,b)=>(data[b].lastSeen||0)-(data[a].lastSeen||0));
-  el.innerHTML=sorted.map(name=>{
-    const p=data[name];
-    const games=p.games||{};
-    const gameNames=Object.keys(games);
-    const lastSeen=p.lastSeen||0;
-    const isActive=lastSeen&&(now-lastSeen)<60000;
-    const agoMs=lastSeen?now-lastSeen:null;
-    const agoMin=agoMs?Math.floor(agoMs/60000):null;
-    const inactive=agoMin!==null&&agoMin>=10;
+function renderTcPlayers(code,data){
+  const el=document.getElementById('tc-players-'+code);
+  if(!el) return;
+  const names=Object.keys(data);
+  if(!names.length){el.innerHTML='<span style="color:#166534;font-size:0.78rem">Ingen elever ennå...</span>';return;}
+  el.innerHTML=names.map(n=>`<span style="padding:2px 8px;background:white;border:1.5px solid #86efac;border-radius:20px;font-size:0.75rem;font-weight:700">👤 ${n}</span>`).join('');
+}
 
-    const gameRows=gameNames.map(g=>{
-      const gd=games[g];
-      const tot=(gd.correct||0)+(gd.wrong||0);
-      const pct=tot>0?Math.round((gd.correct||0)/tot*100):0;
-      const progressed=(gd.maxLevel||1)>(gd.startLevel||1);
-      return `<div style="display:flex;align-items:center;gap:5px;margin-top:5px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:4px">
-        <span style="font-size:0.7rem;font-weight:800;color:var(--text);min-width:90px">${g}</span>
-        <span class="live-stat stat-level">N${gd.startLevel||'?'}${progressed?'→'+gd.maxLevel:''}</span>
-        <span class="live-stat stat-correct">✓${gd.correct||0}</span>
-        <span class="live-stat stat-wrong">✗${gd.wrong||0}</span>
-        ${tot>0?`<span class="live-stat" style="background:#f0f4ff;color:var(--accent)">${pct}%</span>`:''}
-      </div>`;
-    }).join('');
-
-    const statusLine=inactive
-      ? `<div style="font-size:0.72rem;color:var(--red);font-weight:700;margin-top:5px">⚠️ Inaktiv ${agoMin>=60?Math.floor(agoMin/60)+'t':agoMin+'min'}</div>`
-      : !isActive&&agoMin!==null
-        ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:4px">Sist aktiv: ${agoMin}min siden</div>`
-        : '';
-
-    return `<div class="live-card ${isActive?'active':''}" ${inactive?'style="border-color:#fca5a5"':''}>
-      <div style="display:flex;align-items:center;gap:6px">
-        <div class="live-name" style="flex:1">${name}</div>
-        <div class="active-dot ${isActive?'active':'inactive'}"></div>
-      </div>
-      ${gameNames.length?gameRows:'<div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Ingen spill ennå</div>'}
-      ${statusLine}
-    </div>`;
-  }).join('');
+function mergeAndUpdateLiveGrid(){
+  const merged={};
+  Object.values(tcPlayersCache).forEach(players=>{
+    Object.entries(players).forEach(([name,data])=>{
+      if(!merged[name]) merged[name]={...data};
+      else{
+        merged[name].games=Object.assign({},merged[name].games||{},data.games||{});
+        merged[name].lastSeen=Math.max(merged[name].lastSeen||0,data.lastSeen||0);
+      }
+    });
+  });
+  updateLiveGrid(merged);
 }
 
 function checkExistingTimecode(){
@@ -492,10 +471,11 @@ function checkExistingTimecode(){
     const data=snap.val()||{};
     const now=Date.now();
     Object.entries(data).forEach(([code,tc])=>{
-      if(tc.active&&tc.expires>now&&!activeCode){
-        showActiveTimecode(code,tc.expires,tc.minutes);
+      if(tc.active&&tc.expires>now&&!activeCodes[code]){
+        addActiveTimecode(code,tc.expires,tc.minutes);
+        activeCode=code;
+        document.getElementById('rapportCode').value=code;
       }
-      // Clean up codes older than 48h
       if(tc.expires<now-48*60*60*1000){
         window._remove(window._ref(window._db,'timecodes/'+code));
       }
@@ -616,16 +596,16 @@ window.closeConfirm=function(){ document.getElementById('confirmOverlay').classL
 // ── RAPPORT ──
 const GAME_LEVELS={
   'funksjonsfabrikk':{
-    1:'bygge funksjonsuttrykk av blokker (positive heltall)',
-    2:'bygge funksjonsuttrykk med negative heltall',
-    3:'bygge funksjonsuttrykk med desimaltall',
+    1:'bygge funksjonsuttrykk av blokker med positive tall',
+    2:'bygge funksjonsuttrykk, blanding av positive tall',
+    3:'skrive stigningstall og konstantledd',
     4:'negative konstantledd',
     5:'negative stigningstall',
     6:'blanding av alle typer med proporsjonal-vurdering',
-    7:'skrive funksjonsuttrykket direkte med stigningstall og konstantledd',
+    7:'skrive hele funksjonsuttrykket direkte',
   },
   'likningsbygger':{
-    1:'enkle ligninger (x + b = c)',
+    1:'enkle ligninger (x + b = c), positive tall',
     2:'ligninger med koeffisient (ax = c)',
     3:'ligninger med ledd på begge sider',
     4:'ligninger med negative tall',
@@ -640,18 +620,25 @@ const GAME_LEVELS={
     4:'avanserte likningssett',
   },
   'ligningsvekt':{
-    1:'balansere enkle vektligninger',
-    7:'balansere ligninger med negative tall',
-    14:'balansere avanserte ligninger med brøker',
+    1:'balansere enkle vektligninger (nivå 1)',
+    4:'balansere ligninger med koeffisient',
+    8:'balansere ligninger med negative tall',
+    12:'balansere ligninger med brøker',
+    14:'balansere avanserte ligninger',
   },
   'uttrykk-til-tabell':{
-    1:'fylle ut verditabell med fabrikk-animasjon (positive heltall)',
-    4:'skrive regnestykket selv for positive heltall',
-    7:'bruke kalkulator for å fylle ut verditabell',
-    9:'verditabell med brøkkoeffisienter',
+    1:'fylle ut verditabell med fabrikk-animasjon, positive heltall',
+    2:'verditabell med negative heltall',
+    3:'verditabell med desimaltall',
+    4:'skrive regnestykket selv, positive heltall',
+    5:'skrive regnestykket selv med negative tall og desimaltall',
+    6:'skrive regnestykket selv, inkl brøkkoeffisienter',
+    7:'bruke kalkulator for å fylle ut tabell, positive heltall',
+    8:'kalkulator med negative tall og desimaltall',
+    9:'kalkulator med brøkkoeffisienter',
   },
   'koordinatslag':{
-    0:'koordinatlag (skyte på koordinater i et koordinatsystem)',
+    0:'koordinatslag (skyte på koordinater i et koordinatsystem)',
   },
 };
 
@@ -783,13 +770,16 @@ ${gameSummary||'Ingen data tilgjengelig'}
 
 Totalt: ${totalCorrect} riktige av ${totalTasks} oppgaver (${totalPct}%)${activityNote}
 
-Skriv 3-4 setninger i tredje person til læreren som:
-1. Oppsummerer hvilke emner eleven jobbet med og i hvilken rekkefølge
-2. Vurderer mestring og progresjon på tvers av spillene
-3. Peker på hva eleven viser forståelse for faglig
-4. Foreslår ett konkret neste steg${lowActivity?'\n5. Nevn at eleven løste få oppgaver og at det kan være verdt å følge opp':''}
+Her er et eksempel på ønsket format (om en annen elev):
+---
+Emma jobbet denne timen med å balansere enkle vektligninger og nådde nivå 4, som innebærer ligninger med koeffisient på begge sider. Hun løste tre av fire oppgaver riktig, noe som tyder på god grunnforståelse for likevektsprinsippet. Emma viser særlig styrke i å flytte ledd, men kan trene mer på å håndtere negative koeffisienter. Et naturlig neste steg vil være å jobbe med ligninger der ukjente forekommer på begge sider.
+---
 
-Vær faglig og konkret. Skriv til læreren, ikke til eleven.`;
+Skriv tilsvarende 3-4 setninger i tredje person om ${name}. Husk:
+- Skriv til læreren, ikke til eleven
+- Bruk konkrete faglige begreper basert på nivåbeskrivelsene over
+- Ikke bruk vage fraser som "viser god fremgang" uten begrunnelse
+- Avslutt med ett konkret neste steg`;
 
   try{
     const resp=await fetch('/.netlify/functions/ai-proxy',{
