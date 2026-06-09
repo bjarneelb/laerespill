@@ -112,7 +112,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>📖 Fra tekst til uttrykk</h1>
     <h2>Les situasjonen og finn funksjonsuttrykket</h2>
-    <div class="version">v1.0</div>
+    <div class="version">v1.1</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
@@ -170,7 +170,7 @@ const SCENARIOS=[
     startValue:'77 meter',
     choices_x:['minutter','meter','høydemeter','turer'],
     choices_f:['høyden i meter','antall minutter','farten','antall turer'],
-    choices_change:['9 høydemeter','77 høydemeter','1 meter','9 minutter'],
+    choices_change:['9 høydemeter per minutt','77 høydemeter per minutt','1 meter per minutt','9 minutter per meter'],
     choices_start:['77 meter','9 meter','77 minutter','0 meter'],
   },
   {
@@ -184,7 +184,7 @@ const SCENARIOS=[
     startValue:'30 km',
     choices_x:['timer','km','minutter','km/t'],
     choices_f:['distanse i km','antall timer','farten','startpunktet'],
-    choices_change:['70 km','30 km','1 km','100 km'],
+    choices_change:['70 km per time','30 km per time','1 km per time','100 km per time'],
     choices_start:['30 km','70 km','0 km','100 km'],
   },
   {
@@ -198,7 +198,7 @@ const SCENARIOS=[
     startValue:'400 kr',
     choices_x:['uker','kroner','måneder','dager'],
     choices_f:['beløp i kroner','antall uker','spareraten','rentenivået'],
-    choices_change:['150 kr','400 kr','50 kr','15 kr'],
+    choices_change:['150 kr per uke','400 kr per uke','50 kr per uke','15 kr per uke'],
     choices_start:['400 kr','150 kr','0 kr','550 kr'],
   },
   {
@@ -212,7 +212,7 @@ const SCENARIOS=[
     startValue:'24 cm',
     choices_x:['timer','cm','minutter','lys'],
     choices_f:['lengde i cm','antall timer','brennhastigheten','temperaturen'],
-    choices_change:['-2 cm','2 cm','24 cm','-24 cm'],
+    choices_change:['−2 cm per time','2 cm per time','24 cm per time','−24 cm per time'],
     choices_start:['24 cm','2 cm','12 cm','0 cm'],
   },
   // N2 — negative stigningstall
@@ -227,7 +227,7 @@ const SCENARIOS=[
     startValue:'15 grader',
     choices_x:['timer','grader','minutter','dager'],
     choices_f:['temperatur i grader','antall timer','nedkjølingen','vinden'],
-    choices_change:['-3 grader','3 grader','15 grader','-15 grader'],
+    choices_change:['−3 grader per time','3 grader per time','15 grader per time','−15 grader per time'],
     choices_start:['15 grader','3 grader','0 grader','-3 grader'],
   },
   {
@@ -241,7 +241,7 @@ const SCENARIOS=[
     startValue:'5000 liter',
     choices_x:['minutter','liter','timer','basseng'],
     choices_f:['liter i bassenget','antall minutter','tømmehastigheten','startmengden'],
-    choices_change:['-200 liter','200 liter','5000 liter','-5000 liter'],
+    choices_change:['−200 liter per minutt','200 liter per minutt','5000 liter per minutt','−5000 liter per minutt'],
     choices_start:['5000 liter','200 liter','0 liter','4800 liter'],
   },
   {
@@ -255,7 +255,7 @@ const SCENARIOS=[
     startValue:'92%',
     choices_x:['timer','prosent','minutter','lader'],
     choices_f:['batteri i prosent','antall timer','ladekapasiteten','strømbruket'],
-    choices_change:['-8%','8%','92%','-92%'],
+    choices_change:['−8% per time','8% per time','92% per time','−92% per time'],
     choices_start:['92%','8%','100%','0%'],
   },
   // N3 — fritekst i stedet for flervalg
