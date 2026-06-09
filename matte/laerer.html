@@ -172,7 +172,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 </div>
 
 <div class="header">
-  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v2.0</span></div>
+  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v2.1</span></div>
   <div class="header-right">
     <a class="btn-menu" href="./">← Meny</a>
     <button class="btn-logout" onclick="doLogout()">Logg ut</button>
@@ -481,7 +481,7 @@ function checkExistingTimecode(){
         activeCode=code;
         document.getElementById('rapportCode').value=code;
       }
-      if(tc.expires<now-48*60*60*1000){
+      if(tc.expires<now-24*60*60*1000){
         window._remove(window._ref(window._db,'timecodes/'+code));
       }
     });
@@ -664,8 +664,17 @@ window.loadRapportStudents=async function(){
   const code=document.getElementById('rapportCode').value.trim().toUpperCase()||activeCode;
   if(!code){ showToast('Skriv inn timekode','error'); return; }
   document.getElementById('rapportCode').value=code;
-  const snap=await window._get(window._ref(window._db,'timecodes/'+code+'/players'));
-  const data=snap.val();
+  const snap=await window._get(window._ref(window._db,'timecodes/'+code));
+  const tcData=snap.val();
+  const status=document.getElementById('rapportStatus');
+  if(!tcData){ showToast('Ingen data funnet for kode: '+code,'error'); return; }
+  const now=Date.now();
+  const expired=tcData.expires&&tcData.expires<now;
+  const tooOld=tcData.expires&&tcData.expires<now-24*60*60*1000;
+  if(tooOld){ showToast('Data eldre enn 24 timer — slettet','error'); return; }
+  if(expired) status.textContent='⚠️ Timekoden utløp '+new Date(tcData.expires).toLocaleString('no')+' — data tilgjengelig i 24t';
+  else status.textContent='';
+  const data=tcData.players||{};
   const card=document.getElementById('rapportStudentCard');
   const list=document.getElementById('rapportStudentList');
   if(!data){ showToast('Ingen elever funnet for kode: '+code,'error'); card.style.display='none'; return; }
