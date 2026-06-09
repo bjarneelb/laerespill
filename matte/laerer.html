@@ -172,7 +172,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 </div>
 
 <div class="header">
-  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v1.8</span></div>
+  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v2.0</span></div>
   <div class="header-right">
     <a class="btn-menu" href="./">← Meny</a>
     <button class="btn-logout" onclick="doLogout()">Logg ut</button>
@@ -351,6 +351,7 @@ window.showTab=function(name){
   document.querySelectorAll('.tab-panel').forEach(p=>{
     p.classList.toggle('active',p.id==='tab-'+name);
   });
+  if(name==='live') mergeAndUpdateLiveGrid();
 };
 
 // ── INIT ──
@@ -463,6 +464,10 @@ function mergeAndUpdateLiveGrid(){
       }
     });
   });
+  if(!Object.keys(activeCodes).length){
+    document.getElementById('liveGrid').innerHTML='<div class="empty-state"><div class="icon">👥</div><p>Ingen aktiv timekode</p></div>';
+    return;
+  }
   updateLiveGrid(merged);
 }
 
@@ -672,7 +677,11 @@ window.loadRapportStudents=async function(){
     const games=p.games||{};
     const gameNames=Object.keys(games);
     const summary=gameNames.length
-      ? gameNames.map(g=>`${g} N${games[g].startLevel||'?'}→N${games[g].maxLevel||'?'}`).join(', ')
+      ? gameNames.map(g=>{
+          const noLevel=games[g].level===null||games[g].level===undefined;
+          if(noLevel) return `${g} (${games[g].correct||0} treff)`;
+          return `${g} N${games[g].startLevel||'?'}→N${games[g].maxLevel||'?'}`;
+        }).join(', ')
       : 'Ingen spill registrert';
     const totalCorrect=gameNames.reduce((s,g)=>s+(games[g].correct||0),0);
     const totalWrong=gameNames.reduce((s,g)=>s+(games[g].wrong||0),0);
@@ -741,11 +750,16 @@ async function generateAIRapport(name,p){
 
   const gameSummary=gameNames.map(g=>{
     const gd=games[g];
-    const startDesc=getLevelDesc(g,gd.startLevel);
-    const maxDesc=getLevelDesc(g,gd.maxLevel);
     const tot=(gd.correct||0)+(gd.wrong||0);
     const pct=tot>0?Math.round((gd.correct||0)/tot*100):0;
-    return `- ${g}: startet N${gd.startLevel||'?'}, nådde N${gd.maxLevel||'?'} (${maxDesc}), ${pct}% riktige av ${tot} oppgaver`;
+    const noLevel=gd.level===null||gd.level===undefined;
+    if(noLevel){
+      const desc=getLevelDesc(g,0);
+      return `- ${g}: ${desc}, ${gd.correct||0} treff av ${tot} skudd`;
+    }
+    const maxDesc=getLevelDesc(g,gd.maxLevel);
+    const progressed=(gd.maxLevel||1)>(gd.startLevel||1);
+    return `- ${g}: startet N${gd.startLevel||'?'}${progressed?', nådde N'+(gd.maxLevel||'?'):''} (${maxDesc}), ${pct}% riktige av ${tot} oppgaver`;
   }).join('\n');
 
   const totalCorrect=gameNames.reduce((s,g)=>s+(games[g].correct||0),0);
