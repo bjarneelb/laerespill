@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bygge uttrykk</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f4ff;--panel:#fff;--border:#dde3f0;
+  --accent:#5b4fcf;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --factory:#92400e;--r:14px;--shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(91,79,207,0.3);}
+.header-left h1{font-size:1rem;font-weight:900;}
+.header-left p{font-size:0.7rem;opacity:0.8;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.level-badge{background:rgba(255,255,255,0.2);color:white;}
+.score-badge{background:var(--yellow);color:#78350f;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+/* START */
+.overlay{position:fixed;inset:0;background:rgba(240,244,255,0.97);display:flex;align-items:center;justify-content:center;z-index:200;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:32px 36px;width:440px;text-align:center;box-shadow:var(--shadow);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card p{font-size:0.88rem;color:var(--muted);font-weight:700;margin-bottom:16px;line-height:1.5;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:700;outline:none;margin-bottom:10px;text-align:center;}
+.name-input:focus{border-color:var(--accent);}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px;}
+.level-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.start-btn:hover{background:#4338ca;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px;gap:12px;max-width:800px;margin:0 auto;width:100%;}
+
+/* STORY CARD */
+.story-card{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:18px 20px;width:100%;box-shadow:var(--shadow);display:flex;gap:16px;align-items:flex-start;}
+.story-emoji{font-size:4rem;flex-shrink:0;line-height:1;}
+.story-label{font-size:0.68rem;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.story-text{font-size:1rem;font-weight:700;line-height:1.6;}
+
+/* STEP CARD */
+.step-card{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:18px 20px;width:100%;box-shadow:var(--shadow);}
+.step-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.step-num{width:28px;height:28px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:900;flex-shrink:0;}
+.step-num.done{background:var(--green);}
+.step-q{font-size:0.95rem;font-weight:800;}
+.step-q.done{color:var(--muted);}
+
+/* CHOICES */
+.choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.choice-btn{padding:8px 16px;background:white;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;cursor:pointer;transition:all 0.15s;}
+.choice-btn:hover:not(:disabled){background:#f0f4ff;border-color:var(--accent);}
+.choice-btn.correct{background:#f0fdf4;border-color:var(--green);color:var(--green);}
+.choice-btn.wrong{background:#fef2f2;border-color:var(--red);color:var(--red);}
+.choice-btn:disabled{cursor:default;}
+
+/* INPUT */
+.input-row{display:flex;gap:8px;align-items:center;margin-top:4px;}
+.step-input{padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;outline:none;width:140px;text-align:center;}
+.step-input:focus{border-color:var(--accent);}
+.step-input.correct{border-color:var(--green);background:#f0fdf4;}
+.step-input.wrong{border-color:var(--red);background:#fef2f2;}
+.btn-ok{padding:8px 18px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.88rem;cursor:pointer;}
+.btn-ok:disabled{opacity:0.4;cursor:default;}
+.step-answer{font-size:0.88rem;font-weight:800;color:var(--green);margin-top:6px;}
+.step-wrong{font-size:0.82rem;font-weight:800;color:var(--red);margin-top:4px;}
+.tries-left{font-size:0.75rem;color:var(--muted);font-weight:700;margin-top:4px;}
+
+/* EXPRESSION BUILDER */
+.expr-card{background:linear-gradient(180deg,#d97706,#92400e);border:3px solid #78350f;border-radius:var(--r);padding:16px;width:100%;box-shadow:0 4px 20px rgba(120,53,15,0.3);}
+.expr-label{text-align:center;color:#fef3c7;font-size:0.72rem;font-weight:800;letter-spacing:2px;margin-bottom:10px;}
+.expr-prefix{color:#fef3c7;font-size:1.1rem;font-weight:900;margin-right:6px;}
+.drop-zone{min-height:44px;background:rgba(255,255,255,0.1);border:2px dashed rgba(254,243,199,0.5);border-radius:8px;display:flex;align-items:center;padding:6px 10px;gap:8px;flex-wrap:wrap;flex:1;}
+.drop-zone.dragover{background:rgba(255,255,255,0.2);border-color:#fef3c7;}
+.expr-row{display:flex;align-items:center;gap:8px;}
+.expr-block{background:#fef3c7;border:2px solid #f59e0b;border-radius:6px;padding:6px 14px;font-size:1rem;font-weight:900;color:#92400e;cursor:grab;user-select:none;}
+.expr-block:hover{background:#fde68a;}
+.expr-placed{background:#fef3c7;border:2px solid #f59e0b;border-radius:6px;padding:6px 14px;font-size:1rem;font-weight:900;color:#92400e;cursor:pointer;}
+.expr-placed:hover{background:#fee2e2;border-color:var(--red);}
+.expr-op{color:#fef3c7;font-weight:900;font-size:1rem;}
+.block-bank{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.bank-label{color:#fef3c7;font-size:0.7rem;font-weight:800;margin-bottom:4px;}
+.expr-input-field{background:rgba(255,255,255,0.15);border:2px solid rgba(254,243,199,0.6);border-radius:8px;padding:8px 12px;color:#fef3c7;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;outline:none;width:100%;text-align:center;}
+.expr-input-field::placeholder{color:rgba(254,243,199,0.5);}
+.expr-input-field.correct{border-color:#86efac;background:rgba(134,239,172,0.2);}
+.expr-input-field.wrong{border-color:#fca5a5;background:rgba(252,165,165,0.2);}
+
+/* CONTROLS */
+.controls{display:flex;gap:8px;justify-content:center;}
+.btn{padding:9px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:800;cursor:pointer;}
+.btn-check{background:var(--accent);color:white;}
+.btn-next{background:var(--green);color:white;display:none;}
+.btn-skip{background:#f3f4f6;color:var(--muted);}
+
+/* FINAL EXPR */
+.final-expr{font-size:1.3rem;font-weight:900;color:var(--accent);text-align:center;padding:12px;background:#f0f4ff;border-radius:var(--r);border:2px solid var(--accent);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:8px;font-weight:800;font-size:0.9rem;opacity:0;transition:all 0.3s;z-index:100;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);color:white;}
+.toast.error{background:var(--red);color:white;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- START -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <h1>🔨 Bygge uttrykk</h1>
+    <p>Les en situasjon og bygg funksjonsuttrykket steg for steg.</p>
+    <div class="version">v1.4</div>
+    <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
+    <div class="level-select" id="levelSelect"></div>
+    <button class="start-btn" onclick="startGame()">🚀 Start!</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>🔨 Bygge uttrykk</h1>
+    <p>Fra tekst til funksjonsuttrykk</p>
+  </div>
+  <div class="header-right">
+    <span class="badge level-badge" id="levelBadge">Nivå 1</span>
+    <span class="badge score-badge" id="scoreBadge">0 p</span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+
+  <!-- STORY -->
+  <div class="story-card">
+    <div class="story-emoji" id="storyEmoji">🏔️</div>
+    <div>
+      <div class="story-label">📋 Situasjon</div>
+      <div class="story-text" id="storyText">–</div>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <div id="stepsArea" style="display:flex;flex-direction:column;gap:10px;width:100%"></div>
+
+  <!-- EXPR BUILDER -->
+  <div class="expr-card" id="exprCard" style="display:none">
+    <div class="expr-label">⚙️ BYGG FUNKSJONSUTTRYKKET ⚙️</div>
+    <div class="expr-row">
+      <span class="expr-prefix">f(x) =</span>
+      <div class="drop-zone" id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <span id="dropPlaceholder" style="color:rgba(254,243,199,0.5);font-size:0.85rem;font-weight:700">Dra blokkene hit...</span>
+      </div>
+    </div>
+    <div class="bank-label" style="margin-top:10px">📦 Blokker</div>
+    <div class="block-bank" id="blockBank"></div>
+  </div>
+
+  <!-- EXPR INPUT (N4+) -->
+  <div class="expr-card" id="exprInputCard" style="display:none">
+    <div class="expr-label">✏️ SKRIV FUNKSJONSUTTRYKKET</div>
+    <input class="expr-input-field" id="exprInputField" placeholder="f(x) = ..." autocomplete="off"
+      onkeydown="if(event.key==='Enter') checkExprInput()">
+    <div style="margin-top:8px;display:flex;justify-content:center">
+      <button class="btn btn-check" onclick="checkExprInput()">✅ Sjekk uttrykk</button>
+    </div>
+    <div id="exprInputFeedback" style="color:#fef3c7;font-size:0.82rem;font-weight:800;text-align:center;margin-top:6px;min-height:18px"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-skip" onclick="nextTask()">↩ Ny oppgave</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextTask()">➡️ Neste oppgave</button>
+  </div>
+
+</div>
+
+<script>
+// ── SCENARIOS ──
+const SCENARIOS=[
+  {
+    emoji:'🏔️', level:1,
+    story:'Du går tur i fjellet. Du stiger 9 høydemeter per minutt og starter på 77 meters høyde.',
+    a:-1, b:-1, // computed below
+    aVal:9, bVal:77,
+    xMeans:'minutter',
+    fMeans:'høyde i meter',
+    xLeddChoices:['-9x','9x','77x','-77x'], xLeddCorrect:'9x',
+    aChoices:['-9','9','77','-77'], aCorrect:'9',
+    bQuestion:'Hva er starthøyden?',
+    bChoices:['77','9','0','86'], bCorrect:'77',
+    bLeddChoices:['+77','+9','-77','-9'], bLeddCorrect:'+77',
+  },
+  {
+    emoji:'🚗', level:1,
+    story:'En bil kjører i 70 km/t og har allerede tilbakelagt 30 km.',
+    aVal:70, bVal:30,
+    xMeans:'timer',
+    fMeans:'distanse i km',
+    xLeddChoices:['70x','30x','-70x','-30x'], xLeddCorrect:'70x',
+    aChoices:['70','30','-70','100'], aCorrect:'70',
+    bQuestion:'Hvor mange km har bilen kjørt fra start?',
+    bChoices:['30','70','0','100'], bCorrect:'30',
+    bLeddChoices:['+30','+70','-30','-70'], bLeddCorrect:'+30',
+  },
+  {
+    emoji:'💰', level:1,
+    story:'Lena sparer 150 kr per uke. Hun har allerede 400 kr på konto.',
+    aVal:150, bVal:400,
+    xMeans:'uker',
+    fMeans:'beløp i kroner',
+    xLeddChoices:['150x','400x','-150x','-400x'], xLeddCorrect:'150x',
+    aChoices:['150','400','-150','50'], aCorrect:'150',
+    bQuestion:'Hvor mye har Lena på konto fra starten?',
+    bChoices:['400','150','0','550'], bCorrect:'400',
+    bLeddChoices:['+400','+150','-400','-150'], bLeddCorrect:'+400',
+  },
+  {
+    emoji:'🕯️', level:2,
+    story:'Et lys brenner ned 2 cm per time. Lyset er 24 cm langt til å begynne med.',
+    aVal:-2, bVal:24,
+    xMeans:'timer',
+    fMeans:'lengde i cm',
+    xLeddChoices:['-2x','2x','24x','-24x'], xLeddCorrect:'-2x',
+    aChoices:['-2','2','24','-24'], aCorrect:'-2',
+    bQuestion:'Hvor langt er lyset ved start?',
+    bChoices:['24','2','0','-2'], bCorrect:'24',
+    bLeddChoices:['+24','+2','-24','-2'], bLeddCorrect:'+24',
+  },
+  {
+    emoji:'❄️', level:2,
+    story:'Temperaturen synker med 3 grader per time. Akkurat nå er det 15 grader.',
+    aVal:-3, bVal:15,
+    xMeans:'timer',
+    fMeans:'temperatur i grader',
+    xLeddChoices:['-3x','3x','15x','-15x'], xLeddCorrect:'-3x',
+    aChoices:['-3','3','15','-15'], aCorrect:'-3',
+    bQuestion:'Hva er temperaturen nå (ved x=0)?',
+    bChoices:['15','3','0','-3'], bCorrect:'15',
+    bLeddChoices:['+15','+3','-15','-3'], bLeddCorrect:'+15',
+  },
+  {
+    emoji:'🏊', level:2,
+    story:'Et basseng tømmes med 200 liter per minutt. Det er 5000 liter igjen i bassenget.',
+    aVal:-200, bVal:5000,
+    xMeans:'minutter',
+    fMeans:'liter i bassenget',
+    xLeddChoices:['-200x','200x','5000x','-5000x'], xLeddCorrect:'-200x',
+    aChoices:['-200','200','5000','-5000'], aCorrect:'-200',
+    bQuestion:'Hvor mange liter er det i bassenget ved start?',
+    bChoices:['5000','200','0','-200'], bCorrect:'5000',
+    bLeddChoices:['+5000','+200','-5000','-200'], bLeddCorrect:'+5000',
+  },
+  {
+    emoji:'🔋', level:2,
+    story:'Batteriet lader ut med 8% per time. Akkurat nå er det 92% batteri igjen.',
+    aVal:-8, bVal:92,
+    xMeans:'timer',
+    fMeans:'batteri i prosent',
+    xLeddChoices:['-8x','8x','92x','-92x'], xLeddCorrect:'-8x',
+    aChoices:['-8','8','92','-92'], aCorrect:'-8',
+    bQuestion:'Hva er batterinivået ved start?',
+    bChoices:['92','8','100','-8'], bCorrect:'92',
+    bLeddChoices:['+92','+8','-92','-8'], bLeddCorrect:'+92',
+  },
+  {
+    emoji:'🚀', level:3,
+    story:'En rakett stiger 120 meter per sekund. Den befinner seg allerede 500 meter over bakken.',
+    aVal:120, bVal:500,
+    xMeans:'sekunder',
+    fMeans:'høyde i meter',
+    xLeddChoices:['120x','500x','-120x','-500x'], xLeddCorrect:'120x',
+    aChoices:['120','500','-120','-500'], aCorrect:'120',
+    bQuestion:'Hva er høyden ved start?',
+    bChoices:['500','120','0','-500'], bCorrect:'500',
+    bLeddChoices:['+500','+120','-500','-120'], bLeddCorrect:'+500',
+  },
+  {
+    emoji:'🌊', level:3,
+    story:'Vannet i en tank synker med 15 liter per minutt. Det er 800 liter i tanken nå.',
+    aVal:-15, bVal:800,
+    xMeans:'minutter',
+    fMeans:'liter i tanken',
+    xLeddChoices:['-15x','15x','800x','-800x'], xLeddCorrect:'-15x',
+    aChoices:['-15','15','800','-800'], aCorrect:'-15',
+    bQuestion:'Hvor mange liter er det i tanken ved start?',
+    bChoices:['800','15','0','-15'], bCorrect:'800',
+    bLeddChoices:['+800','+15','-800','-15'], bLeddCorrect:'+800',
+  },
+  {
+    emoji:'🎮', level:3,
+    story:'Du spiller et spill og tjener 45 poeng per runde. Du startet med 200 poeng.',
+    aVal:45, bVal:200,
+    xMeans:'runder',
+    fMeans:'poeng',
+    xLeddChoices:['45x','200x','-45x','-200x'], xLeddCorrect:'45x',
+    aChoices:['45','200','-45','-200'], aCorrect:'45',
+    bQuestion:'Hvor mange poeng startet du med?',
+    bChoices:['200','45','0','-200'], bCorrect:'200',
+    bLeddChoices:['+200','+45','-200','-45'], bLeddCorrect:'+200',
+  },
+  {
+    emoji:'🏃', level:4,
+    story:'Maja løper i 12 km/t og har allerede løpt 4 km.',
+    aVal:12, bVal:4,
+    xMeans:'timer',
+    fMeans:'distanse i km',
+    xLeddChoices:['12x','4x','-12x','-4x'], xLeddCorrect:'12x',
+    aChoices:['12','4','-12','-4'], aCorrect:'12',
+    bQuestion:'Hvor mange km har Maja løpt fra start?',
+    bChoices:['4','12','0','-4'], bCorrect:'4',
+    bLeddChoices:['+4','+12','-4','-12'], bLeddCorrect:'+4',
+  },
+  {
+    emoji:'☀️', level:4,
+    story:'Temperaturen stiger 2,5 grader per time fra kl. 06. Klokken 06 er det −4 grader.',
+    aVal:2.5, bVal:-4,
+    xMeans:'timer etter kl. 06',
+    fMeans:'temperatur i grader',
+    xLeddChoices:['2,5x','-2,5x','4x','-4x'], xLeddCorrect:'2,5x',
+    aChoices:['2,5','-2,5','4','-4'], aCorrect:'2,5',
+    bQuestion:'Hva er temperaturen kl. 06 (ved x=0)?',
+    bChoices:['-4','2,5','0','4'], bCorrect:'-4',
+    bLeddChoices:['-4','+2,5','+4','-2,5'], bLeddCorrect:'-4',
+  },
+  {
+    emoji:'📦', level:4,
+    story:'Et lager har 500 varer. Hver dag selges 20 varer.',
+    aVal:-20, bVal:500,
+    xMeans:'dager',
+    fMeans:'antall varer igjen',
+    xLeddChoices:['-20x','20x','500x','-500x'], xLeddCorrect:'-20x',
+    aChoices:['-20','20','500','-500'], aCorrect:'-20',
+    bQuestion:'Hvor mange varer er det på lageret ved start?',
+    bChoices:['500','20','0','-20'], bCorrect:'500',
+    bLeddChoices:['+500','+20','-500','-20'], bLeddCorrect:'+500',
+  },
+  {
+    emoji:'💎', level:5,
+    story:'Prisen på sølv er 8 kr per gram. Du har allerede sølv verdt 120 kr.',
+    aVal:8, bVal:120,
+    xMeans:'gram',
+    fMeans:'total verdi i kr',
+    xLeddChoices:['8x','120x','-8x','-120x'], xLeddCorrect:'8x',
+    aChoices:['8','120','-8','-120'], aCorrect:'8',
+    bQuestion:'Hva er startverdien?',
+    bChoices:['120','8','0','-120'], bCorrect:'120',
+    bLeddChoices:['+120','+8','-120','-8'], bLeddCorrect:'+120',
+  },
+  {
+    emoji:'🏦', level:5,
+    story:'En sparekonto har 3000 kr. Det settes inn 250 kr per måned.',
+    aVal:250, bVal:3000,
+    xMeans:'måneder',
+    fMeans:'beløp i kr',
+    xLeddChoices:['250x','3000x','-250x','-3000x'], xLeddCorrect:'250x',
+    aChoices:['250','3000','-250','-3000'], aCorrect:'250',
+    bQuestion:'Hva er startverdien på kontoen?',
+    bChoices:['3000','250','0','-250'], bCorrect:'3000',
+    bLeddChoices:['+3000','+250','-3000','-250'], bLeddCorrect:'+3000',
+  },
+];
+
+// ── LEVELS ──
+const LEVELS={
+  1:{name:'Nivå 1',desc:'Flervalg alle steg + dra blokker'},
+  2:{name:'Nivå 2',desc:'Flervalg + negative tall'},
+  3:{name:'Nivå 3',desc:'Skriv stigningstall og konstantledd'},
+  4:{name:'Nivå 4',desc:'Skriv alle steg manuelt + dra blokker'},
+  5:{name:'Nivå 5',desc:'Skriv hele uttrykket direkte'},
+};
+const MAX_LEVEL=5, MIN_LEVEL=1;
+
+// ── STATE ──
+let currentLevel=1, currentScore=0, playerName='';
+let currentTask=null, taskStartTime=0;
+let streak=0, errorStreak=0;
+let usedTasks=[];
+// Step state
+let stepAnswers={xLedd:null, a:null, b:null, bLedd:null};
+let stepTries={xLedd:0, a:0, b:0, bLedd:0};
+let stepsComplete=0;
+let placedBlocks=[];
+
+// ── ADAPTIVE ──
+function recordResult(correct){
+  if(correct){errorStreak=0;streak++;if(streak>=3)changeLevel(1);}
+  else{streak=0;errorStreak++;if(errorStreak>=2)changeLevel(-1);}
+}
+function changeLevel(d){
+  const n=Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,currentLevel+d));
+  if(n===currentLevel)return;
+  currentLevel=n;streak=0;errorStreak=0;
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  showToast(d>0?'⬆️ '+LEVELS[currentLevel].name+'!':'⬇️ '+LEVELS[currentLevel].name,'success');
+  document.querySelectorAll('.level-btn').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===currentLevel));
+}
+
+// ── PICK TASK ──
+function pickTask(){
+  let pool=SCENARIOS.filter((s,i)=>s.level<=currentLevel&&!usedTasks.includes(i));
+  if(!pool.length){usedTasks=[];pool=SCENARIOS.filter(s=>s.level<=currentLevel);}
+  const idx=SCENARIOS.indexOf(pool[Math.floor(Math.random()*pool.length)]);
+  usedTasks.push(idx);
+  return SCENARIOS[idx];
+}
+
+// ── RENDER ──
+function renderTask(){
+  const t=currentTask;
+  const lv=currentLevel;
+  taskStartTime=Date.now();
+  stepAnswers={xLedd:null,a:null,b:null,bLedd:null};
+  stepTries={xLedd:0,a:0,b:0,bLedd:0};
+  stepsComplete=0;
+  placedBlocks=[];
+
+  document.getElementById('storyEmoji').textContent=t.emoji;
+  document.getElementById('storyText').textContent=t.story+' Skriv et uttrykk for '+t.fMeans+' f(x) etter x '+t.xMeans+'.';
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('exprCard').style.display='none';
+  document.getElementById('exprInputCard').style.display='none';
+
+  const area=document.getElementById('stepsArea');
+  area.innerHTML='';
+
+  const useInput=lv>=3; // Use text input instead of choices for a/b
+  const useInputAll=lv>=4; // Input for x-ledd too
+  const exprOnly=lv>=5; // Skip steps, just write expression
+
+  if(exprOnly){
+    // N5: show expression input directly
+    document.getElementById('exprInputCard').style.display='';
+    document.getElementById('exprInputField').value='';
+    document.getElementById('exprInputField').className='expr-input-field';
+    document.getElementById('exprInputFeedback').textContent='';
+    document.getElementById('exprInputField').focus();
+    // Also show a/b fields after expression
+    stepsComplete=4; // mark steps done, show after expr
+    return;
+  }
+
+  // Step 1: Hva er x?
+  area.appendChild(makeStep(1,'Hva står x for i denne situasjonen?',
+    makeChoices(['x = '+t.xMeans,'x = '+t.fMeans,'x = stigningstallet','x = startverdien'],
+      'x = '+t.xMeans,'xMeta_','xMeta',true)));
+
+  // Step 2: x-leddet
+  if(useInputAll){
+    area.appendChild(makeStep(2,'Hva blir x-leddet? (stigningstall × x)',makeInputStep('xLedd',t.xLeddCorrect,'f.eks. 5x eller -3x')));
+  } else {
+    area.appendChild(makeStep(2,'Hva blir x-leddet?',makeChoices(t.xLeddChoices,t.xLeddCorrect,'xLedd_','xLedd',false)));
+  }
+
+  // Step 3: Stigningstall
+  if(useInput){
+    area.appendChild(makeStep(3,'Hva er stigningstallet (a)?',makeInputStep('a',t.aCorrect,'Skriv tallet')));
+  } else {
+    area.appendChild(makeStep(3,'Hva er stigningstallet?',makeChoices(t.aChoices,t.aCorrect,'a_','a',false)));
+  }
+
+  // Step 4: konstantledd-verdi
+  if(useInput){
+    area.appendChild(makeStep(4,t.bQuestion||'Hva er startverdien (b)?',makeInputStep('b',t.bCorrect,'Skriv tallet')));
+  } else {
+    area.appendChild(makeStep(4,t.bQuestion||'Hva er startverdien?',makeChoices(t.bChoices,t.bCorrect,'b_','b',false)));
+  }
+
+  // Step 5: b-leddet
+  if(useInputAll){
+    area.appendChild(makeStep(5,'Hva blir konstantleddet i uttrykket? (med fortegn)',makeInputStep('bLedd',t.bLeddCorrect,'f.eks. +5 eller -3')));
+  } else {
+    area.appendChild(makeStep(5,'Hva blir konstantleddet i uttrykket?',makeChoices(t.bLeddChoices,t.bLeddCorrect,'bLedd_','bLedd',false)));
+  }
+
+  // Enable step 1
+  lockStepsAfter(0);
+  // Force-enable step 1 choices directly
+  const step1=document.getElementById('step-1');
+  if(step1) step1.querySelectorAll('.choice-btn,.step-input,.btn-ok').forEach(el=>el.disabled=false);
+}
+
+function makeStep(num,question,content){
+  const div=document.createElement('div');
+  div.className='step-card';
+  div.id='step-'+num;
+  div.innerHTML=`<div class="step-header"><div class="step-num" id="stepnum-${num}">${num}</div><div class="step-q" id="stepq-${num}">${question}</div></div>`;
+  div.appendChild(content);
+  return div;
+}
+
+function makeChoices(options,correct,idPrefix,stepKey,enabled){
+  const div=document.createElement('div');
+  div.className='choices';
+  options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.textContent=opt;
+    btn.disabled=!enabled;
+    btn.dataset.orig=i;
+    btn.id=(idPrefix||'c_')+i;
+    const capturedOpt=opt;
+    btn.addEventListener('click',function(){
+      handleChoiceAnswer(this,capturedOpt,correct,stepKey,options);
+    });
+    div.appendChild(btn);
+  });
+  return div;
+}
+
+function makeInputStep(stepKey,correct,placeholder){
+  const div=document.createElement('div');
+  const inp=document.createElement('input');
+  inp.type='text'; inp.className='step-input'; inp.placeholder=placeholder;
+  inp.id='inp-'+stepKey; inp.disabled=true;
+  const btn=document.createElement('button');
+  btn.className='btn-ok'; btn.textContent='✓';
+  btn.id='btnok-'+stepKey; btn.disabled=true;
+  btn.onclick=()=>handleInputAnswer(stepKey,inp.value.trim(),correct,inp,btn);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!btn.disabled)btn.click();});
+  const fb=document.createElement('div');
+  fb.id='fb-'+stepKey; fb.style.minHeight='18px';
+  const row=document.createElement('div');
+  row.className='input-row';
+  row.appendChild(inp); row.appendChild(btn);
+  div.appendChild(row); div.appendChild(fb);
+  return div;
+}
+
+function lockStepsAfter(completedNum){
+  for(let i=1;i<=5;i++){
+    const step=document.getElementById('step-'+i);
+    if(!step) continue;
+    const shouldEnable=i===completedNum+1;
+    if(shouldEnable){
+      step.querySelectorAll('.choice-btn,.step-input,.btn-ok').forEach(el=>{
+        if(!el.classList.contains('correct')&&!el.classList.contains('wrong'))
+          el.disabled=false;
+      });
+    }
+  }
+}
+
+// ── HANDLE ANSWERS ──
+function handleChoiceAnswer(btn,chosen,correct,stepKey,options){
+  if(stepAnswers[stepKey]!==null) return;
+  stepTries[stepKey]++;
+  const isCorrect=chosen===correct;
+  // Mark buttons
+  btn.closest('.choices').querySelectorAll('.choice-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===correct) b.classList.add('correct');
+    else if(b===btn&&!isCorrect) b.classList.add('wrong');
+  });
+  if(isCorrect){
+    stepAnswers[stepKey]=chosen;
+    advanceStep(stepKey);
+  } else {
+    // Show try again
+    setTimeout(()=>{
+      btn.closest('.choices').querySelectorAll('.choice-btn').forEach(b=>{
+        b.classList.remove('wrong','correct');
+        if(b.textContent!==chosen) b.disabled=false;
+      });
+    },1000);
+  }
+}
+
+function handleInputAnswer(stepKey,val,correct,inp,btn){
+  stepTries[stepKey]++;
+  // Normalize: allow comma as decimal
+  const norm=s=>s.replace(',','.').trim();
+  const isCorrect=norm(val)===norm(correct)||
+    (!isNaN(parseFloat(norm(val)))&&!isNaN(parseFloat(norm(correct)))&&
+     Math.abs(parseFloat(norm(val))-parseFloat(norm(correct)))<0.001);
+  const fb=document.getElementById('fb-'+stepKey);
+  if(isCorrect){
+    inp.className='step-input correct';
+    inp.disabled=true; btn.disabled=true;
+    if(fb) fb.innerHTML='';
+    stepAnswers[stepKey]=val;
+    advanceStep(stepKey);
+  } else {
+    inp.className='step-input wrong';
+    if(fb) fb.innerHTML=`<div class="step-wrong">✗ Prøv igjen</div>`;
+    setTimeout(()=>{inp.className='step-input';inp.value='';inp.focus();},700);
+  }
+}
+
+// ── ADVANCE ──
+const STEP_MAP={xMeta:1,xLedd:2,a:3,b:4,bLedd:5};
+function advanceStep(completedKey){
+  if(window._abMode){
+    window._abDone++;
+    const num=completedKey==='a'?1:2;
+    const el=document.getElementById('stepnum-'+num);
+    if(el){el.className='step-num done';el.textContent='✓';}
+    const qel=document.getElementById('stepq-'+num);
+    if(qel) qel.className='step-q done';
+    if(window._abDone===1){
+      const inp=document.getElementById('inp-b');
+      const btn=document.getElementById('btnok-b');
+      if(inp) inp.disabled=false;
+      if(btn) btn.disabled=false;
+    }
+    if(window._abDone>=2) finishTask();
+    return;
+  }
+
+  stepsComplete++;
+  const num=STEP_MAP[completedKey];
+  if(num){
+    const el=document.getElementById('stepnum-'+num);
+    if(el){el.className='step-num done';el.textContent='✓';}
+    const qel=document.getElementById('stepq-'+num);
+    if(qel) qel.className='step-q done';
+  }
+  lockStepsAfter(stepsComplete);
+  if(stepsComplete>=5) showExprBuilder();
+}
+
+// ── EXPR BUILDER ──
+function showExprBuilder(){
+  const t=currentTask;
+  const lv=currentLevel;
+  if(lv>=5){
+    // Already showing input card
+    return;
+  }
+  placedBlocks=[];
+  const card=document.getElementById('exprCard');
+  card.style.display='';
+  // Build bank blocks
+  const bank=document.getElementById('blockBank');
+  bank.innerHTML='';
+  const blocks=[t.xLeddCorrect, t.bLeddCorrect];
+  blocks.forEach(label=>{
+    const el=document.createElement('div');
+    el.className='expr-block';
+    el.textContent=label;
+    el.draggable=true;
+    el.id='bank-'+label;
+    el.addEventListener('dragstart',e=>{e.dataTransfer.setData('block',label);el.style.opacity='0.4';});
+    el.addEventListener('dragend',()=>el.style.opacity='1');
+    bank.appendChild(el);
+  });
+  updateDropZone();
+}
+
+function updateDropZone(){
+  const dz=document.getElementById('dropZone');
+  dz.innerHTML='';
+  if(!placedBlocks.length){
+    dz.innerHTML='<span style="color:rgba(254,243,199,0.5);font-size:0.85rem;font-weight:700">Dra blokkene hit...</span>';
+    return;
+  }
+  placedBlocks.forEach((b,idx)=>{
+    if(idx>0){
+      // sign already included in bLedd label
+    }
+    const el=document.createElement('div');
+    el.className='expr-placed';
+    el.textContent=b;
+    el.title='Klikk for å fjerne';
+    el.onclick=()=>{placedBlocks.splice(idx,1);updateDropZone();};
+    dz.appendChild(el);
+  });
+  if(placedBlocks.length===2) checkExprBuilt();
+}
+
+function handleDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('dragover');}
+function handleDragLeave(){document.getElementById('dropZone').classList.remove('dragover');}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('dragover');
+  const label=e.dataTransfer.getData('block');
+  if(!label||placedBlocks.includes(label)) return;
+  placedBlocks.push(label);
+  document.getElementById('bank-'+label).style.opacity='0.3';
+  document.getElementById('bank-'+label).draggable=false;
+  updateDropZone();
+}
+
+function checkExprBuilt(){
+  const t=currentTask;
+  // Check order: xLedd first, then bLedd
+  if(placedBlocks[0]===t.xLeddCorrect&&placedBlocks[1]===t.bLeddCorrect){
+    finishTask();
+  } else if(placedBlocks.length===2){
+    showToast('❌ Feil rekkefølge — x-leddet skal stå først!','error');
+    placedBlocks=[];
+    document.querySelectorAll('.expr-block').forEach(b=>{b.style.opacity='1';b.draggable=true;});
+    updateDropZone();
+  }
+}
+
+// ── EXPR INPUT (N5) ──
+window.checkExprInput=function(){
+  const t=currentTask;
+  const val=document.getElementById('exprInputField').value.trim()
+    .replace(/\s+/g,'').replace(/−/g,'-').replace(/,/g,'.');
+  // Parse f(x)=axb or axb
+  const stripped=val.replace(/^f\(x\)=/i,'');
+  const parsed=parseExpr(stripped);
+  const ok=parsed&&Math.abs(parsed.a-t.aVal)<0.001&&Math.abs(parsed.b-t.bVal)<0.001;
+  const el=document.getElementById('exprInputField');
+  const fb=document.getElementById('exprInputFeedback');
+  if(ok){
+    el.className='expr-input-field correct';
+    fb.textContent='✓ Riktig!';
+    fb.style.color='#86efac';
+    // Now show a/b input steps
+    showABStepsAfterExpr();
+  } else {
+    el.className='expr-input-field wrong';
+    fb.textContent='✗ Ikke riktig — prøv igjen';
+    fb.style.color='#fca5a5';
+    setTimeout(()=>{ el.className='expr-input-field'; fb.textContent=''; },1000);
+  }
+};
+
+function parseExpr(s){
+  const m=s.match(/^(-?)(\d*\.?\d*)x([+-]\d*\.?\d+)?$/);
+  if(!m) return null;
+  const aSign=m[1]==='-'?-1:1;
+  const aAbs=m[2]===''||m[2]==='0'?1:parseFloat(m[2]);
+  const a=aSign*aAbs;
+  const b=m[3]?parseFloat(m[3]):0;
+  return {a,b};
+}
+
+function showABStepsAfterExpr(){
+  const t=currentTask;
+  const area=document.getElementById('stepsArea');
+  area.innerHTML='';
+  area.appendChild(makeStep(1,'Hva er stigningstallet (a)?',makeInputStep('a',t.aCorrect,'Skriv tallet')));
+  area.appendChild(makeStep(2,'Hva er konstantleddet (b)?',makeInputStep('b',t.bCorrect,'Skriv tallet')));
+  document.getElementById('inp-a').disabled=false;
+  document.getElementById('btnok-a').disabled=false;
+  window._abMode=true;
+  window._abDone=0;
+}
+
+// ── FINISH ──
+function finishTask(){
+  const t=currentTask;
+  const elapsed=(Date.now()-taskStartTime)/1000;
+  const bonus=Math.round(Math.max(30,150-elapsed));
+  currentScore+=bonus;
+  document.getElementById('scoreBadge').textContent=currentScore+' p';
+  recordResult(true);
+  showToast('🎉 +'+bonus+' poeng!','success');
+
+  // Show final expr
+  const aStr=t.aVal===1?'x':t.aVal===-1?'−x':(t.aVal<0?'−'+Math.abs(t.aVal)+'x':t.aVal+'x');
+  const bStr=t.bVal===0?'':(t.bVal>0?' + '+t.bVal:' − '+Math.abs(t.bVal));
+  const exprCard=document.getElementById('exprCard');
+  if(exprCard.style.display!=='none'){
+    const done=document.createElement('div');
+    done.className='final-expr';
+    done.style.marginTop='10px';
+    done.textContent='f(x) = '+aStr+bStr;
+    exprCard.appendChild(done);
+  }
+  document.getElementById('nextBtn').style.display='inline-block';
+  window._abMode=false; window._abDone=0;
+}
+
+// ── NEXT ──
+window.nextTask=function(){
+  window._abMode=false; window._abDone=0;
+  currentTask=pickTask();
+  renderTask();
+};
+
+// ── START ──
+window.startGame=function(){
+  playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  currentTask=pickTask();
+  renderTask();
+};
+
+function buildLevelSelect(){
+  const el=document.getElementById('levelSelect');
+  Object.keys(LEVELS).forEach(l=>{
+    const btn=document.createElement('button');
+    btn.className='level-btn'+(parseInt(l)===currentLevel?' active':'');
+    btn.textContent=l; btn.title=LEVELS[l].desc;
+    btn.onclick=()=>{
+      currentLevel=parseInt(l);
+      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    el.appendChild(btn);
+  });
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type;
+  void t.offsetWidth; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+buildLevelSelect();
+</script>
+<script src="../js/touch-dnd.js"></script>
+</body>
+</html>
