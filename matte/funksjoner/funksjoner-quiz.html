@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Er det en funksjon?</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f4ff;--panel:#fff;--border:#dde3f0;
+  --accent:#5b4fcf;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --r:14px;--shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(91,79,207,0.3);}
+.header-left h1{font-size:1rem;font-weight:900;}
+.header-left p{font-size:0.7rem;opacity:0.8;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.level-badge{background:rgba(255,255,255,0.2);color:white;}
+.score-badge{background:var(--yellow);color:#78350f;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+/* START */
+.overlay{position:fixed;inset:0;background:rgba(240,244,255,0.97);display:flex;align-items:center;justify-content:center;z-index:200;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:32px 36px;width:440px;text-align:center;box-shadow:var(--shadow);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card p{font-size:0.9rem;color:var(--muted);font-weight:700;margin-bottom:16px;line-height:1.5;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:700;outline:none;margin-bottom:10px;text-align:center;}
+.name-input:focus{border-color:var(--accent);}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px;}
+.level-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.start-btn:hover{background:#4338ca;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px;gap:14px;max-width:700px;margin:0 auto;width:100%;}
+
+/* QUESTION CARD */
+.q-card{background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:24px;width:100%;box-shadow:var(--shadow);}
+.q-type{font-size:0.68rem;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.q-emoji{font-size:3.5rem;text-align:center;margin-bottom:12px;line-height:1;}
+.q-text{font-size:1.05rem;font-weight:800;line-height:1.6;color:var(--text);margin-bottom:6px;}
+.q-sub{font-size:0.85rem;font-weight:700;color:var(--muted);margin-bottom:16px;}
+
+/* CHOICES */
+.choices{display:flex;flex-direction:column;gap:8px;}
+.choice-btn{padding:12px 16px;background:white;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;cursor:pointer;transition:all 0.15s;color:var(--text);text-align:left;display:flex;align-items:center;gap:10px;}
+.choice-btn:hover:not(:disabled){background:#f0f4ff;border-color:var(--accent);}
+.choice-btn.correct{background:#f0fdf4;border-color:var(--green);color:var(--green);}
+.choice-btn.wrong{background:#fef2f2;border-color:var(--red);color:var(--red);}
+.choice-btn:disabled{cursor:default;}
+.choice-icon{font-size:1.1rem;flex-shrink:0;}
+
+/* YES/NO BUTTONS */
+.yn-row{display:flex;gap:12px;}
+.yn-btn{flex:1;padding:16px;border:3px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;cursor:pointer;transition:all 0.15s;background:white;}
+.yn-btn.yes:hover:not(:disabled){background:#f0fdf4;border-color:var(--green);color:var(--green);}
+.yn-btn.no:hover:not(:disabled){background:#fef2f2;border-color:var(--red);color:var(--red);}
+.yn-btn.correct-yes{background:#f0fdf4;border-color:var(--green);color:var(--green);}
+.yn-btn.correct-no{background:#fef2f2;border-color:var(--red);color:var(--red);}
+.yn-btn.wrong-pick{background:#fef2f2;border-color:var(--red);color:var(--red);opacity:0.6;}
+.yn-btn:disabled{cursor:default;}
+
+/* FEEDBACK */
+.feedback-card{background:white;border:2px solid var(--border);border-radius:var(--r);padding:16px 20px;width:100%;box-shadow:var(--shadow);}
+.feedback-card.ok{border-color:var(--green);background:#f0fdf4;}
+.feedback-card.err{border-color:var(--red);background:#fef2f2;}
+.feedback-title{font-size:1rem;font-weight:900;margin-bottom:4px;}
+.feedback-title.ok{color:var(--green);}
+.feedback-title.err{color:var(--red);}
+.feedback-text{font-size:0.88rem;font-weight:700;color:var(--text);line-height:1.6;}
+
+/* TABLE */
+.q-table{border-collapse:collapse;margin:12px auto 16px;font-size:0.95rem;}
+.q-table th{background:#f0f4ff;font-weight:800;padding:8px 20px;border:2px solid var(--border);color:var(--accent);}
+.q-table td{padding:7px 20px;border:1px solid var(--border);text-align:center;font-weight:700;}
+.q-table tr.dup td{color:var(--red);font-weight:900;}
+
+/* CONTROLS */
+.controls{display:flex;gap:8px;justify-content:center;}
+.btn{padding:9px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:800;cursor:pointer;}
+.btn-next{background:var(--green);color:white;}
+.btn-skip{background:#f3f4f6;color:var(--muted);}
+
+/* PROGRESS */
+.progress-wrap{width:100%;display:flex;align-items:center;gap:10px;}
+.progress-bar{flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width 0.4s;}
+.progress-label{font-size:0.75rem;font-weight:800;color:var(--muted);white-space:nowrap;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 24px;border-radius:8px;font-weight:800;font-size:0.9rem;opacity:0;transition:all 0.3s;z-index:100;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);color:white;}
+.toast.error{background:var(--red);color:white;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- START -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <h1>🔗 Er det en funksjon?</h1>
+    <p>Lær å kjenne igjen funksjoner — sammenhengen mellom to tallstørrelser der den ene <em>bestemmes av</em> den andre via en fast regel.</p>
+    <div class="version">v1.12</div>
+    <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
+    <div class="level-select" id="levelSelect"></div>
+    <button class="start-btn" onclick="startGame()">🚀 Start!</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>🔗 Er det en funksjon?</h1>
+    <p>Funksjoner og sammenhenger</p>
+  </div>
+  <div class="header-right">
+    <span class="badge level-badge" id="levelBadge">Nivå 1</span>
+    <span class="badge score-badge" id="scoreBadge">0 p</span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 0</div>
+  </div>
+
+  <div class="q-card" id="qCard"></div>
+  <div id="feedbackArea"></div>
+
+  <div class="controls">
+    <button class="btn btn-skip" onclick="nextQuestion()">Hopp over</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()" style="display:none">➡️ Neste</button>
+  </div>
+
+</div>
+
+<script>
+// ── QUESTIONS ──
+const QUESTIONS=[
+
+  // ── TYPE: ja/nei — er dette en funksjon? ──
+  {
+    type:'yn', level:1, isFunction:true,
+    emoji:'💰',
+    text:'Du har timesbetalt jobb. Er lønnen din en funksjon av antall timer du jobber?',
+    explanation:'Ja! Lønn = timelønn × antall timer. For hvert antall timer finnes det nøyaktig én lønnsverdi. Det er en funksjon.',
+  },
+  {
+    type:'yn', level:1, isFunction:true,
+    emoji:'🍌',
+    text:'Er prisen du betaler for bananer en funksjon av antall kilo?',
+    explanation:'Ja! Pris = kilopris × antall kg. Én kilopris og én mengde gir alltid nøyaktig én pris.',
+  },
+  {
+    type:'yn', level:1, isFunction:true,
+    emoji:'🚗',
+    text:'Kjører du i 80 km/t — er distansen du tilbakelegger en funksjon av antall timer?',
+    explanation:'Ja! Distanse = 80 × antall timer. For hver tidsverdi finnes det nøyaktig én distanse.',
+  },
+  {
+    type:'yn', level:1, isFunction:false,
+    emoji:'📚',
+    text:'Er karakteren du får på en prøve en funksjon av antall timer du leser?',
+    explanation:'Nei. Det finnes ingen fast regel som kobler lesetimer direkte til karakter. To elever kan lese like lenge og få ulike karakterer.',
+  },
+  {
+    type:'yn', level:1, isFunction:false,
+    emoji:'👟',
+    text:'Er skostørrelsen din en funksjon av høyden din?',
+    explanation:'Nei. Høye og lave personer kan ha samme skostørrelse, og personer med samme høyde kan ha ulike skostørrelser. Det er ingen fast matematisk regel.',
+  },
+  {
+    type:'yn', level:1, isFunction:true,
+    emoji:'💡',
+    text:'Er strømregningen din en funksjon av antall kilowattimer du bruker?',
+    explanation:'Ja! Pris = pris per kWh × forbruk. For hvert forbruk finnes det nøyaktig én pris.',
+  },
+  {
+    type:'yn', level:1, isFunction:false,
+    emoji:'🎂',
+    text:'Er antall venner du har en funksjon av alderen din?',
+    explanation:'Nei. To personer som er like gamle kan ha svært ulikt antall venner. Det finnes ingen fast regel.',
+  },
+  {
+    type:'yn', level:2, isFunction:true,
+    emoji:'⬛',
+    text:'Er arealet av et kvadrat en funksjon av sidelengden?',
+    explanation:'Ja! Areal = sidelengde². For hver sidelengde finnes det nøyaktig ett areal.',
+  },
+  {
+    type:'yn', level:2, isFunction:true,
+    emoji:'🔵',
+    text:'Er omkretsen av en sirkel en funksjon av radiusen?',
+    explanation:'Ja! Omkrets = 2π × radius. For hver radius finnes det nøyaktig én omkrets.',
+  },
+  {
+    type:'yn', level:2, isFunction:false,
+    emoji:'🌡️',
+    text:'Er temperaturen ute en funksjon av klokkeslettet?',
+    explanation:'Nei. Temperaturen kl. 12 på mandag er ikke den samme som kl. 12 på tirsdag. Det finnes ingen fast matematisk regel mellom klokkeslett og temperatur.',
+  },
+  {
+    type:'yn', level:2, isFunction:false,
+    emoji:'⚽',
+    text:'Er antall mål et lag scorer en funksjon av antall kamper de spiller?',
+    explanation:'Nei. Et lag kan score ulikt antall mål i ulike kamper. Det finnes ingen fast regel.',
+  },
+  {
+    type:'yn', level:2, isFunction:true,
+    emoji:'🏗️',
+    text:'Er prisen på en vegg en funksjon av antall fliser, hvis hver flis koster 45 kr?',
+    explanation:'Ja! Pris = 45 × antall fliser. For hvert antall fliser finnes det nøyaktig én pris.',
+  },
+
+  // ── TYPE: hva er x og hva er f(x)? ──
+  {
+    type:'xy', level:2,
+    emoji:'🚴',
+    text:'En syklist sykler i 20 km/t. Funksjonen f(x) = 20x beskriver distansen. Hva er x og hva er f(x)?',
+    choices:[
+      {text:'x = tid, f(x) = distanse', correct:true},
+      {text:'x = distanse, f(x) = tid', correct:false},
+      {text:'x = fart, f(x) = syklist', correct:false},
+      {text:'x = distanse, f(x) = fart', correct:false},
+    ],
+    explanation:'Distansen bestemmes av tiden du sykler. x = tid (uavhengig variabel), f(x) = distanse (avhengig variabel).',
+  },
+  {
+    type:'xy', level:2,
+    emoji:'🍕',
+    text:'En pizzarestaurant tar 149 kr per pizza. Funksjonen er f(x) = 149x. Hva er x og hva er f(x)?',
+    choices:[
+      {text:'x = antall pizzaer, f(x) = totalpris', correct:true},
+      {text:'x = totalpris, f(x) = antall pizzaer', correct:false},
+      {text:'x = pizzastørrelse, f(x) = antall pizzaer', correct:false},
+      {text:'x = antall gjester, f(x) = totalpris', correct:false},
+    ],
+    explanation:'Totalprisen bestemmes av antall pizzaer. x = antall pizzaer, f(x) = totalpris.',
+  },
+  {
+    type:'xy', level:3,
+    emoji:'📦',
+    text:'Et lager har 500 varer. Hver dag selges 20 varer. Funksjonen er f(x) = 500 − 20x. Hva er x og hva er f(x)?',
+    choices:[
+      {text:'x = antall dager, f(x) = antall varer igjen', correct:true},
+      {text:'x = antall varer, f(x) = antall dager', correct:false},
+      {text:'x = antall solgte varer, f(x) = pris', correct:false},
+      {text:'x = pris, f(x) = antall dager', correct:false},
+    ],
+    explanation:'Antall varer igjen bestemmes av antall dager som har gått. f(x) = 500 − 20x.',
+  },
+  {
+    type:'xy', level:3,
+    emoji:'🏋️',
+    text:'Jo mer du trener, jo sterkere blir du. Er dette en funksjon, og hva er x?',
+    choices:[
+      {text:'Ikke en funksjon — ingen fast matematisk regel', correct:true},
+      {text:'x = treningsøkter, f(x) = styrke', correct:false},
+      {text:'x = styrke, f(x) = treningsøkter', correct:false},
+      {text:'x = tid, f(x) = muskler', correct:false},
+    ],
+    explanation:'Sammenhengen er ikke en funksjon. To personer som trener like mye kan ha svært ulik styrke — det finnes ingen fast regel.',
+  },
+
+  // ── TYPE: tabell — funksjon eller ikke? ──
+  {
+    type:'table', level:2, isFunction:true,
+    emoji:'📊',
+    text:'Er dette en funksjon?',
+    tableData:{
+      headers:['x','f(x)'],
+      rows:[['1','5'],['2','10'],['3','15'],['4','20']],
+    },
+    explanation:'Ja! For hver x-verdi finnes det nøyaktig én f(x)-verdi. f(x) = 5x.',
+  },
+  {
+    type:'table', level:2, isFunction:false,
+    emoji:'📊',
+    text:'Er dette en funksjon?',
+    tableData:{
+      headers:['x','f(x)'],
+      rows:[['2','4'],['3','9'],['2','7'],['5','25']],
+      dupX:'2',
+    },
+    explanation:'Nei! x = 2 gir to ulike f(x)-verdier (4 og 7). En funksjon kan bare ha én f(x)-verdi per x-verdi.',
+  },
+  {
+    type:'table', level:3, isFunction:false,
+    emoji:'📊',
+    text:'Er dette en funksjon?',
+    tableData:{
+      headers:['x','y'],
+      rows:[['1','3'],['4','6'],['1','9'],['7','12']],
+      dupX:'1',
+    },
+    explanation:'Nei! x = 1 gir to ulike y-verdier (3 og 9). Det er ikke en funksjon.',
+  },
+  {
+    type:'table', level:3, isFunction:true,
+    emoji:'📊',
+    text:'Er dette en funksjon?',
+    tableData:{
+      headers:['x','y'],
+      rows:[['−2','6'],['0','2'],['3','−4'],['5','−8']],
+    },
+    explanation:'Ja! Alle x-verdier er ulike, og hver x gir nøyaktig én y-verdi. Dette er en funksjon.',
+  },
+
+  // ── TYPE: beskriv funksjonen med ord ──
+  {
+    type:'describe', level:3,
+    emoji:'🧾',
+    text:'f(x) = 25x beskriver prisen på parkering, der 25 er prisen per time. Hva betyr f(x) i denne sammenhengen?',
+    choices:[
+      {text:'f(x) = totalprisen for parkeringen', correct:true},
+      {text:'f(x) = antall timer parkert', correct:false},
+      {text:'f(x) = prisen per time', correct:false},
+      {text:'f(x) = antall parkeringsplasser', correct:false},
+    ],
+    explanation:'x er antall timer, og f(x) er totalprisen. f(x) = 25x betyr at totalprisen er 25 kr × antall timer.',
+  },
+  {
+    type:'describe', level:3,
+    emoji:'🕯️',
+    text:'f(x) = −3x + 30 beskriver lengden på et lys som brenner. Hva betyr −3 i denne sammenhengen?',
+    choices:[
+      {text:'Lyset brenner ned 3 cm per time', correct:true},
+      {text:'Lyset er 3 cm langt', correct:false},
+      {text:'Lyset brenner i 3 timer', correct:false},
+      {text:'Lyset starter 3 cm fra bunnen', correct:false},
+    ],
+    explanation:'−3 er stigningstallet — lyset blir 3 cm kortere for hver time (negativ fordi det minker). 30 er startverdien.',
+  },
+  {
+    type:'describe', level:4,
+    emoji:'🏦',
+    text:'f(x) = 200x + 1500 beskriver beløpet på en sparekonto. Hva betyr 1500 i denne sammenhengen?',
+    choices:[
+      {text:'Det sto 1500 kr på kontoen fra starten', correct:true},
+      {text:'Det settes inn 1500 kr per uke', correct:false},
+      {text:'Kontoen gir 1500 kr i rente', correct:false},
+      {text:'Totalt vil det stå 1500 kr på kontoen', correct:false},
+    ],
+    explanation:'1500 er konstantleddet b — startverdien. Da x = 0 (ingen uker gått), er f(0) = 1500. Det sto 1500 kr fra starten.',
+  },
+  {
+    type:'describe', level:4,
+    emoji:'🏃',
+    text:'To løpere starter samtidig. Løper A: f(x) = 8x. Løper B: f(x) = 6x + 2. Hvem er raskest, og hvem startet lengst fremme?',
+    choices:[
+      {text:'A er raskest, B startet lengst fremme', correct:true},
+      {text:'B er raskest, A startet lengst fremme', correct:false},
+      {text:'A er raskest, A startet lengst fremme', correct:false},
+      {text:'De løper like raskt', correct:false},
+    ],
+    explanation:'Stigningstallet er farten: A = 8 km/t, B = 6 km/t. A er raskest. Konstantleddet er startposisjon: B = 2, A = 0. B startet lengst fremme.',
+  },
+];
+
+// ── LEVELS ──
+const LEVELS={
+  1:{name:'Nivå 1',desc:'Grunnleggende — er dette en funksjon?'},
+  2:{name:'Nivå 2',desc:'Tabeller og variabler'},
+  3:{name:'Nivå 3',desc:'Beskriv funksjoner'},
+  4:{name:'Nivå 4',desc:'Sammenlign funksjoner'},
+};
+const MAX_LEVEL=4, MIN_LEVEL=1;
+
+// ── STATE ──
+let currentLevel=1, currentScore=0, playerName='';
+let currentQ=null, answered=false;
+let streak=0, errorStreak=0, taskStartTime=0;
+let usedIds=[], qCount=0;
+
+// ── ADAPTIVE ──
+function recordResult(correct){
+  if(correct){errorStreak=0;streak++;if(streak>=3) changeLevel(1);}
+  else{streak=0;errorStreak++;if(errorStreak>=2) changeLevel(-1);}
+}
+function changeLevel(d){
+  const n=Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,currentLevel+d));
+  if(n===currentLevel) return;
+  currentLevel=n; streak=0; errorStreak=0;
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  showToast(d>0?'⬆️ '+LEVELS[currentLevel].name+'!':'⬇️ '+LEVELS[currentLevel].name,'success');
+  document.querySelectorAll('.level-btn').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===currentLevel));
+}
+
+// ── PICK QUESTION ──
+function pickQuestion(){
+  let pool=QUESTIONS.filter((q,i)=>q.level<=currentLevel&&!usedIds.includes(i));
+  if(!pool.length){ usedIds=[]; pool=QUESTIONS.filter(q=>q.level<=currentLevel); }
+  const idx=QUESTIONS.indexOf(pool[Math.floor(Math.random()*pool.length)]);
+  usedIds.push(idx);
+  return QUESTIONS[idx];
+}
+
+// ── RENDER ──
+function renderQuestion(){
+  const q=currentQ;
+  answered=false;
+  taskStartTime=Date.now();
+  qCount++;
+  const pct=Math.min(100,(qCount%10)*10);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=streak+' riktige på rad';
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('feedbackArea').innerHTML='';
+
+  const card=document.getElementById('qCard');
+  card.innerHTML=`
+    <div class="q-type">${getTypeLabel(q.type)}</div>
+    <div class="q-emoji">${q.emoji}</div>
+    <div class="q-text">${q.text}</div>`;
+
+  if(q.tableData){
+    const t=q.tableData;
+    let tableHtml=`<table class="q-table"><tr>${t.headers.map(h=>`<th>${h}</th>`).join('')}</tr>`;
+    t.rows.forEach(row=>{
+      const isDup=t.dupX&&row[0]===t.dupX;
+      tableHtml+=`<tr ${isDup?'class="dup"':''}>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`;
+    });
+    tableHtml+='</table>';
+    card.innerHTML+=tableHtml;
+  }
+
+  if(q.type==='yn'||q.type==='table'){
+    card.innerHTML+=`<div class="yn-row">
+      <button class="yn-btn yes" id="btnYes" onclick="answerYN(true)">✓ Ja, det er en funksjon</button>
+      <button class="yn-btn no" id="btnNo" onclick="answerYN(false)">✗ Nei, det er ikke en funksjon</button>
+    </div>`;
+  } else {
+    const shuffled=[...q.choices].sort(()=>Math.random()-0.5);
+    card.innerHTML+=`<div class="choices">${shuffled.map((c,i)=>`
+      <button class="choice-btn" onclick="answerChoice(this,${q.choices.indexOf(c)})">
+        <span class="choice-icon">${['🅐','🅑','🅒','🅓'][i]}</span>
+        <span>${c.text}</span>
+      </button>`).join('')}</div>`;
+  }
+}
+
+function getTypeLabel(type){
+  return {yn:'❓ Er dette en funksjon?',xy:'🔤 Hva er x og hva er f(x)?',table:'📊 Se på tabellen',describe:'💬 Forstå funksjonen'}[type]||'';
+}
+
+// ── ANSWER ──
+window.answerYN=function(answer){
+  if(answered) return;
+  answered=true;
+  const correct=answer===currentQ.isFunction;
+  document.getElementById('btnYes').disabled=true;
+  document.getElementById('btnNo').disabled=true;
+  if(answer){
+    document.getElementById('btnYes').className='yn-btn yes '+(correct?'correct-yes':'wrong-pick');
+    if(!correct) document.getElementById('btnNo').className='yn-btn no correct-no';
+  } else {
+    document.getElementById('btnNo').className='yn-btn no '+(correct?'correct-no':'wrong-pick');
+    if(!correct) document.getElementById('btnYes').className='yn-btn yes correct-yes';
+  }
+  showFeedback(correct);
+};
+window.answerChoice=function(btn,idx){
+  if(answered) return;
+  answered=true;
+  const correct=currentQ.choices[idx].correct;
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{
+    b.disabled=true;
+    if(currentQ.choices[i]?.correct) b.classList.add('correct');
+    else if(b===btn&&!correct) b.classList.add('wrong');
+  });
+  showFeedback(correct);
+};
+
+function showFeedback(correct){
+  recordResult(correct);
+  const elapsed=Math.round((Date.now()-taskStartTime)/1000);
+  const bonus=correct?Math.round(Math.max(20,100-elapsed)):0;
+  if(bonus>0){ currentScore+=bonus; document.getElementById('scoreBadge').textContent=currentScore+' p'; }
+
+  const fb=document.getElementById('feedbackArea');
+  fb.innerHTML=`<div class="feedback-card ${correct?'ok':'err'}">
+    <div class="feedback-title ${correct?'ok':'err'}">${correct?'✓ Riktig!':'✗ Ikke riktig'}</div>
+    <div class="feedback-text">${currentQ.explanation}</div>
+  </div>`;
+  document.getElementById('nextBtn').style.display='inline-block';
+  document.querySelector('.btn-skip').style.display='none';
+}
+
+// ── NEXT ──
+window.nextQuestion=function(){
+  document.querySelector('.btn-skip').style.display='';
+  currentQ=pickQuestion();
+  renderQuestion();
+};
+
+// ── START ──
+window.startGame=function(){
+  playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainArea').style.display='flex';
+  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  currentQ=pickQuestion();
+  renderQuestion();
+};
+
+function buildLevelSelect(){
+  const el=document.getElementById('levelSelect');
+  Object.keys(LEVELS).forEach(l=>{
+    const btn=document.createElement('button');
+    btn.className='level-btn'+(parseInt(l)===currentLevel?' active':'');
+    btn.textContent=l; btn.title=LEVELS[l].desc;
+    btn.onclick=()=>{
+      currentLevel=parseInt(l);
+      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    el.appendChild(btn);
+  });
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type;
+  void t.offsetWidth; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+buildLevelSelect();
+</script>
+</body>
+</html>
