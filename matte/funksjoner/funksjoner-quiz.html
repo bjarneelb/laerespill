@@ -109,7 +109,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>🔗 Er det en funksjon?</h1>
     <p>Lær å kjenne igjen funksjoner — sammenhengen mellom to tallstørrelser der den ene <em>bestemmes av</em> den andre via en fast regel.</p>
-    <div class="version">v1.12</div>
+    <div class="version">v1.16</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
@@ -368,6 +368,195 @@ const QUESTIONS=[
     ],
     explanation:'Stigningstallet er farten: A = 8 km/t, B = 6 km/t. A er raskest. Konstantleddet er startposisjon: B = 2, A = 0. B startet lengst fremme.',
   },
+
+  // ── EKSTRA YN ──
+  {
+    type:'yn', level:1, isFunction:true,
+    emoji:'🚿',
+    story:'',
+    text:'Vannet som renner ut av en kran er 12 liter per minutt. Er mengden vann en funksjon av tid?',
+    explanation:'Ja! Mengde = 12 × antall minutter. For hvert tidspunkt finnes nøyaktig én mengde.',
+  },
+  {
+    type:'yn', level:1, isFunction:false,
+    emoji:'🎲',
+    text:'Er antall øyne på en terning en funksjon av antall kast du har gjort?',
+    explanation:'Nei. Terningkast er tilfeldige — det finnes ingen fast regel som kobler antall kast til resultatet.',
+  },
+  {
+    type:'yn', level:1, isFunction:true,
+    emoji:'🧱',
+    text:'En murstein veier 3 kg. Er totalvekten av en stabel murstein en funksjon av antall stein?',
+    explanation:'Ja! Vekt = 3 × antall stein. For hvert antall stein finnes nøyaktig én totalvekt.',
+  },
+  {
+    type:'yn', level:1, isFunction:false,
+    emoji:'🌧️',
+    text:'Er nedbørsmengden i morgen en funksjon av temperaturen i dag?',
+    explanation:'Nei. Det finnes ingen fast matematisk regel som bestemmer morgendagens nedbør ut fra dagens temperatur.',
+  },
+  {
+    type:'yn', level:1, isFunction:true,
+    emoji:'🚌',
+    text:'En busstur koster 35 kr per person. Er totalprisen en funksjon av antall passasjerer?',
+    explanation:'Ja! Pris = 35 × antall passasjerer. Én passasjerverdi gir nøyaktig én pris.',
+  },
+  {
+    type:'yn', level:2, isFunction:true,
+    emoji:'🏠',
+    text:'Er arealet av et rektangel med fast bredde 5 m en funksjon av lengden?',
+    explanation:'Ja! Areal = 5 × lengde. For hver lengde finnes nøyaktig ett areal.',
+  },
+  {
+    type:'yn', level:2, isFunction:false,
+    emoji:'📊',
+    text:'Er en persons lønn en funksjon av utdanningslengden?',
+    explanation:'Nei. To personer med like lang utdanning kan ha svært ulik lønn — det finnes ingen fast matematisk regel.',
+  },
+  {
+    type:'yn', level:2, isFunction:true,
+    emoji:'🎵',
+    text:'En streamingtjeneste koster 99 kr per måned. Er totalkostnaden en funksjon av antall måneder?',
+    explanation:'Ja! Kostnad = 99 × antall måneder. For hvert antall måneder finnes nøyaktig én kostnad.',
+  },
+  {
+    type:'yn', level:2, isFunction:false,
+    emoji:'🌱',
+    text:'Er høyden til en plante en funksjon av antall dager siden den ble plantet?',
+    explanation:'Nei. Plantevekst varierer med vanning, lys og jordsmonn — ingen fast matematisk regel.',
+  },
+  {
+    type:'yn', level:3, isFunction:true,
+    emoji:'💎',
+    text:'Prisen på gull er 650 kr per gram. Er prisen du betaler en funksjon av antall gram?',
+    explanation:'Ja! Pris = 650 × antall gram. Én mengde gir nøyaktig én pris — dette er en proporsjonal funksjon.',
+  },
+  {
+    type:'yn', level:3, isFunction:false,
+    emoji:'🏆',
+    text:'Er plasseringen i et idrettsarrangement en funksjon av antall timer trening?',
+    explanation:'Nei. Plassering avhenger av mange faktorer utover treningstimer — konkurrenter, dagsform, teknikk osv.',
+  },
+
+  // ── EKSTRA XY ──
+  {
+    type:'xy', level:2,
+    emoji:'☕',
+    text:'En kaffemaskin bruker 0,8 kWh per time. Funksjonen f(x) = 0,8x beskriver strømforbruket. Hva er x?',
+    choices:[
+      {text:'x = antall timer maskinen er på', correct:true},
+      {text:'x = strømforbruket', correct:false},
+      {text:'x = antall kopper kaffe', correct:false},
+      {text:'x = prisen på strøm', correct:false},
+    ],
+    explanation:'x er det som varierer — antall timer. f(x) = 0,8x gir strømforbruket i kWh.',
+  },
+  {
+    type:'xy', level:3,
+    emoji:'🌡️',
+    text:'f(x) = −5x + 20 beskriver temperaturen i en fryser etter at den er slått på. Hva betyr −5?',
+    choices:[
+      {text:'Temperaturen synker 5 grader per minutt', correct:true},
+      {text:'Startemperaturen er −5 grader', correct:false},
+      {text:'Fryseren bruker 5 watt', correct:false},
+      {text:'Det tar 5 minutter å fryse ned', correct:false},
+    ],
+    explanation:'−5 er stigningstallet — temperaturen synker 5 grader for hvert minutt (negativ = synkende). 20 er startverdien.',
+  },
+
+  // ── EKSTRA TABELLER ──
+  {
+    type:'table', level:2, isFunction:true,
+    emoji:'📊',
+    text:'Er dette en funksjon?',
+    tableData:{
+      headers:['x','f(x)'],
+      rows:[['−2','−1'],['−1','1'],['0','3'],['1','5'],['2','7']],
+    },
+    explanation:'Ja! For hver x-verdi finnes nøyaktig én f(x)-verdi. f(x) = 2x + 3.',
+  },
+  {
+    type:'table', level:3, isFunction:false,
+    emoji:'📊',
+    text:'Er dette en funksjon?',
+    tableData:{
+      headers:['x','y'],
+      rows:[['3','7'],['5','11'],['3','15'],['8','17']],
+      dupX:'3',
+    },
+    explanation:'Nei! x = 3 gir to ulike y-verdier (7 og 15). En funksjon tillater bare én y-verdi per x-verdi.',
+  },
+  {
+    type:'table', level:2, isFunction:true,
+    emoji:'📊',
+    text:'Er dette en funksjon?',
+    tableData:{
+      headers:['Timer (x)','Lønn f(x)'],
+      rows:[['1','175'],['2','350'],['3','525'],['4','700']],
+    },
+    explanation:'Ja! For hvert antall timer finnes nøyaktig én lønn. f(x) = 175x.',
+  },
+  {
+    type:'table', level:3, isFunction:false,
+    emoji:'📊',
+    text:'Er dette en funksjon?',
+    tableData:{
+      headers:['x','y'],
+      rows:[['0','5'],['2','9'],['4','13'],['2','7']],
+      dupX:'2',
+    },
+    explanation:'Nei! x = 2 gir to ulike y-verdier (9 og 7). Da er det ikke en funksjon.',
+  },
+
+  // ── EKSTRA DESCRIBE ──
+  {
+    type:'describe', level:3,
+    emoji:'🚕',
+    text:'f(x) = 12x + 50 beskriver prisen for en taxitur. Hva betyr 50?',
+    choices:[
+      {text:'Startpris (grunnbeløp uavhengig av km)', correct:true},
+      {text:'Prisen per kilometer', correct:false},
+      {text:'Totalpris for 50 km', correct:false},
+      {text:'Antall kilometer inkludert', correct:false},
+    ],
+    explanation:'50 er konstantleddet — startprisen du betaler uansett hvor langt du kjører. 12 er prisen per kilometer.',
+  },
+  {
+    type:'describe', level:3,
+    emoji:'📱',
+    text:'f(x) = −15x + 100 beskriver batterinivået på en telefon. Hva betyr 100?',
+    choices:[
+      {text:'Batteriet var fullt ladet (100%) ved start', correct:true},
+      {text:'Batteriet lader seg opp med 100% per time', correct:false},
+      {text:'Telefonen har 100 apper', correct:false},
+      {text:'Batteriet varer 100 timer', correct:false},
+    ],
+    explanation:'100 er startverdien — batteriet var 100% da x = 0. Stigningstallet −15 betyr at batteriet synker 15% per time.',
+  },
+  {
+    type:'describe', level:4,
+    emoji:'🏗️',
+    text:'Byggmester A: f(x) = 500x + 2000. Byggmester B: f(x) = 600x + 1000. Hvem er billigst for en jobb på 5 timer?',
+    choices:[
+      {text:'A: 4500 kr, B: 4000 kr — B er billigst', correct:true},
+      {text:'A: 4500 kr, B: 4000 kr — A er billigst', correct:false},
+      {text:'A: 2500 kr, B: 3000 kr — A er billigst', correct:false},
+      {text:'De koster like mye', correct:false},
+    ],
+    explanation:'A: 500×5+2000 = 4500 kr. B: 600×5+1000 = 4000 kr. B er billigst for 5 timer, selv om B har høyere timepris — startbeløpet er lavere.',
+  },
+  {
+    type:'describe', level:4,
+    emoji:'🏊',
+    text:'Basseng A: f(x) = −300x + 9000. Basseng B: f(x) = −200x + 6000. Hvilket basseng er tomt først?',
+    choices:[
+      {text:'De tømmes samtidig — begge etter 30 timer', correct:true},
+      {text:'A tømmes først — etter 20 timer', correct:false},
+      {text:'B tømmes først — etter 25 timer', correct:false},
+      {text:'A tømmes først — etter 30 timer, B etter 40 timer', correct:false},
+    ],
+    explanation:'A: −300x+9000=0 → x=30 timer. B: −200x+6000=0 → x=30 timer. Begge tømmes etter 30 timer! A starter med mer vann men tømmes raskere.',
+  },
 ];
 
 // ── LEVELS ──
@@ -443,9 +632,9 @@ function renderQuestion(){
       <button class="yn-btn no" id="btnNo" onclick="answerYN(false)">✗ Nei, det er ikke en funksjon</button>
     </div>`;
   } else {
-    const shuffled=[...q.choices].sort(()=>Math.random()-0.5);
+    const shuffled=[...q.choices.map((c,i)=>({...c,origIdx:i}))].sort(()=>Math.random()-0.5);
     card.innerHTML+=`<div class="choices">${shuffled.map((c,i)=>`
-      <button class="choice-btn" onclick="answerChoice(this,${q.choices.indexOf(c)})">
+      <button class="choice-btn" data-orig="${c.origIdx}" onclick="answerChoice(this,${c.origIdx})">
         <span class="choice-icon">${['🅐','🅑','🅒','🅓'][i]}</span>
         <span>${c.text}</span>
       </button>`).join('')}</div>`;
@@ -476,9 +665,10 @@ window.answerChoice=function(btn,idx){
   if(answered) return;
   answered=true;
   const correct=currentQ.choices[idx].correct;
-  document.querySelectorAll('.choice-btn').forEach((b,i)=>{
+  document.querySelectorAll('.choice-btn').forEach(b=>{
     b.disabled=true;
-    if(currentQ.choices[i]?.correct) b.classList.add('correct');
+    const origIdx=parseInt(b.dataset.orig);
+    if(currentQ.choices[origIdx]?.correct) b.classList.add('correct');
     else if(b===btn&&!correct) b.classList.add('wrong');
   });
   showFeedback(correct);
