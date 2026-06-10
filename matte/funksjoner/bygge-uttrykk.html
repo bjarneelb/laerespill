@@ -119,7 +119,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>🔨 Bygge uttrykk</h1>
     <p>Les en situasjon og bygg funksjonsuttrykket steg for steg.</p>
-    <div class="version">v1.4</div>
+    <div class="version">v1.7</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
@@ -197,7 +197,7 @@ const SCENARIOS=[
     fMeans:'høyde i meter',
     xLeddChoices:['-9x','9x','77x','-77x'], xLeddCorrect:'9x',
     aChoices:['-9','9','77','-77'], aCorrect:'9',
-    bQuestion:'Hva er starthøyden?',
+    bQuestion:'Hva er høyden når x = 0 (ved start)?',
     bChoices:['77','9','0','86'], bCorrect:'77',
     bLeddChoices:['+77','+9','-77','-9'], bLeddCorrect:'+77',
   },
@@ -209,7 +209,7 @@ const SCENARIOS=[
     fMeans:'distanse i km',
     xLeddChoices:['70x','30x','-70x','-30x'], xLeddCorrect:'70x',
     aChoices:['70','30','-70','100'], aCorrect:'70',
-    bQuestion:'Hvor mange km har bilen kjørt fra start?',
+    bQuestion:'Hvor mange km hadde bilen allerede kjørt da vi begynte å telle?',
     bChoices:['30','70','0','100'], bCorrect:'30',
     bLeddChoices:['+30','+70','-30','-70'], bLeddCorrect:'+30',
   },
@@ -221,7 +221,7 @@ const SCENARIOS=[
     fMeans:'beløp i kroner',
     xLeddChoices:['150x','400x','-150x','-400x'], xLeddCorrect:'150x',
     aChoices:['150','400','-150','50'], aCorrect:'150',
-    bQuestion:'Hvor mye har Lena på konto fra starten?',
+    bQuestion:'Hvor mye hadde Lena på konto da vi begynte å telle?',
     bChoices:['400','150','0','550'], bCorrect:'400',
     bLeddChoices:['+400','+150','-400','-150'], bLeddCorrect:'+400',
   },
@@ -233,7 +233,7 @@ const SCENARIOS=[
     fMeans:'lengde i cm',
     xLeddChoices:['-2x','2x','24x','-24x'], xLeddCorrect:'-2x',
     aChoices:['-2','2','24','-24'], aCorrect:'-2',
-    bQuestion:'Hvor langt er lyset ved start?',
+    bQuestion:'Hvor langt er lyset når x = 0?',
     bChoices:['24','2','0','-2'], bCorrect:'24',
     bLeddChoices:['+24','+2','-24','-2'], bLeddCorrect:'+24',
   },
@@ -257,7 +257,7 @@ const SCENARIOS=[
     fMeans:'liter i bassenget',
     xLeddChoices:['-200x','200x','5000x','-5000x'], xLeddCorrect:'-200x',
     aChoices:['-200','200','5000','-5000'], aCorrect:'-200',
-    bQuestion:'Hvor mange liter er det i bassenget ved start?',
+    bQuestion:'Hvor mange liter er det i bassenget når x = 0?',
     bChoices:['5000','200','0','-200'], bCorrect:'5000',
     bLeddChoices:['+5000','+200','-5000','-200'], bLeddCorrect:'+5000',
   },
@@ -269,7 +269,7 @@ const SCENARIOS=[
     fMeans:'batteri i prosent',
     xLeddChoices:['-8x','8x','92x','-92x'], xLeddCorrect:'-8x',
     aChoices:['-8','8','92','-92'], aCorrect:'-8',
-    bQuestion:'Hva er batterinivået ved start?',
+    bQuestion:'Hva er batterinivået når x = 0?',
     bChoices:['92','8','100','-8'], bCorrect:'92',
     bLeddChoices:['+92','+8','-92','-8'], bLeddCorrect:'+92',
   },
@@ -281,7 +281,7 @@ const SCENARIOS=[
     fMeans:'høyde i meter',
     xLeddChoices:['120x','500x','-120x','-500x'], xLeddCorrect:'120x',
     aChoices:['120','500','-120','-500'], aCorrect:'120',
-    bQuestion:'Hva er høyden ved start?',
+    bQuestion:'Hva er høyden når x = 0 (ved start)?',
     bChoices:['500','120','0','-500'], bCorrect:'500',
     bLeddChoices:['+500','+120','-500','-120'], bLeddCorrect:'+500',
   },
@@ -293,7 +293,7 @@ const SCENARIOS=[
     fMeans:'liter i tanken',
     xLeddChoices:['-15x','15x','800x','-800x'], xLeddCorrect:'-15x',
     aChoices:['-15','15','800','-800'], aCorrect:'-15',
-    bQuestion:'Hvor mange liter er det i tanken ved start?',
+    bQuestion:'Hvor mange liter er det i tanken når x = 0?',
     bChoices:['800','15','0','-15'], bCorrect:'800',
     bLeddChoices:['+800','+15','-800','-15'], bLeddCorrect:'+800',
   },
@@ -317,7 +317,7 @@ const SCENARIOS=[
     fMeans:'distanse i km',
     xLeddChoices:['12x','4x','-12x','-4x'], xLeddCorrect:'12x',
     aChoices:['12','4','-12','-4'], aCorrect:'12',
-    bQuestion:'Hvor mange km har Maja løpt fra start?',
+    bQuestion:'Hvor mange km hadde Maja allerede løpt da vi begynte å telle?',
     bChoices:['4','12','0','-4'], bCorrect:'4',
     bLeddChoices:['+4','+12','-4','-12'], bLeddCorrect:'+4',
   },
@@ -341,7 +341,7 @@ const SCENARIOS=[
     fMeans:'antall varer igjen',
     xLeddChoices:['-20x','20x','500x','-500x'], xLeddCorrect:'-20x',
     aChoices:['-20','20','500','-500'], aCorrect:'-20',
-    bQuestion:'Hvor mange varer er det på lageret ved start?',
+    bQuestion:'Hvor mange varer er det på lageret når x = 0?',
     bChoices:['500','20','0','-20'], bCorrect:'500',
     bLeddChoices:['+500','+20','-500','-20'], bLeddCorrect:'+500',
   },
@@ -387,7 +387,7 @@ let currentTask=null, taskStartTime=0;
 let streak=0, errorStreak=0;
 let usedTasks=[];
 // Step state
-let stepAnswers={xLedd:null, a:null, b:null, bLedd:null};
+let stepAnswers={xMeta:null, xLedd:null, a:null, b:null, bLedd:null};
 let stepTries={xLedd:0, a:0, b:0, bLedd:0};
 let stepsComplete=0;
 let placedBlocks=[];
@@ -420,7 +420,7 @@ function renderTask(){
   const t=currentTask;
   const lv=currentLevel;
   taskStartTime=Date.now();
-  stepAnswers={xLedd:null,a:null,b:null,bLedd:null};
+  stepAnswers={xMeta:null, xLedd:null,a:null,b:null,bLedd:null};
   stepTries={xLedd:0,a:0,b:0,bLedd:0};
   stepsComplete=0;
   placedBlocks=[];
@@ -429,6 +429,9 @@ function renderTask(){
   document.getElementById('storyText').textContent=t.story+' Skriv et uttrykk for '+t.fMeans+' f(x) etter x '+t.xMeans+'.';
   document.getElementById('nextBtn').style.display='none';
   document.getElementById('exprCard').style.display='none';
+  document.getElementById('exprCard').querySelectorAll('.final-expr').forEach(el=>el.remove());
+  document.getElementById('blockBank').innerHTML='';
+  document.getElementById('dropZone').innerHTML='<span style="color:rgba(254,243,199,0.5);font-size:0.85rem;font-weight:700">Dra blokkene hit...</span>';
   document.getElementById('exprInputCard').style.display='none';
 
   const area=document.getElementById('stepsArea');
@@ -553,7 +556,7 @@ function lockStepsAfter(completedNum){
 
 // ── HANDLE ANSWERS ──
 function handleChoiceAnswer(btn,chosen,correct,stepKey,options){
-  if(stepAnswers[stepKey]!==null) return;
+  if(stepAnswers[stepKey]!=null) return;
   stepTries[stepKey]++;
   const isCorrect=chosen===correct;
   // Mark buttons
