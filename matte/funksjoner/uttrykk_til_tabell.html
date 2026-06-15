@@ -114,14 +114,18 @@ table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border
   <div class="start-card">
     <h1>📋 Lineære funksjoner</h1>
     <h2>Fra uttrykk til tabell</h2>
-    <div class="version">v1.2</div>
+    <div class="version">v1.3</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
       <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')">⏱️ Enkeltspiller</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">🏎️ Flerspiller</button>
     </div>
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
+    <div id="multiOpts" style="display:none;margin-bottom:10px">
+        <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" style="text-transform:uppercase;letter-spacing:2px;">
+      </div>
     <button class="start-btn" onclick="startGame()">🚀 Start!</button>
   </div>
 </div>
@@ -255,6 +259,22 @@ const LEVELS={
   9:{name:'Nivå 9',mode:'calc',nums:'frac',desc:'Kalkulator, inkl brøker'},
 };
 const MAX_LEVEL=9, MIN_LEVEL=1;
+
+
+// ── ROOM SYNC (for baner) ──
+let roomCode='';
+function initRoom(code){
+  if(!code||!window._fbReady) return;
+  roomCode=code;
+  window._set(window._ref(window._db,'rooms/'+code+'/players/'+playerName),{score:0,lastUpdated:Date.now()});
+  window._onValue(window._ref(window._db,'rooms/'+code+'/players'),snap=>{
+    // scoreboard update handled by bane
+  });
+}
+function syncRoomScore(score){
+  if(!roomCode||!window._fbReady) return;
+  window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+playerName),{score,lastUpdated:Date.now()});
+}
 
 // ── STATE ──
 let currentLevel=1, currentScore=0, gameMode='practice', playerName='';
@@ -638,6 +658,7 @@ window.checkTable=function(){
     const bonus=Math.round(Math.max(50,200-elapsed)*levelMult);
     currentScore+=bonus;
     document.getElementById('scoreBadge').textContent=currentScore+' p';
+    syncRoomScore(currentScore);
     document.getElementById('checkBtn').style.display='none';
     document.getElementById('nextBtn').style.display='inline-block';
   } else {
@@ -680,6 +701,7 @@ window.resetTask=function(){
 window.selectMode=function(mode){
   gameMode=mode;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  document.getElementById('multiOpts').style.display=mode==='multi'?'block':'none';
 };
 
 window.startGame=function(){
