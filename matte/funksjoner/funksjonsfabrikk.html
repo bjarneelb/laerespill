@@ -190,7 +190,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.8</div>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.9</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -368,9 +368,10 @@ function fbRootPath(){
 
 function syncToFirebase(){
   const path=fbGamePath();
-  if(!window._fbReady||!path) return;
+  if(!window._fbReady) return;
   sessionMaxLevel=Math.max(currentLevel,sessionMaxLevel);
-  window._update(window._ref(window._db,path),{
+  // Sync to timecode path
+  if(path) window._update(window._ref(window._db,path),{
     score:currentScore, level:currentLevel,
     maxLevel:sessionMaxLevel, startLevel:sessionStartLevel,
     correct:sessionCorrect, wrong:sessionWrong,
@@ -378,18 +379,39 @@ function syncToFirebase(){
   });
   const root=fbRootPath();
   if(root) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name:playerName});
+  // Sync to room (for baner)
+  if(roomCode&&gameMode==='multi'){
+    window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+playerName),{
+      score:currentScore, lastUpdated:Date.now()
+    });
+  }
 }
 
 function registerPlayer(){
   const path=fbGamePath();
-  if(!window._fbReady||!path) return;
-  window._update(window._ref(window._db,path),{
+  if(!window._fbReady) return;
+  if(path) window._update(window._ref(window._db,path),{
     score:0, level:currentLevel, maxLevel:currentLevel,
     startLevel:currentLevel, correct:0, wrong:0,
     lastUpdated:Date.now(), sessionStart:sessionStartTime,
   });
   const root=fbRootPath();
   if(root) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name:playerName});
+  // Register in room (for baner)
+  if(roomCode&&gameMode==='multi'){
+    window._set(window._ref(window._db,'rooms/'+roomCode+'/players/'+playerName),{
+      score:0, lastUpdated:Date.now()
+    });
+    window._onValue(window._ref(window._db,'rooms/'+roomCode+'/players'),(snap)=>{
+      if(snap.val()) updateScoreboard(snap.val());
+    });
+  }
+}
+
+function updateScoreboard(players){
+  // Update scoreboard display if it exists
+  const el=document.getElementById('scoreBadge');
+  if(el) el.textContent=currentScore+' p';
 }
 
 // ── ADAPTIVE LEVEL ──
