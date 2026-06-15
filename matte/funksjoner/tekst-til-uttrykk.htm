@@ -59,7 +59,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 /* CHOICES */
 .choices{display:flex;flex-wrap:wrap;gap:8px;}
 .choice-btn{padding:8px 16px;background:white;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:800;cursor:pointer;transition:all 0.15s;color:var(--text);}
-.choice-btn:hover:not(:disabled){background:#f0f4ff;border-color:var(--accent);}
+.choice-btn:not(:disabled):not(.correct):not(.wrong):hover{background:#f0f4ff;border-color:var(--accent);}
 .choice-btn.correct{background:#f0fdf4;border-color:var(--green);color:var(--green);}
 .choice-btn.wrong{background:#fef2f2;border-color:var(--red);color:var(--red);}
 .choice-btn:disabled{cursor:default;}
@@ -102,6 +102,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.success{background:var(--green);color:white;}
 .toast.error{background:var(--red);color:white;}
+  .mode-btn{flex:1;padding:8px;background:white;border:2px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:0.78rem;font-weight:800;cursor:pointer;transition:all 0.15s;}
+  .mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+  .mode-row{display:flex;gap:8px;}
 </style>
 </head>
 <body>
@@ -112,13 +115,17 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>📖 Fra tekst til uttrykk</h1>
     <h2>Les situasjonen og finn funksjonsuttrykket</h2>
-    <div class="version">v1.14</div>
+    <div class="version">v1.16</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
+    <div class="mode-row" style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">🏎️ Flerspiller</button>
+    </div>
     <div id="multiOpts" style="display:none;margin-bottom:10px">
-        <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" style="text-transform:uppercase;letter-spacing:2px;">
-      </div>
+      <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" style="text-transform:uppercase;letter-spacing:2px;">
+    </div>
     <button class="start-btn" onclick="startGame()">🚀 Start!</button>
   </div>
 </div>
@@ -335,6 +342,20 @@ const LEVELS={
 const MAX_LEVEL=4, MIN_LEVEL=1;
 
 
+
+function showMatchOverToast(result){
+  if(document.getElementById('matchOverOverlay')) return;
+  const overlay=document.createElement('div');
+  overlay.id='matchOverOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Nunito,sans-serif;';
+  overlay.innerHTML=`
+    <div style="font-size:3rem">🏆</div>
+    <div style="color:white;font-size:1.6rem;font-weight:900;text-align:center;padding:0 20px">${result}</div>
+    <div style="color:rgba(255,255,255,0.7);font-size:0.88rem;text-align:center;padding:0 20px">Kampen er over! Start et nytt spill med kampkoden for en ny kamp.</div>
+    <a href="./" style="padding:12px 28px;background:#5b4fcf;color:white;border-radius:12px;font-weight:800;font-size:1rem;text-decoration:none;margin-top:8px">🏠 Tilbake til meny</a>`;
+  document.body.appendChild(overlay);
+}
+
 // ── ROOM SYNC (for baner) ──
 function initRoom(code){
   if(!code||!window._fbReady) return;
@@ -342,6 +363,15 @@ function initRoom(code){
   window._set(window._ref(window._db,'rooms/'+code+'/players/'+playerName),{score:0,lastUpdated:Date.now()});
   window._onValue(window._ref(window._db,'rooms/'+code+'/players'),snap=>{
     // scoreboard update handled by bane
+  });
+  // Listen for match over
+  window._onValue(window._ref(window._db,'rooms/'+code+'/matchOver'),(snap)=>{
+    if(snap.val()===true){
+      window._get(window._ref(window._db,'rooms/'+code)).then(s=>{
+        const d=s.val()||{};
+        showMatchOverToast(d.result||'Kampen er over!');
+      }).catch(()=>showMatchOverToast('Kampen er over!'));
+    }
   });
 }
 function syncRoomScore(score){
@@ -598,6 +628,14 @@ window.resetTask=function(){
 };
 
 // ── START ──
+
+window.selectMode=function(mode){
+  gameMode=mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  const mo=document.getElementById('multiOpts');
+  if(mo) mo.style.display=mode==='multi'?'block':'none';
+};
+
 window.startGame=function(){
   playerName=document.getElementById('nameInput').value.trim()||'Spiller';
   document.getElementById('startScreen').style.display='none';
