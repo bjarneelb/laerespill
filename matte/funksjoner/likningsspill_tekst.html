@@ -490,7 +490,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '2.2';
+const VERSION = '2.4';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
@@ -909,6 +909,7 @@ KRITISKE REGLER:
 11. Sørg for variasjon: unngå å alltid bruke penger og alder – bruk også fart, vekt, temperatur, antall gjenstander.
 12. KRITISK for malen "${template.split('.')[0]}": Likningen MÅ stemme nøyaktig med JSON-strukturen. Hvis malen er x + b = c, skal left ha KUN én x-blokk og én num-blokk. Lag IKKE en historie som egentlig krever 2x (f.eks. "to personer der begge er ukjente") – da trengs koeffisient 2, ikke 1.
 13. FEIL EKSEMPEL (x + b = c): "Mia har 12 kr mer enn Jonas. Til sammen har de 48 kr." — dette er 2x + 12 = 48, ikke x + 12 = 48. RIKTIG: "Jonas har 12 kr. Han får litt mer og har nå 48 kr." — dette er x + 12 = 48.
+14. KRITISK: Hvert ledd i likningen skal svare til ÉTT tall i oppgaveteksten. Ikke lag oppgaver der eleven må legge sammen to kjente tall for å finne konstantleddet. Eks: "hun har 150 kr fra før og får 100 kr i gave" gir b = 250 som eleven må regne ut selv — det er FEIL. Bruk heller "hun har 250 kr fra før" direkte.
 
 Svar KUN med gyldig JSON (ingen markdown):
 {
@@ -1221,6 +1222,20 @@ function updateSoloScore() {
 }
 
 // ── STARTUP ──
+
+function showMatchOverToast(result){
+  if(document.getElementById('matchOverOverlay')) return;
+  const overlay=document.createElement('div');
+  overlay.id='matchOverOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Nunito,sans-serif;';
+  overlay.innerHTML=`
+    <div style="font-size:3rem">🏆</div>
+    <div style="color:white;font-size:1.6rem;font-weight:900;text-align:center;padding:0 20px">${result}</div>
+    <div style="color:rgba(255,255,255,0.7);font-size:0.88rem;text-align:center;padding:0 20px">Kampen er over! Start et nytt spill med kampkoden for en ny kamp.</div>
+    <a href="./" style="padding:12px 28px;background:#5b4fcf;color:white;border-radius:12px;font-weight:800;font-size:1rem;text-decoration:none;margin-top:8px">🏠 Tilbake til meny</a>`;
+  document.body.appendChild(overlay);
+}
+
 window._startSession = function() {
   currentLevel = startLevel>0 ? startLevel : 1;
   recentScores=[]; currentScore=0; totalCorrect=0; speedRate=0;
@@ -1273,7 +1288,21 @@ window.addEventListener('load',()=>{
     } else {
       window.syncScore=gameMode==='solo'?(s)=>updateSoloScore():()=>{};
     }
-    window._startSession();
+    
+function showMatchOverToast(result){
+  if(document.getElementById('matchOverOverlay')) return;
+  const overlay=document.createElement('div');
+  overlay.id='matchOverOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Nunito,sans-serif;';
+  overlay.innerHTML=`
+    <div style="font-size:3rem">🏆</div>
+    <div style="color:white;font-size:1.6rem;font-weight:900;text-align:center;padding:0 20px">${result}</div>
+    <div style="color:rgba(255,255,255,0.7);font-size:0.88rem;text-align:center;padding:0 20px">Kampen er over! Start et nytt spill med kampkoden for en ny kamp.</div>
+    <a href="./" style="padding:12px 28px;background:#5b4fcf;color:white;border-radius:12px;font-weight:800;font-size:1rem;text-decoration:none;margin-top:8px">🏠 Tilbake til meny</a>`;
+  document.body.appendChild(overlay);
+}
+
+window._startSession();
   };
 });
 </script>
