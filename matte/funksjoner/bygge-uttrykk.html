@@ -119,10 +119,13 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>🔨 Bygge uttrykk</h1>
     <p>Les en situasjon og bygg funksjonsuttrykket steg for steg.</p>
-    <div class="version">v1.7</div>
+    <div class="version">v1.8</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
+    <div id="multiOpts" style="display:none;margin-bottom:10px">
+        <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" style="text-transform:uppercase;letter-spacing:2px;">
+      </div>
     <button class="start-btn" onclick="startGame()">🚀 Start!</button>
   </div>
 </div>
@@ -381,8 +384,23 @@ const LEVELS={
 };
 const MAX_LEVEL=5, MIN_LEVEL=1;
 
+
+// ── ROOM SYNC (for baner) ──
+function initRoom(code){
+  if(!code||!window._fbReady) return;
+  roomCode=code;
+  window._set(window._ref(window._db,'rooms/'+code+'/players/'+playerName),{score:0,lastUpdated:Date.now()});
+  window._onValue(window._ref(window._db,'rooms/'+code+'/players'),snap=>{
+    // scoreboard update handled by bane
+  });
+}
+function syncRoomScore(score){
+  if(!roomCode||!window._fbReady) return;
+  window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+playerName),{score,lastUpdated:Date.now()});
+}
+
 // ── STATE ──
-let currentLevel=1, currentScore=0, playerName='';
+let gameMode='practice', roomCode='', currentLevel=1, currentScore=0, playerName='';
 let currentTask=null, taskStartTime=0;
 let streak=0, errorStreak=0;
 let usedTasks=[];
@@ -761,6 +779,7 @@ function finishTask(){
   const bonus=Math.round(Math.max(30,150-elapsed));
   currentScore+=bonus;
   document.getElementById('scoreBadge').textContent=currentScore+' p';
+    syncRoomScore(currentScore);
   recordResult(true);
   showToast('🎉 +'+bonus+' poeng!','success');
 
@@ -819,6 +838,10 @@ function showToast(msg,type){
 }
 
 buildLevelSelect();
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue } from "../js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._fbReady=true;
 </script>
 <script src="../js/touch-dnd.js"></script>
 </body>
