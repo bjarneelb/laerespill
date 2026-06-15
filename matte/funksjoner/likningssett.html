@@ -368,7 +368,7 @@
 </script>
 
 <script>
-const VERSION='1.3';
+const VERSION='1.4';
 document.querySelectorAll('.version-num').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -972,6 +972,20 @@ function showToast(msg,type){ const t=document.getElementById('toast'); t.textCo
 function guide(msg){ if(currentLevel<=1) showToast(msg,'success'); }
 
 // ── START GAME ──
+
+function showMatchOverToast(result){
+  if(document.getElementById('matchOverOverlay')) return;
+  const overlay=document.createElement('div');
+  overlay.id='matchOverOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Nunito,sans-serif;';
+  overlay.innerHTML=`
+    <div style="font-size:3rem">🏆</div>
+    <div style="color:white;font-size:1.6rem;font-weight:900;text-align:center;padding:0 20px">${result}</div>
+    <div style="color:rgba(255,255,255,0.7);font-size:0.88rem;text-align:center;padding:0 20px">Kampen er over! Start et nytt spill med kampkoden for en ny kamp.</div>
+    <a href="./" style="padding:12px 28px;background:#5b4fcf;color:white;border-radius:12px;font-weight:800;font-size:1rem;text-decoration:none;margin-top:8px">🏠 Tilbake til meny</a>`;
+  document.body.appendChild(overlay);
+}
+
 window.startGame=function(){
   currentLevel=lsStartLevel;
   lsStreak=0; lsErrorStreak=0; taskStartTime=Date.now();
