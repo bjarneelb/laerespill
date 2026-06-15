@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Likningssett – To ukjente</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff; --border: #d0d8f0; --accent: #5b4fcf; --accent2: #e84393;
+    --green: #22c55e; --red: #ef4444; --yellow: #eab308; --text: #1e1b4b; --muted: #6b7280;
+    --x-color: #7c3aed; --x-neg: #be185d; --y-color: #0891b2; --y-neg: #b45309;
+    --num-pos: #1d4ed8; --num-neg: #92400e; --sub-color: #059669; --paren-color: #d97706;
+    --shadow: 0 4px 24px rgba(91,79,207,0.10); --r: 16px; --r-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+  .header { width:100%; background:var(--accent); color:white; padding:12px 24px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 12px rgba(91,79,207,0.25); flex-shrink:0; }
+  .header-title { font-size:1.3rem; font-weight:900; }
+  .header-right { display:flex; align-items:center; gap:10px; }
+  .player-badge { background:rgba(255,255,255,0.18); border-radius:20px; padding:5px 14px; font-weight:700; font-size:0.82rem; }
+  .mode-badge { background:rgba(255,255,255,0.12); border-radius:20px; padding:4px 12px; font-weight:700; font-size:0.78rem; }
+  .version-tag { font-size:0.7rem; opacity:0.55; font-weight:600; }
+  .streak-badge { background:var(--yellow); color:#713f12; border-radius:20px; padding:5px 14px; font-weight:800; font-size:0.88rem; }
+
+  #startScreen { position:fixed; inset:0; background:linear-gradient(135deg,#4338ca,#7c3aed 60%,#e84393); z-index:1000; display:flex; align-items:center; justify-content:center; }
+  .start-card { background:white; border-radius:28px; padding:36px 40px; width:460px; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,0.3); }
+  .start-icon { font-size:2.8rem; margin-bottom:6px; }
+  .start-card h1 { font-size:1.7rem; font-weight:900; color:var(--accent); margin-bottom:4px; }
+  .start-card > p { color:var(--muted); font-size:0.88rem; margin-bottom:16px; }
+  .start-name { font-weight:800; font-size:0.95rem; color:var(--accent2); background:#fdf2f8; border-radius:10px; padding:6px 14px; display:inline-block; margin-bottom:16px; }
+  .mode-selector { display:flex; gap:8px; margin-bottom:16px; }
+  .mode-btn { flex:1; padding:12px 6px; border-radius:12px; border:2px solid var(--border); background:#f9fafb; cursor:pointer; font-family:'Nunito',sans-serif; font-weight:800; font-size:0.78rem; color:var(--muted); transition:all 0.15s; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .mode-btn .mode-icon { font-size:1.4rem; }
+  .mode-btn.active { background:var(--accent); border-color:var(--accent); color:white; box-shadow:0 4px 14px rgba(91,79,207,0.4); transform:translateY(-2px); }
+  .mode-options { background:#f5f3ff; border-radius:12px; padding:14px; margin-bottom:14px; display:none; flex-direction:column; gap:10px; }
+  .mode-options.visible { display:flex; }
+  .opt-row { display:flex; align-items:center; gap:10px; }
+  .opt-label { font-size:0.78rem; font-weight:800; color:var(--muted); white-space:nowrap; }
+  .start-input { flex:1; padding:9px 14px; border:2px solid var(--border); border-radius:10px; font-family:'Nunito',sans-serif; font-size:0.95rem; font-weight:700; text-align:center; text-transform:uppercase; letter-spacing:2px; outline:none; background:white; }
+  .start-input:focus { border-color:var(--accent); }
+  .start-num { width:70px; padding:9px 10px; border:2px solid var(--border); border-radius:10px; font-family:'Nunito',sans-serif; font-size:0.95rem; font-weight:700; text-align:center; outline:none; background:white; }
+  .start-num:focus { border-color:var(--accent); }
+  .btn-start { width:100%; padding:13px; background:var(--accent); color:white; border:none; border-radius:12px; font-family:'Nunito',sans-serif; font-size:1.05rem; font-weight:800; cursor:pointer; transition:transform 0.1s,background 0.15s; margin-top:4px; }
+  .btn-start:hover { background:#4338ca; transform:translateY(-1px); }
+  .ls-lvl{padding:5px 12px;border:2px solid var(--border);border-radius:8px;background:white;
+    font-family:'Nunito',sans-serif;font-weight:800;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+  .ls-lvl.active{background:var(--accent);border-color:var(--accent);color:white;}
+  .start-version { margin-top:10px; font-size:0.72rem; color:#9ca3af; font-weight:600; }
+
+  .main { width:100%; max-width:900px; padding:16px; display:flex; flex-direction:column; gap:14px; }
+
+  #countdownBanner { display:none; background:var(--accent); color:white; border-radius:var(--r); padding:10px 20px; align-items:center; justify-content:space-between; box-shadow:var(--shadow); }
+  #countdownBanner.visible { display:flex; }
+  .countdown-time { font-size:1.5rem; font-weight:900; font-family:monospace; }
+  .countdown-time.urgent { color:var(--yellow); animation:urgentPulse 0.5s infinite; }
+  @keyframes urgentPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* Step indicator */
+  .step-card { background:white; border-radius:var(--r); border:2px solid var(--border); padding:14px 20px; box-shadow:var(--shadow); }
+  .step-sub { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:10px; }
+  .step-indicator { display:flex; align-items:center; }
+  .step-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; }
+  .step-dot.done    { background:var(--green); color:white; }
+  .step-dot.current { background:var(--accent); color:white; }
+  .step-dot.future  { background:#e5e7eb; color:var(--muted); }
+  .step-line { flex:1; height:2px; background:#e5e7eb; }
+  .step-line.done { background:var(--green); }
+  .step-labels { display:flex; justify-content:space-between; margin-top:6px; font-size:0.7rem; font-weight:700; color:var(--muted); }
+
+  /* System card */
+  .system-card { background:white; border-radius:var(--r); border:2px solid var(--border); padding:18px 22px; box-shadow:var(--shadow); }
+  .system-title { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:12px; }
+  .equation-row-display { display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:10px; margin-bottom:6px; cursor:pointer; transition:background 0.15s,border-color 0.15s; border:2px solid transparent; }
+  .equation-row-display:last-child { margin-bottom:0; }
+  .equation-row-display:hover { background:#f5f3ff; }
+  .equation-row-display.active { background:#f5f3ff; border-color:var(--accent); }
+  .equation-row-display.solved { background:#f0fdf4; border-color:var(--green); cursor:default; }
+  .eq-numeral { font-family:serif; font-size:1.1rem; font-weight:900; color:var(--accent); width:24px; flex-shrink:0; }
+  .eq-text { font-size:1.1rem; font-weight:800; font-family:monospace; flex:1; }
+  .eq-badge { font-size:0.72rem; font-weight:800; padding:2px 10px; border-radius:20px; flex-shrink:0; }
+  .eq-badge.solved  { background:#d1fae5; color:#065f46; }
+  .eq-badge.active  { background:#ede9fe; color:var(--accent); }
+  .eq-badge.pending { background:#f3f4f6; color:var(--muted); }
+
+  /* Solver */
+  .solver-card { background:white; border-radius:var(--r); border:2px solid var(--border); padding:18px 22px; box-shadow:var(--shadow); }
+  .solver-title { font-size:0.85rem; font-weight:800; color:var(--accent); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .solver-eq-display { text-align:center; font-size:1.3rem; font-weight:900; font-family:monospace; color:var(--accent); padding:8px 0; min-height:40px; }
+
+  .scales-area { display:flex; align-items:flex-start; gap:14px; margin:10px 0; }
+  .scale-panel { flex:1; background:white; border-radius:var(--r); border:2px solid var(--border); padding:14px; min-height:100px; transition:transform 0.5s cubic-bezier(.4,0,.2,1),border-color 0.3s; }
+  .scale-panel.drag-over { border-color:var(--accent); background:#f5f3ff; }
+  .scale-label { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:8px; }
+  .blocks-container { display:flex; flex-wrap:wrap; gap:7px; min-height:56px; align-content:flex-start; }
+  .scale-eq-sign { display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:900; color:var(--muted); padding:35px 0; flex-shrink:0; width:28px; }
+
+  .block { padding:8px 12px; border-radius:var(--r-sm); font-weight:800; font-size:0.9rem; cursor:grab; user-select:none; transition:transform 0.15s; color:white; display:flex; align-items:center; justify-content:center; min-width:44px; text-align:center; }
+  .block:active { cursor:grabbing; transform:scale(1.08); }
+  .block.type-x      { background:var(--x-color); }
+  .block.type-x-neg  { background:var(--x-neg); }
+  .block.type-y      { background:var(--y-color); }
+  .block.type-y-neg  { background:var(--y-neg); }
+  .block.type-num    { background:var(--num-pos); }
+  .block.type-num-neg{ background:var(--num-neg); }
+  .block.type-sub    { background:var(--sub-color); font-size:0.78rem; min-width:80px; }
+  .block.type-paren  { background:var(--paren-color); font-size:0.82rem; min-width:80px; border:2px solid #fbbf24; }
+  .block.dragging    { opacity:0.4; }
+  .block.just-changed { animation:pop 0.4s ease-out; }
+  @keyframes pop { 0%{transform:scale(1.2);box-shadow:0 0 0 4px rgba(91,79,207,0.4)} 100%{transform:scale(1);box-shadow:none} }
+
+  .block-bank { background:white; border-radius:var(--r); border:2px dashed var(--border); padding:14px; box-shadow:var(--shadow); }
+  .bank-label { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:8px; }
+  .bank-blocks { display:flex; flex-wrap:wrap; gap:7px; min-height:48px; }
+
+  .ops-panel { background:white; border-radius:var(--r); border:2px solid var(--border); padding:12px 18px; box-shadow:var(--shadow); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .ops-label { font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--muted); flex-shrink:0; }
+  .ops-num { width:68px; padding:7px 10px; border:2px solid var(--border); border-radius:8px; font-family:'Nunito',sans-serif; font-size:1rem; font-weight:700; text-align:center; outline:none; }
+  .ops-num:focus { border-color:var(--accent); }
+  .op-btn { padding:7px 16px; border-radius:8px; border:none; font-family:'Nunito',sans-serif; font-weight:800; font-size:0.9rem; cursor:pointer; transition:filter 0.1s; }
+  .op-btn:hover { filter:brightness(0.93); }
+  .op-btn.times  { background:#ede9fe; color:var(--x-color); }
+  .op-btn.divide { background:#dbeafe; color:var(--num-pos); }
+
+  .actions-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .action-btn { flex:1; padding:12px; border-radius:12px; border:none; font-family:'Nunito',sans-serif; font-weight:800; font-size:0.9rem; cursor:pointer; transition:transform 0.1s,filter 0.1s; min-width:80px; }
+  .action-btn:hover { filter:brightness(0.93); transform:translateY(-1px); }
+  .action-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; filter:none; }
+  .btn-check { background:var(--green); color:white; }
+  .btn-reset { background:#fef3c7; color:#92400e; }
+  .btn-undo  { background:#f3f4f6; color:var(--muted); }
+  .btn-sub   { background:#d1fae5; color:#065f46; border:2px solid #6ee7b7; }
+  .btn-sub.ready { background:#059669; color:white; border-color:#059669; animation:subtlePulse 2s infinite; }
+  @keyframes subtlePulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 0 4px rgba(5,150,105,0.25)} }
+
+  .final-card { background:white; border-radius:var(--r); border:2px solid var(--border); padding:20px 24px; box-shadow:var(--shadow); }
+  .final-title { font-size:0.85rem; font-weight:800; color:var(--accent); margin-bottom:14px; }
+  .final-inputs { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .final-field { display:flex; align-items:center; gap:8px; }
+  .final-label { font-size:1.1rem; font-weight:900; font-family:monospace; color:var(--accent); }
+  .final-input { width:80px; padding:10px 12px; border:2px solid var(--border); border-radius:10px; font-family:'Nunito',sans-serif; font-size:1.1rem; font-weight:800; text-align:center; outline:none; }
+  .final-input:focus { border-color:var(--accent); }
+  .final-input.correct { border-color:var(--green); background:#f0fdf4; }
+  .final-input.wrong   { border-color:var(--red);   background:#fef2f2; }
+  .btn-final-check { padding:11px 24px; background:var(--green); color:white; border:none; border-radius:12px; font-family:'Nunito',sans-serif; font-weight:800; font-size:0.95rem; cursor:pointer; }
+
+  .score-card { background:white; border-radius:var(--r); border:2px solid var(--border); padding:14px 18px; box-shadow:var(--shadow); }
+  .score-title { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:8px; }
+  .score-entry { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #f3f4f6; font-size:0.88rem; font-weight:700; }
+  .score-entry:last-child { border-bottom:none; }
+  .score-entry.is-me { color:var(--accent); }
+  .score-entry .pts { background:#f0f4ff; color:var(--accent); border-radius:20px; padding:2px 10px; font-size:0.78rem; }
+  .score-entry.is-me .pts { background:var(--accent); color:white; }
+
+  .feedback-toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px); padding:12px 24px; border-radius:50px; font-weight:800; font-size:1rem; color:white; z-index:500; transition:transform 0.4s cubic-bezier(.34,1.56,.64,1); pointer-events:none; white-space:nowrap; }
+  .feedback-toast.show { transform:translateX(-50%) translateY(0); }
+  .feedback-toast.success { background:var(--green); }
+  .feedback-toast.error   { background:var(--red); }
+
+  .ctx-menu { display:none; position:fixed; background:white; border:2px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:2000; overflow:hidden; min-width:200px; }
+  .ctx-menu button { display:block; width:100%; border:none; background:none; font-family:'Nunito',sans-serif; font-size:0.9rem; font-weight:700; padding:9px 18px; cursor:pointer; text-align:left; color:var(--text); }
+  .ctx-menu button:hover { background:#f5f3ff; color:var(--accent); }
+  .ctx-sep { height:1px; background:var(--border); margin:4px 0; }
+  .ctx-sub-options { padding:4px 8px; display:flex; flex-direction:column; gap:4px; }
+  .ctx-sub-btn { display:block; width:100%; border:none; background:#f0fdf4; border-radius:8px; font-family:'Nunito',sans-serif; font-size:0.82rem; font-weight:800; padding:6px 12px; cursor:pointer; text-align:left; color:#065f46; }
+  .ctx-sub-btn:hover { background:#d1fae5; }
+
+  .bottom-row { display:grid; grid-template-columns:1fr 210px; gap:14px; align-items:start; }
+  @media (max-width:640px) { .bottom-row{grid-template-columns:1fr} .scales-area{flex-direction:column} .scale-eq-sign{padding:8px 0;width:100%;text-align:center} }
+
+  #timeUpOverlay { position:fixed; inset:0; z-index:950; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
+  #timeUpOverlay.show { display:flex; }
+  .timeup-card { background:white; border-radius:28px; padding:48px; text-align:center; animation:popIn 0.5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  .timeup-card .icon { font-size:3.5rem; margin-bottom:10px; }
+  .timeup-card h2 { font-size:1.8rem; font-weight:900; color:var(--accent); margin-bottom:8px; }
+  .timeup-card .score { font-size:2.5rem; font-weight:900; color:var(--green); margin-bottom:6px; }
+  .timeup-card p { color:var(--muted); margin-bottom:24px; }
+  .btn-again { padding:13px 32px; background:var(--accent); color:white; border:none; border-radius:12px; font-family:'Nunito',sans-serif; font-weight:800; font-size:1rem; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="feedback-toast" id="toast"></div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctxMenu">
+  <button onclick="ctxInvert()">± Bytt fortegn</button>
+  <button onclick="ctxSplit()">⚏ Splitt blokk</button>
+  <div class="ctx-sep" id="ctxSubSep" style="display:none"></div>
+  <div class="ctx-sub-options" id="ctxSubOptions"></div>
+</div>
+
+<!-- TIME UP -->
+<div id="timeUpOverlay">
+  <div class="timeup-card">
+    <div class="icon">⏱️</div>
+    <h2>Tiden er ute!</h2>
+    <div class="score" id="timeupScore">0</div>
+    <p>poeng på <span id="timeupMinutes">5</span> minutter</p>
+    <button class="btn-again" onclick="location.reload()">🔄 Spill igjen</button>
+  </div>
+</div>
+
+<!-- START SCREEN -->
+<div id="startScreen">
+  <div class="start-card">
+    <div class="start-icon">🔢</div>
+    <h1>Likningssett</h1>
+    <p>Løs likninger med to ukjente ved hjelp av innsettingsmetoden</p>
+    <div class="start-name" id="displayName">...</div>
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')"><span class="mode-icon">🧘</span>Øvemodus</button>
+      <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')"><span class="mode-icon">⏱️</span>Enkeltspiller</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')"><span class="mode-icon">🏎️</span>Flerspiller</button>
+    </div>
+    <div class="mode-options" id="opts-solo">
+      <div class="opt-row"><span class="opt-label">Tid (min):</span><input class="start-num" id="timedMinutes" type="number" value="5" min="1" max="30"></div>
+    </div>
+    <div class="mode-options" id="opts-multi">
+      <div class="opt-row"><span class="opt-label">Romkode:</span><input class="start-input" id="roomInput" placeholder="ROMKODE" maxlength="8"></div>
+    </div>
+    <div style="font-size:0.75rem;font-weight:800;color:var(--muted);margin:8px 0 4px;letter-spacing:1px">STARTNIVÅ</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="lsLevelSelect">
+      <button class="ls-lvl active" data-lv="1" onclick="lsSetLevel(1)">N1</button>
+      <button class="ls-lvl" data-lv="2" onclick="lsSetLevel(2)">N2</button>
+      <button class="ls-lvl" data-lv="3" onclick="lsSetLevel(3)">N3</button>
+      <button class="ls-lvl" data-lv="4" onclick="lsSetLevel(4)">N4</button>
+    </div>
+    <button class="btn-start" onclick="startGame()">Start! 🚀</button>
+    <div class="start-version">v<span class="version-num"></span></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">🔢 Likningssett</div>
+  <div class="header-right">
+    <span class="version-tag">v<span class="version-num"></span></span>
+    <span class="mode-badge" id="modeBadge">–</span>
+    <span class="player-badge" id="headerName">–</span>
+    <span class="streak-badge">✅ <span id="solvedCount">0</span></span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <div id="countdownBanner">
+    <span style="font-weight:800">⏱️ Tid igjen:</span>
+    <span class="countdown-time" id="countdownTime">5:00</span>
+    <span style="font-weight:700;font-size:0.85rem">Flest poeng vinner!</span>
+  </div>
+
+  <!-- STEP INDICATOR -->
+  <div class="step-card">
+    <div class="step-sub">Fremgang</div>
+    <div class="step-indicator">
+      <div class="step-dot current" id="step1dot">1</div>
+      <div class="step-line" id="step1line"></div>
+      <div class="step-dot future" id="step2dot">2</div>
+      <div class="step-line" id="step2line"></div>
+      <div class="step-dot future" id="step3dot">3</div>
+      <div class="step-line" id="step3line"></div>
+      <div class="step-dot future" id="step4dot">4</div>
+    </div>
+    <div class="step-labels">
+      <span>Velg likning</span><span>Isoler variabel</span><span>Sett inn</span><span>Finn svar</span>
+    </div>
+  </div>
+
+  <!-- EQUATION SYSTEM -->
+  <div class="system-card">
+    <div class="system-title" id="systemTitle">📋 Velg hvilken likning du vil starte med</div>
+    <div class="equation-row-display" id="eqDisplay1" onclick="selectEquation(1)">
+      <span class="eq-numeral">I</span>
+      <span class="eq-text" id="eqText1">–</span>
+      <span class="eq-badge pending" id="eqBadge1">Velg</span>
+    </div>
+    <div class="equation-row-display" id="eqDisplay2" onclick="selectEquation(2)">
+      <span class="eq-numeral">II</span>
+      <span class="eq-text" id="eqText2">–</span>
+      <span class="eq-badge pending" id="eqBadge2">Velg</span>
+    </div>
+  </div>
+
+  <!-- SOLVER -->
+  <div class="solver-card" id="solverCard">
+    <div class="solver-title" id="solverTitle">🔧 Velg en likning å starte med</div>
+    <div class="solver-eq-display" id="solverEqDisplay">–</div>
+    <div class="scales-area">
+      <div class="scale-panel" id="scaleL">
+        <div class="scale-label">Venstre side</div>
+        <div class="blocks-container" id="blocksL"></div>
+      </div>
+      <div class="scale-eq-sign">=</div>
+      <div class="scale-panel" id="scaleR">
+        <div class="scale-label">Høyre side</div>
+        <div class="blocks-container" id="blocksR"></div>
+      </div>
+    </div>
+    <div class="ops-panel">
+      <span class="ops-label">Begge sider:</span>
+      <input class="ops-num" id="opVal" type="number" value="2">
+      <button class="op-btn times"  onclick="operate('multiply')">× Ganger</button>
+      <button class="op-btn divide" onclick="operate('divide')">÷ Del</button>
+    </div>
+    <div class="actions-row" style="margin-top:10px">
+      <button class="action-btn btn-sub" id="subBtn" onclick="makeBlock()" disabled>📦 Lag innsettingsblokk</button>
+      <button class="action-btn btn-undo" onclick="doUndo()">⟲ Angre</button>
+      <button class="action-btn btn-reset" onclick="resetSolver()">↺ Nullstill</button>
+    </div>
+  </div>
+
+  <!-- BANK -->
+  <div class="block-bank" id="bankPanel">
+    <div class="bank-label">📦 Blokker – innsettingsblokker og mellomresultater</div>
+    <div class="bank-blocks" id="bankBlocks"></div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="final-card" id="finalCard" style="display:none">
+        <div class="final-title">🎯 Sett inn svarene dine</div>
+        <div style="color:var(--muted);font-size:0.82rem;margin-bottom:12px">Se i blokk-banken om du trenger å sjekke verdiene</div>
+        <div class="final-inputs">
+          <div class="final-field"><span class="final-label">x =</span><input class="final-input" id="finalX" type="number" placeholder="?"></div>
+          <div class="final-field"><span class="final-label">y =</span><input class="final-input" id="finalY" type="number" placeholder="?"></div>
+          <button class="btn-final-check" onclick="checkFinalAnswer()">✅ Sjekk svar</button>
+        </div>
+      </div>
+    </div>
+    <div class="score-card">
+      <div class="score-title" id="scoreTitle">🏆 Poeng</div>
+      <div id="scoreList"><div style="color:var(--muted);font-size:0.85rem">–</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, set, update, onValue } from "./js/firebase-config.js";
+  window._fbReady=true; window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue;
+  window._fbInit=function(room){
+    _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
+    _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateSB(snap.val()); });
+  };
+  window.syncScore=function(score){
+    if(!window.roomCode)return;
+    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),{score,lastUpdated:Date.now()});
+  };
+  window.addEventListener('beforeunload',()=>{
+    if(window.roomCode&&window._fbReady) window._set(window._ref(window._db,'rooms/'+window.roomCode+'/players/'+window.playerName),null);
+  });
+  function updateSB(players){
+    const sorted=Object.entries(players).sort((a,b)=>b[1].score-a[1].score).slice(0,6);
+    let html='';
+    sorted.forEach(([name,data],i)=>{
+      const isMe=name===window.playerName;
+      const medals=['🥇','🥈','🥉'];
+      html+=`<div class="score-entry ${isMe?'is-me':''}"><span style="color:var(--muted);width:20px">${medals[i]||i+1+'.'}</span><span style="flex:1;padding:0 6px">${name}</span><span class="pts">${data.score}p</span></div>`;
+    });
+    document.getElementById('scoreList').innerHTML=html||'<div style="color:var(--muted);font-size:0.85rem">Ingen ennå</div>';
+  }
+</script>
+
+<script>
+const VERSION='1.4';
+document.querySelectorAll('.version-num').forEach(el=>el.textContent=VERSION);
+
+// ── PLAYER NAME ──
+const adj=['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flinke','Dristige','Skarpe'];
+const ani=['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger','Ørn','Gepard','Panter','Falken'];
+const _used=new Set();
+function genName(){ const pool=[]; adj.forEach(a=>ani.forEach(b=>pool.push(a+' '+b))); const avail=pool.filter(n=>!_used.has(n)); const name=avail.length?avail[Math.floor(Math.random()*avail.length)]:pool[Math.floor(Math.random()*pool.length)]; _used.add(name); return name; }
+window.playerName=genName();
+document.getElementById('displayName').textContent='🚗 '+window.playerName;
+
+// ── MODE ──
+let gameMode='practice', timedMinutes=5, timedSecondsLeft=0, timedInterval=null;
+window.selectMode=function(mode){ gameMode=mode; document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode)); document.getElementById('opts-solo').classList.toggle('visible',mode==='solo'); document.getElementById('opts-multi').classList.toggle('visible',mode==='multi'); };
+
+// ── STATE ──
+let idCounter=0, currentScore=0, totalSolved=0, currentLevel=1, taskStartTime=Date.now();
+let lsStartLevel=1;
+// ── ADAPTIVE LEVEL ──
+const LS_MAX=4, LS_UP=3, LS_DOWN=2, LS_TIME=50;
+let lsStreak=0, lsErrorStreak=0;
+
+window.lsSetLevel=function(n){
+  lsStartLevel=n;
+  document.querySelectorAll('.ls-lvl').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.lv)===n));
+};
+
+// ── TIMECODE SYNC ──
+function getActiveSession(){
+  try{const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
+    if(!s||s.skipped||s.noCode||s.expired) return null;
+    if(s.expires&&Date.now()>s.expires) return null;
+    return s;
+  }catch(e){return null;}
+}
+let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0, tcMaxLevel=1, tcStartLevel=1;
+function syncToTimecode(){
+  const s=getActiveSession(); if(!s) return;
+  const name=s.name||window.playerName; if(!name) return;
+  const waitFb=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name+'/games/likningssett'),
+      {level:currentLevel,maxLevel:Math.max(currentLevel,tcMaxLevel),startLevel:tcStartLevel,score:currentScore,
+       correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
+       sessionStart:tcSyncSessionStart});
+    else setTimeout(waitFb,200);
+  }; waitFb();
+  // Update root
+  const root='timecodes/'+s.code+'/players/'+name;
+  const waitRoot=()=>{
+    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
+    else setTimeout(waitRoot,200);
+  }; waitRoot();
+}
+
+function lsRecordResult(correct){
+  const elapsed=(Date.now()-taskStartTime)/1000;
+  taskStartTime=Date.now();
+  if(correct) tcCorrect++; else tcWrong++;
+  tcMaxLevel=Math.max(tcMaxLevel,currentLevel);
+  syncToTimecode();
+  if(correct){
+    lsErrorStreak=0; lsStreak++;
+    if(elapsed>LS_TIME*2){lsStreak=Math.max(0,lsStreak-1);lsErrorStreak=1;}
+    if(lsStreak>=LS_UP&&currentLevel<LS_MAX){currentLevel++;lsStreak=0;lsErrorStreak=0;lsShowChange('up');}
+  } else {
+    lsStreak=0; lsErrorStreak++;
+    if(lsErrorStreak>=LS_DOWN&&currentLevel>1){currentLevel--;lsStreak=0;lsErrorStreak=0;lsShowChange('down');}
+  }
+}
+function lsShowChange(dir){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);'+
+    'background:'+(dir==='up'?'#16a34a':'#d97706')+';color:white;padding:8px 20px;'+
+    'border-radius:20px;font-weight:800;font-size:1rem;z-index:999;';
+  el.textContent=dir==='up'?'⬆️ Nivå '+currentLevel+'!':'⬇️ Nivå '+currentLevel;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2000);
+}
+let system=null;
+// Steg: 0=velg likning, 1=løs første likning, 2=løs andre likning, 3=løs siste likning, 4=skriv inn svar
+let step=0, firstEq=0, secondEq=0;
+let isolatedVar='', isolatedExpr=null; // fra steg 1
+let subBlock=null;                     // innsettingsblokk i banken
+let knownVar='', knownVal=null;        // fra steg 2
+let finalVar='', finalVal=null;        // fra steg 3
+let sides={left:[],right:[]};
+let lastChangedId=null, activeMenuTarget=null, solverOriginal=null, solverHistory=[];
+
+// ── 60 LIKNINGSSETT ──
+const SYSTEMS=[
+  // NIVÅ 1 (15) — koeffisienter 1–2, løsninger 1–6
+  {level:1,xVal:3,yVal:1,eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}],   eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:4}]},
+  {level:1,xVal:4,yVal:2,eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:2}]},
+  {level:1,xVal:2,yVal:4,eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}],   eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}]},
+  {level:1,xVal:2,yVal:3,eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}],   eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:1}]},
+  {level:1,xVal:5,yVal:1,eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:7}],   eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:4}]},
+  {level:1,xVal:3,yVal:3,eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}],   eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:9}]},
+  {level:1,xVal:4,yVal:1,eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}],   eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}]},
+  {level:1,xVal:6,yVal:2,eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:4}]},
+  {level:1,xVal:2,yVal:6,eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:10}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:14}]},
+  {level:1,xVal:5,yVal:3,eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:2},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:7}]},
+  {level:1,xVal:3,yVal:2,eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:7}]},
+  {level:1,xVal:1,yVal:4,eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:9}],   eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}]},
+  {level:1,xVal:6,yVal:1,eq1:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}],   eq2:[{t:'x',n:1},{t:'y',n:-1},{t:'=',n:0},{t:'num',n:5}]},
+  {level:1,xVal:4,yVal:4,eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:12}],  eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:12}]},
+  {level:1,xVal:1,yVal:5,eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}],   eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:11}]},
+  // NIVÅ 2 (15) — koeffisienter 1–3, løsninger 1–8
+  {level:2,xVal:3,yVal:2,eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:12}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}]},
+  {level:2,xVal:2,yVal:3,eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}],   eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:11}]},
+  {level:2,xVal:4,yVal:2,eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:14}],  eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:10}]},
+  {level:2,xVal:5,yVal:2,eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:16}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}]},
+  {level:2,xVal:3,yVal:4,eq1:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:15}],  eq2:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:13}]},
+  {level:2,xVal:6,yVal:1,eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:15}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}]},
+  {level:2,xVal:2,yVal:5,eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:16}],  eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:17}]},
+  {level:2,xVal:7,yVal:2,eq1:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:13}],  eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:16}]},
+  {level:2,xVal:4,yVal:3,eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:18}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}]},
+  {level:2,xVal:1,yVal:6,eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:8}],   eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:19}]},
+  {level:2,xVal:5,yVal:3,eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:13}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:11}]},
+  {level:2,xVal:8,yVal:1,eq1:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:11}],  eq2:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:26}]},
+  {level:2,xVal:2,yVal:7,eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:13}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:16}]},
+  {level:2,xVal:6,yVal:3,eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:21}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}]},
+  {level:2,xVal:3,yVal:5,eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:19}],  eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:18}]},
+  // NIVÅ 3 (15) — koeffisienter 2–5, løsninger 1–8
+  {level:3,xVal:3,yVal:2,eq1:[{t:'x',n:4},{t:'y',n:2},{t:'=',n:0},{t:'num',n:16}],  eq2:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:12}]},
+  {level:3,xVal:4,yVal:3,eq1:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:24}],  eq2:[{t:'x',n:5},{t:'y',n:2},{t:'=',n:0},{t:'num',n:26}]},
+  {level:3,xVal:2,yVal:5,eq1:[{t:'x',n:5},{t:'y',n:2},{t:'=',n:0},{t:'num',n:20}],  eq2:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:19}]},
+  {level:3,xVal:6,yVal:2,eq1:[{t:'x',n:3},{t:'y',n:5},{t:'=',n:0},{t:'num',n:28}],  eq2:[{t:'x',n:4},{t:'y',n:2},{t:'=',n:0},{t:'num',n:28}]},
+  {level:3,xVal:3,yVal:4,eq1:[{t:'x',n:4},{t:'y',n:3},{t:'=',n:0},{t:'num',n:24}],  eq2:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:26}]},
+  {level:3,xVal:5,yVal:3,eq1:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:25}],  eq2:[{t:'x',n:4},{t:'y',n:2},{t:'=',n:0},{t:'num',n:26}]},
+  {level:3,xVal:7,yVal:2,eq1:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:29}],  eq2:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:24}]},
+  {level:3,xVal:4,yVal:5,eq1:[{t:'x',n:5},{t:'y',n:3},{t:'=',n:0},{t:'num',n:35}],  eq2:[{t:'x',n:2},{t:'y',n:4},{t:'=',n:0},{t:'num',n:28}]},
+  {level:3,xVal:2,yVal:6,eq1:[{t:'x',n:4},{t:'y',n:3},{t:'=',n:0},{t:'num',n:26}],  eq2:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:18}]},
+  {level:3,xVal:8,yVal:3,eq1:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:31}],  eq2:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:36}]},
+  {level:3,xVal:1,yVal:7,eq1:[{t:'x',n:5},{t:'y',n:2},{t:'=',n:0},{t:'num',n:19}],  eq2:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:31}]},
+  {level:3,xVal:6,yVal:4,eq1:[{t:'x',n:4},{t:'y',n:3},{t:'=',n:0},{t:'num',n:36}],  eq2:[{t:'x',n:2},{t:'y',n:5},{t:'=',n:0},{t:'num',n:32}]},
+  {level:3,xVal:3,yVal:6,eq1:[{t:'x',n:5},{t:'y',n:2},{t:'=',n:0},{t:'num',n:27}],  eq2:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:24}]},
+  {level:3,xVal:5,yVal:4,eq1:[{t:'x',n:3},{t:'y',n:5},{t:'=',n:0},{t:'num',n:35}],  eq2:[{t:'x',n:4},{t:'y',n:2},{t:'=',n:0},{t:'num',n:28}]},
+  {level:3,xVal:7,yVal:3,eq1:[{t:'x',n:2},{t:'y',n:4},{t:'=',n:0},{t:'num',n:26}],  eq2:[{t:'x',n:5},{t:'y',n:3},{t:'=',n:0},{t:'num',n:44}]},
+  // NIVÅ 4 (15) — koeffisienter 1–4, negative løsninger tillatt
+  {level:4,xVal:-2,yVal:3, eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:5}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:1}]},
+  {level:4,xVal:3, yVal:-1,eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:1}],  eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:5}]},
+  {level:4,xVal:-3,yVal:2, eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:1}],  eq2:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-7}]},
+  {level:4,xVal:4, yVal:-2,eq1:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:6}],  eq2:[{t:'x',n:1},{t:'y',n:3},{t:'=',n:0},{t:'num',n:-2}]},
+  {level:4,xVal:-1,yVal:4, eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:5}],  eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:3}]},
+  {level:4,xVal:5, yVal:-3,eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:-1}], eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:7}]},
+  {level:4,xVal:-4,yVal:1, eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:-5}], eq2:[{t:'x',n:1},{t:'y',n:4},{t:'=',n:0},{t:'num',n:0}]},
+  {level:4,xVal:2, yVal:-4,eq1:[{t:'x',n:3},{t:'y',n:1},{t:'=',n:0},{t:'num',n:2}],  eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:-6}]},
+  {level:4,xVal:-2,yVal:5, eq1:[{t:'x',n:4},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-3}], eq2:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:8}]},
+  {level:4,xVal:6, yVal:-2,eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:6}],  eq2:[{t:'x',n:1},{t:'y',n:4},{t:'=',n:0},{t:'num',n:-2}]},
+  {level:4,xVal:-3,yVal:4, eq1:[{t:'x',n:3},{t:'y',n:2},{t:'=',n:0},{t:'num',n:1}],  eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-2}]},
+  {level:4,xVal:1, yVal:-5,eq1:[{t:'x',n:4},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-1}], eq2:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:-13}]},
+  {level:4,xVal:-1,yVal:-2,eq1:[{t:'x',n:2},{t:'y',n:3},{t:'=',n:0},{t:'num',n:-8}], eq2:[{t:'x',n:1},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-3}]},
+  {level:4,xVal:3, yVal:-3,eq1:[{t:'x',n:1},{t:'y',n:2},{t:'=',n:0},{t:'num',n:-3}], eq2:[{t:'x',n:4},{t:'y',n:1},{t:'=',n:0},{t:'num',n:9}]},
+  {level:4,xVal:-2,yVal:-1,eq1:[{t:'x',n:3},{t:'y',n:4},{t:'=',n:0},{t:'num',n:-10}],eq2:[{t:'x',n:2},{t:'y',n:1},{t:'=',n:0},{t:'num',n:-5}]},
+];
+
+const _usedSystems=new Set();
+function pickSystem(level){
+  let pool=SYSTEMS.filter(s=>s.level===level&&!_usedSystems.has(s));
+  if(!pool.length){ SYSTEMS.filter(s=>s.level===level).forEach(s=>_usedSystems.delete(s)); pool=SYSTEMS.filter(s=>s.level===level); }
+  const chosen=pool[Math.floor(Math.random()*pool.length)];
+  _usedSystems.add(chosen); return chosen;
+}
+
+// ── INIT GAME ──
+function initGame(){
+  step=0; firstEq=0; secondEq=0; isolatedVar=''; isolatedExpr=null;
+  subBlock=null; knownVar=''; knownVal=null; finalVar=''; finalVal=null;
+  sides={left:[],right:[]}; lastChangedId=null; solverOriginal=null;
+  taskStartTime=Date.now();
+
+  system=pickSystem(currentLevel);
+  document.getElementById('eqText1').textContent=fmtEqLine(system.eq1);
+  document.getElementById('eqText2').textContent=fmtEqLine(system.eq2);
+  [1,2].forEach(n=>{
+    document.getElementById('eqDisplay'+n).className='equation-row-display';
+    document.getElementById('eqBadge'+n).textContent='Velg';
+    document.getElementById('eqBadge'+n).className='eq-badge pending';
+  });
+  document.getElementById('systemTitle').textContent='📋 Velg hvilken likning du vil starte med';
+  document.getElementById('solverTitle').textContent='🔧 Velg en likning å starte med';
+  document.getElementById('solverEqDisplay').textContent='–';
+  document.getElementById('finalCard').style.display='none';
+  document.getElementById('solverCard').style.display='block';
+  renderSolver(); renderBank(); updateSubBtn(); updateStepDots(0);
+}
+window.initGame=initGame;
+
+// ── FORMAT EQUATION LINE ──
+function fmtEqLine(eq){
+  let L='',R='',onRight=false;
+  eq.forEach(t=>{
+    if(t.t==='='){onRight=true;return;}
+    const term=fmtTerm(t.t,t.n);
+    if(onRight) R+=(R&&t.n>=0?'+ ':'')+term;
+    else L+=(L&&t.n>=0?'+ ':'')+term;
+  });
+  return L+' = '+R;
+}
+function fmtTerm(type,num){
+  if(type==='num') return String(num);
+  const s=num<0?'-':'', a=Math.abs(num), c=a===1?'':String(a);
+  return s+c+type;
+}
+
+// ── SELECT EQUATION ──
+window.selectEquation=function(eq){
+  if(step===0){
+    firstEq=eq; secondEq=eq===1?2:1; step=1;
+    document.getElementById('eqDisplay'+eq).className='equation-row-display active';
+    document.getElementById('eqBadge'+eq).textContent='Løser nå';
+    document.getElementById('eqBadge'+eq).className='eq-badge active';
+    document.getElementById('eqDisplay'+secondEq).className='equation-row-display';
+    document.getElementById('eqBadge'+secondEq).textContent='Neste steg';
+    document.getElementById('eqBadge'+secondEq).className='eq-badge pending';
+    guide('Likning '+toRoman(eq)+' er valgt – isoler x eller y');
+    loadIntoSolver(eq);
+    updateStepDots(1);
+    document.getElementById('solverTitle').textContent='🔧 Likning '+toRoman(eq)+' – isoler x eller y';
+
+  } else if(step===2){
+    // Eleven velger likning for steg 2
+    document.getElementById('eqDisplay'+eq).className='equation-row-display active';
+    document.getElementById('eqBadge'+eq).textContent='Løser nå';
+    document.getElementById('eqBadge'+eq).className='eq-badge active';
+    loadIntoSolver(eq);
+    document.getElementById('solverTitle').textContent='🔧 Likning '+toRoman(eq)+' – høyreklikk på '+isolatedVar+'-blokk og sett inn';
+
+  } else if(step===3){
+    // Eleven velger likning for steg 3
+    document.getElementById('eqDisplay'+eq).className='equation-row-display active';
+    document.getElementById('eqBadge'+eq).textContent='Løser nå';
+    document.getElementById('eqBadge'+eq).className='eq-badge active';
+    loadIntoSolver(eq);
+    document.getElementById('solverTitle').textContent='🔧 Likning '+toRoman(eq)+' – høyreklikk på '+knownVar+'-blokk og sett inn';
+  }
+};
+
+function toRoman(n){return n===1?'I':'II';}
+function otherVar(v){return v==='x'?'y':'x';}
+
+// ── LOAD INTO SOLVER ──
+function loadIntoSolver(eqNum){
+  const eq=eqNum===1?system.eq1:system.eq2;
+  sides={left:[],right:[]}; let onRight=false;
+  eq.forEach(t=>{
+    if(t.t==='='){onRight=true;return;}
+    if(t.n===0) return;
+    const b={id:idCounter++,type:t.t,num:t.n};
+    if(onRight) sides.right.push(b); else sides.left.push(b);
+  });
+  solverOriginal={left:JSON.parse(JSON.stringify(sides.left)),right:JSON.parse(JSON.stringify(sides.right))};
+  lastChangedId=null; renderSolver(); updateSubBtn();
+}
+
+// ── RENDER ──
+function renderSolver(){
+  renderSide('left',document.getElementById('blocksL'));
+  renderSide('right',document.getElementById('blocksR'));
+  updateSolverDisplay(); updateScaleTilt(); updateSubBtn();
+}
+
+function renderSide(side,container){
+  container.innerHTML='';
+  sides[side].forEach((item,idx)=>{
+    if (idx > 0) {
+      const plus = document.createElement('span');
+      plus.textContent = '+';
+      plus.style.cssText = 'color:var(--muted);font-weight:900;font-size:1.1rem;align-self:center;user-select:none;pointer-events:none;';
+      container.appendChild(plus);
+    }
+    const div=document.createElement('div');
+    div.className=`block ${bClass(item)}${item.id===lastChangedId?' just-changed':''}`;
+    div.draggable=true; div.setAttribute('data-id',item.id); div.setAttribute('data-side',side);
+    div.textContent=bLabel(item);
+    div.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text',JSON.stringify({side,id:item.id})); setTimeout(()=>div.classList.add('dragging'),0); });
+    div.addEventListener('dragend',()=>div.classList.remove('dragging'));
+    div.addEventListener('contextmenu',e=>{ e.preventDefault(); activeMenuTarget={side,item}; showCtxMenu(e.clientX,e.clientY,item); });
+    container.appendChild(div);
+  });
+}
+
+function bClass(i){
+  if(i.type==='sub')   return 'type-sub';
+  if(i.type==='paren') return 'type-paren';
+  if(i.type==='x')     return i.num<0?'type-x-neg':'type-x';
+  if(i.type==='y')     return i.num<0?'type-y-neg':'type-y';
+  return i.num<0?'type-num-neg':'type-num';
+}
+function bLabel(i){
+  if(i.type==='sub')   return i.label||'?';
+  if(i.type==='paren') return i.label||'?';
+  if(i.type==='x'||i.type==='y') return i.num===1?i.type:i.num===-1?'-'+i.type:i.num+i.type;
+  return String(i.num);
+}
+
+function updateSolverDisplay(){
+  document.getElementById('solverEqDisplay').textContent=fmtSide(sides.left)+' = '+fmtSide(sides.right);
+}
+function fmtSide(items){
+  if(!items.length) return '0';
+  return items.map((i,idx)=>{ const t=bLabel(i); return (idx>0&&(i.type==='paren'||i.num>=0))?'+ '+t:t; }).join(' ');
+}
+function updateScaleTilt(){
+  const evalItem=(i)=>{
+    if(i.type==='sub') return 0;
+    if(i.type==='paren'){
+      // Evaluer hvert ledd i parentesen og gang med koeffisienten
+      const inner=i.expr.reduce((t,b)=>{
+        const xv=system?system.xVal:0, yv=system?system.yVal:0;
+        if(b.type==='x') return t+b.num*xv;
+        if(b.type==='y') return t+b.num*yv;
+        return t+b.num;
+      },0);
+      return inner*i.coef;
+    }
+    const xv=system?system.xVal:0, yv=system?system.yVal:0;
+    if(i.type==='x') return i.num*xv;
+    if(i.type==='y') return i.num*yv;
+    return i.num;
+  };
+  const val=s=>sides[s].reduce((t,i)=>t+evalItem(i),0);
+  const tilt=Math.min(Math.max((val('left')-val('right'))*3,-35),35);
+  document.getElementById('scaleL').style.transform=`translateY(${-tilt}px)`;
+  document.getElementById('scaleR').style.transform=`translateY(${tilt}px)`;
+}
+
+function renderBank(){
+  const c=document.getElementById('bankBlocks'); c.innerHTML='';
+  if(subBlock){ const d=document.createElement('div'); d.className='block type-sub'; d.textContent=subBlock.label; c.appendChild(d); }
+  if(knownVar&&knownVal!==null){ const d=document.createElement('div'); d.className='block type-sub'; d.style.background='#5b4fcf'; d.textContent=knownVar+' = '+knownVal; c.appendChild(d); }
+  if(finalVar&&finalVal!==null){ const d=document.createElement('div'); d.className='block type-sub'; d.style.background='#b45309'; d.textContent=finalVar+' = '+finalVal; c.appendChild(d); }
+}
+
+// ── CHECK ISOLATED ──
+function checkIsolated(){
+  const L=sides.left,R=sides.right;
+  const isOnlyVar=(arr,v)=>arr.length===1&&arr[0].type===v&&arr[0].num===1;
+  const hasNoVar=(arr,v)=>!arr.some(i=>i.type===v);
+  for(const v of ['x','y']){
+    if(isOnlyVar(L,v)&&hasNoVar(R,v)) return {var:v,expr:R};
+    if(isOnlyVar(R,v)&&hasNoVar(L,v)) return {var:v,expr:L};
+  }
+  return null;
+}
+
+// Sjekk om en variabel er isolert og den andre siden er et rent tall
+function checkPureNum(v){
+  const L=sides.left,R=sides.right;
+  const isVar=(arr)=>arr.length===1&&arr[0].type===v&&arr[0].num===1;
+  const isNum=(arr)=>arr.length===1&&arr[0].type==='num';
+  if(isVar(L)&&isNum(R)) return R[0].num;
+  if(isVar(R)&&isNum(L)) return L[0].num;
+  return null;
+}
+
+// ── UPDATE SUB BUTTON ──
+function updateSubBtn(){
+  const btn=document.getElementById('subBtn');
+  if(step===1){
+    const iso=checkIsolated();
+    if(iso){ btn.disabled=false; btn.className='action-btn btn-sub ready'; btn.textContent='📦 Lag innsettingsblokk for '+iso.var; }
+    else   { btn.disabled=true;  btn.className='action-btn btn-sub';        btn.textContent='📦 Lag innsettingsblokk'; }
+  } else if(step===2){
+    const v=otherVar(isolatedVar), found=checkPureNum(v);
+    if(found!==null){ btn.disabled=false; btn.className='action-btn btn-sub ready'; btn.textContent='📦 Lag verdiblokk: '+v+' = '+found; }
+    else            { btn.disabled=true;  btn.className='action-btn btn-sub';        btn.textContent='📦 Lag verdiblokk'; }
+  } else if(step===3){
+    const found=checkPureNum(isolatedVar);
+    if(found!==null){ btn.disabled=false; btn.className='action-btn btn-sub ready'; btn.textContent='📦 Lag verdiblokk: '+isolatedVar+' = '+found; }
+    else            { btn.disabled=true;  btn.className='action-btn btn-sub';        btn.textContent='📦 Lag verdiblokk'; }
+  } else { btn.disabled=true; btn.className='action-btn btn-sub'; btn.textContent='📦 Lag innsettingsblokk'; }
+}
+
+// ── MAKE BLOCK (knapp) ──
+window.makeBlock=function(){
+  if(step===1){
+    const iso=checkIsolated(); if(!iso) return;
+    isolatedVar=iso.var; isolatedExpr=JSON.parse(JSON.stringify(iso.expr));
+    const exprStr=iso.expr.map((i,idx)=>{ const t=bLabel(i); return (idx>0&&i.num>=0)?'+ '+t:t; }).join(' ');
+    subBlock={label:iso.var+' = '+exprStr, var:iso.var, expr:isolatedExpr};
+    step=2; updateStepDots(2);
+    document.getElementById('eqDisplay'+firstEq).className='equation-row-display solved';
+    document.getElementById('eqBadge'+firstEq).textContent='Løst ✓';
+    document.getElementById('eqBadge'+firstEq).className='eq-badge solved';
+    document.getElementById('eqDisplay'+secondEq).className='equation-row-display';
+    document.getElementById('eqBadge'+secondEq).textContent='Velg og løs';
+    document.getElementById('eqBadge'+secondEq).className='eq-badge pending';
+    document.getElementById('systemTitle').textContent='📋 Velg likning '+toRoman(secondEq)+' og sett inn '+subBlock.label;
+    // Tøm solver
+    sides={left:[],right:[]}; solverOriginal=null;
+    document.getElementById('solverTitle').textContent='🔧 Klikk på likning '+toRoman(secondEq)+' over for å starte';
+    document.getElementById('solverEqDisplay').textContent='–';
+    renderSolver(); renderBank();
+    showToast('📦 Innsettingsblokk laget!','success');
+    guide('Klikk på likning '+toRoman(secondEq)+' over for å fortsette');
+
+  } else if(step===2){
+    const v=otherVar(isolatedVar), found=checkPureNum(v); if(found===null) return;
+    knownVar=v; knownVal=found; step=3; updateStepDots(3);
+    document.getElementById('eqDisplay'+secondEq).className='equation-row-display solved';
+    document.getElementById('eqBadge'+secondEq).textContent='Løst ✓';
+    document.getElementById('eqBadge'+secondEq).className='eq-badge solved';
+    // Nullstill begge til "velg"
+    [1,2].forEach(n=>{ if(!document.getElementById('eqBadge'+n).textContent.includes('✓')){ document.getElementById('eqDisplay'+n).className='equation-row-display'; document.getElementById('eqBadge'+n).textContent='Velg'; document.getElementById('eqBadge'+n).className='eq-badge pending'; } });
+    document.getElementById('systemTitle').textContent='📋 Velg en likning og sett inn '+knownVar+' = '+knownVal;
+    sides={left:[],right:[]}; solverOriginal=null;
+    document.getElementById('solverTitle').textContent='🔧 Klikk på en likning over for å starte';
+    document.getElementById('solverEqDisplay').textContent='–';
+    renderSolver(); renderBank();
+    showToast('📦 '+knownVar+' = '+knownVal+' lagt i banken!','success');
+    guide('Velg en likning og sett inn');
+
+  } else if(step===3){
+    const found=checkPureNum(isolatedVar); if(found===null) return;
+    finalVar=isolatedVar; finalVal=found; step=4; updateStepDots(4);
+    renderBank();
+    document.getElementById('finalCard').style.display='block';
+    document.getElementById('solverCard').style.display='none';
+    showToast('🎉 '+finalVar+' = '+finalVal+'! Fyll inn svarene','success');
+  }
+  updateSubBtn();
+};
+
+// ── CONTEXT MENU ──
+function showCtxMenu(x,y,item){
+  const menu=document.getElementById('ctxMenu'), sep=document.getElementById('ctxSubSep'), opts=document.getElementById('ctxSubOptions');
+  opts.innerHTML=''; sep.style.display='none';
+
+  // Løs opp parentes
+  if(item.type==='paren'){
+    sep.style.display='block';
+    const btn=document.createElement('button'); btn.className='ctx-sub-btn';
+    btn.style.background='#fff7ed'; btn.style.color='#92400e';
+    btn.textContent='✖️ Løs opp: '+item.label;
+    btn.onclick=()=>{ expandParen(item); document.getElementById('ctxMenu').style.display='none'; };
+    opts.appendChild(btn);
+  }
+
+  // Innsetting i steg 2: erstatt isolatedVar
+  if(subBlock&&item.type===subBlock.var&&step===2){
+    sep.style.display='block';
+    const btn=document.createElement('button'); btn.className='ctx-sub-btn';
+    btn.textContent='↩ Sett inn: '+subBlock.label;
+    btn.onclick=()=>{ doSubstitute(item); document.getElementById('ctxMenu').style.display='none'; };
+    opts.appendChild(btn);
+  }
+
+  // Innsetting i steg 3: erstatt knownVar
+  if(knownVar&&knownVal!==null&&item.type===knownVar&&step===3){
+    sep.style.display='block';
+    const btn=document.createElement('button'); btn.className='ctx-sub-btn';
+    btn.textContent='↩ Sett inn: '+knownVar+' = '+knownVal;
+    btn.onclick=()=>{ doKnownSub(item); document.getElementById('ctxMenu').style.display='none'; };
+    opts.appendChild(btn);
+  }
+
+  menu.style.display='block'; menu.style.left=x+'px'; menu.style.top=y+'px';
+}
+
+function doSubstitute(item){
+  const side=activeMenuTarget.side, arr=sides[side];
+  const idx=arr.findIndex(i=>i.id===item.id); if(idx===-1) return;
+  const coef=item.num;
+  const exprStr=isolatedExpr.map((b,i)=>{ const t=bLabel(b); return (i>0&&b.num>=0)?'+ '+t:t; }).join(' ');
+  let label;
+  if(coef===1)       label='('+exprStr+')';
+  else if(coef===-1) label='-('+exprStr+')';
+  else               label=coef+'('+exprStr+')';
+  const parenBlock={id:idCounter++,type:'paren',label,coef,expr:JSON.parse(JSON.stringify(isolatedExpr))};
+  arr.splice(idx,1,parenBlock);
+  lastChangedId=parenBlock.id;
+  renderSolver();
+  showToast('✅ Satt inn som '+label,'success');
+  guide('Høyreklikk på blokken for å løse opp parentesen');
+}
+
+function expandParen(item){
+  const side=activeMenuTarget.side, arr=sides[side];
+  const idx=arr.findIndex(i=>i.id===item.id); if(idx===-1) return;
+  const newBlocks=item.expr.map(b=>({id:idCounter++,type:b.type,num:b.num*item.coef})).filter(b=>b.num!==0);
+  arr.splice(idx,1,...newBlocks);
+  lastChangedId=newBlocks[0]?.id||null;
+  renderSolver(); showToast('✅ Parentes løst opp!','success');
+}
+
+function doKnownSub(item){
+  const side=activeMenuTarget.side, arr=sides[side];
+  const idx=arr.findIndex(i=>i.id===item.id); if(idx===-1) return;
+  const newBlock={id:idCounter++,type:'num',num:item.num*knownVal};
+  arr.splice(idx,1,newBlock); lastChangedId=newBlock.id;
+  renderSolver(); showToast('✅ '+knownVar+' = '+knownVal+' satt inn!','success');
+}
+
+window.ctxInvert=function(){ if(!activeMenuTarget)return; activeMenuTarget.item.num*=-1; lastChangedId=activeMenuTarget.item.id; renderSolver(); };
+window.ctxSplit=function(){
+  if(!activeMenuTarget||Math.abs(activeMenuTarget.item.num)<2)return;
+  const i=activeMenuTarget.item,n1=Math.floor(i.num/2),n2=i.num-n1;
+  const arr=sides[activeMenuTarget.side]; arr.splice(arr.indexOf(i),1);
+  const nid=idCounter++; arr.push({id:nid,type:i.type,num:n1},{id:idCounter++,type:i.type,num:n2});
+  lastChangedId=nid; renderSolver();
+};
+document.addEventListener('click',()=>document.getElementById('ctxMenu').style.display='none');
+
+// ── DRAG & DROP ──
+['scaleL','scaleR'].forEach((id,idx)=>{
+  const sideMap=['left','right'],el=document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
+  el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+  el.addEventListener('drop',e=>{
+    e.preventDefault(); el.classList.remove('drag-over');
+    let data; try{data=JSON.parse(e.dataTransfer.getData('text'));}catch{return;}
+    const srcArr=sides[data.side], itemIdx=srcArr.findIndex(i=>i.id===data.id);
+    if(itemIdx===-1)return; const item=srcArr[itemIdx]; const targetSide=sideMap[idx];
+    if(data.side===targetSide){
+      const tEl=e.target.closest('.block');
+      if(tEl){ const tItem=sides[targetSide].find(i=>i.id===parseInt(tEl.getAttribute('data-id'))); if(tItem&&tItem.type===item.type&&tItem.id!==item.id){ saveHistory(); tItem.num+=item.num; lastChangedId=tItem.id; srcArr.splice(itemIdx,1); if(tItem.num===0){sides[targetSide].splice(sides[targetSide].indexOf(tItem),1);lastChangedId=null;} renderSolver();return; } }
+    }
+    saveHistory(); lastChangedId=item.id; sides[targetSide].push(srcArr.splice(itemIdx,1)[0]); renderSolver();
+  });
+});
+
+// ── OPERATIONS ──
+window.operate=function(t){
+  const v=parseInt(document.getElementById('opVal').value); if(!v||v===0) return;
+  if(t==='divide'){
+    const allBlocks=[...sides.left,...sides.right].filter(i=>i.type!=='sub');
+    if(!allBlocks.every(i=>i.num%v===0)){ showToast('⚠️ Går ikke opp – prøv en annen fremgangsmåte!','error'); return; }
+  }
+  saveHistory(); lastChangedId=null;
+  ['left','right'].forEach(s=>{ sides[s].forEach(i=>{ if(i.type!=='sub') i.num=t==='multiply'?i.num*v:i.num/v; }); sides[s]=sides[s].filter(i=>i.num!==0||i.type==='sub'); });
+  renderSolver();
+};
+
+// ── RESET SOLVER ──
+function saveHistory(){
+  solverHistory.push({
+    left:JSON.parse(JSON.stringify(sides.left)),
+    right:JSON.parse(JSON.stringify(sides.right)),
+  });
+  if(solverHistory.length>30) solverHistory.shift();
+}
+
+window.doUndo=function(){
+  if(!solverHistory.length){ showToast('Ingenting å angre','error'); return; }
+  const prev=solverHistory.pop();
+  sides={left:prev.left,right:prev.right};
+  lastChangedId=null; renderSolver();
+};
+
+window.resetSolver=function(){
+  if(solverOriginal){
+    sides={left:JSON.parse(JSON.stringify(solverOriginal.left)),right:JSON.parse(JSON.stringify(solverOriginal.right))};
+  } else {
+    sides={left:[],right:[]};
+  }
+  solverHistory=[]; lastChangedId=null; renderSolver();
+};
+
+// ── FINAL ANSWER ──
+window.checkFinalAnswer=function(){
+  const xIn=parseInt(document.getElementById('finalX').value);
+  const yIn=parseInt(document.getElementById('finalY').value);
+  const xOk=xIn===system.xVal, yOk=yIn===system.yVal;
+  document.getElementById('finalX').className='final-input'+(xOk?' correct':' wrong');
+  document.getElementById('finalY').className='final-input'+(yOk?' correct':' wrong');
+  if(xOk&&yOk){
+    lsRecordResult(true);
+    totalSolved++; document.getElementById('solvedCount').textContent=totalSolved;
+    const bonus=gameMode==='practice'?0:Math.max(50,Math.round(300-(Date.now()-taskStartTime)/1000*2));
+    currentScore+=bonus;
+    if(typeof syncScore==='function'&&gameMode!=='practice') syncScore(currentScore);
+    updateSoloScore();
+    showToast('🎉 Riktig! x='+system.xVal+', y='+system.yVal+(bonus>0?' (+'+bonus+' p)':''),'success');
+    setTimeout(()=>initGame(),2200);
+  } else { lsRecordResult(false); showToast('❌ Ikke helt riktig – prøv igjen!','error'); }
+};
+
+// ── STEP DOTS ──
+function updateStepDots(cur){
+  for(let i=1;i<=4;i++){
+    const d=document.getElementById('step'+i+'dot');
+    d.className='step-dot '+(i<cur?'done':i===cur?'current':'future');
+    if(i<4) document.getElementById('step'+i+'line').className='step-line'+(i<cur?' done':'');
+  }
+}
+
+// ── SCORE ──
+function updateSoloScore(){
+  if(gameMode==='practice'){ document.getElementById('scoreList').innerHTML='<div style="text-align:center;color:var(--muted);font-size:0.85rem">Øvemodus<br>Ingen poeng</div>'; return; }
+  document.getElementById('scoreList').innerHTML=`<div style="font-size:2rem;font-weight:900;color:var(--accent);text-align:center">${currentScore}</div><div style="color:var(--muted);font-size:0.82rem;text-align:center;margin-top:4px">${totalSolved} løste sett</div>`;
+}
+
+// ── TIMED ──
+let timedInterval2=null;
+function startTimed(){ timedSecondsLeft=timedMinutes*60; document.getElementById('countdownBanner').classList.add('visible'); document.getElementById('timeupMinutes').textContent=timedMinutes; updTimed(); timedInterval2=setInterval(()=>{ timedSecondsLeft--; updTimed(); if(timedSecondsLeft<=0){clearInterval(timedInterval2);document.getElementById('timeupScore').textContent=currentScore;document.getElementById('timeUpOverlay').classList.add('show');} },1000); }
+function updTimed(){ const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60; const el=document.getElementById('countdownTime'); el.textContent=m+':'+(s<10?'0':'')+s; el.className='countdown-time'+(timedSecondsLeft<=30?' urgent':''); }
+
+// ── TOAST ──
+function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='feedback-toast '+type; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+
+function guide(msg){ if(currentLevel<=1) showToast(msg,'success'); }
+
+// ── START GAME ──
+
+function showMatchOverToast(result){
+  if(document.getElementById('matchOverOverlay')) return;
+  const overlay=document.createElement('div');
+  overlay.id='matchOverOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Nunito,sans-serif;';
+  overlay.innerHTML=`
+    <div style="font-size:3rem">🏆</div>
+    <div style="color:white;font-size:1.6rem;font-weight:900;text-align:center;padding:0 20px">${result}</div>
+    <div style="color:rgba(255,255,255,0.7);font-size:0.88rem;text-align:center;padding:0 20px">Kampen er over! Start et nytt spill med kampkoden for en ny kamp.</div>
+    <a href="./" style="padding:12px 28px;background:#5b4fcf;color:white;border-radius:12px;font-weight:800;font-size:1rem;text-decoration:none;margin-top:8px">🏠 Tilbake til meny</a>`;
+  document.body.appendChild(overlay);
+}
+
+window.startGame=function(){
+  currentLevel=lsStartLevel;
+  lsStreak=0; lsErrorStreak=0; taskStartTime=Date.now();
+  let room='';
+  if(gameMode==='multi') room=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(gameMode==='solo')  timedMinutes=parseInt(document.getElementById('timedMinutes').value)||5;
+  window.roomCode=room||null;
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('headerName').textContent=window.playerName;
+  const modeLabels={practice:'🧘 Øvemodus',solo:'⏱️ Enkeltspiller',multi:'🏎️ Flerspiller'};
+  document.getElementById('modeBadge').textContent=modeLabels[gameMode];
+  if(room&&window._fbReady){ window._fbInit(room); document.getElementById('scoreTitle').textContent='🏆 Toppliste'; }
+  else { window.syncScore=()=>{}; document.getElementById('scoreTitle').textContent='🏆 Poeng'; updateSoloScore(); }
+  if(gameMode==='solo') startTimed();
+  initGame();
+};
+</script>
+<script src="./js/touch-dnd.js"></script>
+<script src="./js/touch-dnd.js"></script>
+</body>
+</html>
