@@ -190,7 +190,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.11</div>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.12</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -321,9 +321,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, update, onValue, set } from "../js/firebase-config.js";
+  import { database, ref, update, onValue, set, get } from "../js/firebase-config.js";
   window._db=database; window._ref=ref;
-  window._update=update; window._onValue=onValue; window._set=set;
+  window._update=update; window._onValue=onValue; window._set=set; window._get=get;
   window._fbReady=true;
 </script>
 
@@ -396,6 +396,14 @@ function registerPlayer(){
     });
     window._onValue(window._ref(window._db,'rooms/'+roomCode+'/players'),(snap)=>{
       if(snap.val()) updateScoreboard(snap.val());
+    });
+    window._onValue(window._ref(window._db,'rooms/'+roomCode+'/matchOver'),(snap)=>{
+      if(snap.val()===true){
+        window._get(window._ref(window._db,'rooms/'+roomCode)).then(s=>{
+          const d=s.val()||{};
+          if(typeof showMatchOverToast==='function') showMatchOverToast(d.result||'Kampen er over!');
+        }).catch(()=>{ if(typeof showMatchOverToast==='function') showMatchOverToast('Kampen er over!'); });
+      }
     });
   }
 }
