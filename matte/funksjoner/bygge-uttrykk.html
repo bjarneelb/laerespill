@@ -122,7 +122,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>🔨 Bygge uttrykk</h1>
     <p>Les en situasjon og bygg funksjonsuttrykket steg for steg.</p>
-    <div class="version">v1.13</div>
+    <div class="version">v1.15</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
@@ -431,6 +431,7 @@ function renderTask(){
   const t=currentTask;
   const lv=currentLevel;
   taskStartTime=Date.now();
+  taskFinished=false;
   stepAnswers={xMeta:null, xLedd:null,a:null,b:null,bLedd:null};
   stepTries={xLedd:0,a:0,b:0,bLedd:0};
   stepsComplete=0;
@@ -720,20 +721,21 @@ function checkExprBuilt(){
 
 // ── EXPR INPUT (N5) ──
 window.checkExprInput=function(){
+  const el=document.getElementById('exprInputField');
+  if(el.disabled) return; // already answered correctly
   const t=currentTask;
-  const val=document.getElementById('exprInputField').value.trim()
+  const val=el.value.trim()
     .replace(/\s+/g,'').replace(/−/g,'-').replace(/,/g,'.');
-  // Parse f(x)=axb or axb
   const stripped=val.replace(/^f\(x\)=/i,'');
   const parsed=parseExpr(stripped);
   const ok=parsed&&Math.abs(parsed.a-t.aVal)<0.001&&Math.abs(parsed.b-t.bVal)<0.001;
-  const el=document.getElementById('exprInputField');
   const fb=document.getElementById('exprInputFeedback');
   if(ok){
     el.className='expr-input-field correct';
+    el.disabled=true;
+    document.querySelector('#exprInputCard .btn-check').disabled=true;
     fb.textContent='✓ Riktig!';
     fb.style.color='#86efac';
-    // Now show a/b input steps
     showABStepsAfterExpr();
   } else {
     el.className='expr-input-field wrong';
@@ -766,7 +768,10 @@ function showABStepsAfterExpr(){
 }
 
 // ── FINISH ──
+let taskFinished=false;
 function finishTask(){
+  if(taskFinished) return;
+  taskFinished=true;
   const t=currentTask;
   const elapsed=(Date.now()-taskStartTime)/1000;
   const bonus=Math.round(Math.max(30,150-elapsed));
@@ -809,9 +814,14 @@ window.selectMode=function(mode){
 
 window.startGame=function(){
   playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  window.playerName=playerName;
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainArea').style.display='flex';
   document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  if(gameMode==='multi'){
+    const rc=document.getElementById('roomInput')?.value.trim().toUpperCase();
+    if(rc) initRoom(rc);
+  }
   currentTask=pickTask();
   renderTask();
 };
