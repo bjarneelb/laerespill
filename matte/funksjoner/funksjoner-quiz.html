@@ -112,7 +112,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>🔗 Er det en funksjon?</h1>
     <p>Lær å kjenne igjen funksjoner — sammenhengen mellom to tallstørrelser der den ene <em>bestemmes av</em> den andre via en fast regel.</p>
-    <div class="version">v1.23</div>
+    <div class="version">v1.24</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
@@ -690,7 +690,7 @@ function showFeedback(correct){
   const elapsed=Math.round((Date.now()-taskStartTime)/1000);
   const bonus=correct?Math.round(Math.max(20,100-elapsed)):0;
   if(bonus>0){ currentScore+=bonus; document.getElementById('scoreBadge').textContent=currentScore+' p';
-    syncRoomScore(currentScore); }
+    if(typeof syncRoomScore==='function') syncRoomScore(currentScore); }
 
   const fb=document.getElementById('feedbackArea');
   fb.innerHTML=`<div class="feedback-card ${correct?'ok':'err'}">
@@ -743,5 +743,10 @@ function buildLevelSelect(){
 
 buildLevelSelect();
 </script>
+<script type="module">
+  import { database, ref, set, update, onValue, get } from "../js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._fbReady=true;
+</script>
+<script src="../js/spill-utils.js"></script>
 </body>
 </html>
