@@ -284,6 +284,7 @@
 <div class="header">
   <div class="header-title">⚖️ Ligningsvekten</div>
   <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
     <span class="version-tag">v<span class="vn"></span></span>
     <span class="mode-badge" id="modeBadge">–</span>
     <span class="level-badge-header" id="levelBadgeH">Nivå 1</span>
@@ -454,8 +455,25 @@
   window._fbReady=true; window._db=database; window._ref=ref;
   window._set=set; window._update=update; window._onValue=onValue;
   window._fbInit=function(room){
+  const rb=document.getElementById('roomBadge');
+  const rc=document.getElementById('roomBadgeCode');
+  if(rb) rb.style.display='';
+  if(rc) rc.textContent=room;
     _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
     _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateScoreboard(snap.val()); });
+    // Listen for match over
+    _onValue(_ref(_db,'rooms/'+room+'/matchOver'),(snap)=>{
+      if(snap.val()===true){
+        // Get result
+        _ref(_db,'rooms/'+room);
+        import('./js/firebase-config.js').then(({get,ref})=>{
+          get(ref(_db,'rooms/'+room)).then(s=>{
+            const d=s.val()||{};
+            showMatchOverToast(d.result||'Kampen er over!');
+          });
+        }).catch(()=>showMatchOverToast('Kampen er over!'));
+      }
+    });
   };
   window.syncScore=function(score){
     if(!window.roomCode) return;
@@ -492,7 +510,7 @@
 
 <!-- MAIN SCRIPT -->
 <script>
-const VERSION='1.3';
+const VERSION='1.8';
 document.querySelectorAll('.vn').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -1249,8 +1267,10 @@ function triggerIncident(type){
   // Oppdater instruksjon i oppgavekortet
   if(type!=='slide'){
     const n=incidentTasksLeft;
-    document.getElementById('taskInstr').textContent=
-      '🔧 Løs '+n+' oppgave'+(n>1?'r':'')+' for å kjøre videre!';
+    const instr=currentLevel<=2
+      ? '🔧 Balanser '+n+' likning'+(n>1?'er':'')+' for å kjøre videre!'
+      : '🔧 Løs '+n+' oppgave'+(n>1?'r':'')+' for å kjøre videre!';
+    document.getElementById('taskInstr').textContent=instr;
   }
 }
 window.operate=function(t){
@@ -1422,6 +1442,7 @@ function initGame(){
   currentLevel=startLevel>0?startLevel:1;
   winsOnLevel=0; currentScore=0; totalWins=0;
   lvStreak=0; lvErrorStreak=0; lvTaskStart=Date.now();
+  speedRate=0; lastScoreTime=Date.now(); lastScoreValue=0;
   updateLevelUI();
   updateScaleTilt(); // initialiser snorer
   newTask();
@@ -1438,17 +1459,10 @@ function startTimed(){
 function updCD(){ const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60; const el=document.getElementById('cdTime'); el.textContent=m+':'+(s<10?'0':'')+s; el.className='countdown-time'+(timedSecondsLeft<=30?' urgent':''); }
 
 // ── TOAST ──
-function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+type; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
 
 // ── START GAME ──
 // ── TIMECODE SYNC ──
-function getActiveSession(){
-  try{const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
-    if(!s||s.skipped||s.noCode||s.expired) return null;
-    if(s.expires&&Date.now()>s.expires) return null;
-    return s;
-  }catch(e){return null;}
-}
+
 let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0, tcMaxLevel=1, tcStartLevel=1;
 function syncToTimecode(extra={}){
   const s=getActiveSession(); if(!s) return;
@@ -1512,6 +1526,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='z'&&(e.ctrlKey||e.metaKey)) doUndo();
 });
 </script>
+<script src="./js/spill-utils.js"></script>
 <script src="./js/touch-dnd.js"></script>
 </body>
 </html>
