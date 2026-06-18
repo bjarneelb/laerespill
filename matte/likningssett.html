@@ -237,6 +237,7 @@
 <div class="header">
   <div class="header-title">🔢 Likningssett</div>
   <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
     <span class="version-tag">v<span class="version-num"></span></span>
     <span class="mode-badge" id="modeBadge">–</span>
     <span class="player-badge" id="headerName">–</span>
@@ -345,6 +346,10 @@
   import { database, ref, set, update, onValue } from "./js/firebase-config.js";
   window._fbReady=true; window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue;
   window._fbInit=function(room){
+  const rb=document.getElementById('roomBadge');
+  const rc=document.getElementById('roomBadgeCode');
+  if(rb) rb.style.display='';
+  if(rc) rc.textContent=room;
     _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
     _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateSB(snap.val()); });
   };
@@ -368,7 +373,7 @@
 </script>
 
 <script>
-const VERSION='1.4';
+const VERSION='1.6';
 document.querySelectorAll('.version-num').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -396,13 +401,7 @@ window.lsSetLevel=function(n){
 };
 
 // ── TIMECODE SYNC ──
-function getActiveSession(){
-  try{const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
-    if(!s||s.skipped||s.noCode||s.expired) return null;
-    if(s.expires&&Date.now()>s.expires) return null;
-    return s;
-  }catch(e){return null;}
-}
+
 let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0, tcMaxLevel=1, tcStartLevel=1;
 function syncToTimecode(){
   const s=getActiveSession(); if(!s) return;
@@ -967,24 +966,10 @@ function startTimed(){ timedSecondsLeft=timedMinutes*60; document.getElementById
 function updTimed(){ const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60; const el=document.getElementById('countdownTime'); el.textContent=m+':'+(s<10?'0':'')+s; el.className='countdown-time'+(timedSecondsLeft<=30?' urgent':''); }
 
 // ── TOAST ──
-function showToast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='feedback-toast '+type; void t.offsetWidth; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
 
 function guide(msg){ if(currentLevel<=1) showToast(msg,'success'); }
 
 // ── START GAME ──
-
-function showMatchOverToast(result){
-  if(document.getElementById('matchOverOverlay')) return;
-  const overlay=document.createElement('div');
-  overlay.id='matchOverOverlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Nunito,sans-serif;';
-  overlay.innerHTML=`
-    <div style="font-size:3rem">🏆</div>
-    <div style="color:white;font-size:1.6rem;font-weight:900;text-align:center;padding:0 20px">${result}</div>
-    <div style="color:rgba(255,255,255,0.7);font-size:0.88rem;text-align:center;padding:0 20px">Kampen er over! Start et nytt spill med kampkoden for en ny kamp.</div>
-    <a href="./" style="padding:12px 28px;background:#5b4fcf;color:white;border-radius:12px;font-weight:800;font-size:1rem;text-decoration:none;margin-top:8px">🏠 Tilbake til meny</a>`;
-  document.body.appendChild(overlay);
-}
 
 window.startGame=function(){
   currentLevel=lsStartLevel;
@@ -1003,7 +988,9 @@ window.startGame=function(){
   initGame();
 };
 </script>
+<script src="./js/spill-utils.js"></script>
 <script src="./js/touch-dnd.js"></script>
+<script src="./js/spill-utils.js"></script>
 <script src="./js/touch-dnd.js"></script>
 </body>
 </html>
