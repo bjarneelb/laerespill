@@ -115,7 +115,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>📖 Fra tekst til uttrykk</h1>
     <h2>Les situasjonen og finn funksjonsuttrykket</h2>
-    <div class="version">v1.16</div>
+    <div class="version">v1.19</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
@@ -136,6 +136,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
     <div class="header-title">📖 Fra tekst til uttrykk</div>
   </div>
   <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
     <span class="badge level-badge" id="levelBadge">Nivå 1</span>
     <span class="badge score-badge" id="scoreBadge">0 p</span>
     <a class="btn-menu" href="../">← Meny</a>
@@ -340,44 +341,6 @@ const LEVELS={
   4:{name:'Nivå 4',desc:'Avanserte situasjoner, fritekst'},
 };
 const MAX_LEVEL=4, MIN_LEVEL=1;
-
-
-
-function showMatchOverToast(result){
-  if(document.getElementById('matchOverOverlay')) return;
-  const overlay=document.createElement('div');
-  overlay.id='matchOverOverlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:Nunito,sans-serif;';
-  overlay.innerHTML=`
-    <div style="font-size:3rem">🏆</div>
-    <div style="color:white;font-size:1.6rem;font-weight:900;text-align:center;padding:0 20px">${result}</div>
-    <div style="color:rgba(255,255,255,0.7);font-size:0.88rem;text-align:center;padding:0 20px">Kampen er over! Start et nytt spill med kampkoden for en ny kamp.</div>
-    <a href="./" style="padding:12px 28px;background:#5b4fcf;color:white;border-radius:12px;font-weight:800;font-size:1rem;text-decoration:none;margin-top:8px">🏠 Tilbake til meny</a>`;
-  document.body.appendChild(overlay);
-}
-
-// ── ROOM SYNC (for baner) ──
-function initRoom(code){
-  if(!code||!window._fbReady) return;
-  roomCode=code;
-  window._set(window._ref(window._db,'rooms/'+code+'/players/'+playerName),{score:0,lastUpdated:Date.now()});
-  window._onValue(window._ref(window._db,'rooms/'+code+'/players'),snap=>{
-    // scoreboard update handled by bane
-  });
-  // Listen for match over
-  window._onValue(window._ref(window._db,'rooms/'+code+'/matchOver'),(snap)=>{
-    if(snap.val()===true){
-      window._get(window._ref(window._db,'rooms/'+code)).then(s=>{
-        const d=s.val()||{};
-        showMatchOverToast(d.result||'Kampen er over!');
-      }).catch(()=>showMatchOverToast('Kampen er over!'));
-    }
-  });
-}
-function syncRoomScore(score){
-  if(!roomCode||!window._fbReady) return;
-  window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+playerName),{score,lastUpdated:Date.now()});
-}
 
 // ── STATE ──
 let gameMode='practice', roomCode='', currentLevel=1, currentScore=0, playerName='';
@@ -661,19 +624,13 @@ function buildLevelSelect(){
   });
 }
 
-function showToast(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className='toast '+type;
-  void t.offsetWidth; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2200);
-}
-
 buildLevelSelect();
 </script>
 <script type="module">
   import { database, ref, set, update, onValue } from "../js/firebase-config.js";
   window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._fbReady=true;
 </script>
+<script src="../js/spill-utils.js"></script>
 <script src="../js/touch-dnd.js"></script>
 </body>
 </html>
