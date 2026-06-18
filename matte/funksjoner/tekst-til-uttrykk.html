@@ -115,7 +115,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>📖 Fra tekst til uttrykk</h1>
     <h2>Les situasjonen og finn funksjonsuttrykket</h2>
-    <div class="version">v1.19</div>
+    <div class="version">v1.20</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
@@ -601,9 +601,14 @@ window.selectMode=function(mode){
 
 window.startGame=function(){
   playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  window.playerName=playerName;
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainArea').style.display='flex';
   document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  if(gameMode==='multi'){
+    const rc=document.getElementById('roomInput')?.value.trim().toUpperCase();
+    if(rc) initRoom(rc);
+  }
   currentTask=pickTask(currentLevel);
   renderTask();
 };
