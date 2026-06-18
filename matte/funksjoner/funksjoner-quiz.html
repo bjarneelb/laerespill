@@ -112,7 +112,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>🔗 Er det en funksjon?</h1>
     <p>Lær å kjenne igjen funksjoner — sammenhengen mellom to tallstørrelser der den ene <em>bestemmes av</em> den andre via en fast regel.</p>
-    <div class="version">v1.24</div>
+    <div class="version">v1.25</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
@@ -719,9 +719,14 @@ window.selectMode=function(mode){
 
 window.startGame=function(){
   playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  window.playerName=playerName;
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainArea').style.display='flex';
   document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
+  if(gameMode==='multi'){
+    const rc=document.getElementById('roomInput')?.value.trim().toUpperCase();
+    if(rc) initRoom(rc);
+  }
   currentQ=pickQuestion();
   renderQuestion();
 };
