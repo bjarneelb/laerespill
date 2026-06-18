@@ -455,14 +455,22 @@
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, set, update, onValue } from "./js/firebase-config.js";
+  import { database, ref, set, update, onValue, get } from "./js/firebase-config.js";
   window._fbReady = true;
   window._db = database; window._ref = ref;
-  window._set = set; window._update = update; window._onValue = onValue;
+  window._set = set; window._update = update; window._onValue = onValue; window._get = get;
 
   window._fbInit = function(room) {
     _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
     _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateScoreboard(snap.val()); });
+    _onValue(_ref(_db,'rooms/'+room+'/matchOver'),(snap)=>{
+      if(snap.val()===true){
+        get(ref(_db,'rooms/'+room)).then(s=>{
+          const d=s.val()||{};
+          if(typeof showMatchOverToast==='function') showMatchOverToast(d.result||'Kampen er over!');
+        }).catch(()=>{ if(typeof showMatchOverToast==='function') showMatchOverToast('Kampen er over!'); });
+      }
+    });
   };
 
   window.syncScore = function(score, extra) {
@@ -491,7 +499,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '2.6';
+const VERSION = '2.7';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
