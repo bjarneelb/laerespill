@@ -114,7 +114,7 @@ table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border
   <div class="start-card">
     <h1>📋 Lineære funksjoner</h1>
     <h2>Fra uttrykk til tabell</h2>
-    <div class="version">v1.6</div>
+    <div class="version">v1.7</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -255,33 +255,7 @@ const LEVELS={
 };
 const MAX_LEVEL=9, MIN_LEVEL=1;
 
-// ── ROOM SYNC (for baner) ──
-let roomCode='';
-function initRoom(code){
-  const rb=document.getElementById('roomBadge');
-  const rc=document.getElementById('roomBadgeCode');
-  if(rb) rb.style.display='';
-  if(rc) rc.textContent=code;
-  if(!code||!window._fbReady) return;
-  roomCode=code;
-  window._set(window._ref(window._db,'rooms/'+code+'/players/'+playerName),{score:0,lastUpdated:Date.now()});
-  window._onValue(window._ref(window._db,'rooms/'+code+'/players'),snap=>{
-    // scoreboard update handled by bane
-  });
-  // Listen for match over
-  window._onValue(window._ref(window._db,'rooms/'+code+'/matchOver'),(snap)=>{
-    if(snap.val()===true){
-      window._get(window._ref(window._db,'rooms/'+code)).then(s=>{
-        const d=s.val()||{};
-        showMatchOverToast(d.result||'Kampen er over!');
-      }).catch(()=>showMatchOverToast('Kampen er over!'));
-    }
-  });
-}
-function syncRoomScore(score){
-  if(!roomCode||!window._fbReady) return;
-  window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+playerName),{score,lastUpdated:Date.now()});
-}
+// ── ROOM SYNC (for baner) — bruker initRoom/syncRoomScore fra spill-utils.js ──
 
 // ── STATE ──
 let currentLevel=1, currentScore=0, gameMode='practice', playerName='';
@@ -713,11 +687,16 @@ window.selectMode=function(mode){
 
 window.startGame=function(){
   playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  window.playerName=playerName;
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainArea').style.display='flex';
   document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
   document.getElementById('scoreBadge').style.display='';
   document.getElementById('scoreBadge').textContent='0 p';
+  if(gameMode==='multi'){
+    const rc=document.getElementById('roomInput')?.value.trim().toUpperCase();
+    if(rc) initRoom(rc);
+  }
   currentTask=genTask(currentLevel);
   renderTask();
 };
