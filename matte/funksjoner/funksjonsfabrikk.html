@@ -190,7 +190,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.10</div>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.11</div>
     <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
@@ -341,14 +341,6 @@ let sessionCorrect=0, sessionWrong=0, sessionStartTime=Date.now();
 let sessionMaxLevel=1, sessionStartLevel=1;
 
 // ── SESSION ──
-function getActiveSession(){
-  try{
-    const s=JSON.parse(sessionStorage.getItem('matte_session')||'null');
-    if(!s||s.skipped||s.noCode) return null;
-    if(s.expires&&Date.now()>s.expires) return null;
-    return s;
-  }catch(e){return null;}
-}
 
 // ── FIREBASE SYNC ──
 function fbGamePath(){
@@ -1313,16 +1305,11 @@ function buildLevelSelect(){
 }
 
 // ── TOAST ──
-function showToast(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className='toast '+type;
-  void t.offsetWidth; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2200);
-}
 
 // ── INIT ──
 buildLevelSelect();
 </script>
+<script src="../js/spill-utils.js"></script>
 <script src="../js/touch-dnd.js"></script>
 </body>
 </html>
