@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Periodesystemet og skallmodeller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #e6eaee; --panel: #f8fafb; --card: #ffffff; --ink: #1b2733; --ink-soft: #5a6773; --rule: #cad3db;
+  --ring: #a5b3c0; --proton: #d7263d; --neutron: #8c96a1; --electron: #1e66d8; --focus: #1e66d8;
+  --st-no: #c0262d; --st-no-bg: #fdecec; --st-lab: #9a5b00; --st-lab-bg: #fdf3e1;
+  --st-exc: #6a4bb0; --st-exc-bg: #f0ebfb; --st-ok: #2b7a4b; --st-ok-bg: #e7f5ec;
+  --orb-p: #138a67; --c-alkali: #f3cfc6; --c-earth: #f1dfbd; --c-trans: #cfdde8; --c-post: #cfe3de;
+  --c-metalloid: #dde6c4; --c-nonmetal: #efe8b8; --c-halogen: #c5e5cc; --c-noble: #ddd3ee;
+  --c-lanth: #ecd3e3; --c-act: #e9cfd3;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11181f; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
+    --ring: #5b6b7a; --proton: #ef4a5f; --neutron: #8e98a3; --electron: #4a8cf5; --focus: #6ea4ff;
+    --st-no: #ff7b7b; --st-no-bg: #3a1f22; --st-lab: #f0b44c; --st-lab-bg: #3a2e18;
+    --orb-p: #3cc79a; --st-exc: #b9a2f5; --st-exc-bg: #2c2544; --st-ok: #6fcf97; --st-ok-bg: #1d3327;
+    --c-alkali: #4f302b; --c-earth: #4d3f25; --c-trans: #2a3d4c; --c-post: #29423d;
+    --c-metalloid: #3b4428; --c-nonmetal: #4a4526; --c-halogen: #28452f; --c-noble: #3b3350;
+    --c-lanth: #4a2f41; --c-act: #4a2e34;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11181f; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
+  --ring: #5b6b7a; --proton: #ef4a5f; --neutron: #8e98a3; --electron: #4a8cf5; --focus: #6ea4ff;
+  --st-no: #ff7b7b; --st-no-bg: #3a1f22; --st-lab: #f0b44c; --st-lab-bg: #3a2e18;
+  --orb-p: #3cc79a; --st-exc: #b9a2f5; --st-exc-bg: #2c2544; --st-ok: #6fcf97; --st-ok-bg: #1d3327;
+  --c-alkali: #4f302b; --c-earth: #4d3f25; --c-trans: #2a3d4c; --c-post: #29423d;
+  --c-metalloid: #3b4428; --c-nonmetal: #4a4526; --c-halogen: #28452f; --c-noble: #3b3350;
+  --c-lanth: #4a2f41; --c-act: #4a2e34;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); display: grid; grid-template-rows: auto 1fr; height: 100dvh; overflow: hidden; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.top { display: flex; align-items: baseline; gap: .6rem 1.25rem; flex-wrap: wrap; padding: .7rem 1.1rem .2rem; }
+.top .auto-btn { margin-left: auto; }
+.top .auto-btn + .fs-btn { margin-left: 0; }
+.top h1 { margin: 0; font-size: 1.35rem; letter-spacing: -.01em; }
+.top h1 { flex: none; }
+.top p { margin: 0; color: var(--ink-soft); font-size: .95rem; flex: 1 1 340px; min-width: 0; }
+.top .btn { flex: none; }
+.lbl-short { display: none; }
+.auto-btn { display: none; font-size: .85rem; padding: .25rem .6rem; }
+body.manual-split .auto-btn { display: inline-block; }
+.fs-btn { margin-left: auto; display: inline-flex; align-items: center; gap: .4rem; }
+.fs-icon { font-size: 1.05em; line-height: 1; }
+.touch-hint { display: none; }
+@media (hover: none) { .mouse-hint { display: none; } .touch-hint { display: inline; } }
+
+.stage { display: flex; gap: .7rem; padding: .6rem 1.1rem 1.1rem; min-height: 0; }
+.panel {
+  flex: 3 1 0; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 16px; overflow: clip;
+  transition: flex-grow .45s cubic-bezier(.2,.7,.2,1), border-color .3s;
+}
+.panel.is-active { flex-grow: 7; border-color: var(--ink-soft); }
+.stage.add-hidden .mp-panel { flex-grow: 1; }
+@media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
+
+.btn { border: 1px solid var(--rule); background: var(--card); border-radius: 8px; padding: .3rem .7rem; cursor: pointer; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--ink-soft); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--electron); border-color: var(--electron); color: #fff; font-weight: 700; padding: .5rem 1rem; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--st-no); }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--focus); text-decoration: underline; cursor: pointer; font-size: inherit; }
+
+/* ---------- Venstre felt: legg til atomer ---------- */
+.add-head { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; padding: .55rem .7rem; border-bottom: 1px solid var(--rule); }
+.add-head .tabs { flex: 0 1 auto; min-width: 0; }
+.tabs button { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tabs { display: flex; gap: .25rem; background: var(--bg); padding: .2rem; border-radius: 10px; }
+.tabs button { border: 0; background: transparent; padding: .35rem .8rem; border-radius: 8px; cursor: pointer; white-space: nowrap; color: var(--ink-soft); }
+.tabs button[aria-selected="true"] { background: var(--card); color: var(--ink); font-weight: 700; box-shadow: 0 0 0 1px var(--rule); }
+.add-head .btn { margin-left: auto; }
+.add-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.view { flex: 1; min-height: 0; }
+
+.divider { flex: 0 0 16px; align-self: stretch; display: grid; place-items: center; cursor: col-resize; touch-action: none; border-radius: 8px; }
+.divider .grip { width: 5px; height: 46px; border-radius: 99px; background: var(--rule); transition: background .2s; }
+.divider:hover .grip, .divider:focus-visible .grip, .divider.dragging .grip { background: var(--ink-soft); }
+.divider.dragging .grip { height: 80px; }
+
+.el { touch-action: manipulation; }
+.info-panel { flex: 2.6 1 0; }
+.info-panel.is-active { flex-grow: 6.5; }
+.info-head { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .55rem .8rem; border-bottom: 1px solid var(--rule); }
+.info-head h2 { margin: 0; font-size: 1.1rem; }
+.info-head .btn { margin-left: auto; }
+.info-body { flex: 1; min-height: 0; overflow: auto; padding: .8rem .9rem 1.2rem; container: info / inline-size; }
+.info-empty { color: var(--ink-soft); line-height: 1.5; margin: 0; }
+.info-top { display: flex; gap: .9rem; align-items: flex-start; flex-wrap: wrap; }
+.el-chip {
+  flex: none; min-width: 78px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  background: var(--cat); color: #1b2733; padding: .5rem .7rem .45rem; text-align: center; line-height: 1.15;
+}
+.el-chip .z { font-size: .78rem; }
+.el-chip .sym { font-size: 2.1rem; font-weight: 700; }
+.el-chip .w { font-size: .72rem; }
+.info-headline { flex: 1 1 12ch; min-width: 0; }
+.info-headline .big { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+.info-headline .sub { color: var(--ink-soft); font-size: .92rem; }
+.info-desc { margin: .7rem 0 .2rem; line-height: 1.5; }
+.facts-list { display: grid; grid-template-columns: auto 1fr; gap: .3rem .8rem; margin: .7rem 0 0; font-size: .92rem; align-items: baseline; }
+.facts-list dt { color: var(--ink-soft); }
+.facts-list dd { margin: 0; }
+@container info (width < 260px) { .facts-list { grid-template-columns: 1fr; gap: 0 0; } .facts-list dd { margin-bottom: .35rem; } }
+.info-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
+.info-actions a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: .35rem; }
+.shellbar { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .5rem; }
+.shellbar span { border: 1px solid var(--rule); border-radius: 7px; padding: .12rem .45rem; font-size: .85rem; background: var(--card); }
+.shellbar b { font-weight: 700; }
+
+.stage.dragging .panel { transition: none; }
+.stage.dragging { cursor: col-resize; user-select: none; -webkit-user-select: none; }
+
+.rail {
+  flex: none; width: 2.9rem; border: 1px solid var(--rule); border-radius: 16px; background: var(--panel); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: .6rem; padding: .8rem 0; color: var(--ink);
+}
+.rail:hover { border-color: var(--ink-soft); }
+.rail .plus { font-size: 1.5rem; line-height: 1; font-weight: 700; }
+.rail .rail-text { writing-mode: vertical-rl; transform: rotate(180deg); font-size: .95rem; }
+
+/* Periodesystemet */
+.pt-view { container: pt / size; display: flex; align-items: center; justify-content: center; padding: 12px; }
+.pt-grid {
+  --cell: min(calc(100cqw / 18), calc(100cqh / 10.35)); width: calc(var(--cell) * 18);
+  display: grid; grid-template-columns: repeat(18, minmax(0, 1fr));
+  grid-template-rows: calc(var(--cell) * .5) repeat(7, var(--cell)) calc(var(--cell) * .35) repeat(2, var(--cell));
+  gap: calc(var(--cell) * .05);
+}
+.el {
+  position: relative; min-width: 0; border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: calc(var(--cell) * .07); background: var(--cat, var(--panel)); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; padding: calc(var(--cell) * .04); line-height: 1.05; overflow: hidden;
+}
+.el:hover { outline: 2px solid var(--ink); outline-offset: -1px; z-index: 1; }
+.el:active { transform: scale(.96); }
+.el .z { position: absolute; top: calc(var(--cell) * .05); left: calc(var(--cell) * .08); font-size: calc(var(--cell) * .15); }
+.el .sym { font-size: calc(var(--cell) * .36); font-weight: 700; margin-top: calc(var(--cell) * .1); }
+.el .nm, .el .w { font-size: calc(var(--cell) * .125); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.el .w { color: var(--ink-soft); }
+.el .badge { position: absolute; top: calc(var(--cell) * .04); right: calc(var(--cell) * .04); min-width: calc(var(--cell) * .24); height: calc(var(--cell) * .24); padding: 0 .2em; border-radius: 99px; background: var(--ink); color: var(--panel); font-size: calc(var(--cell) * .15); font-weight: 700; display: grid; place-items: center; }
+.el.placeholder { cursor: default; border-style: dashed; font-size: calc(var(--cell) * .17); color: var(--ink-soft); }
+.el.placeholder:hover { outline: none; }
+.grp { align-self: end; text-align: center; font-size: calc(var(--cell) * .16); color: var(--ink-soft); padding-bottom: calc(var(--cell) * .03); }
+.legend { grid-column: 3 / 13; grid-row: 2 / 4; display: flex; flex-wrap: wrap; align-content: center; gap: calc(var(--cell) * .06) calc(var(--cell) * .22); padding: 0 calc(var(--cell) * .25); font-size: calc(var(--cell) * .15); color: var(--ink-soft); }
+.legend span { display: inline-flex; align-items: center; gap: .35em; white-space: nowrap; }
+.legend i { width: 1em; height: 1em; border-radius: .2em; background: var(--cat); border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); }
+@container pt (width < 780px) or (height < 440px) { .el .nm, .legend { display: none; } }
+@container pt (width < 520px) or (height < 300px) { .el .w, .grp { visibility: hidden; } .el .sym { margin-top: calc(var(--cell) * .14); } }
+
+/* Atombyggeren */
+.build-view { container: build / inline-size; overflow: auto; }
+.build-grid { display: grid; grid-template-columns: minmax(250px, 1fr) minmax(260px, 1.15fr); gap: 1.2rem 1.6rem; padding: 1rem 1.2rem 1.4rem; align-items: start; max-width: 1000px; margin: 0 auto; }
+@container build (width < 600px) { .build-grid { grid-template-columns: 1fr; padding: .8rem; } }
+.build-intro { margin: 0 0 .8rem; color: var(--ink-soft); line-height: 1.45; max-width: 42ch; }
+.build-right { display: flex; flex-direction: column; align-items: center; gap: .45rem; }
+.preview-wrap { width: 100%; max-width: 380px; }
+.build-right .status { width: 100%; }
+.build-left .btn { margin-top: .7rem; }
+
+/* Redigering (felles for byggeren og valgt atom) */
+.editor { display: grid; grid-template-columns: 1fr auto; gap: .3rem .6rem; align-items: center; }
+.editor .erow { display: contents; }
+.elbl { display: inline-flex; align-items: center; gap: .45rem; color: var(--ink-soft); }
+.elbl b { color: var(--ink); min-width: 1.1em; }
+.elbl small { font-size: .8rem; }
+.esub { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--rule); }
+.esub .etotal { color: var(--ink-soft); font-size: .88rem; }
+.erow.over .elbl, .erow.over .val { color: var(--st-no); font-weight: 700; }
+.eblock { grid-column: 1 / -1; margin-top: .4rem; font-size: .85rem; line-height: 1.4; color: var(--ink-soft); background: var(--bg); border-radius: 8px; padding: .45rem .6rem; }
+.eblock strong { color: var(--ink); }
+.eblock ul { margin: .2rem 0 0; padding-left: 1.1rem; }
+.add-note { margin: 0; font-size: .85rem; color: var(--st-no); text-align: center; }
+.stepper { display: inline-flex; align-items: center; gap: .2rem; justify-self: end; }
+.stepper button { width: 1.9rem; height: 1.9rem; border-radius: 7px; border: 1px solid var(--rule); background: var(--card); cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 0; }
+.stepper button:hover:not(:disabled) { border-color: var(--ink-soft); }
+.stepper button:disabled { opacity: .35; cursor: default; }
+.stepper input { width: 3.6rem; height: 1.9rem; text-align: center; font-weight: 700; border: 1px solid var(--rule); border-radius: 7px; background: var(--card); -moz-appearance: textfield; }
+.stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.val { min-width: 3.6rem; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; justify-self: end; }
+.stepper .val { min-width: 2.6rem; }
+
+.dot { display: inline-block; width: .8em; height: .8em; border-radius: 50%; flex: none; }
+.swatch { display: inline-block; width: 1.1em; height: .7em; border-radius: 99px; }
+.swatch.s { background: color-mix(in srgb, var(--electron) 22%, transparent); border: 1px solid color-mix(in srgb, var(--electron) 50%, transparent); }
+.swatch.pp { background: color-mix(in srgb, var(--orb-p) 30%, transparent); border: 1px solid var(--orb-p); }
+.dot.p { background: var(--proton); } .dot.n { background: var(--neutron); } .dot.e { background: var(--electron); width: .6em; height: .6em; }
+
+.ident { display: flex; align-items: center; gap: .6rem; min-height: 2.4rem; flex-wrap: wrap; justify-content: center; }
+.nuclide { display: inline-flex; align-items: center; font-size: 1.9rem; line-height: 1; }
+.nuclide .nums { display: inline-flex; flex-direction: column; align-items: flex-end; font-size: .42em; gap: .12em; margin-right: .08em; }
+.nuclide .sym { font-weight: 700; }
+.nuclide .q { align-self: flex-start; font-size: .45em; margin-left: .05em; font-weight: 700; min-width: .3em; }
+.name { font-size: 1.05rem; }
+.charge { font-size: .95rem; text-align: center; color: var(--ink-soft); }
+
+.status { border-radius: 10px; padding: .55rem .75rem; font-size: .9rem; line-height: 1.4; border: 1px solid transparent; }
+.status strong { display: block; font-size: 1rem; margin-bottom: .15rem; }
+.status ul { margin: .2rem 0 0; padding-left: 1.1rem; }
+.status li { margin: .15rem 0; }
+.status li.info { color: var(--ink-soft); }
+.status .linkbtn { margin-top: .3rem; }
+.status.l0 { background: var(--st-ok-bg); border-color: color-mix(in srgb, var(--st-ok) 35%, transparent); } .status.l0 strong { color: var(--st-ok); }
+.status.l1 { background: var(--st-exc-bg); border-color: color-mix(in srgb, var(--st-exc) 35%, transparent); } .status.l1 strong { color: var(--st-exc); }
+.status.l2 { background: var(--st-lab-bg); border-color: color-mix(in srgb, var(--st-lab) 35%, transparent); } .status.l2 strong { color: var(--st-lab); }
+.status.l3 { background: var(--st-no-bg); border-color: color-mix(in srgb, var(--st-no) 45%, transparent); } .status.l3 strong { color: var(--st-no); }
+
+svg.model { width: 100%; height: auto; aspect-ratio: 1; display: block; overflow: visible; }
+svg .ring { fill: none; stroke: var(--ring); stroke-width: 1.3; }
+svg .ring.empty { stroke-dasharray: 5 5; opacity: .6; }
+svg .ring.faded { opacity: .45; stroke-dasharray: 3 5; }
+svg .inner-dim { opacity: .5; }
+svg .orb-s { fill: var(--electron); fill-opacity: .1; stroke: var(--electron); stroke-opacity: .35; stroke-width: 1; }
+svg .orb-p { fill: var(--orb-p); fill-opacity: .22; stroke: var(--orb-p); stroke-opacity: .75; stroke-width: 1; }
+svg .orb-p.empty { fill-opacity: .04; stroke-dasharray: 5 4; stroke-opacity: .55; }
+svg .ring.over { stroke: var(--st-no); stroke-width: 2.2; }
+svg .sg { stroke: #fff; stroke-linecap: round; fill: none; }
+svg .p .sg { stroke-width: 2.3; }
+svg .e .sg { stroke-width: 1.9; }
+svg .edge { stroke: rgba(0,0,0,.28); stroke-width: .7; }
+.no-psign .p .sg, .no-esign .e .sg { display: none; }
+svg .shl { fill: var(--ink-soft); font-weight: 700; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; font-family: var(--font); }
+
+/* ---------- Skallmodellfeltet ---------- */
+.mp-panel { container: mp / inline-size; }
+.mp-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.1rem; padding: .7rem 1rem .5rem; border-bottom: 1px solid var(--rule); }
+.mp-head h2 { margin: 0; font-size: 1.15rem; }
+.key { display: flex; gap: .8rem; font-size: .9rem; color: var(--ink-soft); }
+.key span { display: inline-flex; align-items: center; gap: .3rem; }
+.mp-head > .btn { margin-left: auto; }
+.opts { display: flex; flex-wrap: wrap; gap: .3rem .9rem; font-size: .92rem; border: 0; margin: 0; padding: 0; }
+.opts legend { float: left; margin-right: .6rem; color: var(--ink-soft); padding: 0; }
+.opts label { display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; white-space: nowrap; }
+.opts input { width: 1.05rem; height: 1.05rem; accent-color: var(--electron); margin: 0; }
+@container mp (width < 380px) { .mp-head .key { display: none; } .opts label { white-space: normal; } .opts legend { float: none; } }
+@container mp (width < 300px) { .summary .ref { display: none; } }
+.summary { padding: .55rem 1rem; border-bottom: 1px solid var(--rule); font-size: .95rem; line-height: 1.4; }
+.summary:empty { display: none; }
+.summary strong { font-size: 1.2rem; }
+.summary .ref { color: var(--ink-soft); font-size: .85rem; }
+
+.surface { container: surface / size; position: relative; flex: 1; min-height: 0; background-image: radial-gradient(color-mix(in srgb, var(--ink) 13%, transparent) 1px, transparent 1px); background-size: 22px 22px; }
+#world { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#world.panning { cursor: grabbing; }
+#world .atom { cursor: grab; outline: none; }
+#world .atom.dragging { cursor: grabbing; }
+#world .hit { fill: transparent; }
+#world .sel { fill: none; stroke: var(--focus); stroke-width: 2.5; stroke-dasharray: 9 7; vector-effect: non-scaling-stroke; display: none; }
+#world .atom.is-selected .sel, #world .atom:focus-visible .sel { display: inline; }
+#world .stat { fill: none; stroke: var(--st-no); stroke-width: 2.5; stroke-dasharray: 12 7; vector-effect: non-scaling-stroke; }
+#world .lt { fill: var(--ink); font-family: var(--font); }
+#world .ionic-link { stroke: var(--ink-soft); stroke-width: 2; stroke-dasharray: 6 6; opacity: .8; }
+#world .bond-hit { stroke: transparent; cursor: pointer; }
+#world .bond-hit:hover { stroke: color-mix(in srgb, var(--focus) 22%, transparent); }
+#world .mol { letter-spacing: .01em; }
+#world .lt.soft { fill: var(--ink-soft); }
+#world .lt.b { font-weight: 700; }
+#world .lt.l1 { fill: var(--st-exc); font-weight: 700; }
+#world .lt.l2 { fill: var(--st-lab); font-weight: 700; }
+#world .lt.l3 { fill: var(--st-no); font-weight: 700; }
+#world .shl { stroke: var(--panel); }
+
+.empty-msg { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; padding: 1.5rem; }
+.empty-msg p { max-width: 36ch; text-align: center; color: var(--ink-soft); line-height: 1.5; margin: 0; background: var(--panel); padding: .6rem .9rem; border-radius: 10px; }
+.toast {
+  position: absolute; left: 50%; transform: translateX(-50%); top: .6rem; z-index: 3; margin: 0;
+  max-width: min(52ch, calc(100% - 2rem)); background: var(--ink); color: var(--panel); border-radius: 10px;
+  padding: .5rem .8rem; font-size: .9rem; line-height: 1.35; box-shadow: 0 6px 20px rgba(10, 20, 30, .25);
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; justify-content: center;
+}
+.toast-btn { background: var(--panel); color: var(--ink); border-color: transparent; font-size: .85rem; padding: .2rem .6rem; }
+.zoom { position: absolute; right: .6rem; bottom: .6rem; left: .6rem; display: flex; flex-wrap: wrap; gap: .3rem; justify-content: flex-end; pointer-events: none; }
+.zoom .btn { pointer-events: auto; }
+.zoom .btn { padding: .3rem .6rem; }
+.zoom .sq { width: 2.1rem; padding: .3rem 0; font-size: 1.1rem; line-height: 1; }
+
+.inspector {
+  position: absolute; top: .6rem; right: .6rem; width: min(330px, calc(100% - 1.2rem)); max-height: calc(100% - 4rem); overflow: auto;
+  background: var(--card); border: 1px solid var(--ink-soft); border-radius: 12px; padding: .7rem .8rem .8rem;
+  display: flex; flex-direction: column; gap: .5rem; box-shadow: 0 8px 28px rgba(15, 25, 35, .16);
+}
+@container surface (width < 560px) { .inspector { left: .5rem; right: .5rem; top: .5rem; width: auto; max-height: calc(100% - 1rem); } }
+.inspector { z-index: 2; }
+.insp-head { display: flex; align-items: center; gap: .5rem; }
+.insp-head .ident { justify-content: flex-start; flex: 1; }
+.icon { width: 2rem; height: 2rem; border-radius: 50%; border: 0; background: transparent; font-size: 1.3rem; cursor: pointer; color: var(--ink-soft); flex: none; }
+.icon:hover { background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--ink); }
+.insp-actions { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: space-between; margin-top: .3rem; }
+.insp-actions .btn { flex: 1 1 auto; }
+
+.hide-nums .nuclide .nums, .hide-symbol .nuclide, .hide-name .name, .hide-counts .count-only { display: none !important; }
+
+@media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
+  .stage { flex-direction: column; padding: .5rem; gap: .5rem; }
+  .top { padding: .5rem .7rem 0; }
+  .top h1 { font-size: 1.15rem; } .top p { font-size: .85rem; order: 3; flex-basis: 100%; }
+  .fs-btn .fs-text { display: none; }
+  .auto-btn { font-size: .8rem; padding: .25rem .5rem; }
+  .lbl-long { display: none; } .lbl-short { display: inline; }
+  .panel.info-panel, .panel.info-panel.is-active { flex: none; height: 44%; }
+  .panel.add-panel, .panel.add-panel.is-active { flex: none; height: 58%; transition: height .45s cubic-bezier(.2,.7,.2,1), border-color .3s; }
+  .panel.add-panel:not(.is-active) { height: 30%; }
+  .panel.mp-panel, .panel.mp-panel.is-active { flex: 1 1 0; }
+  .divider { flex: 0 0 18px; width: auto; cursor: row-resize; }
+  .divider .grip { width: 46px; height: 5px; }
+  .divider.dragging .grip { width: 80px; height: 5px; }
+  .stage.dragging { cursor: row-resize; }
+
+  .rail { width: auto; flex-direction: row; justify-content: center; padding: .45rem; border-radius: 12px; }
+  .rail .rail-text { writing-mode: horizontal-tb; transform: none; }
+  .mp-head { padding: .5rem .7rem .4rem; gap: .35rem .8rem; }
+  .mp-head h2 { font-size: 1rem; }
+  .key, .opts { font-size: .82rem; }
+  .summary { padding: .45rem .7rem; font-size: .85rem; }
+  .summary strong { font-size: 1rem; }
+  .inspector { max-height: calc(100% - 3.6rem); }
+}
+@media (prefers-reduced-motion: reduce) { .panel.add-panel { transition: none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="gP" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#ff8a8f"/><stop offset=".55" stop-color="#d7263d"/><stop offset="1" stop-color="#8f1426"/></radialGradient>
+    <radialGradient id="gN" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#dfe4e9"/><stop offset=".55" stop-color="#8c96a1"/><stop offset="1" stop-color="#555e68"/></radialGradient>
+    <radialGradient id="gE" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#8fbcff"/><stop offset=".55" stop-color="#1e66d8"/><stop offset="1" stop-color="#0f3f8f"/></radialGradient>
+  </defs>
+</svg>
+
+<header class="top">
+  <h1>Periodesystemet</h1>
+  <p>
+    <span class="mouse-hint">Velg et grunnstoff eller bygg et atom selv. Klikk på et grunnstoff for å lese om det, og dobbeltklikk for å legge det i feltet. Dra to atomer sammen for å lage en binding.</span>
+    <span class="touch-hint">Velg et grunnstoff eller bygg et atom selv. Trykk på et grunnstoff for å lese om det, og på «Legg i feltet» for å tegne det. Dra to atomer sammen for å lage en binding.</span>
+  </p>
+  <button class="btn auto-btn" id="autoSplit" hidden title="Feltene endrer nå ikke størrelse av seg selv. Gå tilbake til automatisk."><span class="lbl-long">Automatisk størrelse</span><span class="lbl-short">Auto</span></button>
+  <button class="btn fs-btn" id="fsBtn" hidden aria-pressed="false"><span class="fs-icon" aria-hidden="true">⛶</span><span class="fs-text">Fullskjerm</span></button>
+</header>
+
+<main class="stage" id="stage">
+  <section class="panel add-panel is-active" id="addPanel" aria-label="Legg til atomer">
+    <div class="add-head">
+      <div class="tabs" role="tablist" aria-label="Måte å legge til atomer på">
+        <button role="tab" id="tabTable" aria-selected="true" aria-controls="viewTable">Periodesystem</button>
+        <button role="tab" id="tabBuild" aria-selected="false" aria-controls="viewBuild">Bygg atom</button>
+      </div>
+      <button class="btn" id="hideAdd">Skjul</button>
+    </div>
+    <div class="add-body">
+      <div class="view pt-view" id="viewTable" role="tabpanel" aria-labelledby="tabTable">
+        <div class="pt-grid" id="ptGrid"></div>
+      </div>
+      <div class="view build-view" id="viewBuild" role="tabpanel" aria-labelledby="tabBuild" hidden>
+        <div class="build-grid">
+          <div class="build-left">
+            <p class="build-intro">Velg antall protoner og nøytroner, og plasser elektronene i skallene. Merkingen viser om atomet kan finnes. Atomer som ikke kan eksistere, kan ikke legges i feltet.</p>
+            <div class="editor" id="bEditor"></div>
+            <button class="btn" id="bEmpty">Fjern alle elektroner</button>
+          </div>
+          <div class="build-right">
+            <div class="preview-wrap" id="bPreview"></div>
+            <div class="ident"><span class="nuclide" id="bNuc"></span><span class="name" id="bName"></span></div>
+            <div class="charge" id="bCharge"></div>
+            <div class="status" id="bStatus" aria-live="polite"></div>
+            <button class="btn primary" id="bAdd">Legg i feltet</button>
+            <p class="add-note" id="bAddNote" hidden>Atomet kan ikke eksistere, og kan derfor ikke legges i feltet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <button class="rail" id="showAdd" hidden><span class="plus" aria-hidden="true">+</span><span class="rail-text">Legg til atomer</span></button>
+
+  <div class="divider" id="divider" role="separator" tabindex="0" aria-orientation="vertical"
+       aria-label="Størrelse på feltene. Dra for å endre, eller bruk piltastene."
+       aria-valuemin="20" aria-valuemax="80" aria-valuenow="30" title="Dra for å endre størrelsen på feltene."><span class="grip" aria-hidden="true"></span></div>
+
+
+  <section class="panel info-panel" id="infoPanel" aria-label="Om grunnstoffet" hidden>
+    <div class="info-head">
+      <h2 id="infoTitle">Om grunnstoffet</h2>
+      <button class="btn" id="hideInfo">Skjul</button>
+    </div>
+    <div class="info-body" id="infoBody"></div>
+  </section>
+
+
+  <button class="rail" id="showInfo" hidden><span class="plus" aria-hidden="true">i</span><span class="rail-text">Om grunnstoffet</span></button>
+
+  <div class="divider" id="divider2" role="separator" tabindex="0" aria-orientation="vertical" hidden
+       aria-label="Størrelse på feltene. Dra for å endre, eller bruk piltastene."
+       title="Dra for å endre størrelsen på feltene."><span class="grip" aria-hidden="true"></span></div>
+
+
+  <section class="panel mp-panel" id="mpPanel" aria-label="Skallmodeller">
+    <div class="mp-head">
+      <h2>Skallmodeller</h2>
+      <div class="key" aria-label="Forklaring">
+        <span><i class="dot p"></i>proton</span><span><i class="dot n"></i>nøytron</span><span><i class="dot e"></i>elektron</span>
+        <span class="orb-key" hidden><i class="swatch s"></i>s-orbital</span><span class="orb-key" hidden><i class="swatch pp"></i>p-orbital</span>
+      </div>
+      <button class="btn" id="clearBtn" disabled>Tøm feltet</button>
+      <button class="btn" id="hideModels">Skjul</button>
+      <fieldset class="opts">
+        <legend>Vis:</legend>
+        <label><input type="checkbox" id="optSymbol" checked> Kjemisk symbol</label>
+        <label><input type="checkbox" id="optNums" checked> Massetall og atomnummer</label>
+        <label><input type="checkbox" id="optName" checked> Navn</label>
+        <label><input type="checkbox" id="optCounts" checked> Partikkeltall</label>
+        <label><input type="checkbox" id="optShells"> Skallbokstaver</label>
+        <label><input type="checkbox" id="optOuter"> Kun ytterskall</label>
+        <label><input type="checkbox" id="optOrbitals"> Orbitaler</label>
+        <label><input type="checkbox" id="optOrigin"> Hvor elektronene kommer fra</label>
+      </fieldset>
+    </div>
+    <div class="summary" id="summary" aria-live="polite"></div>
+    <div class="surface" id="surface">
+      <svg id="world" role="application" aria-label="Arbeidsbord med skallmodeller. Dra atomene mot hverandre for å danne bindinger."><g id="atomsLayer"></g><g id="bondsLayer"></g><g id="flyLayer"></g></svg>
+      <p class="toast" id="toast" role="status" hidden></p>
+      <div class="empty-msg" id="emptyMsg"><p>Legg til atomer fra periodesystemet eller atombyggeren. Dra to atomer sammen for å lage en binding, og klikk på et atom for å endre det.</p></div>
+      <aside class="inspector" id="inspector" hidden aria-label="Valgt atom">
+        <div class="insp-head">
+          <div class="ident"><span class="nuclide" id="iNuc"></span><span class="name" id="iName"></span></div>
+          <button class="icon" id="iClose" aria-label="Lukk">×</button>
+        </div>
+        <div class="charge" id="iCharge"></div>
+        <div class="status" id="iStatus"></div>
+        <div class="editor" id="iEditor"></div>
+        <div class="insp-actions">
+          <button class="btn" id="iDetach" hidden>Løsne</button>
+          <button class="btn" id="iReset">Tilbakestill</button>
+          <button class="btn danger" id="iRemove">Fjern fra feltet</button>
+        </div>
+      </aside>
+      <div class="zoom">
+        <button class="btn" id="arrangeBtn">Ordne</button>
+        <button class="btn sq" id="zoomOut" aria-label="Zoom ut">−</button>
+        <button class="btn" id="fitBtn">Vis alle</button>
+        <button class="btn sq" id="zoomIn" aria-label="Zoom inn">+</button>
+      </div>
+    </div>
+  </section>
+
+  <button class="rail" id="showModels" hidden><span class="plus" aria-hidden="true">⚛</span><span class="rail-text">Skallmodeller</span></button>
+</main>
+
+</div>
+
+
+<script>
+const ISO={"1":[1,[0,0,389000000.0,1.39e-22,8.6e-23,2.94e-22,6.52e-22],[1,2,3]],"2":[3,[0,0,6.02e-22,0.807,2.51e-21,0.12,2.5e-21,2.6e-22],[3,4]],"3":[3,[-1,9.1e-23,3.7e-22,0,0,0.839,0.178,2e-21,0.00875,0,3.3e-21],[6,7]],"4":[5,[-1,5e-21,4600000.0,8.19e-17,0,43800000000000.0,13.8,0.0215,1e-21,0.00453,7.9e-22,6.5e-22],[7,9,10]],"5":[6,[-1,5.7e-22,0.772,8e-19,0,0,0.0202,0.0172,0.0124,0.0102,-1,0.00508,0,0.00292,-1,-1],[10,11]],"6":[8,[3.5e-21,0.127,19.3,1220.0,0,0,180000000000.0,2.45,0.75,0.193,0.092,0.0462,0.016,0,0.0062,0],[12,13,14]],"7":[10,[1.43e-22,5.85e-22,0.011,598.0,0,0,7.13,4.17,0.619,0.336,0.136,0.085,0.023,0.0139,0,0],[14,15]],"8":[11,[1.98e-22,8.9e-21,0.00858,70.6,122.0,0,0,0,26.5,13.5,3.42,2.25,0.097,0.0774,5.18e-21,4.2e-12,0,0],[16,17,18]],"9":[13,[0,5e-22,1.1e-21,2.1e-20,64.4,6580.0,0,11.0,4.16,4.23,2.23,0.384,0.08,0.0082,0.005,4.6e-20,0.0025,0,-1],[19]],"10":[15,[7.7e-22,-1,0.109,1.66,17.3,0,0,0,37.1,203.0,0.602,0.197,0.0309,0.0188,0.0147,0.00722,0.0034,0.0035,0,-1],[20,21,22]],"11":[17,[0,1.3e-21,-1,0.448,22.5,82100000.0,0,53800.0,59.1,1.07,0.301,0.0331,0.0432,0.0459,0.0168,0.0129,0.0082,0.0055,0.0015,0,-1,0,-1],[22,23]],"12":[19,[5e-12,0.0904,0.12,3.87,11.3,0,0,0,566.0,75300.0,1.3,0.317,0.27,0.0804,0.092,0.0449,0.0113,0.0039,0.008,-1,0,-1,0],[24,25,26]],"13":[21,[0,0.0911,0.446,2.05,7.17,22600000000000.0,0,135.0,394.0,3.62,0.644,0.0326,0.0415,0.0537,0.0382,0.09,0.0114,0.009,0.0076,-1,-1,-1,-1],[26,27]],"14":[22,[0.0287,0.0423,0.143,0.221,2.25,4.12,0,0,0,9430.0,4950000000.0,6.18,2.77,0.78,0.503,0.141,0.063,0.0412,0.0312,0.02,0.0125,-1,-1,-1],[28,29,30,32]],"15":[24,[0,0,0.0436,0.26,0.27,4.1,150.0,0,1230000.0,2190000.0,12.4,47.3,5.6,2.31,0.64,0.282,0.15,0.101,0.0485,0.0358,0.0185,-1,-1,-1],[31,32,33]],"16":[26,[0,0.0163,0.125,0.188,1.18,2.55,0,0,0,7550000.0,0,303.0,10200.0,11.5,8.8,1.99,1.02,0.265,0.1,0.068,0.05,-1,-1,-1],[32,33,34,35,36]],"17":[28,[0,5.4e-21,0,0.19,0.298,2.5,1.53,0,9510000000000.0,0,2230.0,3370.0,81.0,38.4,6.8,3.13,0.562,0.413,0.232,0.101,-1,-1,-1,-1,-1],[35,36,37]],"18":[29,[0,-1,0.015,0.098,0.173,0.846,1.78,0,3020000.0,0,8460000000.0,0,6580.0,1040000000.0,322.0,712.0,21.5,8.4,1.23,0.415,0.236,0.106,-1,-1,-1,-1],[36,38,39,40]],"19":[31,[-1,0,0,0,0.175,0.341,1.24,459.0,0,3.94e+16,0,44500.0,80300.0,1330.0,1070.0,96.3,17.4,6.83,1.26,0.472,0.365,0.11,0.03,0.01,-1,-1,-1,-1,-1],[39,40,41]],"20":[33,[0,0,0.0257,0.101,0.181,0.444,0.86,0,3140000000000.0,0,0,0,14000000.0,0,392000.0,1.77e+27,523.0,13.4,10.0,4.6,0.461,0.09,0.022,0.011,-1,-1,-1,-1,-1],[40,42,43,44,46,48]],"21":[35,[0,0,0,0,0,0.182,0.596,0.681,14000.0,14600.0,0,7240000.0,289000.0,157000.0,3430.0,102.0,12.4,8.2,2.4,0.526,0.096,0.026,0.022,0.012,-1,-1,-1,-1,-1],[45]],"22":[37,[0,0,0.0285,0.0524,0.0819,0.208,0.509,1870000000.0,11100.0,0,0,0,0,0,346.0,102.0,32.7,2.1,1.3,0.2,0.095,0.055,0.0285,0.0222,0.015,-1,-1,-1,-1],[46,47,48,49,50]],"23":[39,[0,0,0,0,0.0793,0.111,0.547,0.423,1960.0,1380000.0,28500000.0,8.55e+24,0,225.0,92.6,49.8,6.54,0.216,0.35,0.191,0.095,0.122,0.0482,0.0336,0.0196,0.015,-1,-1,-1],[50,51]],"24":[41,[0,0.0133,0.0211,0.0428,0.0609,0.224,0.462,77600.0,2540.0,0,2390000.0,0,0,0,210.0,356.0,21.1,7.0,1.05,0.49,0.243,0.206,0.129,0.043,0.0275,0.0238,-1,-1,-1,-1],[50,52,53,54]],"25":[43,[0,0,0,0.0362,0.088,0.158,0.382,0.283,2750.0,483000.0,117000000000000.0,27000000.0,0,9280.0,85.4,3.0,4.59,0.28,0.709,0.092,0.275,0.0888,0.0919,0.0638,0.0467,0.0337,0.0221,0.0199,-1,-1,-1],[55]],"26":[45,[0.0025,0.013,0.0219,0.0453,0.0647,0.152,0.305,29800.0,511.0,0,87000000.0,0,0,0,3840000.0,82700000000000.0,359.0,68.0,6.1,2.0,0.805,0.467,0.394,0.188,0.162,0.0614,0.0343,0.017,0.0129,0.005,-1,-1],[54,56,57,58]],"27":[47,[0,0,0,0.0388,0.0688,0.112,0.245,0.193,63100.0,6670000.0,23500000.0,6120000.0,0,166000000.0,5940.0,92.4,26.9,0.3,1.16,0.194,0.329,0.2,0.18,0.508,0.08,0.0515,0.042,0.0313,0.0265,0.023,0.015,-1],[59]],"28":[48,[0.0028,0.0075,0.0185,0.0238,0.0418,0.0552,0.114,0.204,525000.0,128000.0,0,2560000000000.0,0,0,0,3190000000.0,0,9060.0,197000.0,21.0,29.0,11.4,6.0,2.56,1.57,0.84,0.508,0.332,0.235,0.159,0.122,0.044,0.03,-1,-1],[58,60,61,62,64]],"29":[52,[0,0,0,0.0559,0.0808,0.196,3.2,81.5,1420.0,12000.0,580.0,0,45700.0,0,307.0,223000.0,30.9,171.0,44.5,19.4,6.63,4.2,1.61,1.22,0.638,0.47,0.331,0.241,0.113,0.0732,0.034,-1,0],[63,65]],"30":[54,[0.0018,0.0198,0.0324,0.0457,0.086,0.179,143.0,89.1,33100.0,2310.0,0,21100000.0,0,0,0,3380.0,0,144.0,167000.0,24.5,95.6,10.2,5.7,2.08,1.47,0.746,0.562,0.299,0.178,0.1,0.054,-1,0],[64,66,67,68,70]],"31":[56,[0,0,0,0,0.0724,0.166,0.116,32.4,158.0,908.0,33500.0,282000.0,4070.0,0,1270.0,0,50500.0,17500.0,487.0,126.0,30.6,13.2,5.09,2.85,1.9,1.22,0.6,0.31,0.0976,0.0953,0.049,0.029,0],[69,71]],"32":[58,[0,0.0133,0.021,0.0407,0.0825,0.154,63.7,30.9,8140.0,1130.0,23400000.0,141000.0,0,988000.0,0,0,0,4970.0,5.93e+28,40400.0,5280.0,19.0,29.5,9.0,4.31,1.85,0.951,0.495,0.222,0.103,0.061,-1,-1],[70,72,73,74,76]],"33":[60,[0,0,0,0,0.069,0.13,0.0958,42.5,152.0,912.0,3160.0,235000.0,93600.0,6940000.0,1540000.0,0,94500.0,140000.0,5440.0,541.0,15.2,33.3,19.1,13.4,3.16,2.02,0.945,0.492,0.27,-1,-1,-1,-1],[75]],"34":[63,[0.0132,0.0226,0.0342,0.054,0.133,35.5,27.4,2470.0,284.0,726000.0,25700.0,0,10300000.0,0,0,0,10300000000000.0,0,1110.0,2.76e+27,1340.0,196.0,32.9,14.3,5.5,1.53,0.43,0.21,0.27,-1,-1,-1,-1],[74,76,77,78,80,82]],"35":[65,[0,0,0,0,-1,0.0788,21.4,78.6,204.0,1520.0,5800.0,58300.0,205000.0,387.0,0,1060.0,0,127000.0,8550.0,1910.0,174.0,55.1,55.7,16.3,4.36,1.91,0.543,0.314,0.152,0.07,-1,-1,-1,-1],[79,81]],"36":[67,[0.0074,0.0216,0.0279,0.045,0.0988,17.2,27.3,690.0,276.0,53300.0,4360.0,0,126000.0,0,7230000000000.0,0,0,0,339000000.0,0,4580.0,10200.0,189.0,32.3,8.57,1.84,1.29,0.212,0.114,0.08,0.0622,0.0428,0.04,0.012,-1],[78,80,81,82,83,84,86]],"37":[71,[0,1.03e-07,-1,0.0648,19.0,36.5,227.0,1060.0,1370.0,33.4,16500.0,75.5,7450000.0,2840000.0,0,1610000.0,1.57e+18,1070.0,919.0,158.0,58.2,4.48,5.84,2.7,0.378,0.202,0.169,0.115,0.054,0.0513,0.0318,0.037,0.026,-1],[85,87]],"38":[73,[0.0253,0.0276,0.0852,7.89,9.0,156.0,135.0,6380.0,1340.0,2190000.0,117000.0,0,5600000.0,0,0,0,4370000.0,912000000.0,34700.0,9400.0,446.0,75.3,23.9,1.06,0.432,0.653,0.269,0.202,0.114,0.069,0.053,0.0506,0.039,0.021,-1],[84,86,87,88]],"39":[75,[-1,0.028,0.063,0.054,14.8,30.1,70.4,8.3,425.0,2370.0,9650.0,53100.0,287000.0,9210000.0,0,231000.0,5060000.0,12700.0,36600.0,1120.0,618.0,5.34,3.75,0.548,1.48,0.94,0.426,0.36,0.239,0.197,0.095,0.075,0.0335,0.03,0.025],[89]],"40":[77,[-1,-1,0.056,4.6,5.5,32.0,42.0,1550.0,472.0,59400.0,6050.0,7210000.0,282000.0,0,0,0,50800000000000.0,0,5530000.0,7.38e+26,60300.0,30.7,2.1,7.1,2.29,2.01,1.38,0.92,0.67,0.179,0.146,0.0785,0.056,0.0375,0.024,0.043,-1],[90,91,92,94,96]],"41":[79,[0,0,0,0.051,3.9,9.8,20.5,88.0,222.0,870.0,7310.0,52600.0,21500000000.0,1100000000000000.0,0,644000000000.0,3020000.0,84100.0,4330.0,2.86,15.0,1.5,7.1,4.3,1.34,0.98,2.91,0.9,0.286,0.201,0.107,0.075,0.054,0.038,0.032,0.017,0.023,-1],[93]],"42":[81,[-1,-1,0.023,2.3,3.2,19.1,14.1,480.0,127.0,20000.0,929.0,0,126000000000.0,0,0,0,0,0,237000.0,2.23e+26,877.0,678.0,67.5,60.0,36.3,8.73,3.5,1.1,0.7,0.292,0.194,0.125,0.08,0.058,0.0455,0.032,0.022,0.021,-1],[92,94,95,96,97,98,100]],"43":[83,[0,0,0,0.055,2.14,6.4,12.8,49.2,188.0,255.0,9900.0,17600.0,69300.0,370000.0,133000000000000.0,133000000000000.0,6660000000000.0,15.5,853.0,5.28,54.2,1100.0,458.0,35.6,21.2,5.17,0.905,0.9,0.35,0.323,0.152,0.121,0.078,0.057,0.0445,0.03,0.022,0.021,0.022,-1],[99]],"44":[85,[-1,-1,-1,1.5,1.32,11.7,8.0,219.0,59.7,3110.0,5790.0,0,245000.0,0,0,0,0,0,3390000.0,0,16000.0,32100000.0,225.0,273.0,34.4,12.0,2.12,1.75,0.8,0.54,0.318,0.204,0.151,0.099,0.0695,0.045,0.029,0.025,0.019,0.015,-1],[96,98,99,100,101,102,104]],"45":[88,[-1,0,0.029,1.47,5.61,13.9,70.6,301.0,594.0,1840.0,523.0,1390000.0,74900.0,128000000.0,17900000.0,0,42.3,127000.0,30.1,1300.0,16.8,80.8,3.35,11.0,3.4,2.8,1.85,1.03,0.685,0.421,0.282,0.19,0.13,0.074,0.051,0.042,0.03,0.0265,0.019,0.028,-1],[103]],"46":[90,[-1,0.032,1.06,1.17,9.1,7.4,122.0,186.0,1060.0,1280.0,314000.0,30500.0,0,1470000.0,0,0,0,205000000000000.0,0,48900.0,0,1410.0,75700.0,93.0,145.0,25.0,11.8,4.3,1.9,0.92,0.492,0.29,0.193,0.108,0.088,0.06,0.0486,0.038,0.035,0.031,-1,-1],[102,104,105,106,108,110]],"47":[92,[-1,2.28e-07,0.027,1.78,4.45,25.5,47.5,124.0,121.0,666.0,774.0,3940.0,4150.0,3570000.0,1440.0,0,143.0,0,24.6,642000.0,11300.0,19300.0,4.6,1200.0,230.0,73.6,3.76,6.0,1.52,0.777,0.529,0.294,0.178,0.16,0.052,0.089,0.06,0.0499,0.0406,0.035,0.03,0],[107,109]],"48":[94,[-1,0.032,1.0,1.16,9.29,17.0,49.1,81.6,330.0,438.0,3460.0,3330.0,0,23400.0,0,39900000.0,0,0,0,2.54e+23,0,192000.0,8.49e+26,9010.0,3020.0,161.0,50.8,13.5,5.24,2.1,1.25,0.68,0.512,0.48,0.246,0.147,0.127,0.098,0.084,0.061,0.065,0],[106,108,110,111,112,113,114,116]],"49":[96,[-1,0.036,0.03,3.11,5.62,15.1,23.3,60.0,108.0,304.0,372.0,1940.0,3480.0,15000.0,17700.0,242000.0,893.0,0,71.9,1.39e+22,14.1,2590.0,5.0,144.0,3.08,23.1,1.5,6.17,3.12,2.36,1.53,1.09,0.816,0.57,0.273,0.262,0.202,0.163,0.136,0.103,0.086,0.07],[113,115]],"50":[99,[0.024,1.18,2.22,3.8,7.0,20.8,32.7,115.0,174.0,618.0,1090.0,15000.0,2120.0,0,9940000.0,0,0,0,0,0,0,0,97300.0,0,11200000.0,0,832000.0,7260000000000.0,7560.0,3540.0,134.0,223.0,56.0,39.7,1.37,0.93,0.515,0.355,0.249,0.148,0.12,-1],[112,114,115,116,117,118,119,120,122,124]],"51":[102,[0,0,0.47,1.12,0.6,4.0,7.4,17.2,23.6,75.0,53.5,400.0,209.0,1930.0,948.0,10700.0,216.0,137000.0,953.0,0,235000.0,0,5200000.0,87000000.0,1070000.0,333000.0,32600.0,15700.0,2370.0,1380.0,167.0,140.0,0.674,1.67,0.923,0.497,0.333,0.182,0.17,0.103,0.08],[121,123]],"52":[104,[-1,6.33e-07,7.8e-05,0.00322,2.1,4.4,18.6,26.2,120.0,102.0,912.0,348.0,8960.0,3720.0,518000.0,57800.0,0,1670000.0,0,0,0,0,0,33700.0,7.1e+31,4180.0,2.5e+28,1500.0,277000.0,750.0,2510.0,19.0,17.6,2.49,1.46,0.724,0.351,0.193,0.147,0.12,0.093,-1],[120,122,123,124,125,126,128,130]],"53":[106,[0,-1,0.0264,9.28e-05,0.664,2.5,3.34,6.6,2.01,78.0,2.91,133.0,822.0,1150.0,4900.0,7630.0,218.0,47600.0,361000.0,5130000.0,1120000.0,0,1500.0,509000000000000.0,44500.0,693000.0,8260.0,75000.0,3150.0,23700.0,83.4,24.1,6.26,2.28,0.588,0.42,0.235,0.182,0.094,0.0897,0.094,-1],[127,129]],"54":[108,[7.2e-05,0.013,0.093,0.74,2.7,2.74,10.0,18.0,59.0,61.0,228.0,348.0,2760.0,2410.0,72400.0,7490.0,0,60700.0,0,3140000.0,0,0,0,0,0,453000.0,0,32900.0,6.88e+28,229.0,848.0,39.7,13.6,1.73,1.23,0.511,0.388,0.188,0.146,0.088,0.085,-1,-1],[124,126,128,129,130,131,132,134,136]],"55":[111,[-1,0.00049,1.69e-05,0.57,1.4,0.7,8.4,14.0,43.0,60.4,155.0,21.2,353.0,30.9,2660.0,98.4,22500.0,218.0,115000.0,1750.0,837000.0,560000.0,0,65200000.0,42000000000000.0,1120000.0,948000000.0,2010.0,556.0,63.7,24.8,1.69,1.8,0.994,0.582,0.322,0.231,0.152,0.112,0.081,0.059,-1],[133]],"56":[113,[-1,0.46,0.45,1.3,1.75,5.2,5.4,24.0,29.7,117.0,162.0,660.0,198.0,6000.0,762.0,210000.0,8030.0,0,995000.0,0,333000000.0,0,0,0,0,0,4980.0,1100000.0,1100.0,636.0,14.5,11.7,4.31,2.15,0.893,0.62,0.349,0.258,0.167,0.139,0.113,0.053],[130,132,134,135,136,137,138]],"57":[116,[-1,0.0217,-1,-1,2.8,5.3,8.6,17.0,29.2,64.8,54.0,306.0,311.0,696.0,522.0,3540.0,16500.0,14100.0,387.0,68100.0,592.0,1890000000000.0,3.25e+18,0,145000.0,14100.0,5470.0,852.0,44.0,24.8,9.9,4.03,1.41,1.07,0.504,0.465,0.287,0.245,0.161,0.101,0.084,-1],[138,139]],"58":[119,[-1,-1,1.1,-1,3.8,9.1,9.7,51.0,34.0,236.0,210.0,1370.0,618.0,12600.0,5820.0,273000.0,63700.0,0,32400.0,0,11900000.0,0,2810000.0,0,119000.0,24600000.0,181.0,809.0,56.4,56.8,4.94,6.05,1.76,1.42,0.865,0.722,0.313,0.233,0.175,0.099,0],[136,138,140,142]],"59":[121,[0.012,-1,-1,1.2,3.3,3.12,4.2,2.85,30.0,40.0,90.0,89.4,390.0,1020.0,1440.0,786.0,4610.0,87.0,15900.0,203.0,0,68800.0,1170000.0,1040.0,21500.0,1450.0,803.0,137.0,136.0,6.19,18.9,3.57,4.28,2.3,1.47,0.444,0.307,0.181,0.134,0.17,-1],[141]],"60":[124,[-1,0.65,-1,1.8,-1,6.8,21.0,25.4,93.6,70.0,510.0,744.0,3040.0,2310.0,18100.0,1780.0,291000.0,8960.0,0,0,7.23e+22,0,0,949000.0,0,6220.0,2.93e+26,746.0,684.0,31.6,25.9,8.9,5.06,1.15,0.81,0.5,0.439,0.215,0.31,-1],[142,143,144,145,146,148,150]],"61":[126,[-1,-1,1.0,2.4,2.6,6.3,6.2,13.5,22.0,49.0,107.0,-1,194.0,249.0,9.2,1250.0,40.5,22900000.0,31400000.0,559000000.0,175000000.0,82800000.0,464000.0,191000.0,9710.0,102000.0,247.0,315.0,161.0,41.5,27.4,10.6,4.8,1.49,0.725,1.05,0.63,0.255,-1,-1],[147]],"62":[128,[-1,0.55,-1,1.2,4.0,2.89,9.5,10.3,47.0,45.0,186.0,154.0,889.0,612.0,4350.0,525.0,0,29400000.0,2150000000000000.0,3.36e+18,1.99e+23,0,0,2990000000.0,0,167000.0,0,1330.0,33800.0,482.0,318.0,11.4,9.6,4.8,2.7,1.3,1.43,0.98,0.8,-1,-1],[144,147,148,149,150,152,154]],"63":[130,[0.001,0.0178,-1,-1,0.5,1.5,3.3,8.4,-1,17.9,1.51,40.7,2.36,155.0,10.2,512000.0,398000.0,2080000.0,4710000.0,8040000.0,1160000000.0,1.45e+26,427000000.0,0,271000000.0,150000000.0,1310000.0,54600.0,2750.0,1090.0,42.6,26.2,-1,7.7,4.16,2.53,1.24,1.33,0.2,-1,0],[151,153]],"64":[133,[-1,-1,1.1,-1,2.2,4.7,5.7,15.8,14.0,70.2,39.0,268.0,1380.0,4170000.0,137000.0,2250000000.0,802000.0,56500000000000.0,10700000.0,3.41e+21,20800000.0,0,0,0,0,0,66500.0,0,219.0,504.0,68.0,45.0,11.6,5.1,4.2,3.03,0.75,0.42,-1,-1],[152,154,155,156,157,158,160]],"65":[135,[0.00101,-1,-1,-1,1.6,2.29,3.5,0.597,12.0,-1,30.9,8.0,5900.0,3600.0,14800.0,12500.0,63400.0,63000.0,202000.0,36000.0,460000.0,462000.0,2240000000.0,5680000000.0,0,6250000.0,600000.0,456.0,1170.0,180.0,127.0,27.1,18.9,9.4,5.13,0.96,1.23,0.76,-1,-1],[159]],"66":[138,[-1,0.6,-1,0.9,2.3,5.6,9.1,9.5,33.2,67.0,198.0,252.0,430.0,1070.0,8570.0,23000.0,94700000000000.0,35600.0,0,29300.0,0,12500000.0,0,0,0,0,0,8400.0,294000.0,372.0,522.0,39.0,54.9,4.07,3.4,1.43,-1,-1,-1],[156,158,160,161,162,163,164]],"67":[140,[0.006,0.0041,0.4,-1,0.7,2.4,3.32,5.8,2.2,21.1,76.8,35.2,162.0,121.0,706.0,2880.0,3360.0,756.0,678.0,1980.0,1540.0,8930.0,900.0,144000000000.0,1730.0,0,96500.0,11200.0,179.0,283.0,166.0,53.0,25.0,7.1,3.7,1.88,-1,-1,-1],[165]],"68":[142,[-1,-1,-1,0.9,1.7,3.2,4.6,4.0,18.5,23.5,10.3,37.1,224.0,318.0,1170.0,1120.0,8240.0,2160.0,103000.0,11600.0,0,4500.0,0,37300.0,0,0,0,811000.0,0,27100.0,177000.0,86.0,192.0,72.0,-1,-1,-1,-1,-1],[162,164,166,167,168,170]],"69":[144,[2.3e-06,3.17e-06,0.155,0.58,0.7,0.9,-1,4.17,8.0,1.48,8.1,21.6,83.8,218.0,239.0,548.0,564.0,1810.0,1300.0,6520.0,120.0,108000.0,27700.0,799000.0,8040000.0,0,11100000.0,60600000.0,229000.0,29700.0,324.0,912.0,111.0,95.0,-1,-1,-1,-1,0],[169]],"70":[148,[-1,0.7,-1,1.6,3.03,4.2,0.409,1.79,26.1,38.6,89.4,100.0,288.0,252.0,1130.0,663.0,4550.0,594.0,204000.0,1050.0,0,2770000.0,0,0,0,0,0,362000.0,0,6880.0,4440.0,480.0,144.0,-1,-1,-1,-1,-1],[168,170,171,172,173,174,176]],"71":[150,[0.045,0.0784,0.65,0.9,-1,0.068,0.494,7.7,10.6,12.1,36.1,77.0,82.2,238.0,188.0,644.0,159.0,3090.0,330.0,123000.0,174000.0,713000.0,579000.0,43200000.0,104000000.0,0,1.17e+18,574000.0,1700.0,16500.0,342.0,210.0,120.0,58.0,20.0,-1,-1,-1,-1],[175,176]],"72":[153,[-1,2.0,0.843,0.023,0.115,2.85,5.2,13.6,18.4,39.4,40.0,111.0,76.0,406.0,123.0,1560.0,194.0,57600.0,43600.0,59000000.0,85000.0,6.31e+22,6100000.0,0,0,0,0,0,3660000.0,281000000000000.0,3660.0,14800.0,210.0,156.0,-1,-1,-1,-1],[174,176,177,178,179,180]],"73":[155,[0.0032,0.106,0.0101,0.049,1.04,1.7,-1,3.57,10.6,14.2,31.0,34.4,79.8,120.0,294.0,406.0,1400.0,2210.0,11300.0,4100.0,37800.0,29100.0,203000.0,8500.0,57400000.0,29400.0,0,9910000.0,441000.0,31300.0,2960.0,630.0,138.0,19.6,-1,5.3,-1,2.2,-1,-1],[181]],"74":[157,[0.275,0.00143,0.0082,0.09,0.409,1.19,2.63,6.3,5.1,19.2,19.9,50.9,74.0,145.0,143.0,396.0,456.0,1990.0,2110.0,9000.0,7940.0,1870000.0,2220.0,5.02e+25,10500000.0,0,0,0,6490000.0,0,85700.0,6030000.0,696.0,1800.0,-1,-1,-1,-1,-1,-1,-1],[180,182,183,184,186]],"75":[159,[-1,0.000611,0.00044,0.107,0.39,0.719,1.6,2.25,3.4,4.4,8.1,-1,15.2,55.0,120.0,144.0,353.0,318.0,840.0,792.0,1170.0,148.0,71600.0,231000.0,6050000.0,3060000.0,0,321000.0,1.31e+18,61200.0,87500.0,180.0,588.0,15.4,-1,5.0,6.0,2.4,-1,-1,-1],[185,187]],"76":[161,[0.00064,0.0021,0.0057,0.021,0.071,0.213,0.839,2.1,3.46,7.37,8.3,19.2,22.4,44.0,84.0,216.0,180.0,300.0,390.0,1290.0,6300.0,78600.0,46800.0,3.53e+20,8030000.0,6.31e+22,0,0,0,0,1300000.0,0,107000.0,189000000.0,390.0,2090.0,93.0,125.0,6.0,7.0,-1,-1,-1],[184,186,187,188,189,190,192]],"77":[163,[0,-1,-1,0.0105,0.0293,0.23,0.353,0.91,3.1,4.4,9.0,7.9,9.0,8.7,29.8,12.0,79.0,90.0,294.0,900.0,3480.0,11100.0,51800.0,59900.0,37800.0,149000.0,1140000.0,1020000.0,0,6380000.0,0,69700.0,8240.0,52.0,348.0,8.7,7.0,43.0,21.0,11.0,-1,-1,-1],[191,193]],"78":[165,[0.00037,0.000294,0.000915,0.00202,0.00699,0.0139,0.0455,0.0976,0.382,0.862,2.43,6.33,10.0,20.7,21.2,56.0,52.0,160.0,390.0,1040.0,4250.0,7490.0,8460.0,878000.0,39100.0,1.52e+19,245000.0,0,1580000000.0,0,0,0,71600.0,0,1850.0,45400.0,150.0,158000.0,22.0,10.3,-1,-1,-1,-1],[190,192,194,195,196,198]],"79":[168,[0,-1,0.00029,2.23e-05,0.028,0.0255,0.139,0.2,1.05,1.5,3.4,7.1,7.9,13.7,15.5,42.8,20.6,255.0,642.0,498.0,530.0,1720.0,2570.0,11400.0,17800.0,63500.0,137000.0,16100000.0,533000.0,0,233000.0,271000.0,2900.0,1560.0,28.4,60.0,38.3,32.0,47.0,-1,-1,-1,-1],[197]],"80":[170,[0.00031,7e-05,0.000231,0.0008,0.002,0.0102,0.0203,0.117,0.267,1.05,2.59,3.6,10.8,9.4,30.9,49.1,82.8,114.0,195.0,456.0,1200.0,2940.0,17500.0,13700.0,14100000000.0,38500.0,0,234000.0,0,0,0,0,0,4030000.0,0,308.0,499.0,174.0,135.0,6.3,64.0,26.4,-1,-1,-1,-1,-1],[196,198,199,200,201,202,204]],"81":[176,[0.0062,0.018,0.255,0.437,1.09,2.9,1.9,6.9,9.5,19.5,3.5,-1,71.0,138.0,156.0,-1,576.0,1300.0,1980.0,4180.0,6620.0,10200.0,19100.0,26700.0,94000.0,263000.0,1060000.0,0,119000000.0,0,252.0,286.0,183.0,130.0,78.0,81.0,31.0,23.8,11.0,9.7,5.9,-1,-1],[203,205,207,208,209,210]],"82":[178,[0.00025,0.0027,0.0041,0.039,0.055,0.535,0.49,6.3,4.82,15.2,25.1,39.0,71.0,79.8,210.0,-1,642.0,900.0,2220.0,486.0,8640.0,5400.0,77400.0,33600.0,1660000000000.0,187000.0,0,536000000000000.0,0,0,0,11600.0,701000000.0,2170.0,38300.0,612.0,1620.0,142.0,99.6,19.9,14.8,-1,-1],[204,206,207,208,209,210,211,212,214]],"83":[184,[0.0066,-1,0.0148,0.037,0.06,0.688,6.3,12.4,34.6,63.6,95.0,183.0,308.0,560.0,618.0,1620.0,2180.0,6180.0,6190.0,42300.0,40400.0,1290000.0,539000.0,985000000.0,11600000000000.0,6.34e+26,433000.0,128.0,3630.0,2740.0,1190.0,457.0,133.0,98.5,33.0,8.7,9.5,-1,-1,-1,-1],[209,210,211,212,213,214,215]],"84":[186,[3.4e-05,0.0014,0.00027,0.0035,0.00245,0.022,0.0322,0.399,0.392,4.64,5.63,53.6,106.0,328.0,691.0,936.0,2680.0,2200.0,12700.0,6260.0,760000.0,20900.0,91500000.0,3910000000.0,12000000.0,0.516,2.94e-07,3.71e-06,0.000163,0.00178,0.144,1.53,186.0,618.0,-1,132.0,546.0,-1,-1,-1,-1,-1],[210,211,212,213,214,215,216,218]],"85":[191,[0.0021,0.0115,0.029,0.286,0.29,0.377,0.388,4.47,7.02,43.2,85.2,184.0,444.0,547.0,1610.0,1840.0,6520.0,5870.0,19500.0,29200.0,26000.0,0.314,1.25e-07,5.58e-07,3.7e-05,0.0003,0.0326,1.28,56.0,223.0,138.0,54.0,50.0,150.0,-1,-1,-1,-1,-1],[215,217,218,219]],"86":[193,[0.00115,0.00078,0.007,0.0047,0.054,0.0644,0.59,1.09,7.0,9.7,44.2,74.5,170.0,340.0,555.0,1460.0,1730.0,8640.0,52600.0,1430.0,0.0195,2.59e-07,2.3e-06,2.9e-05,0.000593,0.0338,3.96,55.6,1540.0,330000.0,1460.0,6420.0,280.0,444.0,20.2,65.0,11.9,-1,-1],[218,219,220,222]],"87":[197,[0.0023,0.015,0.0066,0.0475,0.0628,0.372,0.55,1.75,3.9,-1,14.8,59.1,50.5,191.0,186.0,1200.0,34.1,0.00551,9e-08,7e-07,2.2e-05,0.0014,0.0225,27.4,288.0,852.0,1320.0,200.0,237.0,48.5,148.0,38.0,50.2,19.1,17.6,5.5,0.9],[221,223]],"88":[201,[0.02,0.0041,0.036,0.06,0.22,0.24,1.38,1.11,4.71,4.0,12.6,13.0,164.0,2.44,0.00167,1.72e-07,1.95e-06,2.59e-05,0.009,0.0181,25.0,33.6,988000.0,314000.0,1280000.0,50500000000.0,2530.0,181000000.0,240.0,5580.0,104.0,240.0,30.0,30.0,-1],[223,224,225,226,228]],"89":[205,[0.08,0.025,0.031,0.097,0.094,0.35,0.213,0.895,0.738,8.2,0.171,0.00044,6.9e-08,1e-06,9.4e-06,0.0264,0.052,5.0,126.0,10000.0,857000.0,106000.0,687000000.0,22100.0,3760.0,122.0,450.0,119.0,143.0,45.0,62.0,270.0,-1],[225,227,228]],"90":[208,[0.0024,-1,0.016,0.048,0.0317,0.144,0.087,1.35,0.0263,0.000248,1.22e-07,1.02e-06,1.02e-05,0.00175,0.00224,0.6,1.04,525.0,1840.0,1620000.0,60400000.0,250000000000.0,2380000000000.0,91900.0,4.42e+17,1310.0,2080000.0,432.0,2240.0,288.0,564.0,-1],[227,228,229,230,231,232,234]],"91":[211,[0.006,0.0058,0.0074,0.017,0.014,0.105,0.0038,0.000108,5.6e-08,8.5e-07,5.9e-06,0.0038,0.0053,0.844,1.71,108.0,2300.0,79200.0,134000.0,1500000.0,1030000000000.0,114000.0,2330000.0,24100.0,1460.0,546.0,522.0,137.0,6480.0,-1,-1],[231,233,234]],"92":[215,[0.0014,0.0069,0.00085,0.000354,6e-05,-1,6.6e-07,4.7e-06,6.5e-05,0.000396,0.062,0.269,66.0,546.0,3470.0,1750000.0,363000.0,2170000000.0,5020000000000.0,7750000000000.0,2.22e+16,739000000000000.0,583000.0,1.41e+17,1410.0,50800.0,-1,1010.0,-1],[233,234,235,236,238]],"93":[219,[0.00057,2.9e-08,-1,4.8e-07,2.5e-06,4.8e-05,0.0065,0.035,0.51,61.4,240.0,276.0,2930.0,882.0,2170.0,380000.0,34200000.0,4830000000000.0,67700000000000.0,181000.0,204000.0,3710.0,834.0,132.0,111.0,137.0,-1],[237,239]],"94":[221,[-1,-1,-1,-1,-1,-1,-1,2.1,91.0,105.0,516.0,2020.0,1250.0,31700.0,1520.0,90200000.0,3940000.0,2770000000.0,761000000000.0,207000000000.0,452000000.0,11800000000000.0,17800.0,2570000000000000.0,37800.0,937000.0,196000.0],[239,244]],"95":[223,[0.01,-1,-1,-1,-1,-1,1.8,40.0,-1,78.6,192.0,139.0,618.0,216.0,4420.0,5880.0,42800.0,183000.0,13700000000.0,57700.0,232000000000.0,36000.0,7380.0,2340.0,1380.0,-1,-1],[]],"96":[231,[-1,-1,27.0,52.0,420.0,408.0,-1,7920.0,9000.0,2630000.0,2830000.0,14100000.0,918000000.0,572000000.0,260000000000.0,149000000000.0,492000000000000.0,11000000000000.0,3850.0,-1,1010.0,-1],[]],"97":[233,[40.0,20.0,-1,26.0,-1,144.0,-1,288.0,276.0,420.0,16600.0,18100.0,428000.0,156000.0,43500000000.0,-1,28300000.0,11600.0,3340.0,108.0,-1,-1],[]],"98":[237,[0.8,0.0211,28.0,40.3,141.0,209.0,648.0,1170.0,2700.0,129000.0,11200.0,28800000.0,11100000000.0,413000000.0,28300000000.0,83500000.0,1540000.0,5230000.0,5100.0,738.0],[]],"99":[239,[-1,6.0,5.1,17.8,22.1,37.0,66.6,450.0,273.0,1440.0,6130.0,31000.0,119000.0,40800000.0,1770000.0,23800000.0,3440000.0,27400.0,665000.0,-1],[]],"100":[241,[0.00073,0.0008,0.231,0.00312,4.2,1.54,31.0,34.5,96.0,1860.0,19100.0,91400.0,259000.0,11700.0,72300.0,9430.0,8680000.0,0.00037,1.5,-1],[]],"101":[244,[0.36,0.38,0.92,1.19,7.0,25.6,54.0,253.0,138.0,720.0,600.0,1620.0,4660.0,19900.0,4460000.0,5760.0,2400000.0,-1,-1],[]],"102":[248,[0,5.7e-05,5.08e-06,0.8,2.47,94.2,51.2,211.0,2.91,24.5,0.00123,3480.0,0.106,-1,-1,-1,-1],[]],"103":[251,[-1,0.369,0.632,12.0,31.1,27.9,6.0,3.92,6.2,180.0,2340.0,-1,-1,-1,-1,79200.0],[]],"104":[253,[0.013,2.29e-05,1.63,0.0066,5.0,0.0125,2.63,0.021,2.1,0.25,660.0,-1,96.0,-1,9000.0,-1],[]],"105":[255,[0.054,1.7,2.3,2.17,0.51,1.52,4.7,34.0,29.0,-1,-1,4800.0,7200.0,104000.0,-1,6120.0],[]],"106":[258,[0.0027,0.402,0.00495,0.183,0.0103,0.94,0.078,9.2,0.39,108.0,-1,300.0,-1,132.0,-1,-1],[]],"107":[260,[0.041,0.0128,0.084,-1,1.07,1.19,10.6,22.0,-1,-1,228.0,2.9,11.3,-1,57.0,-1,-1,-1,-1],[]],"108":[263,[0.0009,0.7,0.00196,0.003,0.055,1.4,15.0,9.0,-1,-1,1.06,-1,0.28,-1,0.012,-1,-1,-1],[]],"109":[265,[-1,0.002,-1,0.023,-1,0.8,-1,-1,-1,0.85,0.031,0.7,9.0,6.0,-1,-1,-1,-1],[]],"110":[267,[1e-05,-1,0.00023,0.000205,0.144,-1,0.00024,-1,-1,-1,0.006,-1,0.21,0.025,14.0,252.0,-1,-1],[]],"111":[272,[0.0042,-1,0.02,-1,-1,-1,0.008,0.17,4.3,19.0,130.0,-1,-1,-1,-1],[]],"112":[276,[-1,0.00079,-1,-1,-1,0.18,0.0011,4.7,0.102,30.0,30.0,-1,-1],[]],"113":[278,[0.0023,-1,-1,-1,0.14,0.14,0.97,4.6,12.0,-1,-1,-1,8.0],[]],"114":[284,[0.0031,0.21,0.13,0.51,0.653,2.1,80.0,-1],[]],"115":[287,[0.06,0.177,0.41,0.84,-1,-1],[]],"116":[289,[-1,0.009,0.026,0.016,0.07],[]],"117":[291,[-1,-1,0.025,0.07],[]],"118":[293,[-1,0.0007,0.68],[]]};
+const EA_POS=new Set([1, 3, 5, 6, 8, 9, 11, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 31, 32, 33, 34, 35, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 63, 65, 66, 69, 71, 72, 73, 74, 75, 76, 77, 78, 79, 81, 82, 83, 84, 85, 87, 88, 89, 118]);
+const RAW = `H hydrogen 1.008
+He helium 4.0026
+Li litium 6.94
+Be beryllium 9.0122
+B bor 10.81
+C karbon 12.011
+N nitrogen 14.007
+O oksygen 15.999
+F fluor 18.998
+Ne neon 20.180
+Na natrium 22.990
+Mg magnesium 24.305
+Al aluminium 26.982
+Si silisium 28.085
+P fosfor 30.974
+S svovel 32.06
+Cl klor 35.45
+Ar argon 39.95
+K kalium 39.098
+Ca kalsium 40.078
+Sc scandium 44.956
+Ti titan 47.867
+V vanadium 50.942
+Cr krom 51.996
+Mn mangan 54.938
+Fe jern 55.845
+Co kobolt 58.933
+Ni nikkel 58.693
+Cu kobber 63.546
+Zn sink 65.38
+Ga gallium 69.723
+Ge germanium 72.630
+As arsen 74.922
+Se selen 78.971
+Br brom 79.904
+Kr krypton 83.798
+Rb rubidium 85.468
+Sr strontium 87.62
+Y yttrium 88.906
+Zr zirkonium 91.224
+Nb niob 92.906
+Mo molybden 95.95
+Tc technetium [98]
+Ru ruthenium 101.07
+Rh rhodium 102.91
+Pd palladium 106.42
+Ag sølv 107.87
+Cd kadmium 112.41
+In indium 114.82
+Sn tinn 118.71
+Sb antimon 121.76
+Te tellur 127.60
+I jod 126.90
+Xe xenon 131.29
+Cs cesium 132.91
+Ba barium 137.33
+La lantan 138.91
+Ce cerium 140.12
+Pr praseodym 140.91
+Nd neodym 144.24
+Pm promethium [145]
+Sm samarium 150.36
+Eu europium 151.96
+Gd gadolinium 157.25
+Tb terbium 158.93
+Dy dysprosium 162.50
+Ho holmium 164.93
+Er erbium 167.26
+Tm thulium 168.93
+Yb ytterbium 173.05
+Lu lutetium 174.97
+Hf hafnium 178.49
+Ta tantal 180.95
+W wolfram 183.84
+Re rhenium 186.21
+Os osmium 190.23
+Ir iridium 192.22
+Pt platina 195.08
+Au gull 196.97
+Hg kvikksølv 200.59
+Tl thallium 204.38
+Pb bly 207.2
+Bi vismut 208.98
+Po polonium [209]
+At astat [210]
+Rn radon [222]
+Fr francium [223]
+Ra radium [226]
+Ac actinium [227]
+Th thorium 232.04
+Pa protactinium 231.04
+U uran 238.03
+Np neptunium [237]
+Pu plutonium [244]
+Am americium [243]
+Cm curium [247]
+Bk berkelium [247]
+Cf californium [251]
+Es einsteinium [252]
+Fm fermium [257]
+Md mendelevium [258]
+No nobelium [259]
+Lr lawrencium [266]
+Rf rutherfordium [267]
+Db dubnium [268]
+Sg seaborgium [269]
+Bh bohrium [270]
+Hs hassium [269]
+Mt meitnerium [278]
+Ds darmstadtium [281]
+Rg röntgenium [282]
+Cn copernicium [285]
+Nh nihonium [286]
+Fl flerovium [289]
+Mc moscovium [290]
+Lv livermorium [293]
+Ts tenness [294]
+Og oganesson [294]`;
+
+const CATS = {
+  alkali:   { label: 'Alkalimetaller',    z: [3,11,19,37,55,87] },
+  earth:    { label: 'Jordalkalimetaller', z: [4,12,20,38,56,88] },
+  trans:    { label: 'Overgangsmetaller',  z: [] },
+  post:     { label: 'Andre metaller',     z: [13,31,49,50,81,82,83,84,113,114,115,116] },
+  metalloid:{ label: 'Halvmetaller',       z: [5,14,32,33,51,52] },
+  nonmetal: { label: 'Ikke-metaller',      z: [1,6,7,8,15,16,34] },
+  halogen:  { label: 'Halogener',          z: [9,17,35,53,85,117] },
+  noble:    { label: 'Edelgasser',         z: [2,10,18,36,54,86,118] },
+  lanth:    { label: 'Lantanoider',        z: [] },
+  act:      { label: 'Aktinoider',         z: [] },
+};
+for (let z = 57; z <= 71; z++) CATS.lanth.z.push(z);
+for (let z = 89; z <= 103; z++) CATS.act.z.push(z);
+for (const [a, b] of [[21,30],[39,48],[72,80],[104,112]]) for (let z = a; z <= b; z++) CATS.trans.z.push(z);
+
+// Faktisk grunntilstand: Madelung-rekkefølge + kjente unntak
+const ORDER = ['1s','2s','2p','3s','3p','4s','3d','4p','5s','4d','5p','6s','4f','5d','6p','7s','5f','6d','7p'];
+const CAP = { s: 2, p: 6, d: 10, f: 14 };
+const EXC = {
+  24:{'3d':5,'4s':1}, 29:{'3d':10,'4s':1}, 41:{'4d':4,'5s':1}, 42:{'4d':5,'5s':1},
+  44:{'4d':7,'5s':1}, 45:{'4d':8,'5s':1}, 46:{'4d':10,'5s':0}, 47:{'4d':10,'5s':1},
+  57:{'4f':0,'5d':1}, 58:{'4f':1,'5d':1}, 64:{'4f':7,'5d':1}, 78:{'5d':9,'6s':1},
+  79:{'5d':10,'6s':1}, 89:{'5f':0,'6d':1}, 90:{'5f':0,'6d':2}, 91:{'5f':2,'6d':1},
+  92:{'5f':3,'6d':1}, 93:{'5f':4,'6d':1}, 96:{'5f':7,'6d':1}, 103:{'6d':0,'7p':1}
+};
+
+const ELEMENTS = [null];
+RAW.trim().split('\n').forEach((line, i) => {
+  const [sym, name, w] = line.trim().split(/\s+/);
+  const Z = i + 1;
+  const bracket = w.startsWith('[');
+  const num = parseFloat(w.replace(/[\[\]]/g, ''));
+  const cat = Object.keys(CATS).find(k => CATS[k].z.includes(Z));
+  ELEMENTS.push({ Z, sym, name: name[0].toUpperCase() + name.slice(1), weightText: w, bracket,
+    A: Math.round(num), N: Math.round(num) - Z, cat });
+});
+
+function neutralShells(Z) {
+  const occ = {}; let left = Z;
+  for (const s of ORDER) { if (!left) break; const c = Math.min(CAP[s[1]], left); occ[s] = c; left -= c; }
+  Object.assign(occ, EXC[Z] || {});
+  const shells = [];
+  for (const [s, c] of Object.entries(occ)) { const n = +s[0]; shells[n - 1] = (shells[n - 1] || 0) + c; }
+  for (let i = 0; i < shells.length; i++) shells[i] = shells[i] || 0;
+  while (shells.length && shells[shells.length - 1] === 0) shells.pop();
+  return shells;
+}
+
+// Elektroner fjernes fra ytterste skall; legges til i ytterste skall,
+// eller i et nytt skall hvis det ytterste har edelgasskonfigurasjon.
+function shellsFor(Z, e) {
+  const s = neutralShells(Z);
+  let total = Z;
+  while (total > e) { s[s.length - 1]--; total--; while (s.length && s[s.length - 1] === 0) s.pop(); }
+  while (total < e) {
+    const i = s.length - 1;
+    const full = i < 0 || (i === 0 ? s[0] >= 2 : s[i] >= 8);
+    if (full) s.push(1); else s[i]++;
+    total++;
+  }
+  return s;
+}
+const INFO = {"1":{"mp":-259.2,"bp":-252.9,"d":8.2e-05,"g":1,"y":1766,"ac":1400.0,"en":2.2,"col":"#ffffff","t":"Det letteste og vanligste grunnstoffet i universet. Finnes i vann og i alle organiske stoffer.","lk":"gass"},"2":{"bp":-268.9,"d":0.000164,"g":18,"y":1895,"ac":0.008,"col":"#d9ffff","t":"En svært lett og helt ureaktiv gass. Brukes i ballonger og til kjøling av superledere.","lk":"gass"},"3":{"mp":180.5,"bp":1342.0,"d":0.534,"g":1,"y":1817,"ac":20.0,"en":0.98,"col":"#cc80ff","t":"Det letteste metallet. Brukes i oppladbare batterier i mobiler og elbiler.","lk":"solv"},"4":{"mp":1287.0,"bp":2468.0,"d":1.85,"g":2,"y":1798,"ac":2.8,"en":1.57,"col":"#c2ff00","t":"Et lett og stivt metall. Giftig å puste inn støv av, men nyttig i romfart og røntgenvinduer.","lk":"solv"},"5":{"mp":2077.0,"bp":4000.0,"d":2.34,"g":13,"y":1808,"ac":10.0,"en":2.04,"col":"#ffb5b5","t":"Finnes i boraks og i glass som tåler raske temperaturendringer, som ildfaste former.","lk":"mork"},"6":{"bp":3825.0,"d":2.2,"g":14,"ac":200.0,"en":2.55,"col":"#909090","t":"Grunnstoffet alt liv bygger på. Finnes som grafitt i blyanter og som diamant.","lk":"mork"},"7":{"mp":-210.0,"bp":-195.8,"d":0.001145,"g":15,"y":1772,"ac":19.0,"en":3.04,"col":"#3050f8","t":"Utgjør omtrent 78 prosent av lufta. Viktig i kunstgjødsel og i proteinene i kroppen.","lk":"gass"},"8":{"mp":-218.8,"bp":-183.0,"d":0.001308,"g":16,"y":1774,"ac":461000.0,"en":3.44,"col":"#ff0d0d","t":"Gassen vi puster inn. Utgjør omtrent 21 prosent av lufta og halvparten av jordskorpa.","lk":"gass"},"9":{"mp":-219.7,"bp":-188.1,"d":0.001553,"g":17,"y":1886,"ac":585.0,"en":3.98,"col":"#90e050","t":"Det mest reaktive grunnstoffet. Finnes i tannkrem som fluorid, som beskytter tennene.","lk":"gassgul"},"10":{"mp":-248.6,"bp":-246.0,"d":0.000825,"g":18,"y":1898,"ac":0.005,"col":"#b3e3f5","t":"En edelgass som lyser rødoransje i lysrør. Reagerer ikke med noe.","lk":"gass"},"11":{"mp":97.8,"bp":882.9,"d":0.97,"g":1,"y":1807,"ac":23600.0,"en":0.93,"col":"#ab5cf2","t":"Et mykt metall som reagerer kraftig med vann. Finnes i vanlig salt, natriumklorid.","lk":"solv"},"12":{"mp":650.0,"bp":1090.0,"d":1.74,"g":2,"y":1808,"ac":23300.0,"en":1.31,"col":"#8aff00","t":"Et lett metall som brenner med sterkt hvitt lys. Finnes i klorofyll i alle grønne planter.","lk":"solv"},"13":{"mp":660.3,"bp":2519.0,"d":2.7,"g":13,"y":1825,"ac":82300.0,"en":1.61,"col":"#bfa6a6","t":"Verdens mest brukte metall etter jern. Lett og rustfritt, brukes i folie, sykler og fly."},"14":{"mp":1414.0,"bp":3265.0,"d":2.33,"g":14,"y":1824,"ac":282000.0,"en":1.9,"col":"#f0c8a0","t":"Hovedstoffet i sand og glass. Brukes i databrikker og solceller.","lk":"mork"},"15":{"mp":44.1,"bp":280.5,"d":1.823,"g":15,"y":1669,"ac":1050.0,"en":2.19,"col":"#ff8000","t":"Finnes i DNA og i beina våre. Brukes i fyrstikker og i kunstgjødsel.","lk":"hvit"},"16":{"mp":95.2,"bp":444.6,"d":2.07,"g":16,"ac":350.0,"en":2.58,"col":"#ffff30","t":"Gult, luktfritt fast stoff. Finnes ved vulkaner og brukes til å lage svovelsyre.","lk":"gul"},"17":{"mp":-101.5,"bp":-34.0,"d":0.002898,"g":17,"y":1774,"ac":145.0,"en":3.16,"col":"#1ff01f","t":"En giftig, grønngul gass. Brukes til å rense drikkevann og i bassenger.","lk":"gassgronn"},"18":{"mp":-189.3,"bp":-185.8,"d":0.001633,"g":18,"y":1894,"ac":3.5,"col":"#80d1e3","t":"Den vanligste edelgassen i lufta. Brukes som beskyttelsesgass ved sveising.","lk":"gass"},"19":{"mp":63.5,"bp":759.0,"d":0.89,"g":1,"y":1807,"ac":20900.0,"en":0.82,"col":"#8f40d4","t":"Et mykt metall som tar fyr i vann. Kroppen trenger kalium for at nervene skal virke.","lk":"solv"},"20":{"mp":842.0,"bp":1484.0,"d":1.54,"g":2,"y":1808,"ac":41500.0,"en":1.0,"col":"#3dff00","t":"Finnes i kalkstein, skjell og i beina og tennene våre.","lk":"solv"},"21":{"mp":1541.0,"bp":2836.0,"d":2.99,"g":3,"y":1879,"ac":22.0,"en":1.36,"col":"#e6e6e6","t":"Et lett, sterkt metall som brukes i noen sportssykler og i sterke lamper."},"22":{"mp":1670.0,"bp":3287.0,"d":4.506,"g":4,"y":1791,"ac":5650.0,"en":1.54,"col":"#bfc2c7","t":"Sterkt som stål, men mye lettere. Brukes i fly, hofteproteser og briller."},"23":{"mp":1910.0,"bp":3407.0,"d":6.0,"g":5,"y":1830,"ac":120.0,"en":1.63,"col":"#a6a6ab","t":"Gjør stål hardere. Brukes i verktøy som må tåle mye."},"24":{"mp":1907.0,"bp":2671.0,"d":7.15,"g":6,"y":1797,"ac":102.0,"en":1.66,"col":"#8a99c7","t":"Gir rustfritt stål sin motstand mot rust, og gir rubiner rødfargen."},"25":{"mp":1246.0,"bp":2061.0,"d":7.3,"g":7,"y":1774,"ac":950.0,"en":1.55,"col":"#9c7ac7","t":"Nødvendig for at stål skal bli sterkt. Kroppen trenger små mengder mangan."},"26":{"mp":1538.0,"bp":2861.0,"d":7.87,"g":8,"ac":56300.0,"en":1.83,"col":"#e06633","t":"Det mest brukte metallet i verden. Hovedstoffet i stål og i blodets hemoglobin."},"27":{"mp":1495.0,"bp":2927.0,"d":8.86,"g":9,"y":1739,"ac":25.0,"en":1.88,"col":"#f090a0","t":"Gir blått glass og blå maling. Finnes i vitamin B12."},"28":{"mp":1455.0,"bp":2913.0,"d":8.9,"g":10,"y":1751,"ac":84.0,"en":1.91,"col":"#50d050","t":"Rustfritt og seigt metall. Finnes i mynter, batterier og rustfritt stål."},"29":{"mp":1084.6,"bp":2560.0,"d":8.96,"g":11,"ac":60.0,"en":1.9,"col":"#c88033","t":"Leder strøm svært godt. Brukes i ledninger og rør, og blir grønt når det korroderer.","lk":"kobber"},"30":{"mp":419.5,"bp":907.0,"d":7.134,"g":12,"ac":70.0,"en":1.65,"col":"#7d80b0","t":"Brukes til å forsinke jern, slik at det ikke ruster. Kroppen trenger litt sink.","lk":"solv"},"31":{"mp":29.8,"bp":2229.0,"d":5.91,"g":13,"y":1875,"ac":19.0,"en":1.81,"col":"#c28f8f","t":"Smelter i hånda, siden smeltepunktet er bare 30 grader. Brukes i lysdioder."},"32":{"mp":938.3,"bp":2833.0,"d":5.323,"g":14,"y":1886,"ac":1.5,"en":2.01,"col":"#668f8f","t":"Et halvmetall som brukes i optikk og i elektronikk.","lk":"mork"},"33":{"mp":817.0,"bp":616.0,"d":5.75,"g":15,"ac":1.8,"en":2.18,"col":"#bd80e3","t":"Giftig halvmetall. Finnes naturlig i noe grunnvann, og ble før brukt som gift.","lk":"mork"},"34":{"mp":180.0,"bp":685.0,"d":4.809,"g":16,"y":1818,"ac":0.05,"en":2.55,"col":"#ffa100","t":"Trengs i små mengder av kroppen. Brukes i kopimaskiner og i glass.","lk":"mork"},"35":{"mp":-7.2,"bp":58.8,"d":3.103,"g":17,"y":1826,"ac":2.4,"en":2.96,"col":"#a62929","t":"Det eneste ikke-metallet som er flytende ved romtemperatur. Rødbrun og etsende.","lk":"brunvaeske"},"36":{"mp":-157.4,"bp":-153.4,"d":0.003425,"g":18,"y":1898,"ac":0.0001,"col":"#5cb8d1","t":"En edelgass som brukes i noen lyspærer og lasere.","lk":"gass"},"37":{"mp":39.3,"bp":688.0,"d":1.53,"g":1,"y":1861,"ac":90.0,"en":0.82,"col":"#702eb0","t":"Et svært mykt og reaktivt metall. Brukes i noen atomur.","lk":"solv"},"38":{"mp":777.0,"bp":1377.0,"d":2.64,"g":2,"y":1790,"ac":370.0,"en":0.95,"col":"#00ff00","t":"Gir rødfargen i fyrverkeri og nødbluss.","lk":"solv"},"39":{"mp":1522.0,"bp":3345.0,"d":4.47,"g":3,"y":1789,"ac":33.0,"en":1.22,"col":"#94ffff","t":"Brukes i lysstoffrør og i skjermer for å lage farget lys."},"40":{"mp":1854.0,"bp":4406.0,"d":6.52,"g":4,"y":1789,"ac":165.0,"en":1.33,"col":"#94e0e0","t":"Tåler høye temperaturer og rust godt. Brukes i kjernekraftverk."},"41":{"mp":2477.0,"bp":4741.0,"d":8.57,"g":5,"y":1801,"ac":20.0,"en":1.6,"col":"#73c2c9","t":"Brukes i superledende magneter, blant annet i MR-maskiner på sykehus."},"42":{"mp":2622.0,"bp":4639.0,"d":10.2,"g":6,"y":1778,"ac":1.2,"en":2.16,"col":"#54b5b5","t":"Gjør stål sterkt ved høy temperatur. Planter trenger små mengder."},"43":{"mp":2157.0,"bp":4262.0,"d":11.0,"g":7,"y":1937,"en":2.1,"rad":1,"col":"#3b9e9e","t":"Det første grunnstoffet som ble laget kunstig. Brukes i medisinsk bildediagnostikk."},"44":{"mp":2333.0,"bp":4147.0,"d":12.1,"g":8,"y":1844,"ac":0.001,"en":2.2,"col":"#248f8f","t":"Et hardt metall som brukes i elektronikk og som katalysator."},"45":{"mp":1963.0,"bp":3695.0,"d":12.4,"g":9,"y":1803,"ac":0.001,"en":2.28,"col":"#0a7d8c","t":"Et av de dyreste metallene. Brukes i katalysatorer i biler."},"46":{"mp":1554.8,"bp":2963.0,"d":12.0,"g":10,"y":1803,"ac":0.015,"en":2.2,"col":"#006985","t":"Kan ta opp store mengder hydrogengass. Brukes i katalysatorer og smykker."},"47":{"mp":961.8,"bp":2162.0,"d":10.5,"g":11,"ac":0.075,"en":1.93,"col":"#c0c0c0","t":"Det metallet som leder strøm og varme best. Brukes i smykker, mynter og elektronikk.","lk":"solv"},"48":{"mp":321.1,"bp":767.0,"d":8.69,"g":12,"y":1817,"ac":0.15,"en":1.69,"col":"#ffd98f","t":"Giftig metall som før ble brukt i batterier."},"49":{"mp":156.6,"bp":2027.0,"d":7.31,"g":13,"y":1863,"ac":0.25,"en":1.78,"col":"#a67573","t":"Brukes i berøringsskjermer, som en gjennomsiktig og strømledende film."},"50":{"mp":13.2,"bp":2586.0,"d":7.287,"g":14,"ac":2.3,"en":1.96,"col":"#668080","t":"Brukes i loddetinn og i bronse. Har vært kjent i flere tusen år."},"51":{"mp":630.6,"bp":1587.0,"d":6.68,"g":15,"ac":0.2,"en":2.05,"col":"#9e63b5","t":"Et halvmetall som brukes i flammehemmere og i noen legeringer.","lk":"mork"},"52":{"mp":449.5,"bp":988.0,"d":6.232,"g":16,"y":1782,"ac":0.001,"en":2.1,"col":"#d47a00","t":"Et sjeldent halvmetall som brukes i solceller og minnebrikker.","lk":"mork"},"53":{"mp":113.7,"bp":184.4,"d":4.933,"g":17,"y":1811,"ac":0.45,"en":2.66,"col":"#940094","t":"Kroppen trenger jod for at skjoldbruskkjertelen skal virke. Tilsettes i salt.","lk":"mork"},"54":{"mp":-111.8,"bp":-108.1,"d":0.005366,"g":18,"y":1898,"ac":3e-05,"en":2.6,"col":"#429eb0","t":"En tung edelgass som brukes i kraftige billykter og i lamper.","lk":"gass"},"55":{"mp":28.5,"bp":671.0,"d":1.873,"g":1,"y":1860,"ac":3.0,"en":0.79,"col":"#57178f","t":"Et av de mest reaktive metallene. Brukes i de mest nøyaktige atomurene.","lk":"gull"},"56":{"mp":727.0,"bp":1845.0,"d":3.62,"g":2,"y":1808,"ac":425.0,"en":0.89,"col":"#00c900","t":"Brukes som kontrastmiddel når man røntgenfotograferer mage og tarm.","lk":"solv"},"57":{"mp":920.0,"bp":3464.0,"d":6.15,"g":3,"y":1839,"ac":39.0,"en":1.1,"col":"#70d4ff","t":"Brukes i linser til kameraer og kikkerter."},"58":{"mp":799.0,"bp":3443.0,"d":6.77,"y":1803,"ac":66.5,"en":1.12,"col":"#ffffc7","t":"Det vanligste av de sjeldne jordartsmetallene. Brukes til å polere glass."},"59":{"mp":931.0,"bp":3520.0,"d":6.773,"y":1885,"ac":9.2,"en":1.13,"col":"#d9ffc7","t":"Brukes i sterke magneter og i vernebriller for glassblåsere."},"60":{"mp":1016.0,"bp":3074.0,"d":7.01,"y":1925,"ac":41.5,"en":1.14,"col":"#c7ffc7","t":"Brukes i verdens sterkeste permanentmagneter, blant annet i hodetelefoner."},"61":{"mp":1042.0,"d":7.26,"y":1945,"rad":1,"col":"#a3ffc7","t":"Radioaktivt grunnstoff som nesten ikke finnes i naturen."},"62":{"mp":1072.0,"bp":1794.0,"d":7.52,"y":1879,"ac":7.05,"en":1.17,"col":"#8fffc7","t":"Brukes i sterke magneter som tåler høy temperatur."},"63":{"mp":822.0,"bp":1529.0,"d":5.24,"y":1901,"ac":2.0,"col":"#61ffc7","t":"Gir rødfargen i skjermer, og brukes i sikkerhetsmerking av pengesedler."},"64":{"mp":1313.0,"bp":3273.0,"d":7.9,"y":1880,"ac":6.2,"en":1.2,"col":"#45ffc7","t":"Brukes som kontrastmiddel ved MR-undersøkelser."},"65":{"mp":1359.0,"bp":3230.0,"d":8.23,"y":1843,"ac":1.2,"col":"#30ffc7","t":"Brukes i lysstoffrør og i skjermer for å gi grønt lys."},"66":{"mp":1412.0,"bp":2567.0,"d":8.55,"y":1886,"ac":5.2,"en":1.22,"col":"#1fffc7","t":"Brukes i sterke magneter og i harddisker."},"67":{"mp":1472.0,"bp":2700.0,"d":8.8,"y":1878,"ac":1.3,"en":1.23,"col":"#00ff9c","t":"Har den sterkeste magnetiske virkningen av alle grunnstoffer."},"68":{"mp":1529.0,"bp":2868.0,"d":9.07,"y":1843,"ac":3.5,"en":1.24,"col":"#00e675","t":"Brukes i fiberoptiske kabler og gir glass en rosa farge."},"69":{"mp":1545.0,"bp":1950.0,"d":9.321,"y":1879,"ac":0.52,"en":1.25,"col":"#00d452","t":"Et av de sjeldneste jordartsmetallene. Brukes i bærbare røntgenapparater."},"70":{"mp":824.0,"bp":1196.0,"d":6.9,"y":1878,"ac":3.2,"col":"#00bf38","t":"Brukes i noen typer stål og i bærbare røntgenkilder."},"71":{"mp":1663.0,"bp":3402.0,"d":9.84,"y":1907,"ac":0.8,"en":1.0,"col":"#00ab24","t":"Det tyngste av de sjeldne jordartsmetallene. Brukes som katalysator i oljeindustrien."},"72":{"mp":2233.0,"bp":4600.0,"d":13.3,"g":4,"y":1923,"ac":3.0,"en":1.3,"col":"#4dc2ff","t":"Tåler ekstrem varme. Brukes i kontrollstaver i kjernereaktorer."},"73":{"mp":3017.0,"bp":5455.0,"d":16.4,"g":5,"y":1802,"ac":2.0,"en":1.5,"col":"#4da6ff","t":"Brukes i kondensatorer i mobiltelefoner og annen elektronikk."},"74":{"mp":3414.0,"bp":5555.0,"d":19.3,"g":6,"y":1783,"ac":1.25,"en":1.7,"col":"#2194d6","t":"Har det høyeste smeltepunktet av alle metaller. Ble brukt i glødetråden i lyspærer."},"75":{"mp":3185.0,"bp":5590.0,"d":20.8,"g":7,"y":1925,"ac":0.0007,"en":1.9,"col":"#267dab","t":"Et av de sjeldneste grunnstoffene i jordskorpa. Brukes i jetmotorer."},"76":{"mp":3033.0,"bp":5008.0,"d":22.59,"g":8,"y":1804,"ac":0.0015,"en":2.2,"col":"#266696","t":"Det tetteste grunnstoffet. En kubikkcentimeter veier over 22 gram."},"77":{"mp":2446.0,"bp":4428.0,"d":22.56,"g":9,"y":1804,"ac":0.001,"en":2.2,"col":"#175487","t":"Svært motstandsdyktig mot korrosjon. Et lag av iridium i bakken viser hvor meteoritten som tok livet av dinosaurene traff."},"78":{"mp":1768.2,"bp":3825.0,"d":21.5,"g":10,"y":1735,"ac":0.005,"en":2.2,"col":"#d0d0e0","t":"Et edelt metall som brukes i smykker og i katalysatorer i biler."},"79":{"mp":1064.2,"bp":2836.0,"d":19.3,"g":11,"ac":0.004,"en":2.4,"col":"#ffd123","t":"Et edelt, mykt metall som ikke ruster. Brukes i smykker og elektronikk.","lk":"gull"},"80":{"mp":-38.8,"bp":356.6,"d":13.53,"g":12,"ac":0.085,"en":1.9,"col":"#b8b8d0","t":"Det eneste metallet som er flytende ved romtemperatur. Svært giftig.","lk":"solvvaeske"},"81":{"mp":304.0,"bp":1473.0,"d":11.8,"g":13,"y":1861,"ac":0.85,"en":1.8,"col":"#a6544d","t":"Meget giftig metall. Ble før brukt som rottegift."},"82":{"mp":327.5,"bp":1749.0,"d":11.3,"g":14,"ac":14.0,"en":1.8,"col":"#575961","t":"Tungt og mykt metall. Giftig, og derfor ikke lenger i bensin eller maling.","lk":"blygra"},"83":{"mp":271.4,"bp":1564.0,"d":9.79,"g":15,"ac":0.0085,"en":1.9,"col":"#9e4fb5","t":"Brukes i medisin mot magesyre, og som erstatning for bly fordi det er lite giftig.","lk":"rosa"},"84":{"mp":254.0,"bp":962.0,"d":9.2,"g":16,"y":1898,"ac":2e-10,"en":2.0,"rad":1,"col":"#ab5c00","t":"Sterkt radioaktivt og svært giftig. Oppdaget av Marie Curie."},"85":{"mp":302.0,"d":7.0,"g":17,"y":1940,"en":2.2,"rad":1,"col":"#754f45","t":"Et av de sjeldneste grunnstoffene i naturen. Radioaktivt.","lk":"mork"},"86":{"mp":-71.0,"bp":-61.7,"d":0.009074,"g":18,"y":1898,"ac":4e-13,"rad":1,"col":"#428296","t":"En radioaktiv edelgass som kan sive inn i hus fra bakken og øke risikoen for lungekreft.","lk":"gass"},"87":{"mp":21.0,"d":1.87,"g":1,"y":1939,"en":0.7,"rad":1,"col":"#420066","t":"Et ekstremt sjeldent og radioaktivt metall.","lk":"solv"},"88":{"mp":696.0,"d":5.0,"g":2,"y":1898,"ac":9e-07,"en":0.9,"rad":1,"col":"#007d00","t":"Radioaktivt metall som lyser svakt i mørket. Oppdaget av Marie og Pierre Curie.","lk":"solv"},"89":{"mp":1050.0,"bp":3200.0,"d":10.0,"g":3,"y":1899,"ac":5.5e-10,"en":1.1,"rad":1,"col":"#70abfa","t":"Radioaktivt metall som har gitt navn til aktinoidene."},"90":{"mp":1750.0,"bp":4785.0,"d":11.7,"y":1828,"ac":9.6,"en":1.3,"rad":1,"col":"#00baff","t":"Radioaktivt metall som kan brukes som brensel i kjernekraftverk."},"91":{"mp":1572.0,"d":15.4,"y":1917,"ac":1.4e-06,"en":1.5,"rad":1,"col":"#00a1ff","t":"Sjeldent og sterkt radioaktivt metall."},"92":{"mp":1135.0,"bp":4131.0,"d":19.1,"y":1789,"ac":2.7,"en":1.7,"rad":1,"col":"#008fff","t":"Brenselet i kjernekraftverk. Kjernene kan spaltes og frigjøre store mengder energi."},"93":{"mp":644.0,"d":20.2,"y":1940,"en":1.3,"rad":1,"col":"#0080ff","t":"Det første grunnstoffet tyngre enn uran som ble laget."},"94":{"mp":640.0,"bp":3228.0,"d":19.7,"y":1940,"en":1.3,"rad":1,"col":"#006bff","t":"Brukes i kjernekraft og i romsonder som energikilde."},"95":{"mp":1176.0,"d":12.0,"y":1945,"rad":1,"col":"#545cf2","t":"Brukes i røykvarslere, i små og ufarlige mengder."},"96":{"mp":1345.0,"d":13.51,"y":1944,"rad":1,"col":"#785ce3","t":"Oppkalt etter Marie og Pierre Curie. Brukes som energikilde i romsonder."},"97":{"mp":986.0,"d":14.78,"y":1949,"rad":1,"col":"#8a4fe3","t":"Laget kunstig i laboratorium. Finnes ikke i naturen."},"98":{"mp":900.0,"d":15.1,"y":1950,"rad":1,"col":"#a136d4","t":"Brukes til å starte kjernereaktorer og til å lete etter olje og gull."},"99":{"mp":860.0,"d":8.84,"y":1952,"rad":1,"col":"#b31fd4","t":"Oppdaget i restene etter en hydrogenbombeprøve i 1952."},"100":{"mp":1527.0,"d":9.7,"y":1953,"rad":1,"col":"#b31fba","t":"Oppkalt etter fysikeren Enrico Fermi. Bare laget i små mengder."},"101":{"mp":827.0,"d":10.3,"y":1955,"rad":1,"col":"#b30da6","t":"Oppkalt etter Dmitrij Mendelejev, som laget periodesystemet."},"102":{"mp":827.0,"d":9.9,"y":1957,"rad":1,"col":"#bd0d87","t":"Oppkalt etter Alfred Nobel. Bare noen få atomer er laget om gangen."},"103":{"mp":1627.0,"d":15.6,"y":1961,"rad":1,"col":"#c70066","t":"Det siste av aktinoidene. Svært ustabilt."},"104":{"d":23.3,"g":4,"y":1969,"rad":1,"col":"#cc0059","t":"Et kunstig grunnstoff. Atomene lever bare noen sekunder."},"105":{"d":29.3,"g":5,"y":1970,"rad":1,"col":"#d1004f","t":"Kunstig laget grunnstoff som forsvinner i løpet av sekunder."},"106":{"d":35.0,"g":6,"y":1974,"rad":1,"col":"#d90045","t":"Oppkalt etter Glenn Seaborg, som var med på å lage mange nye grunnstoffer."},"107":{"d":37.1,"g":7,"y":1976,"rad":1,"col":"#e00038","t":"Oppkalt etter fysikeren Niels Bohr, som forklarte elektronskallene."},"108":{"d":40.7,"g":8,"y":1984,"rad":1,"col":"#e6002e","t":"Kunstig grunnstoff oppkalt etter den tyske delstaten Hessen."},"109":{"d":37.4,"g":9,"y":1982,"rad":1,"col":"#eb0026","t":"Oppkalt etter Lise Meitner, som forklarte kjernespalting."},"110":{"d":34.8,"g":10,"y":1994,"rad":1,"col":null,"t":"Kunstig grunnstoff laget i Darmstadt i Tyskland."},"111":{"d":28.7,"g":11,"y":1994,"rad":1,"col":null,"t":"Oppkalt etter Wilhelm Röntgen, som oppdaget røntgenstråling.","w":"Røntgenium"},"112":{"d":14.0,"g":12,"y":1996,"rad":1,"col":null,"t":"Oppkalt etter astronomen Nikolaus Kopernikus."},"113":{"d":16.0,"g":13,"y":2015,"rad":1,"col":null,"t":"Det første grunnstoffet som ble laget i Japan.","w":"Nihonium"},"114":{"d":9.928,"g":14,"y":1998,"rad":1,"col":null,"t":"Kunstig grunnstoff laget i Russland."},"115":{"d":13.5,"g":15,"y":2003,"rad":1,"col":null,"t":"Kunstig grunnstoff oppkalt etter Moskva.","w":"Moskovium"},"116":{"d":12.9,"g":16,"y":2000,"rad":1,"col":null,"t":"Kunstig grunnstoff oppkalt etter laboratoriet i Livermore i USA.","w":"Livermorium"},"117":{"d":7.2,"g":17,"y":2010,"rad":1,"col":null,"t":"Et av de aller siste grunnstoffene som ble laget, i 2010.","w":"Tenness"},"118":{"d":7.0,"g":18,"y":2002,"rad":1,"col":null,"t":"Det tyngste grunnstoffet som er laget. Bare noen få atomer har eksistert."}};
+
+// ================= Informasjon om grunnstoffet =================
+const GROUP_LABEL = {
+  1: 'alkalimetaller', 2: 'jordalkalimetaller', 13: 'borgruppen', 14: 'karbongruppen',
+  15: 'nitrogengruppen', 16: 'oksygengruppen', 17: 'halogener', 18: 'edelgasser'
+};
+const SERIES_LABEL = { alkali: 'alkalimetall', earth: 'jordalkalimetall', trans: 'overgangsmetall', post: 'metall',
+  metalloid: 'halvmetall', nonmetal: 'ikke-metall', halogen: 'halogen', noble: 'edelgass',
+  lanth: 'lantanoid (sjeldent jordartsmetall)', act: 'aktinoid' };
+const ROOM_T = 20;
+function stateAt(z, t = ROOM_T) {
+  const inf = INFO[z];
+  if (inf.mp === undefined && inf.bp === undefined) return null;
+  if (inf.bp !== undefined && t >= inf.bp) return 'gass';
+  if (inf.mp !== undefined && t < inf.mp) return 'fast';
+  if (inf.mp !== undefined && inf.bp !== undefined) return 'væske';
+  if (inf.mp !== undefined && t >= inf.mp) return 'væske';
+  return 'fast';
+}
+function metalWord(cat) {
+  if (['alkali', 'earth', 'trans', 'post', 'lanth', 'act'].includes(cat)) return 'metall';
+  if (cat === 'metalloid') return 'halvmetall';
+  return 'ikke-metall';
+}
+const fmtT = v => v === undefined ? null : (Math.abs(v) >= 1000 ? Math.round(v) : v).toLocaleString('nb-NO', { maximumFractionDigits: 1 }) + ' °C';
+function groupText(z) {
+  const inf = INFO[z], el = ELEMENTS[z];
+  if (el.cat === 'lanth') return 'Lantanoidene (nederste rad nr. 1)';
+  if (el.cat === 'act') return 'Aktinoidene (nederste rad nr. 2)';
+  if (!inf.g) return 'Ingen gruppe';
+  if (z === 1) return 'Gruppe 1, men hydrogen er ikke et alkalimetall';
+  const name = GROUP_LABEL[inf.g];
+  return `Gruppe ${inf.g}${name ? ' (' + name + ')' : ''}`;
+}
+function abundanceText(z) {
+  const a = INFO[z].ac;
+  if (a === undefined) return 'Finnes ikke naturlig i jordskorpa';
+  if (a >= 10000) return 'Svært vanlig i jordskorpa';
+  if (a >= 100) return 'Vanlig i jordskorpa';
+  if (a >= 1) return 'Ganske vanlig i jordskorpa';
+  if (a >= 0.01) return 'Sjeldent i jordskorpa';
+  return 'Svært sjeldent i jordskorpa';
+}
+const wikiUrl = z => 'https://no.wikipedia.org/wiki/' + encodeURIComponent(INFO[z].w || ELEMENTS[z].name);
+// ---------- Hva finnes i naturen? ----------
+// Ioneladninger som forekommer som enkle ioner i forbindelser, salter, mineraler eller løsninger
+const ION_NAT = {
+  1:[1,-1], 3:[1], 4:[2], 6:[-4], 7:[-3], 8:[-2], 9:[-1], 11:[1], 12:[2], 13:[3], 14:[-4], 15:[-3], 16:[-2], 17:[-1],
+  19:[1], 20:[2], 21:[3], 22:[2,3,4], 23:[2,3,4,5], 24:[2,3], 25:[2,3,4], 26:[2,3], 27:[2,3], 28:[2,3], 29:[1,2], 30:[2],
+  31:[3], 32:[2,4], 33:[-3,3], 34:[-2], 35:[-1], 37:[1], 38:[2], 39:[3], 40:[4], 41:[3,5], 42:[3,4,6], 43:[4,7], 44:[3,4],
+  45:[3], 46:[2,4], 47:[1], 48:[2], 49:[1,3], 50:[2,4], 51:[-3,3], 52:[-2], 53:[-1], 55:[1], 56:[2],
+  72:[4], 73:[5], 74:[4,6], 75:[4,7], 76:[4], 77:[3,4], 78:[2,4], 79:[1,3], 80:[2], 81:[1,3], 82:[2,4], 83:[3],
+  84:[-2,2,4], 85:[-1], 87:[1], 88:[2], 89:[3], 90:[4], 91:[4,5], 92:[3,4,5,6], 93:[3,4,5], 94:[3,4,6], 95:[3], 96:[3],
+  97:[3,4], 98:[3], 99:[3], 100:[3], 101:[2,3], 102:[2,3], 103:[3]
+};
+for (let z = 57; z <= 71; z++) ION_NAT[z] = [3];
+ION_NAT[58] = [3,4]; ION_NAT[62] = [2,3]; ION_NAT[63] = [2,3]; ION_NAT[65] = [3,4]; ION_NAT[70] = [2,3];
+const METASTABLE_ANION = new Set([2, 4]); // He⁻ og Be⁻ er påvist som kortlivede ioner
+
+const YEAR = 3.15576e7;
+const SHELL_NAMES = ['K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+const MAX_SHELLS = 7;
+const MINUS = '\u2212';
+const SUP = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','\u2212':'⁻' };
+const supStr = s => [...s].map(c => SUP[c] || c).join('');
+const shellCap = i => 2 * (i + 1) ** 2;
+const sumArr = a => a.reduce((s, v) => s + v, 0);
+const trimShells = a => { const t = a.slice(); while (t.length && t[t.length - 1] === 0) t.pop(); return t; };
+const capFirst = s => s[0].toUpperCase() + s.slice(1);
+const signed = q => q === 0 ? '0' : (q > 0 ? '+' : MINUS) + Math.abs(q);
+const superCharge = q => q === 0 ? '' : (Math.abs(q) === 1 ? '' : Math.abs(q)) + (q > 0 ? '+' : MINUS);
+const ionWord = q => q === 0 ? 'nøytralt atom' : q > 0 ? 'positivt ion' : 'negativt ion';
+
+function fmtNum(v) { return v.toLocaleString('nb-NO', { maximumSignificantDigits: 3 }); }
+function fmtHalfLife(s) {
+  if (s < 0) return 'ukjent, men ekstremt kort';
+  if (s < 1e-9) return 'under ett nanosekund';
+  const units = [
+    [1e-9, 'nanosekund', 'nanosekunder'], [1e-6, 'mikrosekund', 'mikrosekunder'], [1e-3, 'millisekund', 'millisekunder'],
+    [1, 'sekund', 'sekunder'], [60, 'minutt', 'minutter'], [3600, 'time', 'timer'], [86400, 'døgn', 'døgn'],
+    [YEAR, 'år', 'år'], [1e3 * YEAR, 'tusen år', 'tusen år'], [1e6 * YEAR, 'million år', 'millioner år'], [1e9 * YEAR, 'milliard år', 'milliarder år']
+  ];
+  let u = units[0];
+  for (const cand of units) if (s >= (cand[1] === 'tusen år' ? 1e5 * YEAR : cand[0])) u = cand;
+  const v = s / u[0];
+  return `${fmtNum(v)} ${Number(fmtNum(v).replace(',', '.')) === 1 ? u[1] : u[2]}`;
+}
+
+function assess(Z, n, shellsIn) {
+  const el = ELEMENTS[Z], A = Z + n, name = el.name.toLowerCase(), isoName = `${name}-${A}`;
+  const shells = shellsIn.slice(0, MAX_SHELLS);
+  const reasons = [];
+  // Kjernen
+  const [min, hl, nat] = ISO[Z], max = min + hl.length - 1;
+  if (A < min || A > max) {
+    reasons.push({ lvl: 3, kind: 'nucleus', text: `${capFirst(isoName)} er aldri påvist. Kjente isotoper av ${name} har massetall fra ${min} til ${max}.` });
+  } else {
+    const h = hl[A - min];
+    if (!nat.includes(A)) reasons.push({ lvl: 2, text: `${capFirst(isoName)} finnes ikke i naturen, men er laget i forsøk. Den er radioaktiv med halveringstid ${fmtHalfLife(h)}.` });
+    else if (h < 0 || (h > 0 && h < 1e12 * YEAR)) reasons.push({ lvl: 0, text: `${capFirst(isoName)} finnes i naturen og er radioaktiv, med halveringstid ${fmtHalfLife(h)}.` });
+    else if (h > 0) reasons.push({ lvl: 0, text: `${capFirst(isoName)} finnes i naturen og er så langlivet at den regnes som stabil.` });
+    else reasons.push({ lvl: 0, text: `${capFirst(isoName)} er en stabil isotop som finnes i naturen.` });
+  }
+  // Elektronskallene
+  const e = sumArr(shells), q = Z - e;
+  let electronsImpossible = false;
+  shells.forEach((c, i) => {
+    if (c > shellCap(i)) {
+      electronsImpossible = true;
+      reasons.push({ lvl: 3, kind: 'capacity', text: `${SHELL_NAMES[i]}-skallet har ${c} elektroner, men har bare plass til ${shellCap(i)}.` });
+    }
+  });
+  // Ladningen
+  const ion = el.sym + supStr(superCharge(q));
+  const natural = (ION_NAT[Z] || []).includes(q);
+  if (q > 0) {
+    if (natural) reasons.push({ lvl: 0, text: Z === 1 ? `Ionet H⁺ finnes i naturen, for eksempel i sure løsninger.` : `Ionet ${ion} finnes i naturen, for eksempel i salter og mineraler.` });
+    else reasons.push({ lvl: 2, extreme: true, text: `${e === 0 ? 'Alle elektronene er fjernet. ' : ''}Ionet ${ion} finnes bare i forsøk eller under ekstreme forhold, som i plasma og stjerner.` });
+  } else if (q < 0) {
+    if (natural) reasons.push({ lvl: 0, text: `Ionet ${ion} finnes i naturen, for eksempel i salter og mineraler.` });
+    else if (q === -1 && (EA_POS.has(Z) || METASTABLE_ANION.has(Z))) reasons.push({ lvl: 2, text: `Ionet ${ion} er laget i forsøk, men finnes ikke i naturen.` });
+    else {
+      electronsImpossible = true;
+      reasons.push({ lvl: 3, kind: 'ion', text: `Et ${name}atom kan ikke holde på ${q === -1 ? 'et ekstra elektron' : `${-q} ekstra elektroner`}, så ionet ${ion} kan ikke eksistere.` });
+    }
+  }
+  // Grunntilstand eller eksitert tilstand
+  let ground = null;
+  if (!electronsImpossible) {
+    const g = shellsFor(Z, e), t = trimShells(shells);
+    if (g.length <= MAX_SHELLS && g.join() !== t.join()) {
+      ground = g;
+      reasons.push({ lvl: 1, text: 'Elektronene er ikke fordelt slik de er i grunntilstanden, der atomet har lavest mulig energi. En slik eksitert tilstand varer bare et øyeblikk.' });
+    }
+  }
+  const level = Math.max(...reasons.map(r => r.lvl));
+  let title = ['Finnes i naturen', 'Eksitert tilstand', 'Kun mulig i forsøk', 'Kan ikke eksistere'][level];
+  if (level === 2 && reasons.filter(r => r.lvl === 2).every(r => r.extreme)) title = 'Kun i forsøk eller under ekstreme forhold';
+  reasons.sort((a, b) => b.lvl - a.lvl);
+  return { level, title, reasons, ground, q, e, A };
+}
+// ---------- Størrelse: Slaters regler ----------
+const NSTAR = [0, 1, 2, 3, 3.7, 4.0, 4.2, 4.3];
+function splitShell(n, c) {
+  const caps = [2, n >= 2 ? 6 : 0, n >= 3 ? 10 : 0, n >= 4 ? 14 : 0], o = [];
+  let left = c;
+  for (const cp of caps) { const v = Math.min(cp, left); o.push(v); left -= v; }
+  o[0] += 0; if (left > 0) o[Math.max(...[0, 1, 2, 3].filter(i => caps[i] > 0))] += left;
+  return o; // [s, p, d, f]
+}
+// Grupper i Slaters rekkefølge: (1s)(2s,2p)(3s,3p)(3d)(4s,4p)(4d)(4f)(5s,5p)...
+function slaterGroups(shells) {
+  const g = [];
+  shells.forEach((c, i) => {
+    const n = i + 1, [s, p, d, f] = splitShell(n, c);
+    if (s + p > 0) g.push({ n, t: 0, c: s + p });
+    if (d > 0) g.push({ n, t: 1, c: d });
+    if (f > 0) g.push({ n, t: 2, c: f });
+  });
+  return g;
+}
+function zeff(Z, groups, self) {
+  let S = (self.c - 1) * (self.n === 1 ? 0.30 : 0.35);
+  const order = x => x.n * 10 + x.t;
+  for (const g of groups) {
+    if (g === self || order(g) > order(self)) continue;
+    if (self.t === 0) S += g.n === self.n - 1 ? 0.85 * g.c : g.n <= self.n - 2 ? g.c : (g.n === self.n ? 0.35 * g.c : 0);
+    else S += g.c;
+  }
+  return Math.max(0.3, Z - S);
+}
+// Radius (i bohrradier) for det ytterste skallet
+function outerRadiusBohr(Z, shells) {
+  const t = trimShells(shells), n = t.length;
+  if (!n) return 0;
+  const groups = slaterGroups(t);
+  let r = 0;
+  for (const g of groups.filter(x => x.n === n)) r = Math.max(r, NSTAR[n] ** 2 / zeff(Z, groups, g));
+  return r;
+}
+
+// Kovalente radier i pm (Cordero m.fl.) for nøytrale atomer
+const RAD_PM = [0,31,28,128,96,84,76,71,66,57,58,166,141,121,111,107,105,102,106,203,176,170,160,153,139,139,132,126,124,132,122,122,120,119,120,120,116,220,195,190,175,164,154,147,146,142,139,145,144,142,139,139,138,139,140,244,215,207,204,203,201,199,198,198,196,194,192,192,189,190,187,187,175,170,162,151,144,141,136,136,132,145,146,148,140,150,150,260,221,215,206,200,196,190,187,180,169,168,168,165,167,173,176,161,157,149,143,141,134,129,128,121,122,136,143,162,175,165,157];
+const neutralSlater = [];
+function slaterNeutral(Z) {
+  if (neutralSlater[Z] === undefined) neutralSlater[Z] = outerRadiusBohr(Z, neutralShells(Z)) || 1;
+  return neutralSlater[Z];
+}
+// Tabellverdi for grunnstoffet, justert for ladning og for uvanlige elektronfordelinger
+function drawRadius(Z, shells) {
+  const base = 20 + 8.5 * Math.sqrt(RAD_PM[Z] || 150);
+  const e = sumArr(shells), q = Z - e;
+  if (!e) return base * 0.45;
+  // Positive ioner blir mindre, negative større
+  const chargeF = q >= 0 ? 1 / (1 + 0.42 * q) : 1 + 0.35 * (-q);
+  // Eksiterte og egenbygde fordelinger sammenlignes med den vanlige fordelingen for samme elektrontall
+  const now = outerRadiusBohr(Z, shells), std = outerRadiusBohr(Z, shellsFor(Z, e));
+  const extra = now > 0 && std > 0 ? Math.min(2.2, Math.max(0.6, Math.pow(now / std, 0.62))) : 1;
+  return base * chargeF * extra;
+}
+// ================= Bindinger: regler =================
+const EN = { 1:2.20, 3:0.98, 4:1.57, 5:2.04, 6:2.55, 7:3.04, 8:3.44, 9:3.98, 11:0.93, 12:1.31, 13:1.61, 14:1.90,
+  15:2.19, 16:2.58, 17:3.16, 19:0.82, 20:1.00, 31:1.81, 32:2.01, 33:2.18, 34:2.55, 35:2.96, 37:0.82, 38:0.95,
+  49:1.78, 50:1.96, 51:2.05, 52:2.10, 53:2.66, 55:0.79, 56:0.89, 81:1.62, 82:2.33, 83:2.02, 84:2.00, 85:2.20, 87:0.70, 88:0.90 };
+const METALS = new Set([3,11,19,37,55,87, 4,12,20,38,56,88, 13,31,49,81, 50,82]);
+const NONMETALS = new Set([1, 5,6,14,32, 7,15,33,51, 8,16,34,52, 9,17,35,53,85]);
+// Grupper som kan danne binding i denne modellen: hovedgruppene, uten edelgassene
+function bondKind(Z) {
+  if (METALS.has(Z)) return 'metall';
+  if (NONMETALS.has(Z)) return 'ikkemetall';
+  return null;
+}
+const SUB = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉' };
+const subStr = s => [...String(s)].map(c => SUB[c] || c).join('');
+
+const valenceOf = a => { const t = trimShells(a.shells); return t.length ? t[t.length - 1] : 0; };
+const shellIndexOf = a => Math.max(0, trimShells(a.shells).length - 1);
+// Oktettregelen, duettregelen for K-skallet
+function octetNeed(a) {
+  const t = trimShells(a.shells);
+  const full = t.length <= 1 ? 2 : 8;
+  return Math.max(0, full - valenceOf(a));
+}
+const MOLECULE_NAMES = {
+  'H₂O': 'vann', 'CO₂': 'karbondioksid', 'NH₃': 'ammoniakk', 'CH₄': 'metan', 'O₂': 'oksygen', 'N₂': 'nitrogen',
+  'H₂': 'hydrogen', 'Cl₂': 'klor', 'F₂': 'fluor', 'Br₂': 'brom', 'I₂': 'jod', 'HCl': 'hydrogenklorid',
+  'HF': 'hydrogenfluorid', 'H₂S': 'hydrogensulfid', 'C₂H₆': 'etan', 'C₂H₄': 'eten', 'C₂H₂': 'etyn',
+  'CH₃Cl': 'klormetan', 'CCl₄': 'tetraklormetan', 'PH₃': 'fosfin', 'SiH₄': 'silan',
+  'NaCl': 'natriumklorid', 'KCl': 'kaliumklorid', 'NaF': 'natriumfluorid', 'LiF': 'litiumfluorid',
+  'MgO': 'magnesiumoksid', 'CaO': 'kalsiumoksid', 'MgCl₂': 'magnesiumklorid', 'CaCl₂': 'kalsiumklorid',
+  'Al₂O₃': 'aluminiumoksid', 'Na₂O': 'natriumoksid', 'K₂O': 'kaliumoksid', 'CaF₂': 'kalsiumfluorid',
+  'Li₂O': 'litiumoksid', 'MgS': 'magnesiumsulfid', 'Na₂S': 'natriumsulfid', 'AlCl₃': 'aluminiumklorid',
+  'Mg₃N₂': 'magnesiumnitrid', 'Li₃N': 'litiumnitrid', 'NaH': 'natriumhydrid', 'CaH₂': 'kalsiumhydrid'
+};
+// Rekkefølgen i formler følger IUPAC: metaller først, deretter B, Si, C, Sb, As, P, N, H, Te, Se, S, I, Br, Cl, O, F
+const SEQ = [5, 14, 6, 51, 33, 15, 7, 1, 52, 34, 16, 85, 53, 35, 17, 8, 9];
+function formulaRank(Z) {
+  const i = SEQ.indexOf(Z);
+  return i >= 0 ? i : -100 + (EN[Z] ?? 2.5); // metaller og andre foran
+}
+function formulaOf(list) {
+  const counts = new Map();
+  list.forEach(Z => counts.set(Z, (counts.get(Z) || 0) + 1));
+  let zs = [...counts.keys()].sort((x, y) => formulaRank(x) - formulaRank(y));
+  if (counts.has(6) && counts.has(1)) zs = [6, 1, ...zs.filter(z => z !== 6 && z !== 1).sort((x, y) => ELEMENTS[x].sym.localeCompare(ELEMENTS[y].sym, 'en'))];
+  return zs.map(z => ELEMENTS[z].sym + (counts.get(z) > 1 ? subStr(counts.get(z)) : '')).join('');
+}
+
+// ================= Bindinger: struktur =================
+let bonds = [];
+const bondsOf = id => bonds.filter(b => b.a === id || b.b === id);
+const otherEnd = (b, id) => b.a === id ? b.b : b.a;
+const neighborsOf = id => bondsOf(id).map(b => otherEnd(b, id));
+const bondBetween = (x, y) => bonds.find(b => (b.a === x && b.b === y) || (b.a === y && b.b === x));
+const isBonded = id => bonds.some(b => b.a === id || b.b === id);
+function moleculeIds(id) {
+  const seen = new Set([id]), stack = [id];
+  while (stack.length) for (const nb of neighborsOf(stack.pop())) if (!seen.has(nb)) { seen.add(nb); stack.push(nb); }
+  return [...seen];
+}
+function allMolecules() {
+  const seen = new Set(), out = [];
+  for (const a of atoms) {
+    if (seen.has(a.id)) continue;
+    const ids = moleculeIds(a.id);
+    ids.forEach(i => seen.add(i));
+    if (ids.length > 1) out.push(ids);
+  }
+  return out;
+}
+// Hvor mange bindinger atomet har igjen etter oktettregelen
+function freeBonds(a) {
+  const used = bondsOf(a.id).filter(b => b.type === 'kovalent').reduce((s, b) => s + b.order, 0);
+  return Math.max(0, octetNeed(a) - used);
+}
+const usedBonds = a => bondsOf(a.id).filter(b => b.type === 'kovalent').reduce((s, b) => s + b.order, 0);
+const loneElectrons = a => Math.max(0, valenceOf(a) - usedBonds(a));
+function groupSlots(a) {
+  const nb = bondsOf(a.id).length;
+  return Math.max(1, nb + Math.ceil(loneElectrons(a) / 2));
+}
+const outerR = a => { const g = a.geo || geometry(a.Z, a.n, a.shells); return g.radii.length ? g.radii[g.radii.length - 1] : g.R; };
+function bondDistance(A, B, bond) {
+  const ra = outerR(A), rb = outerR(B);
+  if (bond.type === 'ionisk') return ra + rb + 16;
+  const ov = Math.min(ra, rb) * [0, 0.5, 0.62, 0.72][bond.order];
+  return Math.max(ra + rb - ov, (A.geo ? A.geo.R : 12) + (B.geo ? B.geo.R : 12) + 16, Math.max(ra, rb) * 0.75);
+}
+
+// Hva skjer hvis disse to dras sammen?
+function proposeBond(A, B) {
+  const ka = bondKind(A.Z), kb = bondKind(B.Z);
+  const qa = A.Z - sumArr(A.shells), qb = B.Z - sumArr(B.shells);
+  if (qa * qb < 0) return { type: 'ionisk', transfer: 0 };            // ferdige ioner med motsatt ladning
+  if (qa && qb && qa * qb > 0) return { why: `Begge har ${qa > 0 ? 'positiv' : 'negativ'} ladning, så de støter hverandre fra seg.` };
+  if (!ka || !kb) return { why: 'Bare hovedgruppene danner bindinger i denne modellen. Overgangsmetaller, lantanoider, aktinoider og edelgasser gjør det ikke.' };
+  if (ka === 'metall' && kb === 'metall') return { why: 'To metaller danner metallbinding, som ikke er med i denne modellen.' };
+  if (ka === 'ikkemetall' && kb === 'ikkemetall') {
+    const fa = freeBonds(A), fb = freeBonds(B);
+    if (!fa || !fb) return { why: `${!fa ? ELEMENTS[A.Z].name : ELEMENTS[B.Z].name} har allerede fullt ytterskall og kan ikke danne flere bindinger.` };
+    return { type: 'kovalent', order: Math.min(fa, fb, 3) };
+  }
+  const metal = ka === 'metall' ? A : B, nm = ka === 'metall' ? B : A;
+  const give = valenceOf(metal), take = octetNeed(nm);
+  if (!give) return { why: `${ELEMENTS[metal.Z].name} har ingen elektroner igjen i ytterskallet å gi bort.` };
+  if (!take) return { why: `${ELEMENTS[nm.Z].name} har allerede fullt ytterskall og kan ikke ta imot flere elektroner.` };
+  return { type: 'ionisk', transfer: Math.min(give, take), from: metal.id, to: nm.id };
+}
+// ================= Bindinger: plassering og tegning =================
+const TWO_PI = Math.PI * 2;
+const angDiff = (a, b) => { let d = (a - b) % TWO_PI; if (d > Math.PI) d -= TWO_PI; if (d < -Math.PI) d += TWO_PI; return d; };
+const dirTo = (from, to) => Math.atan2(to.y - from.y, to.x - from.x);
+
+// Elektronparene fordeles jevnt rundt atomet. Basen velges slik at bindingene
+// treffer så nær sine nåværende retninger som mulig.
+function chooseBase(slots, fixedDir, dirs) {
+  const step = TWO_PI / slots;
+  const cands = [];
+  if (fixedDir !== null) for (let j = 0; j < slots; j++) cands.push(fixedDir - j * step);
+  else if (dirs.length) for (let j = 0; j < slots; j++) cands.push(dirs[0] - j * step);
+  else cands.push(-Math.PI / 2);
+  let best = cands[0], bestScore = Infinity;
+  for (const base of cands) {
+    let score = 0;
+    for (const d of dirs) {
+      let m = Infinity;
+      for (let i = 0; i < slots; i++) m = Math.min(m, Math.abs(angDiff(d, base + i * step)));
+      score += m * m;
+    }
+    if (score < bestScore) { bestScore = score; best = base; }
+  }
+  return best;
+}
+const ionicOnly = a => { const bs = bondsOf(a.id); return bs.length > 0 && bs.every(b => b.type === 'ionisk'); };
+function slotAngles(a, fixedDir) {
+  // Ioner pakkes rundt hverandre som i et saltgitter, uten hensyn til ensomme par
+  const slots = ionicOnly(a) ? Math.max(1, bondsOf(a.id).length) : groupSlots(a);
+  const nbDirs = neighborsOf(a.id).map(id => dirTo(a, atomById(id)));
+  const base = chooseBase(slots, fixedDir === undefined ? null : fixedDir, nbDirs);
+  const out = [];
+  for (let i = 0; i < slots; i++) out.push(base + i * TWO_PI / slots);
+  return out;
+}
+function takeSlot(angles, used, dir) {
+  let best = -1, bestD = Infinity;
+  angles.forEach((ang, i) => {
+    if (used.has(i)) return;
+    const d = Math.abs(angDiff(ang, dir));
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  if (best < 0) best = angles.length - 1;
+  used.add(best);
+  return angles[best];
+}
+
+// Plasserer alle atomene i molekylet ut fra ankeratomet, som blir liggende i ro
+function layoutMolecule(anchorId) {
+  const ids = moleculeIds(anchorId);
+  if (ids.length < 2) return;
+  ids.forEach(id => ensureGeo(atomById(id)));
+  const done = new Set([anchorId]);
+  const queue = [[anchorId, null]];
+  while (queue.length) {
+    const [uid, parentId] = queue.shift();
+    const u = atomById(uid);
+    const kids = neighborsOf(uid).filter(id => id !== parentId && !done.has(id));
+    const fixed = parentId === null ? undefined : dirTo(u, atomById(parentId));
+    const angles = slotAngles(u, fixed);
+    const used = new Set();
+    if (parentId !== null) takeSlot(angles, used, fixed);
+    for (const kidId of kids) {
+      const v = atomById(kidId), bond = bondBetween(uid, kidId);
+      const ang = takeSlot(angles, used, dirTo(u, v));
+      const d = bondDistance(u, v, bond);
+      v.x = u.x + d * Math.cos(ang); v.y = u.y + d * Math.sin(ang);
+      done.add(kidId);
+      queue.push([kidId, uid]);
+    }
+  }
+}
+
+// Vinklene til atomets egne ytterelektroner (ensomme par i ledige plasser)
+function ownOuterAngles(a) {
+  const lone = loneElectrons(a);
+  if (!isBonded(a.id) || ionicOnly(a)) return null;
+  const angles = slotAngles(a);
+  const used = new Set();
+  neighborsOf(a.id).forEach(id => takeSlot(angles, used, dirTo(a, atomById(id))));
+  const free = angles.filter((_, i) => !used.has(i));
+  const out = [];
+  const spread = 0.30;
+  for (let i = 0, k = 0; i < free.length && k < lone; i++) {
+    if (lone - k >= 2) { out.push(free[i] - spread, free[i] + spread); k += 2; }
+    else { out.push(free[i]); k += 1; }
+  }
+  while (out.length < lone) out.push(angles[out.length % angles.length]);
+  return out;
+}
+// ================= Tegning av bindinger =================
+function renderBonds() {
+  let layer = $('bondsLayer');
+  let s = '';
+  for (const bond of bonds) {
+    const A = atomById(bond.a), B = atomById(bond.b);
+    if (!A || !B) continue;
+    ensureGeo(A); ensureGeo(B);
+    const ra = outerR(A), rb = outerR(B);
+    const dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy) || 1;
+    const ux = dx / d, uy = dy / d, vx = -uy, vy = ux;
+    const re = Math.min(A.geo.re, B.geo.re);
+    if (bond.type === 'ionisk') {
+      const x1 = A.x + ux * ra, y1 = A.y + uy * ra, x2 = B.x - ux * rb, y2 = B.y - uy * rb;
+      s += `<line class="ionic-link" x1="${f2(x1)}" y1="${f2(y1)}" x2="${f2(x2)}" y2="${f2(y2)}"/>`;
+      s += `<line class="bond-hit" data-bond="${bond.id}" x1="${f2(A.x)}" y1="${f2(A.y)}" x2="${f2(B.x)}" y2="${f2(B.y)}" stroke-width="${f2(Math.max(20, re * 3))}"/>`;
+      continue;
+    }
+    // Linsen der de to ytterskallene overlapper
+    const x = (d * d + ra * ra - rb * rb) / (2 * d);
+    const h = Math.sqrt(Math.max(4, ra * ra - x * x));
+    const px = A.x + ux * x, py = A.y + uy * x;
+    const offs = bond.order === 1 ? [0] : bond.order === 2 ? [-0.45, 0.45] : [-0.66, 0, 0.66];
+    const step = Math.min(h * 0.62, re * 3.2);
+    const gapAlong = Math.min(re * 1.45, Math.max(4, (d - Math.max(0, x) ) * 0.2 + re));
+    for (const o of offs) {
+      const cx = px + vx * o * step * 1.35, cy = py + vy * o * step * 1.35;
+      s += `<g class="pair">`;
+      s += electronAt(cx - ux * gapAlong, cy - uy * gapAlong, re, originTint(A));
+      s += electronAt(cx + ux * gapAlong, cy + uy * gapAlong, re, originTint(B));
+      s += `</g>`;
+    }
+    s += `<line class="bond-hit" data-bond="${bond.id}" x1="${f2(px - vx * h)}" y1="${f2(py - vy * h)}" x2="${f2(px + vx * h)}" y2="${f2(py + vy * h)}" stroke-width="${f2(Math.max(18, re * 3.4))}"><title>Klikk for å endre til enkelt-, dobbelt- eller trippelbinding</title></line>`;
+  }
+  // Navn og formel under hvert molekyl
+  for (const ids of allMolecules()) {
+    const list = ids.map(atomById);
+    const formula = formulaOf(list.map(a => a.Z));
+    const ionic = ids.some(id => bondsOf(id).some(b => b.type === 'ionisk'));
+    const name = MOLECULE_NAMES[formula];
+    const x1 = Math.min(...list.map(a => a.x - outerR(a))), x2 = Math.max(...list.map(a => a.x + outerR(a)));
+    let bottom = Math.max(...list.map(a => a.y + (a.box ? a.box.bottom - 60 : outerR(a) + 40)));
+    const cx = (x1 + x2) / 2, size = Math.max(20, Math.min(46, (x2 - x1) / 9));
+    s += `<text class="lt b mol" x="${f2(cx)}" y="${f2(bottom + size)}" font-size="${f2(size)}" text-anchor="middle">${formula}</text>`;
+    const missing = list.filter(a => bondsOf(a.id).some(b => b.type === 'kovalent') && freeBonds(a) > 0);
+    const parts = [];
+    if (missing.length) parts.push('ikke ferdig: ' + [...new Set(missing.map(a => ELEMENTS[a.Z].name.toLowerCase()))].join(' og ') + ' mangler elektroner i ytterskallet');
+    else if (name) parts.push(name);
+    if (ionic) parts.push('ionebinding');
+    const sub = parts.join(' · ');
+    if (sub) s += `<text class="lt soft" x="${f2(cx)}" y="${f2(bottom + size * 1.85)}" font-size="${f2(size * 0.55)}" text-anchor="middle">${sub}</text>`;
+  }
+  layer.innerHTML = s;
+}
+
+// Klikk på en binding endrer bindingsorden
+function cycleBond(bond) {
+  if (bond.type !== 'kovalent') { toast('Ionebindingen holdes sammen av motsatt ladning, og har ikke enkelt-, dobbelt- eller trippelbinding.'); return; }
+  const A = atomById(bond.a), B = atomById(bond.b);
+  const maxOrder = Math.min(3, bond.order + Math.min(freeBonds(A), freeBonds(B)));
+  const next = bond.order >= maxOrder ? 1 : bond.order + 1;
+  if (next === bond.order) { toast('Atomene har ikke plass til flere delte elektronpar.'); return; }
+  bond.order = next;
+  layoutMolecule(bond.a);
+  moleculeIds(bond.a).forEach(id => renderAtom(atomById(id)));
+  renderBonds();
+  const word = ['', 'enkeltbinding', 'dobbeltbinding', 'trippelbinding'][next];
+  toast(`Endret til ${word}.`);
+}
+
+// ================= Danne bindinger =================
+function tryBond(movedIds) {
+  const moved = new Set(movedIds);
+  let best = null;
+  for (const A of atoms) {
+    if (!moved.has(A.id)) continue;
+    for (const B of atoms) {
+      if (moved.has(B.id) || bondBetween(A.id, B.id)) continue;
+      ensureGeo(A); ensureGeo(B);
+      const d = Math.hypot(B.x - A.x, B.y - A.y);
+      const reach = (outerR(A) + outerR(B)) * 1.06;
+      if (d < reach && (!best || d - reach < best.slack)) best = { A, B, slack: d - reach };
+    }
+  }
+  if (!best) return;
+  const { A, B } = best;
+  const plan = proposeBond(A, B);
+  if (plan.why) { toast(plan.why); return; }
+  const bond = { id: nextBondId++, a: A.id, b: B.id, order: plan.order || 0, type: plan.type };
+  bonds.push(bond);
+  layoutMolecule(B.id);
+  moleculeIds(B.id).forEach(id => renderAtom(atomById(id)));
+  renderBonds();
+  if (plan.type === 'ionisk' && plan.transfer) transferElectrons(plan.from, plan.to, plan.transfer);
+  else if (plan.type === 'kovalent') toast(`${['', 'Enkeltbinding', 'Dobbeltbinding', 'Trippelbinding'][bond.order]} dannet. Klikk på bindingen for å endre den.`);
+  else toast('Ionene trekkes mot hverandre fordi de har motsatt ladning.');
+  refreshMeta();
+}
+
+// Elektronene hopper fra metallet til ikke-metallet
+function transferElectrons(fromId, toId, count) {
+  const from = atomById(fromId), to = atomById(toId);
+  const rFrom = outerR(from), rTo = outerR(to);
+  const dir = dirTo(from, to), back = dir + Math.PI;
+  const layer = $('flyLayer');
+  const starts = [], ends = [];
+  for (let i = 0; i < count; i++) {
+    const a1 = back + (i - (count - 1) / 2) * 0.5, a2 = dir + Math.PI + (i - (count - 1) / 2) * 0.5;
+    starts.push([from.x + rFrom * Math.cos(a1), from.y + rFrom * Math.sin(a1)]);
+    ends.push([to.x + rTo * Math.cos(a2), to.y + rTo * Math.sin(a2)]);
+  }
+  const finish = () => {
+    layer.innerHTML = '';
+    const fi = shellIndexOf(from), ti = shellIndexOf(to);
+    from.shells[fi] = Math.max(0, from.shells[fi] - count);
+    to.shells[ti] += count;
+    if (from.shells[fi] === 0 && fi > 0) from.shells[fi] = 0;
+    to.gained = (to.gained || 0) + count; to.gainedFrom = from.tint;
+    layoutMolecule(toId);
+    moleculeIds(toId).forEach(id => renderAtom(atomById(id)));
+    renderBonds();
+    if (selectedId === fromId || selectedId === toId) select(selectedId);
+    refreshMeta();
+    const qf = from.Z - sumArr(from.shells), qt = to.Z - sumArr(to.shells);
+    toast(`${ELEMENTS[from.Z].name} ga fra seg ${count === 1 ? 'ett elektron' : count + ' elektroner'} og ble ${ELEMENTS[from.Z].sym}${supStr(superCharge(qf))}. ${ELEMENTS[to.Z].name} ble ${ELEMENTS[to.Z].sym}${supStr(superCharge(qt))}.`);
+  };
+  if (reduceMotion.matches) { finish(); return; }
+  layer.innerHTML = starts.map((p, i) => `<g class="fly">${electronAt(p[0], p[1], Math.min(from.geo.re, to.geo.re) * 1.15, originTint(from))}</g>`).join('');
+  const nodes = [...layer.querySelectorAll('.fly')];
+  const t0 = performance.now(), dur = 750;
+  const step = now => {
+    const t = Math.min(1, (now - t0) / dur), e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    nodes.forEach((g, i) => {
+      const x = starts[i][0] + (ends[i][0] - starts[i][0]) * e, y = starts[i][1] + (ends[i][1] - starts[i][1]) * e;
+      const lift = Math.sin(e * Math.PI) * 26;
+      g.setAttribute('transform', `translate(${f2(x - starts[i][0])} ${f2(y - starts[i][1] - lift)})`);
+    });
+    if (t < 1) requestAnimationFrame(step); else finish();
+  };
+  requestAnimationFrame(step);
+}
+
+function detachAtom(id) {
+  const others = neighborsOf(id);
+  if (!others.length) return;
+  bonds = bonds.filter(b => b.a !== id && b.b !== id);
+  const a = atomById(id);
+  const away = others.length ? dirTo(atomById(others[0]), a) : 0;
+  a.x += Math.cos(away) * outerR(a) * 0.9; a.y += Math.sin(away) * outerR(a) * 0.9;
+  others.forEach(o => { if (atomById(o)) layoutMolecule(o); });
+  [id, ...others].forEach(i => { const at = atomById(i); if (at) moleculeIds(i).forEach(j => renderAtom(atomById(j))); });
+  renderBonds();
+  if (selectedId === id) select(id);
+  toast('Atomet er løsnet. Ioner beholder ladningen sin, slik de gjør når et salt løses i vann.');
+}
+
+let toastTimer = null;
+function toast(msg, action) {
+  const el = $('toast');
+  el.textContent = msg; el.hidden = false;
+  if (action) {
+    const btn = document.createElement('button');
+    btn.className = 'btn toast-btn'; btn.textContent = action.label;
+    btn.addEventListener('click', () => { el.hidden = true; action.run(); });
+    el.appendChild(btn);
+  }
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, action ? 20000 : 6000);
+}
+// ================= Tegning av skallmodeller =================
+const NS = 'http://www.w3.org/2000/svg';
+const RP = 10, RE = 6.5, C = 10.2, GOLDEN = Math.PI * (3 - Math.sqrt(5));
+const MAX_ATOMS = 40;
+const f2 = v => +v.toFixed(2);
+const $ = id => document.getElementById(id);
+
+function hash01(a) {
+  a |= 0; a ^= a >>> 16; a = Math.imul(a, 0x7feb352d); a ^= a >>> 15; a = Math.imul(a, 0x846ca68b); a ^= a >>> 16;
+  return (a >>> 0) / 4294967296;
+}
+// Kjernepartikler plassert for partikkelradius 10; skaleres ved tegning
+const nucleusCache = new Map();
+function nucleusUnit(Z, n) {
+  const key = Z + ':' + n;
+  if (nucleusCache.has(key)) return nucleusCache.get(key);
+  const N = Z + n, keys = [];
+  for (let i = 0; i < N; i++) keys.push([hash01(Z * 100003 + i * 7919), i]);
+  keys.sort((a, b) => a[0] - b[0]);
+  const isP = new Array(N).fill(false);
+  for (let k = 0; k < Z; k++) isP[keys[k][1]] = true;
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    const r = N === 1 ? 0 : C * Math.sqrt(i + 0.5), a = i * GOLDEN;
+    pts.push({ x: r * Math.cos(a), y: r * Math.sin(a), p: isP[i] });
+  }
+  const mx = pts.reduce((t, q) => t + q.x, 0) / N, my = pts.reduce((t, q) => t + q.y, 0) / N;
+  pts.forEach(q => { q.x -= mx; q.y -= my; });
+  const res = { pts, R10: N <= 1 ? RP : C * Math.sqrt(N - 0.5) + RP };
+  nucleusCache.set(key, res);
+  return res;
+}
+const nucleusRadius = (N, ps) => N <= 1 ? ps : ps * (C / RP) * Math.sqrt(N - 0.5) + ps;
+
+// Geometri: ytterskallets radius følger Slaters regler, kjernen og de indre skallene tilpasses innenfor
+function geometry(Z, n, shellsIn) {
+  const shells = trimShells(shellsIn), m = shells.length, N = Z + n;
+  const { R10 } = nucleusUnit(Z, n);
+  if (!m) return { m, ps: RP, R: R10, radii: [], re: RE, outer: R10 };
+  const firstGap = 12, minSp = 14;
+  let rout = Math.min(560, drawRadius(Z, shells));
+  rout = Math.max(rout, 16 + firstGap + (m - 1) * minSp);
+  const avail = rout - firstGap - (m - 1) * minSp;
+  const R = Math.min(R10, rout * 0.45, avail);
+  const ps = Math.min(RP, N <= 1 ? R : R / ((C / RP) * Math.sqrt(N - 0.5) + 1));
+  const Rn = nucleusRadius(N, ps);
+  const radii = m === 1 ? [rout] : shells.map((_, k) => Rn + firstGap + (rout - Rn - firstGap) * k / (m - 1));
+  const spacing = m === 1 ? rout - Rn : (rout - Rn - firstGap) / (m - 1);
+  let re = Math.min(RE, spacing * 0.42);
+  shells.forEach((c, k) => { if (c) re = Math.min(re, 2 * Math.PI * radii[k] / (c * 2.4)); });
+  re = Math.max(2.2, re);
+  return { m, ps, R: Rn, radii, re, outer: rout + re };
+}
+function lerpGeometry(a, b, t) {
+  const radii = b.radii.map((r, k) => {
+    const from = k < a.radii.length ? a.radii[k] : (a.radii.length ? a.radii[a.radii.length - 1] : a.R);
+    return from + (r - from) * t;
+  });
+  const ps = a.ps + (b.ps - a.ps) * t, re = a.re + (b.re - a.re) * t;
+  return { m: b.m, ps, re, radii, R: a.R + (b.R - a.R) * t, outer: a.outer + (b.outer - a.outer) * t };
+}
+
+function electronAt(x, y, re, tint = '') {
+  return `<g class="e" transform="translate(${f2(x)} ${f2(y)}) scale(${f2(re / RE)})"><circle class="edge" r="${RE}" fill="${tint || 'url(#gE)'}"/><path class="sg" d="M-3.3 0H3.3"/></g>`;
+}
+// Egen farge per atom når «Vis hvor elektronene kommer fra» er på
+const ORIGIN_COLORS = ['#1e66d8', '#00897b', '#c2185b', '#f57c00', '#5e35b1', '#00838f', '#7cb342', '#d81b60'];
+const originTint = a => opts.origin ? ORIGIN_COLORS[(a.tint ?? 0) % ORIGIN_COLORS.length] : '';
+function ringElectrons(r, cnt, re, base = null, tintAt = () => '') {
+  let s = '';
+  for (let j = 0; j < cnt; j++) {
+    const a = (base === null ? Math.PI + Math.PI / cnt : base) + (2 * Math.PI * j) / cnt;
+    s += electronAt(r * Math.cos(a), r * Math.sin(a), re, tintAt(j));
+  }
+  return s;
+}
+function anglesToElectrons(r, angles, re, tintAt) {
+  return angles.map((a, j) => electronAt(r * Math.cos(a), r * Math.sin(a), re, tintAt(j))).join('');
+}
+const sup = n => supStr(String(n));
+const SUBSHELL = ['s', 'p', 'd', 'f'];
+function valenceText(shells) {
+  const t = trimShells(shells), n = t.length; if (!n) return '';
+  const parts = splitShell(n, t[n - 1]);
+  return parts.map((c, i) => c ? `${n}${SUBSHELL[i]}${sup(c)}` : '').filter(Boolean).join(' ');
+}
+
+// Orbitalformer for ytterskallet: s som kule, p som tre hantler (den tredje i perspektiv)
+function orbitalMarkup(shells, geo) {
+  const t = trimShells(shells), n = t.length;
+  const ro = geo.radii[n - 1], [s, p, d, f] = splitShell(n, t[n - 1]);
+  let back = '', els = '';
+  if (s) back += `<circle class="orb-s" r="${f2(ro)}"/>`;
+  const occ = [0, 0, 0];
+  for (let i = 0; i < p; i++) occ[i % 3]++;
+  const axes = [
+    { key: 2, ang: -35, len: ro * 0.72, ry: ro * 0.16 },
+    { key: 0, ang: 0, len: ro, ry: ro * 0.21 },
+    { key: 1, ang: 90, len: ro, ry: ro * 0.21 }
+  ];
+  if (p) axes.forEach(ax => {
+    const o = occ[ax.key], cls = o ? 'orb-p' : 'orb-p empty';
+    back += `<g transform="rotate(${ax.ang})"><ellipse class="${cls}" cx="${f2(ax.len / 2)}" rx="${f2(ax.len / 2)}" ry="${f2(ax.ry)}"/><ellipse class="${cls}" cx="${f2(-ax.len / 2)}" rx="${f2(ax.len / 2)}" ry="${f2(ax.ry)}"/></g>`;
+    const rad = ax.ang * Math.PI / 180, dist = ax.len * 0.62;
+    const sign = ax.key === 1 ? -1 : 1; // py: første elektron i øvre lapp
+    if (o >= 1) els += electronAt(sign * dist * Math.cos(rad), sign * dist * Math.sin(rad), geo.re);
+    if (o >= 2) els += electronAt(-sign * dist * Math.cos(rad), -sign * dist * Math.sin(rad), geo.re);
+  });
+  const sPos = [[-0.57, -0.57], [0.57, 0.57]];
+  for (let i = 0; i < s; i++) els += electronAt(sPos[i][0] * ro, sPos[i][1] * ro, geo.re);
+  if (d + f) els += ringElectrons(ro, d + f, geo.re);
+  return { back, front: `<circle class="ring faded" r="${f2(ro)}"/>` + els, hidden: d + f };
+}
+
+// Tegner kjerne, skall og elektroner rundt (0,0)
+function modelMarkup(Z, n, shellsIn, o, geo, outerAngles = null, tints = null, innerBase = null) {
+  // tints: { own, gained, gainedCount } — elektroner som er mottatt fra et annet atom får giverens farge
+  const own = tints ? tints.own : '';
+  const outerTint = j => {
+    if (!tints || !tints.gained || !tints.gainedCount) return own;
+    const cnt = trimShells(shellsIn).slice(-1)[0] || 0;
+    return j >= cnt - tints.gainedCount ? tints.gained : own;
+  };
+  const shells = trimShells(shellsIn), m = shells.length;
+  geo = geo || geometry(Z, n, shells);
+  const { pts } = nucleusUnit(Z, n), k = geo.ps / RP;
+  const orb = o.orbitals && m && !outerAngles ? orbitalMarkup(shells, geo) : null;
+  let s = orb ? orb.back + '<g class="inner-dim">' : '';
+  geo.radii.forEach((r, i) => {
+    if (o.outerOnly && i < m - 1) return;
+    if (orb && i === m - 1) return;
+    const cls = shells[i] === 0 ? ' empty' : shells[i] > shellCap(i) ? ' over' : '';
+    s += `<circle class="ring${cls}" r="${f2(r)}"/>`;
+  });
+  if (orb) s += '</g>';
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const q = pts[i], x = f2(q.x * k), y = f2(q.y * k);
+    if (q.p) s += `<g class="p" transform="translate(${x} ${y}) scale(${f2(k)})"><circle class="edge" r="${RP}" fill="url(#gP)"/><path class="sg" d="M-4.6 0H4.6M0 -4.6V4.6"/></g>`;
+    else s += `<circle class="edge" cx="${x}" cy="${y}" r="${f2(RP * k)}" fill="url(#gN)"/>`;
+  }
+  if (orb) s += '<g class="inner-dim">';
+  shells.forEach((cnt, i) => {
+    if (o.outerOnly && i < m - 1) return;
+    if (orb && i === m - 1) return;
+    const tintAt = i === m - 1 ? outerTint : () => own;
+    if (outerAngles && i === m - 1) s += anglesToElectrons(geo.radii[i], outerAngles, geo.re, tintAt);
+    else s += ringElectrons(geo.radii[i], cnt, geo.re, orb ? -62.5 * Math.PI / 180 : (i < m - 1 ? innerBase : null), tintAt);
+  });
+  if (orb) s += '</g>' + orb.front;
+  if (o.shells) {
+    const size = f2(Math.min(20, Math.max(11, geo.outer / 14)));
+    geo.radii.forEach((r, i) => {
+      if (o.outerOnly && i < m - 1) return;
+      s += `<text class="shl" x="${f2(-r)}" y="0" font-size="${size}">${SHELL_NAMES[i]}</text>`;
+    });
+  }
+  return { markup: s, outer: geo.outer, geo, hiddenOrbitals: orb ? orb.hidden : 0 };
+}
+function nuclideHTML(Z, A, q) {
+  return `<span class="nums"><span>${A}</span><span>${Z}</span></span><span class="sym">${ELEMENTS[Z].sym}</span><span class="q">${superCharge(q)}</span>`;
+}
+function statusHTML(as, withGroundButton) {
+  const items = as.reasons.map(r => `<li class="${r.lvl === 0 ? 'info' : ''}">${r.text}</li>`).join('');
+  const btn = withGroundButton && as.ground ? '<button class="linkbtn" data-ground>Vis grunntilstanden</button>' : '';
+  return `<strong>${as.title}</strong><ul>${items}</ul>${btn}`;
+}
+function signClasses(el, ps, re, scale) {
+  el.classList.toggle('no-psign', ps * scale < 4.6);
+  el.classList.toggle('no-esign', re * scale < 3.7);
+}
+
+// ================= Felles redigering (byggeren og valgt atom) =================
+function createEditor(root, { protonsEditable, blockCheck = null }) {
+  const one = { p: 'ett proton', n: 'ett nøytron', e: 'ett elektron' };
+  const stepper = (k, label) => `<span class="stepper"><button type="button" data-k="${k}" data-d="-1" aria-label="Fjern ${one[k]}">${MINUS}</button><input type="number" inputmode="numeric" data-k="${k}" aria-label="Antall ${label}"><button type="button" data-k="${k}" data-d="1" aria-label="Legg til ${one[k]}">+</button></span>`;
+  root.innerHTML = `
+    <div class="erow"><span class="elbl"><i class="dot p"></i>Protoner</span>${protonsEditable ? stepper('p', 'protoner') : '<span class="val e-p count-only"></span>'}</div>
+    <div class="erow"><span class="elbl"><i class="dot n"></i>Nøytroner</span>${stepper('n', 'nøytroner')}</div>
+    <div class="erow count-only"><span class="elbl">Massetall</span><span class="val e-a"></span></div>
+    <div class="esub"><span class="elbl"><i class="dot e"></i>Elektroner i skallene</span><span class="etotal"></span></div>`;
+  const blockNote = document.createElement('div');
+  blockNote.className = 'eblock'; blockNote.hidden = true;
+  let lockedNote = '';
+  let state = null, listener = () => {};
+  const rows = [];
+  function ensureRows(count) {
+    while (rows.length < count) {
+      const i = rows.length, row = document.createElement('div');
+      row.className = 'erow shell';
+      row.innerHTML = `<span class="elbl"><b>${SHELL_NAMES[i]}</b><small>skall ${i + 1} · plass til ${shellCap(i)}</small></span><span class="stepper"><button type="button" data-k="s" data-i="${i}" data-d="-1" aria-label="Fjern ett elektron fra ${SHELL_NAMES[i]}-skallet">${MINUS}</button><span class="val"></span><button type="button" data-k="s" data-i="${i}" data-d="1" aria-label="Legg til ett elektron i ${SHELL_NAMES[i]}-skallet">+</button></span>`;
+      root.insertBefore(row, blockNote.parentNode ? blockNote : null); rows.push(row);
+    }
+    rows.forEach((r, i) => { r.hidden = i >= count; });
+  }
+  function clampState() {
+    state.Z = Math.max(1, Math.min(118, state.Z | 0));
+    state.n = Math.max(0, Math.min(250, state.n | 0));
+    state.shells = state.shells.map((c, i) => Math.max(0, Math.min(shellCap(i) + 4, c | 0)));
+  }
+  function render() {
+    const t = trimShells(state.shells);
+    ensureRows(Math.min(MAX_SHELLS, Math.max(2, t.length + 1)));
+    root.querySelectorAll('input[data-k]').forEach(inp => {
+      const v = inp.dataset.k === 'p' ? state.Z : state.n;
+      if (document.activeElement !== inp || +inp.value !== v) inp.value = v;
+    });
+    const pv = root.querySelector('.e-p'); if (pv) pv.textContent = state.Z;
+    root.querySelector('.e-a').textContent = state.Z + state.n;
+    root.querySelector('.etotal').textContent = `${sumArr(state.shells)} totalt`;
+    root.querySelectorAll('button[data-k="p"][data-d="-1"]').forEach(b => b.disabled = state.Z <= 1);
+    root.querySelectorAll('button[data-k="p"][data-d="1"]').forEach(b => b.disabled = state.Z >= 118);
+    root.querySelector('button[data-k="n"][data-d="-1"]').disabled = state.n <= 0;
+    root.querySelector('button[data-k="n"][data-d="1"]').disabled = state.n >= 250;
+    rows.forEach((row, i) => {
+      const c = state.shells[i] || 0;
+      row.querySelector('.val').textContent = c;
+      row.classList.toggle('over', c > shellCap(i));
+      row.querySelector('[data-d="-1"]').disabled = c <= 0;
+      row.querySelector('[data-d="1"]').disabled = c >= shellCap(i) + 4;
+    });
+    if (lockedNote) {
+      root.querySelectorAll('.erow.shell button').forEach(b => b.disabled = true);
+      blockNote.hidden = false; blockNote.innerHTML = lockedNote;
+    } else if (blockCheck) {
+      const reasons = new Set();
+      root.querySelectorAll('button[data-k]').forEach(b => {
+        if (b.disabled || (b.closest('.erow') && b.closest('.erow').hidden)) return;
+        const t = { Z: state.Z, n: state.n, shells: state.shells.slice() }, d = +b.dataset.d;
+        if (b.dataset.k === 'n') t.n += d; else if (b.dataset.k === 's') t.shells[+b.dataset.i] += d; else t.Z += d;
+        const why = blockCheck(t);
+        if (why) { b.disabled = true; reasons.add(why); }
+      });
+      blockNote.hidden = !reasons.size;
+      blockNote.innerHTML = reasons.size ? `<strong>Noen knapper er sperret</strong>, fordi atomet da ikke kunne eksistert:<ul>${[...reasons].slice(0, 4).map(r => `<li>${r}</li>`).join('')}</ul>` : '';
+    }
+  }
+  root.addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-k]'); if (!b || !state) return;
+    if (lockedNote && b.dataset.k === 's') return;
+    const d = +b.dataset.d, k = b.dataset.k;
+    if (k === 'p') state.Z += d; else if (k === 'n') state.n += d; else state.shells[+b.dataset.i] += d;
+    clampState(); render(); listener(state);
+  });
+  root.addEventListener('change', ev => {
+    const inp = ev.target.closest('input[data-k]'); if (!inp || !state) return;
+    const v = parseInt(inp.value, 10); if (Number.isNaN(v)) { render(); return; }
+    if (inp.dataset.k === 'p') state.Z = v; else state.n = v;
+    clampState(); render(); listener(state);
+  });
+  root.appendChild(blockNote);
+  return {
+    setLocked(on, note) {
+      lockedNote = on ? note : '';
+      root.querySelectorAll('.erow.shell button').forEach(b => { if (on) b.disabled = true; });
+      if (on) { blockNote.hidden = false; blockNote.innerHTML = note; } else if (state) render();
+    },
+    set(s) { state = { Z: s.Z, n: s.n, shells: padShells(s.shells) }; render(); },
+    get: () => state,
+    onChange(fn) { listener = fn; }
+  };
+}
+const padShells = s => { const a = s.slice(0, MAX_SHELLS); while (a.length < MAX_SHELLS) a.push(0); return a; };
+
+function ensureGeo(a) { if (!a.geo) a.geo = geometry(a.Z, a.n, a.shells); return a.geo; }
+
+// ================= Tilstand =================
+let atoms = [], nextId = 1, nextBondId = 1, selectedId = null;
+const opts = { symbol: true, nums: true, name: true, counts: true, shells: false, outerOnly: false, orbitals: false, origin: false };
+const atomEls = new Map();
+const world = $('world'), layer = $('atomsLayer'), surface = $('surface');
+const addPanel = $('addPanel'), mpPanel = $('mpPanel'), stage = $('stage');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+// ================= Visning (zoom og panorering) =================
+let view = { x: -450, y: -320, w: 900, h: 640 };
+function screenScale(v = view) {
+  const r = world.getBoundingClientRect();
+  return { r, s: Math.min(r.width / v.w, r.height / v.h) || 1 };
+}
+function visibleRect(v = view) {
+  const { r, s } = screenScale(v);
+  const w = r.width / s, h = r.height / s;
+  return { x: v.x - (w - v.w) / 2, y: v.y - (h - v.h) / 2, w, h };
+}
+function worldAt(v, cx, cy) {
+  const { r, s } = screenScale(v), vis = visibleRect(v);
+  return { x: vis.x + (cx - r.left) / s, y: vis.y + (cy - r.top) / s };
+}
+function applyView() {
+  world.setAttribute('viewBox', `${f2(view.x)} ${f2(view.y)} ${f2(view.w)} ${f2(view.h)}`);
+  const { s } = screenScale();
+  atoms.forEach(a => { const rec = atomEls.get(a.id); if (rec && a.geo) signClasses(rec.g, a.geo.ps, a.geo.re, s); });
+}
+function zoomAt(cx, cy, factor) {
+  const p = worldAt(view, cx, cy);
+  const w = Math.max(160, Math.min(40000, view.w * factor)), k = w / view.w;
+  const nv = { x: 0, y: 0, w, h: view.h * k };
+  const q = worldAt(nv, cx, cy);
+  view = { x: p.x - q.x, y: p.y - q.y, w, h: nv.h };
+  applyView();
+}
+let viewAnim = null;
+function animateView(target) {
+  cancelAnimationFrame(viewAnim);
+  if (reduceMotion.matches) { view = target; applyView(); return; }
+  const from = { ...view }, t0 = performance.now();
+  const step = now => {
+    const t = Math.min(1, (now - t0) / 350), e = 1 - Math.pow(1 - t, 3);
+    view = { x: from.x + (target.x - from.x) * e, y: from.y + (target.y - from.y) * e, w: from.w + (target.w - from.w) * e, h: from.h + (target.h - from.h) * e };
+    applyView();
+    if (t < 1) viewAnim = requestAnimationFrame(step);
+  };
+  viewAnim = requestAnimationFrame(step);
+}
+function atomBounds(a) { return { x1: a.x - a.box.rx, x2: a.x + a.box.rx, y1: a.y + a.box.top, y2: a.y + a.box.bottom }; }
+function screenAspect() { const r = world.getBoundingClientRect(); return r.width > 50 && r.height > 50 ? r.width / r.height : view.w / view.h; }
+function viewForRect(b, pad = 40, aspect = view.w / view.h) {
+  let w = b.x2 - b.x1 + 2 * pad, h = b.y2 - b.y1 + 2 * pad;
+  if (w / h < aspect) w = h * aspect; else h = w / aspect;
+  if (w < 500) { h *= 500 / w; w = 500; }
+  return { x: (b.x1 + b.x2) / 2 - w / 2, y: (b.y1 + b.y2) / 2 - h / 2, w, h };
+}
+function fitAll() {
+  if (!atoms.length) return;
+  const b = atoms.map(atomBounds).reduce((m, q) => ({ x1: Math.min(m.x1, q.x1), x2: Math.max(m.x2, q.x2), y1: Math.min(m.y1, q.y1), y2: Math.max(m.y2, q.y2) }));
+  animateView(viewForRect(b, 40, screenAspect()));
+}
+function ensureVisible(a) {
+  const vis = view, q = atomBounds(a);
+  if (q.x1 >= vis.x && q.x2 <= vis.x + vis.w && q.y1 >= vis.y && q.y2 <= vis.y + vis.h) return;
+  animateView(viewForRect({ x1: Math.min(vis.x, q.x1), x2: Math.max(vis.x + vis.w, q.x2), y1: Math.min(vis.y, q.y1), y2: Math.max(vis.y + vis.h, q.y2) }, 20));
+}
+
+// ================= Atomer på arbeidsbordet =================
+function renderAtom(a) {
+  let rec = atomEls.get(a.id);
+  if (!rec) {
+    const g = document.createElementNS(NS, 'g');
+    g.classList.add('atom'); g.dataset.id = a.id; g.setAttribute('tabindex', '0');
+    layer.appendChild(g);
+    rec = { g }; atomEls.set(a.id, rec);
+  }
+  const g = rec.g, el = ELEMENTS[a.Z];
+  const as = a.assess = assess(a.Z, a.n, a.shells);
+  const bonded = isBonded(a.id);
+  const outerAngles = bonded ? ownOuterAngles(a) : null;
+  const tints = { own: originTint(a), gained: a.gainedFrom != null && opts.origin ? ORIGIN_COLORS[a.gainedFrom % ORIGIN_COLORS.length] : '', gainedCount: a.gained || 0 };
+  // Indre skall roteres slik at elektronene ikke havner rett i bindingsretningen
+  let innerBase = null;
+  if (bonded) {
+    const dirs = neighborsOf(a.id).map(id => dirTo(a, atomById(id)));
+    innerBase = dirs.length ? dirs[0] + Math.PI / Math.max(2, groupSlots(a)) : null;
+  }
+  const { markup, outer, geo, hiddenOrbitals } = modelMarkup(a.Z, a.n, a.shells, opts, null, outerAngles, tints, innerBase);
+  a.geo = geo;
+  const s = 1.1, gap = 14 * s;
+  const statusRing = as.level === 3 ? `<circle class="stat" r="${f2(outer + 10)}"/>` : '';
+  let lx = 0, ly = outer + gap, anchor = 'middle';
+  if (bonded) {
+    const dirs = neighborsOf(a.id).map(id => dirTo(a, atomById(id)));
+    let vx = 0, vy = 0;
+    dirs.forEach(d => { vx -= Math.cos(d); vy -= Math.sin(d); });
+    const len = Math.hypot(vx, vy) || 1;
+    const ang = dirs.length ? Math.atan2(vy / len, vx / len) : Math.PI / 2;
+    const rr = outer + 13 * s;
+    lx = rr * Math.cos(ang); ly = rr * Math.sin(ang) + 9 * s;
+    anchor = Math.cos(ang) < -0.35 ? 'end' : Math.cos(ang) > 0.35 ? 'start' : 'middle';
+  }
+  g.innerHTML = `<circle class="hit" r="${f2(outer + 8)}"/>${statusRing}<circle class="sel" r="${f2(outer + 18)}"/>${markup}<g class="lbl" transform="translate(${f2(lx)} ${f2(ly)})"></g>`;
+  const lbl = g.querySelector('.lbl');
+  let y = 0, h = '';
+  const ax = anchor === 'end' ? -1 : anchor === 'start' ? 1 : 0;
+  if (opts.symbol) {
+    y += 26 * s;
+    h += `<text class="lt b nsym" x="0" y="${f2(y)}" font-size="${f2(26 * s)}" text-anchor="${anchor}">${el.sym}</text>`;
+    if (opts.nums) {
+      h += `<text class="lt nA" y="${f2(y - 11 * s)}" font-size="${f2(12 * s)}" text-anchor="end">${as.A}</text>`;
+      h += `<text class="lt nZ" y="${f2(y)}" font-size="${f2(12 * s)}" text-anchor="end">${a.Z}</text>`;
+    }
+    if (as.q) h += `<text class="lt b nQ" y="${f2(y - 12 * s)}" font-size="${f2(14 * s)}">${superCharge(as.q)}</text>`;
+  }
+  if (!opts.symbol && as.q) { y += 22 * s; h += `<text class="lt b" x="0" y="${f2(y)}" font-size="${f2(22 * s)}" text-anchor="middle">${superCharge(as.q)}</text>`; }
+  if (opts.name && !bonded) { y += 21 * s; h += `<text class="lt" x="0" y="${f2(y)}" font-size="${f2(16 * s)}" text-anchor="middle">${el.name}</text>`; }
+  if (opts.counts && !bonded) { y += 18 * s; h += `<text class="lt soft" x="0" y="${f2(y)}" font-size="${f2(13 * s)}" text-anchor="middle">${a.Z} p⁺   ${a.n} n   ${as.e} e⁻</text>`; }
+  if (opts.orbitals && as.e && !bonded) {
+    y += 18 * s; h += `<text class="lt soft" x="0" y="${f2(y)}" font-size="${f2(13 * s)}" text-anchor="middle">Ytterskall: ${valenceText(a.shells)}</text>`;
+    if (hiddenOrbitals) { y += 17 * s; h += `<text class="lt soft" x="0" y="${f2(y)}" font-size="${f2(12 * s)}" text-anchor="middle">d- og f-elektroner står på skallet</text>`; }
+  }
+  if (as.level > 0 && !bonded) { y += 19 * s; h += `<text class="lt l${as.level}" x="0" y="${f2(y)}" font-size="${f2(14 * s)}" text-anchor="middle">${as.title}</text>`; }
+  lbl.innerHTML = h;
+  if (opts.symbol) {
+    const w = lbl.querySelector('.nsym').getComputedTextLength();
+    const left = ax === 0 ? -w / 2 : ax < 0 ? -w : 0;
+    lbl.querySelectorAll('.nA, .nZ').forEach(t => t.setAttribute('x', f2(left - 1.5 * s)));
+    const qe = lbl.querySelector('.nQ'); if (qe) qe.setAttribute('x', f2(left + w + 1 * s));
+  }
+  let bb = { x: -40, y: 0, width: 80, height: y };
+  try { bb = lbl.getBBox(); } catch (e) {}
+  const hitRect = document.createElementNS(NS, 'rect');
+  hitRect.setAttribute('class', 'hit');
+  hitRect.setAttribute('x', f2(bb.x - 6)); hitRect.setAttribute('y', f2(outer + gap + bb.y - 4));
+  hitRect.setAttribute('width', f2(bb.width + 12)); hitRect.setAttribute('height', f2(bb.height + 8));
+  g.insertBefore(hitRect, g.firstChild);
+  a.box = {
+    rx: Math.max(outer + 20, Math.abs(lx) + bb.width / 2 + 10),
+    top: Math.min(-outer - 20, ly + bb.y - 8),
+    bottom: Math.max(outer + 20, ly + bb.y + bb.height + 8) + (bonded ? 66 * s : 0)
+  };
+  g.setAttribute('transform', `translate(${f2(a.x)} ${f2(a.y)})`);
+  signClasses(g, geo.ps, geo.re, screenScale().s);
+  g.classList.toggle('is-selected', selectedId === a.id);
+  g.setAttribute('aria-label', `${el.name}, ${as.A} nukleoner, ladning ${signed(as.q)}. ${as.title}.`);
+}
+function placeAtom(a) {
+  const vis = view, pad = 30, step = 24;
+  const left = vis.x + pad + a.box.rx, right = Math.max(left, vis.x + vis.w - pad - a.box.rx);
+  const free = (x, y) => atoms.every(o => o === a || !o.box ||
+    Math.abs(x - o.x) >= a.box.rx + o.box.rx || y + a.box.bottom <= o.y + o.box.top || y + a.box.top >= o.y + o.box.bottom);
+  for (let y = vis.y + pad - a.box.top, i = 0; i < 3000; y += step, i++) {
+    for (let x = left; x <= right + 0.01; x += step) if (free(x, y)) { a.x = x; a.y = y; return; }
+  }
+  a.x = vis.x + vis.w / 2; a.y = vis.y + vis.h / 2;
+}
+function addAtom(Z, n, shells) {
+  if (atoms.length >= MAX_ATOMS) { $('summary').textContent = `Feltet har plass til ${MAX_ATOMS} atomer. Fjern noen atomer eller tøm feltet for å legge til flere.`; return; }
+  const a = { id: nextId++, Z, n, shells: padShells(shells), x: 0, y: 0, tint: nextId % 8 };
+  a.origin = { n: a.n, shells: a.shells.slice() };
+  atoms.push(a);
+  renderAtom(a);
+  placeAtom(a);
+  atomEls.get(a.id).g.setAttribute('transform', `translate(${f2(a.x)} ${f2(a.y)})`);
+  ensureVisible(a);
+  refreshMeta();
+}
+function removeAtom(id) {
+  const wasBonded = neighborsOf(id);
+  bonds = bonds.filter(b => b.a !== id && b.b !== id);
+  atoms = atoms.filter(a => a.id !== id);
+  wasBonded.forEach(nb => { if (atomById(nb)) { layoutMolecule(nb); moleculeIds(nb).forEach(i => renderAtom(atomById(i))); } });
+  const rec = atomEls.get(id); if (rec) rec.g.remove();
+  atomEls.delete(id);
+  if (selectedId === id) select(null);
+  refreshMeta();
+}
+const atomById = id => atoms.find(a => a.id === +id);
+function rerenderAll() { atoms.forEach(renderAtom); renderBonds(); }
+
+function arrangeAtoms() {
+  if (!atoms.length) return;
+  const units = [];
+  const seen = new Set();
+  for (const a of atoms) {
+    if (seen.has(a.id)) continue;
+    const ids = moleculeIds(a.id); ids.forEach(i => seen.add(i));
+    const list = ids.map(atomById);
+    const x1 = Math.min(...list.map(t => t.x - t.box.rx)), x2 = Math.max(...list.map(t => t.x + t.box.rx));
+    const y1 = Math.min(...list.map(t => t.y + t.box.top)), y2 = Math.max(...list.map(t => t.y + t.box.bottom));
+    units.push({ list, w: x2 - x1, h: y2 - y1 + (ids.length > 1 ? 60 : 0), x1, y1 });
+  }
+  const area = units.reduce((t, u) => t + u.w * u.h, 0);
+  const rowW = Math.max(Math.max(...units.map(u => u.w)), Math.sqrt(area * screenAspect()) * 1.15);
+  let cx = 0, cy = 0, rowH = 0;
+  units.forEach(u => {
+    if (cx > 0 && cx + u.w > rowW) { cx = 0; cy += rowH + 24; rowH = 0; }
+    const dx = cx - u.x1, dy = cy - u.y1;
+    u.list.forEach(t => { t.x += dx; t.y += dy; atomEls.get(t.id).g.setAttribute('transform', `translate(${f2(t.x)} ${f2(t.y)})`); });
+    cx += u.w + 24; rowH = Math.max(rowH, u.h);
+  });
+  renderBonds();
+  fitAll();
+  return;
+}
+
+// ================= Valgt atom =================
+const iEditor = createEditor($('iEditor'), {
+  protonsEditable: false,
+  blockCheck: t => {
+    const r = assess(t.Z, t.n, t.shells); if (r.level < 3) return null;
+    const hard = r.reasons.filter(x => x.lvl === 3);
+    return (hard.find(x => x.kind === 'ion') || hard.find(x => x.kind === 'capacity') || hard[0]).text;
+  }
+});
+function select(id) {
+  selectedId = id;
+  atomEls.forEach((rec, key) => rec.g.classList.toggle('is-selected', key === id));
+  const a = atomById(id);
+  $('inspector').hidden = !a;
+  if (a) { iEditor.set(a); updateInspector(a); keepClearOfInspector(a); }
+}
+// Flytter visningen litt hvis det valgte atomet ligger bak redigeringspanelet
+function keepClearOfInspector(a) {
+  const ins = $('inspector').getBoundingClientRect(), r = world.getBoundingClientRect();
+  const { s } = screenScale(), vis = visibleRect();
+  const sx = r.left + (a.x - vis.x) * s, sy = r.top + (a.y - vis.y) * s;
+  const room = ins.left - r.left;
+  if (room < 160 || sx < ins.left - 20 || sy > ins.bottom) return;
+  const shift = (sx - (r.left + room / 2)) / s;
+  animateView({ ...view, x: view.x + shift });
+}
+function updateInspector(a) {
+  const as = a.assess;
+  $('iNuc').innerHTML = nuclideHTML(a.Z, as.A, as.q);
+  iEditor.set(a);
+  $('iName').textContent = ELEMENTS[a.Z].name;
+  $('iCharge').textContent = capFirst(ionWord(as.q));
+  const st = $('iStatus'); st.className = `status l${as.level}`; st.innerHTML = statusHTML(as, true);
+  $('iReset').disabled = a.n === a.origin.n && a.shells.join() === a.origin.shells.join();
+  const bonded = isBonded(a.id);
+  $('iDetach').hidden = !bonded;
+  iEditor.setLocked(bonded, bonded ? 'Atomet er bundet til et annet atom. Løsne det for å endre elektronene.' : '');
+}
+iEditor.onChange(s => {
+  const a = atomById(selectedId); if (!a) return;
+  if (assess(a.Z, s.n, s.shells).level === 3) { iEditor.set(a); return; }
+  a.n = s.n; a.shells = s.shells.slice(); a.geo = null;
+  renderAtom(a); renderBonds(); updateInspector(a); refreshMeta();
+});
+$('iStatus').addEventListener('click', ev => {
+  if (!ev.target.closest('[data-ground]')) return;
+  const a = atomById(selectedId); if (!a || !a.assess.ground) return;
+  a.shells = padShells(a.assess.ground); a.geo = null; iEditor.set(a); renderAtom(a); renderBonds(); updateInspector(a); refreshMeta();
+});
+$('iDetach').addEventListener('click', () => { if (selectedId != null) detachAtom(selectedId); });
+$('iClose').addEventListener('click', () => select(null));
+$('iRemove').addEventListener('click', () => { if (selectedId != null) removeAtom(selectedId); });
+$('iReset').addEventListener('click', () => {
+  const a = atomById(selectedId); if (!a) return;
+  a.n = a.origin.n; a.shells = a.origin.shells.slice(); a.geo = null; a.gained = 0; a.gainedFrom = null; iEditor.set(a); renderAtom(a); renderBonds(); updateInspector(a); refreshMeta();
+});
+
+// ================= Oppsummering og merker i periodesystemet =================
+function refreshMeta() {
+  const box = $('summary');
+  $('clearBtn').disabled = !atoms.length;
+  $('emptyMsg').hidden = atoms.length > 0;
+  const counts = {};
+  atoms.forEach(a => counts[a.Z] = (counts[a.Z] || 0) + 1);
+  document.querySelectorAll('.el[data-z]').forEach(b => {
+    const c = counts[b.dataset.z], badge = b.querySelector('.badge');
+    badge.hidden = !c; badge.textContent = c || '';
+  });
+  if (!atoms.length) { box.innerHTML = ''; return; }
+  const zs = [...new Set(atoms.map(a => a.Z))];
+  if (zs.length === 1) {
+    const el = ELEMENTS[zs[0]];
+    const avg = atoms.reduce((s, a) => s + a.Z + a.n, 0) / atoms.length;
+    const who = opts.name ? ` av ${el.name.toLowerCase()}` : '';
+    const antall = atoms.length === 1 ? 'ett atom' : `${atoms.length} atomer`;
+    const ref = el.bracket ? `Grunnstoffet har ingen standard atomvekt. Den mest stabile isotopen har massetall ${el.A}.` : `Tabellverdi: ${el.weightText.replace('.', ',')} u.`;
+    box.innerHTML = `Gjennomsnittlig atomvekt for ${antall}${who}: <strong>${avg.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} u</strong><div class="ref">${ref} Atomvekten i feltet er regnet som protoner + nøytroner per atom.</div>`;
+  } else {
+    box.textContent = `Feltet har ${zs.length} ulike grunnstoffer. Gjennomsnittlig atomvekt vises når alle atomene er samme grunnstoff.`;
+  }
+}
+
+// ================= Dra, zoom og tastatur på arbeidsbordet =================
+const pointers = new Map();
+let gesture = null;
+world.addEventListener('pointerdown', ev => {
+  if (ev.button !== undefined && ev.button > 0) return;
+  world.setPointerCapture(ev.pointerId);
+  pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (pointers.size === 2) {
+    const [p1, p2] = [...pointers.values()];
+    if (gesture && gesture.type === 'atom') atomEls.get(gesture.atom.id).g.classList.remove('dragging');
+    gesture = { type: 'pinch', d0: Math.hypot(p1.x - p2.x, p1.y - p2.y) || 1, v0: { ...view }, m0: worldAt(view, (p1.x + p2.x) / 2, (p1.y + p2.y) / 2) };
+    return;
+  }
+  if (pointers.size > 2) return;
+  const hitBond = ev.target.closest('.bond-hit');
+  const g = ev.target.closest('.atom');
+  if (g) {
+    const a = atomById(g.dataset.id), w = worldAt(view, ev.clientX, ev.clientY);
+    const ids = moleculeIds(a.id);
+    gesture = { type: 'atom', atom: a, ids, dx: w.x - a.x, dy: w.y - a.y, sx: ev.clientX, sy: ev.clientY, moved: false };
+    ids.forEach(id => { const rec = atomEls.get(id); if (rec) { layer.appendChild(rec.g); rec.g.classList.add('dragging'); } });
+  } else if (hitBond) {
+    gesture = { type: 'bond', bond: bonds.find(x => x.id === +hitBond.dataset.bond), sx: ev.clientX, sy: ev.clientY, moved: false };
+  } else {
+    gesture = { type: 'pan', sx: ev.clientX, sy: ev.clientY, v0: { ...view }, moved: false };
+    world.classList.add('panning');
+  }
+});
+world.addEventListener('pointermove', ev => {
+  if (!pointers.has(ev.pointerId) || !gesture) return;
+  pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (gesture.type === 'pinch' && pointers.size >= 2) {
+    const [p1, p2] = [...pointers.values()];
+    const d = Math.hypot(p1.x - p2.x, p1.y - p2.y) || 1, mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+    const w = Math.max(160, Math.min(40000, gesture.v0.w * gesture.d0 / d));
+    const nv = { x: 0, y: 0, w, h: gesture.v0.h * w / gesture.v0.w }, q = worldAt(nv, mx, my);
+    view = { x: gesture.m0.x - q.x, y: gesture.m0.y - q.y, w, h: nv.h }; applyView();
+    return;
+  }
+  const moved = Math.hypot(ev.clientX - gesture.sx, ev.clientY - gesture.sy) > 4;
+  if (gesture.type === 'atom') {
+    if (!gesture.moved && !moved) return;
+    gesture.moved = true;
+    const w = worldAt(view, ev.clientX, ev.clientY), a = gesture.atom;
+    const ddx = (w.x - gesture.dx) - a.x, ddy = (w.y - gesture.dy) - a.y;
+    gesture.ids.forEach(id => {
+      const at = atomById(id); at.x += ddx; at.y += ddy;
+      atomEls.get(id).g.setAttribute('transform', `translate(${f2(at.x)} ${f2(at.y)})`);
+    });
+    if (gesture.ids.length > 1) renderBonds();
+  } else if (gesture.type === 'pan') {
+    if (!gesture.moved && !moved) return;
+    gesture.moved = true;
+    const { s } = screenScale(gesture.v0);
+    view = { ...gesture.v0, x: gesture.v0.x - (ev.clientX - gesture.sx) / s, y: gesture.v0.y - (ev.clientY - gesture.sy) / s };
+    applyView();
+  }
+});
+function endPointer(ev) {
+  if (!pointers.has(ev.pointerId)) return;
+  pointers.delete(ev.pointerId);
+  if (!gesture) return;
+  if (gesture.type === 'pinch') { if (pointers.size === 0) gesture = null; return; }
+  if (gesture.type === 'atom') {
+    gesture.ids.forEach(id => atomEls.get(id)?.g.classList.remove('dragging'));
+    if (!gesture.moved) select(gesture.atom.id);
+    else { tryBond(gesture.ids); renderBonds(); }
+  } else if (gesture.type === 'bond') {
+    if (!gesture.moved && gesture.bond) cycleBond(gesture.bond);
+  } else if (gesture.type === 'pan' && !gesture.moved) select(null);
+  world.classList.remove('panning');
+  gesture = null;
+}
+world.addEventListener('pointerup', endPointer);
+world.addEventListener('pointercancel', endPointer);
+world.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const dy = ev.deltaMode === 1 ? ev.deltaY * 16 : ev.deltaY;
+  zoomAt(ev.clientX, ev.clientY, Math.exp(dy * 0.0015));
+}, { passive: false });
+world.addEventListener('keydown', ev => {
+  const g = ev.target.closest && ev.target.closest('.atom'); if (!g) return;
+  const a = atomById(g.dataset.id), stepSize = ev.shiftKey ? 60 : 12;
+  const moves = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  if (moves[ev.key]) {
+    moleculeIds(a.id).forEach(id => {
+      const at = atomById(id); at.x += moves[ev.key][0] * stepSize; at.y += moves[ev.key][1] * stepSize;
+      atomEls.get(id).g.setAttribute('transform', `translate(${f2(at.x)} ${f2(at.y)})`);
+    });
+    renderBonds(); tryBond(moleculeIds(a.id)); ev.preventDefault();
+  }
+  else if (ev.key === 'Enter' || ev.key === ' ') { select(a.id); ev.preventDefault(); }
+  else if (ev.key === 'Delete' || ev.key === 'Backspace') { removeAtom(a.id); ev.preventDefault(); }
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && selectedId != null) select(null); });
+new ResizeObserver(applyView).observe(world);
+
+const centerPoint = () => { const r = world.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+$('zoomIn').addEventListener('click', () => zoomAt(...centerPoint(), 1 / 1.3));
+$('zoomOut').addEventListener('click', () => zoomAt(...centerPoint(), 1.3));
+$('fitBtn').addEventListener('click', fitAll);
+$('arrangeBtn').addEventListener('click', arrangeAtoms);
+$('clearBtn').addEventListener('click', () => { bonds = []; [...atoms].forEach(a => removeAtom(a.id)); renderBonds(); });
+
+// ================= Periodesystemet =================
+function gridPos(Z) {
+  if (Z === 1) return [2, 1]; if (Z === 2) return [2, 18];
+  if (Z <= 10) return [3, Z <= 4 ? Z - 2 : Z + 8];
+  if (Z <= 18) return [4, Z <= 12 ? Z - 10 : Z];
+  if (Z <= 36) return [5, Z - 18];
+  if (Z <= 54) return [6, Z - 36];
+  if (Z <= 56) return [7, Z - 54];
+  if (Z <= 71) return [10, Z - 54];
+  if (Z <= 86) return [7, Z - 68];
+  if (Z <= 88) return [8, Z - 86];
+  if (Z <= 103) return [11, Z - 86];
+  return [8, Z - 100];
+}
+function buildTable() {
+  const g = $('ptGrid'); let h = '';
+  const grp = (n, row) => `<span class="grp" style="grid-row:${row};grid-column:${n}">${n}</span>`;
+  h += grp(1, 1) + grp(18, 1) + grp(2, 2);
+  for (let n = 13; n <= 17; n++) h += grp(n, 2);
+  for (let n = 3; n <= 12; n++) h += grp(n, 4);
+  h += '<div class="legend" aria-hidden="true">' + Object.entries(CATS).map(([k, c]) => `<span style="--cat:var(--c-${k})"><i></i>${c.label}</span>`).join('') + '</div>';
+  h += `<div class="el placeholder" style="grid-row:7;grid-column:3;--cat:var(--c-lanth)" aria-hidden="true">57–71</div>`;
+  h += `<div class="el placeholder" style="grid-row:8;grid-column:3;--cat:var(--c-act)" aria-hidden="true">89–103</div>`;
+  for (let Z = 1; Z <= 118; Z++) {
+    const el = ELEMENTS[Z], [r, c] = gridPos(Z), w = el.weightText.replace('.', ',');
+    h += `<button class="el" data-z="${Z}" style="grid-row:${r};grid-column:${c};--cat:var(--c-${el.cat})" title="${el.name}, atomnummer ${Z}, atomvekt ${w} u" aria-label="Legg til ${el.name.toLowerCase()}"><span class="z">${Z}</span><span class="sym">${el.sym}</span><span class="nm">${el.name}</span><span class="w">${w}</span><span class="badge" hidden></span></button>`;
+  }
+  g.innerHTML = h;
+  let lastZ = 0, lastTime = 0, addedAt = 0;
+  g.addEventListener('dblclick', ev => {
+    const b = ev.target.closest('.el[data-z]'); if (!b) return;
+    if (performance.now() - addedAt < 900) return;  // allerede lagt til av de to klikkene
+    lastTime = 0; addedAt = performance.now(); addAtomFromTable(+b.dataset.z);
+  });
+  g.addEventListener('click', ev => {
+    const b = ev.target.closest('.el[data-z]'); if (!b) return;
+    const Z = +b.dataset.z, now = performance.now();
+    if (Z === lastZ && now - lastTime < 650) { lastTime = 0; addedAt = now; addAtomFromTable(Z); return; }
+    lastZ = Z; lastTime = now;
+    showInfo(Z, true);
+  });
+}
+
+function addAtomFromTable(Z) { addAtom(Z, ELEMENTS[Z].N, neutralShells(Z)); }
+
+// ================= Informasjon om grunnstoffet =================
+let infoZ = null;
+function showInfo(Z, open) {
+  infoZ = Z;
+  const el = ELEMENTS[Z], inf = INFO[Z], shells = neutralShells(Z);
+  if (open && infoPanel.hidden) toggleInfo(true, true);
+  // Uten musepeker finnes ingen hover, så feltet som nettopp ble bedt om, blir det store
+  if (open && matchMedia('(hover: none)').matches) setActive(infoPanel);
+  $('infoTitle').textContent = `Om ${el.name.toLowerCase()}`;
+  const st = stateAt(Z);
+  const chip = `<div class="el-chip" style="--cat:var(--c-${el.cat})" aria-hidden="true"><div class="z">${Z}</div><div class="sym">${el.sym}</div><div class="w">${el.weightText.replace('.', ',')}</div></div>`;
+  const rows = [];
+  const add = (k, v) => { if (v) rows.push(`<dt>${k}</dt><dd>${v}</dd>`); };
+  add('Type', capFirst(metalWord(el.cat)) + (SERIES_LABEL[el.cat] && metalWord(el.cat) !== SERIES_LABEL[el.cat] ? ` (${SERIES_LABEL[el.cat]})` : ''));
+  add('Plass', `${groupText(Z)}, periode ${inf.p || periodOf(Z)}`);
+  add('Atomnummer', `${Z} protoner`);
+  add('Atomvekt', `${el.weightText.replace('.', ',')} u${el.bracket ? ' (massetall for den mest stabile isotopen)' : ''}`);
+  add('Tilstand ved 20 °C', st ? capFirst(st) : 'Ukjent, grunnstoffet finnes bare et øyeblikk');
+  add('Smelter ved', fmtT(inf.mp));
+  add('Koker ved', fmtT(inf.bp));
+  // Gasser er så lette at g/cm³ blir null komma ingenting, så de oppgis i gram per liter
+  add('Tetthet', inf.d === undefined ? null : inf.d < 0.01
+    ? `${(inf.d * 1000).toLocaleString('nb-NO', { maximumSignificantDigits: 2 })} g per liter (som gass)`
+    : `${inf.d.toLocaleString('nb-NO')} g/cm³`);
+  const val = shells[shells.length - 1];
+  add('Ytterste skall', `${val} elektron${val === 1 ? '' : 'er'} (${SHELL_NAMES[shells.length - 1]}, skall ${shells.length})`);
+  const ions = ION_NAT[Z];
+  if (ions && ions.length) add('Vanlige ioner', ions.slice(0, 3).map(q => el.sym + supStr(superCharge(q))).join(' og '));
+  add('Forekomst', abundanceText(Z));
+  add('Oppdaget', inf.y ? (inf.y < 0 ? 'I oldtiden' : `i ${inf.y}`) : (Z > 100 ? 'Laget i laboratorium' : 'Kjent fra oldtiden'));
+  if (inf.rad) add('Radioaktivt', 'Ja, alle isotopene er radioaktive');
+  const bar = shells.map((c, i) => `<span><b>${SHELL_NAMES[i]}</b> (skall ${i + 1}): ${c}</span>`).join('');
+  $('infoBody').innerHTML = `
+    <div class="info-top">${chip}
+      <div class="info-headline"><div class="big">${el.name}</div><div class="sub">${capFirst(metalWord(el.cat))} · ${st ? st + ' ved 20 °C' : 'finnes bare et øyeblikk'}</div></div>
+    </div>
+    <p class="info-desc">${inf.t}</p>
+    <div class="shellbar" aria-label="Elektroner i skallene">${bar}</div>
+    <dl class="facts-list">${rows.join('')}</dl>
+    <div class="info-actions">
+      <button class="btn primary" id="infoAdd">Legg i feltet</button>
+      <button class="btn" id="infoWiki">Les på Wikipedia</button>
+    </div>`;
+  $('infoAdd').addEventListener('click', () => addAtomFromTable(Z));
+  $('infoWiki').addEventListener('click', () => openWiki(Z));
+}
+// Wikipedia åpnes i et eget vindu ved siden av siden
+function openWiki(Z) {
+  const url = wikiUrl(Z);
+  // Nettleseren avslutter fullskjerm når et nytt vindu åpnes, så vi ber om den tilbake etterpå
+  const wasFullscreen = !!fsElement();
+  const win = window.open(url, 'wikipedia', 'width=940,height=860');
+  if (wasFullscreen) { wantFullscreen = true; requestFullscreenBack(); }
+  if (win) { win.focus(); return; }
+  // Blokkerer nettleseren vinduet, åpnes artikkelen i en ny fane i stedet
+  const tab = window.open(url, '_blank');
+  if (!tab) toast('Nettleseren blokkerte vinduet. Tillat popup-vinduer for denne siden.');
+}
+
+function periodOf(Z) {
+  const limits = [2, 10, 18, 36, 54, 86, 118];
+  return limits.findIndex(l => Z <= l) + 1;
+}
+
+// ================= Atombyggeren =================
+const bEditor = createEditor($('bEditor'), { protonsEditable: true });
+let bGeo = null, bAnim = null, bScale = 1;
+const bPreview = $('bPreview');
+new ResizeObserver(() => { const svg = bPreview.querySelector('svg'); if (svg) { bScale = svg.clientWidth / +svg.dataset.vb; if (bGeo) signClasses(svg, bGeo.ps, bGeo.re, bScale); } }).observe(bPreview);
+function drawBuilderFrame(s, geo) {
+  const { markup } = modelMarkup(s.Z, s.n, s.shells, { shells: true }, geo);
+  const ext = Math.ceil(Math.max(230, geo.outer + 18));
+  bPreview.innerHTML = `<svg class="model" viewBox="${-ext} ${-ext} ${2 * ext} ${2 * ext}" data-vb="${2 * ext}" role="img" aria-label="Skallmodell av atomet du bygger">${markup}</svg>`;
+  const svg = bPreview.querySelector('svg');
+  bScale = (svg.clientWidth || 380) / (2 * ext);
+  signClasses(svg, geo.ps, geo.re, bScale);
+}
+function renderBuilder() {
+  const s = bEditor.get(), as = assess(s.Z, s.n, s.shells), el = ELEMENTS[s.Z];
+  const target = geometry(s.Z, s.n, s.shells);
+  cancelAnimationFrame(bAnim);
+  if (!bGeo || reduceMotion.matches) { bGeo = target; drawBuilderFrame(s, target); }
+  else {
+    const from = bGeo, t0 = performance.now();
+    const step = now => {
+      const t = Math.min(1, (now - t0) / 450), e = 1 - Math.pow(1 - t, 3);
+      bGeo = lerpGeometry(from, target, e);
+      drawBuilderFrame(s, bGeo);
+      if (t < 1) bAnim = requestAnimationFrame(step); else bGeo = target;
+    };
+    bAnim = requestAnimationFrame(step);
+  }
+  $('bNuc').innerHTML = nuclideHTML(s.Z, as.A, as.q);
+  $('bName').textContent = el.name;
+  $('bCharge').textContent = capFirst(ionWord(as.q));
+  const st = $('bStatus'); st.className = `status l${as.level}`; st.innerHTML = statusHTML(as, true);
+  const blocked = as.level === 3;
+  $('bAdd').disabled = blocked;
+  $('bAddNote').hidden = !blocked;
+}
+bEditor.onChange(renderBuilder);
+$('bStatus').addEventListener('click', ev => {
+  if (!ev.target.closest('[data-ground]')) return;
+  const s = bEditor.get(), as = assess(s.Z, s.n, s.shells);
+  if (as.ground) { bEditor.set({ ...s, shells: as.ground }); renderBuilder(); }
+});
+$('bEmpty').addEventListener('click', () => { const s = bEditor.get(); bEditor.set({ ...s, shells: [] }); renderBuilder(); });
+$('bAdd').addEventListener('click', () => { const s = bEditor.get(); addAtom(s.Z, s.n, s.shells); });
+
+// ================= Faner, skjuling og aktivt felt =================
+function showTab(which) {
+  const table = which === 'table';
+  $('tabTable').setAttribute('aria-selected', table); $('tabBuild').setAttribute('aria-selected', !table);
+  $('viewTable').hidden = !table; $('viewBuild').hidden = table;
+}
+$('tabTable').addEventListener('click', () => showTab('table'));
+$('tabBuild').addEventListener('click', () => showTab('build'));
+// Når et felt vises eller skjules, kan nettleseren melde at musepekeren «kom inn» i et
+// felt uten at den har flyttet seg. Slike meldinger skal ikke bytte aktivt felt.
+let lastPointer = { x: -1, y: -1 }, frozenPointer = null;
+document.addEventListener('pointermove', ev => {
+  lastPointer = { x: ev.clientX, y: ev.clientY };
+  if (frozenPointer) {
+    // Pekeren har flyttet seg for alvor: aktiver feltet den faktisk står i nå
+    frozenPointer = null;
+    const p = ev.target && ev.target.closest ? ev.target.closest('.panel') : null;
+    if (p && ev.pointerType !== 'touch') setActive(p);
+  }
+}, true);
+const isSyntheticEnter = ev => frozenPointer && ev.clientX === frozenPointer.x && ev.clientY === frozenPointer.y;
+function setActive(panel) {
+  if (manual || panel.hidden || panel.classList.contains('is-active')) return;
+  PANELS.forEach(p => p.panel.classList.toggle('is-active', p.panel === panel));
+  applyView();
+}
+for (const panel of [addPanel, $('infoPanel'), mpPanel]) {
+  panel.addEventListener('pointerenter', ev => { if (ev.pointerType !== 'touch' && !isSyntheticEnter(ev)) setActive(panel); });
+  panel.addEventListener('pointerdown', ev => { if (ev.pointerType === 'touch') setActive(panel); });
+  panel.addEventListener('focusin', () => setActive(panel));
+}
+const infoPanel = $('infoPanel');
+const PANELS = [
+  { panel: addPanel, rail: $('showAdd'), hide: $('hideAdd'), cls: 'add-hidden' },
+  { panel: infoPanel, rail: $('showInfo'), hide: $('hideInfo'), cls: 'info-hidden' },
+  { panel: mpPanel, rail: $('showModels'), hide: $('hideModels'), cls: 'models-hidden' }
+];
+function visiblePanels() { return PANELS.filter(p => !p.panel.hidden); }
+function setPanelVisible(rec, on, quiet) {
+  if (!on && visiblePanels().length <= 1) { toast('Minst ett felt må være synlig.'); return; }
+  frozenPointer = { ...lastPointer };
+  rec.panel.hidden = !on; rec.rail.hidden = on;
+  stage.classList.toggle(rec.cls, !on);
+  if (!on) rec.panel.classList.remove('is-active');
+  updateDividers();
+  resetSplit();
+  if (quiet) { applyView(); return; }
+  if (on) { PANELS.forEach(p => p.panel.classList.remove('is-active')); rec.panel.classList.add('is-active'); rec.hide.focus(); }
+  else rec.rail.focus();
+  applyView();
+  setTimeout(applyView, 500);
+}
+PANELS.forEach(rec => {
+  rec.hide.addEventListener('click', () => setPanelVisible(rec, false));
+  rec.rail.addEventListener('click', () => setPanelVisible(rec, true));
+});
+function toggleInfo(on, quiet) { setPanelVisible(PANELS[1], on, quiet); }
+
+
+// ================= Skillene mellom feltene =================
+const MIN_PCT = 12;
+const isColumn = () => getComputedStyle(stage).flexDirection === 'column';
+let manual = false;
+const DIVIDERS = [
+  { el: $('divider'), leftIdx: 0 },
+  { el: $('divider2'), leftIdx: 1 }
+];
+function panelSizePct() {
+  const col = isColumn(), r = stage.getBoundingClientRect();
+  const total = (col ? r.height : r.width) || 1;
+  visiblePanels().forEach(p => {
+    const pr = p.panel.getBoundingClientRect();
+    p.pct = ((col ? pr.height : pr.width) / total) * 100;
+  });
+}
+function applyManual() {
+  const col = isColumn();
+  visiblePanels().forEach(p => {
+    p.panel.style.flex = `0 0 ${p.pct.toFixed(2)}%`;
+    p.panel.style.height = col ? `${p.pct.toFixed(2)}%` : '';
+  });
+  document.body.classList.add('manual-split');
+  manual = true;
+}
+function resetSplit() {
+  manual = false;
+  PANELS.forEach(p => { p.panel.style.flex = ''; p.panel.style.height = ''; p.pct = null; });
+  document.body.classList.remove('manual-split');
+  const vis = visiblePanels();
+  // behold det feltet som er aktivt, hvis det fortsatt vises
+  if (!vis.some(p => p.panel.classList.contains('is-active'))) {
+    PANELS.forEach(p => p.panel.classList.remove('is-active'));
+    (vis.includes(PANELS[2]) ? PANELS[2] : vis[vis.length - 1]).panel.classList.add('is-active');
+  }
+  applyView();
+}
+// Naboene til et skille er de nærmeste synlige feltene på hver side
+function neighborsOfDivider(d) {
+  const left = PANELS.slice(0, d.leftIdx + 1).filter(p => !p.panel.hidden).pop();
+  const right = PANELS.slice(d.leftIdx + 1).find(p => !p.panel.hidden);
+  return [left, right];
+}
+function updateDividers() {
+  const usedPairs = new Set();
+  DIVIDERS.forEach(d => {
+    const [l, r] = neighborsOfDivider(d);
+    const key = l && r ? PANELS.indexOf(l) + '-' + PANELS.indexOf(r) : null;
+    d.el.hidden = !key || usedPairs.has(key);
+    if (key) usedPairs.add(key);
+    d.el.setAttribute('aria-orientation', isColumn() ? 'horizontal' : 'vertical');
+  });
+}
+function dragSplitTo(d, cx, cy) {
+  const [l, r] = neighborsOfDivider(d); if (!l || !r) return;
+  if (!manual) { panelSizePct(); applyManual(); }
+  const col = isColumn(), st = stage.getBoundingClientRect();
+  const total = (col ? st.height : st.width) || 1;
+  const lr = l.panel.getBoundingClientRect(), rr = r.panel.getBoundingClientRect();
+  const startPos = col ? Math.min(lr.top, rr.top) : Math.min(lr.left, rr.left);
+  const pair = l.pct + r.pct;
+  const pos = ((col ? cy : cx) - startPos) / total * 100;
+  const leftPct = Math.max(MIN_PCT, Math.min(pair - MIN_PCT, pos));
+  l.pct = leftPct; r.pct = pair - leftPct;
+  applyManual();
+  d.el.setAttribute('aria-valuenow', Math.round(leftPct));
+}
+DIVIDERS.forEach(d => {
+  let dragging = false;
+  d.el.addEventListener('pointerdown', ev => {
+    dragging = true; d.el.setPointerCapture(ev.pointerId);
+    d.el.classList.add('dragging'); stage.classList.add('dragging');
+    dragSplitTo(d, ev.clientX, ev.clientY); ev.preventDefault();
+  });
+  d.el.addEventListener('pointermove', ev => { if (dragging) dragSplitTo(d, ev.clientX, ev.clientY); });
+  const stop = () => { if (!dragging) return; dragging = false; d.el.classList.remove('dragging'); stage.classList.remove('dragging'); applyView(); };
+  d.el.addEventListener('pointerup', stop);
+  d.el.addEventListener('pointercancel', stop);
+  d.el.addEventListener('keydown', ev => {
+    const [l, r] = neighborsOfDivider(d); if (!l || !r) return;
+    const step = ev.shiftKey ? 8 : 2;
+    const less = isColumn() ? 'ArrowUp' : 'ArrowLeft', more = isColumn() ? 'ArrowDown' : 'ArrowRight';
+    if (ev.key === 'Home' || ev.key === 'Escape') { resetSplit(); ev.preventDefault(); return; }
+    if (ev.key !== less && ev.key !== more) return;
+    if (!manual) { panelSizePct(); applyManual(); }
+    const delta = ev.key === less ? -step : step;
+    const pair = l.pct + r.pct;
+    l.pct = Math.max(MIN_PCT, Math.min(pair - MIN_PCT, l.pct + delta));
+    r.pct = pair - l.pct;
+    applyManual(); applyView(); ev.preventDefault();
+  });
+});
+$('autoSplit').addEventListener('click', () => { resetSplit(); DIVIDERS.find(d => !d.el.hidden)?.el.focus(); });
+matchMedia('(orientation: portrait)').addEventListener('change', () => { if (manual) resetSplit(); updateDividers(); });
+
+// ================= Avmerkingsbokser =================
+function applyOptionClasses() {
+  mpPanel.classList.toggle('hide-symbol', !opts.symbol);
+  mpPanel.classList.toggle('hide-nums', !opts.nums);
+  mpPanel.classList.toggle('hide-name', !opts.name);
+  mpPanel.classList.toggle('hide-counts', !opts.counts);
+  document.querySelectorAll('.orb-key').forEach(k => k.hidden = !opts.orbitals);
+  $('optNums').disabled = !opts.symbol;
+}
+[['optSymbol', 'symbol'], ['optNums', 'nums'], ['optName', 'name'], ['optCounts', 'counts'], ['optShells', 'shells'], ['optOuter', 'outerOnly'], ['optOrbitals', 'orbitals'], ['optOrigin', 'origin']].forEach(([id, key]) => {
+  $(id).addEventListener('change', e => {
+    opts[key] = e.target.checked;
+    applyOptionClasses();
+    rerenderAll();
+    if (key === 'name') refreshMeta();
+  });
+});
+
+// ================= Fullskjerm =================
+let wantFullscreen = false;
+function requestFullscreenBack(fromClick) {
+  if (!fsSupported || fsElement()) { wantFullscreen = false; return; }
+  const root = document.documentElement;
+  const req = root.requestFullscreen || root.webkitRequestFullscreen;
+  let p = null;
+  try { p = req.call(root); } catch (e) { p = null; }
+  if (p && p.then) p.then(() => { if (fromClick) wantFullscreen = false; }).catch(() => { if (!fromClick) offerFullscreenBack(); });
+  else setTimeout(() => { if (!fsElement() && !fromClick) offerFullscreenBack(); }, 300);
+}
+function offerFullscreenBack() {
+  if (!wantFullscreen || fsElement()) return;
+  toast('Nettleseren avsluttet fullskjerm da Wikipedia ble åpnet.', {
+    label: 'Tilbake til fullskjerm',
+    run: () => { wantFullscreen = false; requestFullscreenBack(true); }
+  });
+}
+window.addEventListener('focus', () => {
+  if (!wantFullscreen) return;
+  if (fsElement()) wantFullscreen = false; else requestFullscreenBack();
+});
+
+const fsBtn = $('fsBtn'), fsRoot = document.documentElement;
+const fsSupported = !!(fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen);
+const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+if (fsSupported) {
+  fsBtn.hidden = false;
+  fsBtn.addEventListener('click', () => {
+    if (fsElement()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen).call(fsRoot);
+  });
+  const syncFs = () => {
+    const on = !!fsElement();
+    fsBtn.setAttribute('aria-pressed', on);
+    fsBtn.querySelector('.fs-text').textContent = on ? 'Avslutt fullskjerm' : 'Fullskjerm';
+    fsBtn.querySelector('.fs-icon').textContent = on ? '\u2715' : '\u26F6';
+  };
+  document.addEventListener('fullscreenchange', syncFs);
+  document.addEventListener('webkitfullscreenchange', syncFs);
+  fsBtn.addEventListener('click', () => { wantFullscreen = false; });
+}
+
+// ================= Start =================
+buildTable();
+updateDividers();
+applyOptionClasses();
+applyView();
+bEditor.set({ Z: 1, n: 0, shells: [] });
+renderBuilder();
+refreshMeta();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (atoms.length) rerenderAll(); });
+
+</script>
+</body>
+</html>
