@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naturfag – interaktive verktøy</title>
+<meta name="description" content="Interaktive verktøy til naturfagundervisning.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #e6eaee; --panel: #f8fafb; --card: #ffffff; --ink: #1b2733; --ink-soft: #5a6773; --rule: #cad3db;
+  --accent: #1e66d8; --focus: #1e66d8;
+  --c-kjemi: #f6dcae; --c-fysikk: #bfe3dd; --c-biologi: #d7c9ef;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11181f; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
+    --accent: #6ea4ff; --focus: #6ea4ff;
+    --c-kjemi: #5a4520; --c-fysikk: #1f4a44; --c-biologi: #3f3560;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11181f; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
+  --accent: #6ea4ff; --focus: #6ea4ff;
+  --c-kjemi: #5a4520; --c-fysikk: #1f4a44; --c-biologi: #3f3560;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: var(--font);
+  display: flex; flex-direction: column; line-height: 1.5;
+}
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+.wrap { width: min(1100px, 100% - 2.5rem); margin-inline: auto; }
+header { padding: 2.6rem 0 1.4rem; }
+h1 { margin: 0; font-size: clamp(1.9rem, 1.2rem + 2.4vw, 3rem); letter-spacing: -.02em; }
+.lead { margin: .6rem 0 0; max-width: 60ch; color: var(--ink-soft); font-size: 1.05rem; }
+
+main { flex: 1; padding-bottom: 3rem; }
+h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); margin: 2rem 0 .8rem; }
+.grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); margin: 0; padding: 0; list-style: none; }
+
+.card {
+  position: relative; display: flex; flex-direction: column; gap: .55rem; height: 100%;
+  background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 1.1rem 1.2rem 1.2rem;
+  text-decoration: none; color: inherit; overflow: hidden;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--tone, var(--accent)); }
+.card:hover, .card:focus-visible { transform: translateY(-3px); border-color: var(--ink-soft); box-shadow: 0 10px 26px rgba(15, 25, 35, .12); }
+.card .emoji {
+  font-size: 1.9rem; line-height: 1; flex: none; width: 3.2rem; height: 3.2rem; border-radius: 12px;
+  display: grid; place-items: center; background: var(--tone, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.card .body { display: flex; flex-direction: column; gap: .5rem; flex: 1; min-width: 0; }
+@media (min-width: 720px) {
+  .card.feature { flex-direction: row; align-items: flex-start; gap: 1.3rem; padding: 1.4rem 1.5rem 1.5rem; }
+  .card.feature .emoji { width: 4rem; height: 4rem; font-size: 2.4rem; margin-top: .2rem; }
+  .card.feature h3 { font-size: 1.55rem; }
+}
+.grid.few { grid-template-columns: minmax(0, 740px); }
+.card h3 { margin: 0; font-size: 1.3rem; }
+.card .tags, .card .go, .card p { display: block; }
+.card p { margin: 0; color: var(--ink-soft); }
+.card .tags { display: flex !important; flex-wrap: wrap; gap: .35rem; margin-top: auto; padding-top: .7rem; }
+.tag { font-size: .82rem; border-radius: 99px; padding: .15rem .6rem; background: var(--tone, var(--accent)); color: var(--ink); border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent); }
+.card .go { color: var(--accent); font-weight: 700; }
+.card.kjemi { --tone: var(--c-kjemi); }
+.card.fysikk { --tone: var(--c-fysikk); }
+.card.biologi { --tone: var(--c-biologi); }
+
+.card.soon { border-style: dashed; cursor: default; }
+.card.soon:hover { transform: none; box-shadow: none; border-color: var(--rule); }
+.card.soon h3, .card.soon .emoji { opacity: .75; }
+
+footer { border-top: 1px solid var(--rule); padding: 1.2rem 0 2rem; color: var(--ink-soft); font-size: .92rem; }
+footer p { margin: .2rem 0; }
+footer a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <h1>Naturfag</h1>
+  <p class="lead">Interaktive verktøy til undervisning i naturfag. Alt kjører i nettleseren, uten pålogging, og fungerer på tavle, PC og mobil.</p>
+</header>
+
+<main class="wrap">
+  <h2>Kjemi</h2>
+  <ul class="grid few">
+    <li>
+      <!-- LENKEN: endre href hvis periodesystemet ligger et annet sted i repoet -->
+      <a class="card kjemi feature" href="periodesystem.html">
+        <span class="emoji" aria-hidden="true">⚛️</span>
+        <span class="body">
+          <h3>Periodesystemet</h3>
+          <p>Klikk på et grunnstoff og les om det, eller tegn skallmodellen. Bygg atomer og ioner selv, og dra atomer sammen til molekyler og salter.</p>
+          <span class="tags">
+            <span class="tag">Grunnstoffer</span>
+            <span class="tag">Atommodell</span>
+            <span class="tag">Kjemisk binding</span>
+          </span>
+          <span class="go">Åpne →</span>
+        </span>
+      </a>
+    </li>
+
+    <!-- Mal for nye kort. Kopier og fyll ut, og fjern klassen "soon" når siden er ferdig.
+    <li>
+      <a class="card fysikk" href="ny-side.html">
+        <span class="emoji" aria-hidden="true">🔭</span>
+        <span class="body">
+          <h3>Tittel</h3>
+          <p>Kort beskrivelse av hva verktøyet gjør.</p>
+          <span class="tags"><span class="tag">Emne</span></span>
+          <span class="go">Åpne →</span>
+        </span>
+      </a>
+    </li>
+    Når det kommer flere kort: fjern klassen "few" fra <ul class="grid few">, så stiller de seg i rutenett.
+    -->
+  </ul>
+</main>
+
+<footer class="wrap">
+  <p>Lagd for undervisning. Innholdet kan brukes fritt i klasserommet.</p>
+</footer>
+
+</body>
+</html>
