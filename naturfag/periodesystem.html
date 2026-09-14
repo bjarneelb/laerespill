@@ -13,6 +13,8 @@
   --ring: #a5b3c0; --proton: #d7263d; --neutron: #8c96a1; --electron: #1e66d8; --focus: #1e66d8;
   --st-no: #c0262d; --st-no-bg: #fdecec; --st-lab: #9a5b00; --st-lab-bg: #fdf3e1;
   --st-exc: #6a4bb0; --st-exc-bg: #f0ebfb; --st-ok: #2b7a4b; --st-ok-bg: #e7f5ec;
+  --c-metall: #f6dcae; --c-halvmetall: #d7c9ef; --c-ikkemetall: #bfe3dd;
+  --stt-fast: #1b2733; --stt-vaeske: #1257c4; --stt-gass: #c0262d; --stt-ukjent: #8b97a3;
   --orb-p: #138a67; --c-alkali: #f3cfc6; --c-earth: #f1dfbd; --c-trans: #cfdde8; --c-post: #cfe3de;
   --c-metalloid: #dde6c4; --c-nonmetal: #efe8b8; --c-halogen: #c5e5cc; --c-noble: #ddd3ee;
   --c-lanth: #ecd3e3; --c-act: #e9cfd3;
@@ -23,6 +25,8 @@
     --bg: #11181f; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
     --ring: #5b6b7a; --proton: #ef4a5f; --neutron: #8e98a3; --electron: #4a8cf5; --focus: #6ea4ff;
     --st-no: #ff7b7b; --st-no-bg: #3a1f22; --st-lab: #f0b44c; --st-lab-bg: #3a2e18;
+    --c-metall: #5a4520; --c-halvmetall: #3f3560; --c-ikkemetall: #1f4a44;
+    --stt-fast: #e8eef4; --stt-vaeske: #6fa8ff; --stt-gass: #ff8a8a; --stt-ukjent: #9aa7b3;
     --orb-p: #3cc79a; --st-exc: #b9a2f5; --st-exc-bg: #2c2544; --st-ok: #6fcf97; --st-ok-bg: #1d3327;
     --c-alkali: #4f302b; --c-earth: #4d3f25; --c-trans: #2a3d4c; --c-post: #29423d;
     --c-metalloid: #3b4428; --c-nonmetal: #4a4526; --c-halogen: #28452f; --c-noble: #3b3350;
@@ -33,6 +37,8 @@
   --bg: #11181f; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
   --ring: #5b6b7a; --proton: #ef4a5f; --neutron: #8e98a3; --electron: #4a8cf5; --focus: #6ea4ff;
   --st-no: #ff7b7b; --st-no-bg: #3a1f22; --st-lab: #f0b44c; --st-lab-bg: #3a2e18;
+  --c-metall: #5a4520; --c-halvmetall: #3f3560; --c-ikkemetall: #1f4a44;
+  --stt-fast: #e8eef4; --stt-vaeske: #6fa8ff; --stt-gass: #ff8a8a; --stt-ukjent: #9aa7b3;
   --orb-p: #3cc79a; --st-exc: #b9a2f5; --st-exc-bg: #2c2544; --st-ok: #6fcf97; --st-ok-bg: #1d3327;
   --c-alkali: #4f302b; --c-earth: #4d3f25; --c-trans: #2a3d4c; --c-post: #29423d;
   --c-metalloid: #3b4428; --c-nonmetal: #4a4526; --c-halogen: #28452f; --c-noble: #3b3350;
@@ -106,7 +112,7 @@ body.manual-split .auto-btn { display: inline-block; }
 .info-top { display: flex; gap: .9rem; align-items: flex-start; flex-wrap: wrap; }
 .el-chip {
   flex: none; min-width: 78px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
-  background: var(--cat); color: #1b2733; padding: .5rem .7rem .45rem; text-align: center; line-height: 1.15;
+  background: var(--cat); color: #1b2733; padding: .5rem .7rem .45rem; text-align: center; line-height: 1.15; white-space: normal;
 }
 .el-chip .z { font-size: .78rem; }
 .el-chip .sym { font-size: 2.1rem; font-weight: 700; }
@@ -137,10 +143,28 @@ body.manual-split .auto-btn { display: inline-block; }
 .rail .rail-text { writing-mode: vertical-rl; transform: rotate(180deg); font-size: .95rem; }
 
 /* Periodesystemet */
-.pt-view { container: pt / size; display: flex; align-items: center; justify-content: center; padding: 12px; }
+.pt-view { display: flex; flex-direction: column; min-height: 0; }
+.pt-stage { container: pt / size; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px 12px 12px; }
+.pt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .9rem; padding: .5rem .8rem .2rem; font-size: .88rem; }
+.pt-legend { display: flex; flex-wrap: wrap; gap: .3rem; }
+.chip { border-radius: 7px; padding: .12rem .5rem; background: var(--cat, var(--panel)); border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent); white-space: nowrap; }
+.chip.kind-metall { --cat: var(--c-metall); } .chip.kind-halvmetall { --cat: var(--c-halvmetall); } .chip.kind-ikkemetall { --cat: var(--c-ikkemetall); }
+.chip.cat-alkali { --cat: var(--c-alkali); } .chip.cat-earth { --cat: var(--c-earth); } .chip.cat-trans { --cat: var(--c-trans); }
+.chip.cat-post { --cat: var(--c-post); } .chip.cat-metalloid { --cat: var(--c-metalloid); } .chip.cat-nonmetal { --cat: var(--c-nonmetal); }
+.chip.cat-halogen { --cat: var(--c-halogen); } .chip.cat-noble { --cat: var(--c-noble); } .chip.cat-lanth { --cat: var(--c-lanth); } .chip.cat-act { --cat: var(--c-act); }
+.pt-check { display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; white-space: nowrap; }
+.pt-check input { width: 1.05rem; height: 1.05rem; accent-color: var(--electron); margin: 0; }
+.pt-temp { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-left: auto; }
+.state-legend { display: inline-flex; align-items: center; gap: .2rem; color: var(--ink-soft); white-space: nowrap; }
+.state-legend b { margin-left: .5rem; font-weight: 700; }
+.st-fast { color: var(--stt-fast); } .st-vaeske { color: var(--stt-vaeske); } .st-gass { color: var(--stt-gass); } .st-ukjent { color: var(--stt-ukjent); }
+.temp-ctrl { display: inline-flex; align-items: center; gap: .25rem; background: var(--bg); border-radius: 10px; padding: .15rem; }
+.temp-ctrl output { min-width: 7ch; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; }
+#tempRange { width: clamp(80px, 14vw, 200px); accent-color: var(--electron); }
+.btn.sq { width: 1.85rem; padding: .2rem 0; font-size: 1.05rem; line-height: 1; }
 .pt-grid {
-  --cell: min(calc(100cqw / 18), calc(100cqh / 10.35)); width: calc(var(--cell) * 18);
-  display: grid; grid-template-columns: repeat(18, minmax(0, 1fr));
+  --cell: min(calc(100cqw / 18.5), calc(100cqh / 10.35)); width: calc(var(--cell) * 18.5);
+  display: grid; grid-template-columns: calc(var(--cell) * .5) repeat(18, minmax(0, 1fr));
   grid-template-rows: calc(var(--cell) * .5) repeat(7, var(--cell)) calc(var(--cell) * .35) repeat(2, var(--cell));
   gap: calc(var(--cell) * .05);
 }
@@ -152,18 +176,26 @@ body.manual-split .auto-btn { display: inline-block; }
 .el:hover { outline: 2px solid var(--ink); outline-offset: -1px; z-index: 1; }
 .el:active { transform: scale(.96); }
 .el .z { position: absolute; top: calc(var(--cell) * .05); left: calc(var(--cell) * .08); font-size: calc(var(--cell) * .15); }
-.el .sym { font-size: calc(var(--cell) * .36); font-weight: 700; margin-top: calc(var(--cell) * .1); }
+.el .sym { font-size: calc(var(--cell) * .36); font-weight: 700; margin-top: calc(var(--cell) * .1); color: var(--st, var(--ink)); }
+.el.state-fast { --st: var(--stt-fast); } .el.state-vaeske { --st: var(--stt-vaeske); }
+.el.state-gass { --st: var(--stt-gass); } .el.state-ukjent { --st: var(--stt-ukjent); }
+.el.kind-metall { --cat: var(--c-metall); } .el.kind-halvmetall { --cat: var(--c-halvmetall); } .el.kind-ikkemetall { --cat: var(--c-ikkemetall); }
+.pt-grid.fine .el.cat-alkali { --cat: var(--c-alkali); } .pt-grid.fine .el.cat-earth { --cat: var(--c-earth); }
+.pt-grid.fine .el.cat-trans { --cat: var(--c-trans); } .pt-grid.fine .el.cat-post { --cat: var(--c-post); }
+.pt-grid.fine .el.cat-metalloid { --cat: var(--c-metalloid); } .pt-grid.fine .el.cat-nonmetal { --cat: var(--c-nonmetal); }
+.pt-grid.fine .el.cat-halogen { --cat: var(--c-halogen); } .pt-grid.fine .el.cat-noble { --cat: var(--c-noble); }
+.pt-grid.fine .el.cat-lanth { --cat: var(--c-lanth); } .pt-grid.fine .el.cat-act { --cat: var(--c-act); }
+.pt-grid.fine .el.placeholder.cat-lanth { --cat: var(--c-lanth); }
+.pt-grid.fine .el.placeholder.cat-act { --cat: var(--c-act); }
 .el .nm, .el .w { font-size: calc(var(--cell) * .125); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .el .w { color: var(--ink-soft); }
 .el .badge { position: absolute; top: calc(var(--cell) * .04); right: calc(var(--cell) * .04); min-width: calc(var(--cell) * .24); height: calc(var(--cell) * .24); padding: 0 .2em; border-radius: 99px; background: var(--ink); color: var(--panel); font-size: calc(var(--cell) * .15); font-weight: 700; display: grid; place-items: center; }
 .el.placeholder { cursor: default; border-style: dashed; font-size: calc(var(--cell) * .17); color: var(--ink-soft); }
 .el.placeholder:hover { outline: none; }
-.grp { align-self: end; text-align: center; font-size: calc(var(--cell) * .16); color: var(--ink-soft); padding-bottom: calc(var(--cell) * .03); }
-.legend { grid-column: 3 / 13; grid-row: 2 / 4; display: flex; flex-wrap: wrap; align-content: center; gap: calc(var(--cell) * .06) calc(var(--cell) * .22); padding: 0 calc(var(--cell) * .25); font-size: calc(var(--cell) * .15); color: var(--ink-soft); }
-.legend span { display: inline-flex; align-items: center; gap: .35em; white-space: nowrap; }
-.legend i { width: 1em; height: 1em; border-radius: .2em; background: var(--cat); border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); }
-@container pt (width < 780px) or (height < 440px) { .el .nm, .legend { display: none; } }
-@container pt (width < 520px) or (height < 300px) { .el .w, .grp { visibility: hidden; } .el .sym { margin-top: calc(var(--cell) * .14); } }
+.grp { align-self: end; text-align: center; font-size: calc(var(--cell) * .24); font-weight: 700; color: var(--ink-soft); padding-bottom: calc(var(--cell) * .04); }
+.per { display: grid; place-items: center; justify-self: stretch; font-size: calc(var(--cell) * .24); font-weight: 700; color: var(--ink-soft); }
+@container pt (width < 780px) or (height < 440px) { .el .nm { display: none; } }
+@container pt (width < 520px) or (height < 300px) { .el .w, .grp, .per { visibility: hidden; } .el .sym { margin-top: calc(var(--cell) * .14); } }
 
 /* Atombyggeren */
 .build-view { container: build / inline-size; overflow: auto; }
@@ -178,6 +210,7 @@ body.manual-split .auto-btn { display: inline-block; }
 /* Redigering (felles for byggeren og valgt atom) */
 .editor { display: grid; grid-template-columns: 1fr auto; gap: .3rem .6rem; align-items: center; }
 .editor .erow { display: contents; }
+.editor .erow.wide .elbl { grid-column: 1 / -1; }
 .elbl { display: inline-flex; align-items: center; gap: .45rem; color: var(--ink-soft); }
 .elbl b { color: var(--ink); min-width: 1.1em; }
 .elbl small { font-size: .8rem; }
@@ -188,8 +221,9 @@ body.manual-split .auto-btn { display: inline-block; }
 .eblock strong { color: var(--ink); }
 .eblock ul { margin: .2rem 0 0; padding-left: 1.1rem; }
 .add-note { margin: 0; font-size: .85rem; color: var(--st-no); text-align: center; }
-.stepper { display: inline-flex; align-items: center; gap: .2rem; justify-self: end; }
-.stepper button { width: 1.9rem; height: 1.9rem; border-radius: 7px; border: 1px solid var(--rule); background: var(--card); cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 0; }
+.inline-val { margin-left: .5rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.stepper { display: inline-flex; align-items: center; gap: .2rem; justify-self: end; background: var(--bg); border-radius: 10px; padding: .15rem; }
+.stepper button { width: 1.85rem; height: 1.85rem; border-radius: 8px; border: 1px solid var(--rule); background: var(--card); cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 0; }
 .stepper button:hover:not(:disabled) { border-color: var(--ink-soft); }
 .stepper button:disabled { opacity: .35; cursor: default; }
 .stepper input { width: 3.6rem; height: 1.9rem; text-align: center; font-weight: 700; border: 1px solid var(--rule); border-radius: 7px; background: var(--card); -moz-appearance: textfield; }
@@ -310,10 +344,13 @@ svg .shl { fill: var(--ink-soft); font-weight: 700; text-anchor: middle; dominan
 @media (max-width: 760px), (orientation: portrait) and (max-width: 1100px) {
   .stage { flex-direction: column; padding: .5rem; gap: .5rem; }
   .top { padding: .5rem .7rem 0; }
+  .pt-bar { font-size: .78rem; gap: .3rem .6rem; padding: .35rem .5rem .15rem; }
+  .state-legend { display: none; }
   .top h1 { font-size: 1.15rem; } .top p { font-size: .85rem; order: 3; flex-basis: 100%; }
   .fs-btn .fs-text { display: none; }
   .auto-btn { font-size: .8rem; padding: .25rem .5rem; }
   .lbl-long { display: none; } .lbl-short { display: inline; }
+  .stage.solo .panel, .stage.solo .panel.is-active { flex: 1 1 auto; height: auto; }
   .panel.info-panel, .panel.info-panel.is-active { flex: none; height: 44%; }
   .panel.add-panel, .panel.add-panel.is-active { flex: none; height: 58%; transition: height .45s cubic-bezier(.2,.7,.2,1), border-color .3s; }
   .panel.add-panel:not(.is-active) { height: 30%; }
@@ -365,7 +402,27 @@ svg .shl { fill: var(--ink-soft); font-weight: 700; text-anchor: middle; dominan
     </div>
     <div class="add-body">
       <div class="view pt-view" id="viewTable" role="tabpanel" aria-labelledby="tabTable">
-        <div class="pt-grid" id="ptGrid"></div>
+        <div class="pt-bar">
+          <div class="pt-legend" id="kindLegend">
+            <span class="chip kind-metall">Metaller</span>
+            <span class="chip kind-halvmetall">Halvmetaller</span>
+            <span class="chip kind-ikkemetall">Ikke-metaller</span>
+          </div>
+          <label class="pt-check"><input type="checkbox" id="optGroups"> Vis grupper</label>
+          <div class="pt-temp">
+            <span class="state-legend" aria-hidden="true"><b class="st-fast">Fe</b> fast<b class="st-vaeske">Hg</b> væske<b class="st-gass">He</b> gass</span>
+            <span class="temp-ctrl">
+              <button class="btn sq" id="tempDown" aria-label="Senk temperaturen">−</button>
+              <output id="tempOut" for="tempRange">20 °C</output>
+              <button class="btn sq" id="tempUp" aria-label="Hev temperaturen">+</button>
+            </span>
+            <input type="range" id="tempRange" min="-273" max="5000" step="1" value="20" aria-label="Temperatur i grader celsius">
+            <button class="btn" id="tempReset">Tilbake til 20 °C</button>
+          </div>
+        </div>
+        <div class="pt-stage">
+          <div class="pt-grid" id="ptGrid"></div>
+        </div>
       </div>
       <div class="view build-view" id="viewBuild" role="tabpanel" aria-labelledby="tabBuild" hidden>
         <div class="build-grid">
@@ -447,6 +504,7 @@ svg .shl { fill: var(--ink-soft); font-weight: 700; text-anchor: middle; dominan
         <div class="editor" id="iEditor"></div>
         <div class="insp-actions">
           <button class="btn" id="iDetach" hidden>Løsne</button>
+          <button class="btn" id="iDuplicate">Dupliser</button>
           <button class="btn" id="iReset">Tilbakestill</button>
           <button class="btn danger" id="iRemove">Fjern fra feltet</button>
         </div>
@@ -934,11 +992,26 @@ function groupSlots(a) {
   return Math.max(1, nb + Math.ceil(loneElectrons(a) / 2));
 }
 const outerR = a => { const g = a.geo || geometry(a.Z, a.n, a.shells); return g.radii.length ? g.radii[g.radii.length - 1] : g.R; };
+// Avstanden velges slik at overlappet blir akkurat stort nok til elektronparene,
+// og ikke større. Da ser man tydelig at parene ligger i ytterskallet på begge atomene.
 function bondDistance(A, B, bond) {
   const ra = outerR(A), rb = outerR(B);
   if (bond.type === 'ionisk') return ra + rb + 16;
-  const ov = Math.min(ra, rb) * [0, 0.5, 0.62, 0.72][bond.order];
-  return Math.max(ra + rb - ov, (A.geo ? A.geo.R : 12) + (B.geo ? B.geo.R : 12) + 16, Math.max(ra, rb) * 0.75);
+  const re = Math.min(A.geo ? A.geo.re : RE, B.geo ? B.geo.re : RE);
+  const wanted = re * [0, 1.35, 2.9, 4.2][bond.order];   // halv høyde på linsen
+  const lensHalf = d => {
+    const x = (d * d + ra * ra - rb * rb) / (2 * d);
+    return Math.sqrt(Math.max(0, ra * ra - x * x));
+  };
+  let lo = Math.max(Math.abs(ra - rb) + 4, (A.geo ? A.geo.R : 12) + (B.geo ? B.geo.R : 12) + 16, Math.max(ra, rb) * 0.7);
+  let hi = ra + rb - 2;
+  if (lo >= hi) return Math.max(lo, hi);
+  if (lensHalf(lo) < wanted) return lo;                  // kan ikke overlappe dypere
+  for (let i = 0; i < 34; i++) {
+    const mid = (lo + hi) / 2;
+    if (lensHalf(mid) > wanted) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
 }
 
 // Hva skjer hvis disse to dras sammen?
@@ -1072,17 +1145,25 @@ function renderBonds() {
     const x = (d * d + ra * ra - rb * rb) / (2 * d);
     const h = Math.sqrt(Math.max(4, ra * ra - x * x));
     const px = A.x + ux * x, py = A.y + uy * x;
-    const offs = bond.order === 1 ? [0] : bond.order === 2 ? [-0.45, 0.45] : [-0.66, 0, 0.66];
-    const step = Math.min(h * 0.62, re * 3.2);
-    const gapAlong = Math.min(re * 1.45, Math.max(4, (d - Math.max(0, x) ) * 0.2 + re));
-    for (const o of offs) {
-      const cx = px + vx * o * step * 1.35, cy = py + vy * o * step * 1.35;
+    // Hvert delt elektron ligger på ytterskallet til sitt eget atom, inne i linsen,
+    // og dermed også innenfor ytterskallet til det andre atomet
+    const spread = Math.min(h * 0.62, re * 3.4);
+    const offs = bond.order === 1 ? [0] : bond.order === 2 ? [-1, 1] : [-1.5, 0, 1.5];
+    for (const k of offs) {
+      const o = Math.max(-h * 0.82, Math.min(h * 0.82, k * spread));
+      const da = Math.sqrt(Math.max(1, ra * ra - o * o));          // langs aksen, på As ytterskall
+      const db = d - Math.sqrt(Math.max(1, rb * rb - o * o));      // langs aksen, på Bs ytterskall
+      // Paret ligger midt mellom de to ytterskallene, med begge elektronene tett sammen
+      const mid = (da + db) / 2;
+      // Elektronene i paret skal ligge inntil hverandre, ikke oppå hverandre
+      const gap = Math.max(re * 1.08, Math.min(re * 1.35, (da - db) / 2));
       s += `<g class="pair">`;
-      s += electronAt(cx - ux * gapAlong, cy - uy * gapAlong, re, originTint(A));
-      s += electronAt(cx + ux * gapAlong, cy + uy * gapAlong, re, originTint(B));
+      s += electronAt(A.x + ux * (mid + gap) + vx * o, A.y + uy * (mid + gap) + vy * o, re, originTint(A));
+      s += electronAt(A.x + ux * (mid - gap) + vx * o, A.y + uy * (mid - gap) + vy * o, re, originTint(B));
       s += `</g>`;
     }
-    s += `<line class="bond-hit" data-bond="${bond.id}" x1="${f2(px - vx * h)}" y1="${f2(py - vy * h)}" x2="${f2(px + vx * h)}" y2="${f2(py + vy * h)}" stroke-width="${f2(Math.max(18, re * 3.4))}"><title>Klikk for å endre til enkelt-, dobbelt- eller trippelbinding</title></line>`;
+    const hh = Math.max(h, re * 2.6);   // klikkflaten skal være lett å treffe
+    s += `<line class="bond-hit" data-bond="${bond.id}" x1="${f2(px - vx * hh)}" y1="${f2(py - vy * hh)}" x2="${f2(px + vx * hh)}" y2="${f2(py + vy * hh)}" stroke-width="${f2(Math.max(26, re * 4))}"><title>Klikk for å endre til enkelt-, dobbelt- eller trippelbinding</title></line>`;
   }
   // Navn og formel under hvert molekyl
   for (const ids of allMolecules()) {
@@ -1117,35 +1198,44 @@ function cycleBond(bond) {
   moleculeIds(bond.a).forEach(id => renderAtom(atomById(id)));
   renderBonds();
   const word = ['', 'enkeltbinding', 'dobbeltbinding', 'trippelbinding'][next];
-  toast(`Endret til ${word}.`);
+  toast(`Bindingen mellom ${ELEMENTS[A.Z].name.toLowerCase()} og ${ELEMENTS[B.Z].name.toLowerCase()} er nå en ${word}.`);
 }
 
 // ================= Danne bindinger =================
 function tryBond(movedIds) {
   const moved = new Set(movedIds);
-  let best = null;
+  const candidates = [];
   for (const A of atoms) {
     if (!moved.has(A.id)) continue;
     for (const B of atoms) {
       if (moved.has(B.id) || bondBetween(A.id, B.id)) continue;
       ensureGeo(A); ensureGeo(B);
-      const d = Math.hypot(B.x - A.x, B.y - A.y);
+      const dist = Math.hypot(B.x - A.x, B.y - A.y);
       const reach = (outerR(A) + outerR(B)) * 1.06;
-      if (d < reach && (!best || d - reach < best.slack)) best = { A, B, slack: d - reach };
+      if (dist < reach) candidates.push({ A, B, score: dist / reach });
     }
   }
-  if (!best) return;
-  const { A, B } = best;
-  const plan = proposeBond(A, B);
-  if (plan.why) { toast(plan.why); return; }
+  if (!candidates.length) return;
+  // Nærmest i forhold til hvor store atomene er, og et atom som faktisk kan binde seg
+  // går foran et som har fullt ytterskall
+  candidates.sort((x, y) => x.score - y.score);
+  let chosen = null, firstWhy = null;
+  for (const c of candidates) {
+    const p = proposeBond(c.A, c.B);
+    if (p.why) { if (!firstWhy) firstWhy = p.why; continue; }
+    chosen = { ...c, plan: p }; break;
+  }
+  if (!chosen) { toast(firstWhy); return; }
+  const { A, B } = chosen;
+  const plan = chosen.plan;
   const bond = { id: nextBondId++, a: A.id, b: B.id, order: plan.order || 0, type: plan.type };
   bonds.push(bond);
   layoutMolecule(B.id);
   moleculeIds(B.id).forEach(id => renderAtom(atomById(id)));
   renderBonds();
   if (plan.type === 'ionisk' && plan.transfer) transferElectrons(plan.from, plan.to, plan.transfer);
-  else if (plan.type === 'kovalent') toast(`${['', 'Enkeltbinding', 'Dobbeltbinding', 'Trippelbinding'][bond.order]} dannet. Klikk på bindingen for å endre den.`);
-  else toast('Ionene trekkes mot hverandre fordi de har motsatt ladning.');
+  else if (plan.type === 'kovalent') toast(`${['', 'Enkeltbinding', 'Dobbeltbinding', 'Trippelbinding'][bond.order]} mellom ${ELEMENTS[A.Z].name.toLowerCase()} og ${ELEMENTS[B.Z].name.toLowerCase()}. Klikk på bindingen for å endre den.`);
+  else toast(`${ELEMENTS[A.Z].name} og ${ELEMENTS[B.Z].name} trekkes mot hverandre fordi de har motsatt ladning.`);
   refreshMeta();
 }
 
@@ -1163,6 +1253,8 @@ function transferElectrons(fromId, toId, count) {
   }
   const finish = () => {
     layer.innerHTML = '';
+    // Atomene kan ha blitt fjernet eller løsnet mens elektronet var underveis
+    if (!atomById(fromId) || !atomById(toId) || !bondBetween(fromId, toId)) { renderBonds(); return; }
     const fi = shellIndexOf(from), ti = shellIndexOf(to);
     from.shells[fi] = Math.max(0, from.shells[fi] - count);
     to.shells[ti] += count;
@@ -1395,9 +1487,9 @@ function createEditor(root, { protonsEditable, blockCheck = null }) {
   const one = { p: 'ett proton', n: 'ett nøytron', e: 'ett elektron' };
   const stepper = (k, label) => `<span class="stepper"><button type="button" data-k="${k}" data-d="-1" aria-label="Fjern ${one[k]}">${MINUS}</button><input type="number" inputmode="numeric" data-k="${k}" aria-label="Antall ${label}"><button type="button" data-k="${k}" data-d="1" aria-label="Legg til ${one[k]}">+</button></span>`;
   root.innerHTML = `
-    <div class="erow"><span class="elbl"><i class="dot p"></i>Protoner</span>${protonsEditable ? stepper('p', 'protoner') : '<span class="val e-p count-only"></span>'}</div>
+    <div class="erow${protonsEditable ? '' : ' wide'}"><span class="elbl"><i class="dot p"></i>Protoner${protonsEditable ? '' : '<b class="inline-val e-p count-only"></b>'}</span>${protonsEditable ? stepper('p', 'protoner') : ''}</div>
     <div class="erow"><span class="elbl"><i class="dot n"></i>Nøytroner</span>${stepper('n', 'nøytroner')}</div>
-    <div class="erow count-only"><span class="elbl">Massetall</span><span class="val e-a"></span></div>
+    <div class="erow wide count-only"><span class="elbl">Massetall<b class="inline-val e-a"></b></span></div>
     <div class="esub"><span class="elbl"><i class="dot e"></i>Elektroner i skallene</span><span class="etotal"></span></div>`;
   const blockNote = document.createElement('div');
   blockNote.className = 'eblock'; blockNote.hidden = true;
@@ -1408,7 +1500,7 @@ function createEditor(root, { protonsEditable, blockCheck = null }) {
     while (rows.length < count) {
       const i = rows.length, row = document.createElement('div');
       row.className = 'erow shell';
-      row.innerHTML = `<span class="elbl"><b>${SHELL_NAMES[i]}</b><small>skall ${i + 1} · plass til ${shellCap(i)}</small></span><span class="stepper"><button type="button" data-k="s" data-i="${i}" data-d="-1" aria-label="Fjern ett elektron fra ${SHELL_NAMES[i]}-skallet">${MINUS}</button><span class="val"></span><button type="button" data-k="s" data-i="${i}" data-d="1" aria-label="Legg til ett elektron i ${SHELL_NAMES[i]}-skallet">+</button></span>`;
+      row.innerHTML = `<span class="elbl"><b>${SHELL_NAMES[i]}</b><small>skall ${i + 1}</small></span><span class="stepper"><button type="button" data-k="s" data-i="${i}" data-d="-1" aria-label="Fjern ett elektron fra ${SHELL_NAMES[i]}-skallet">${MINUS}</button><span class="val"></span><button type="button" data-k="s" data-i="${i}" data-d="1" aria-label="Legg til ett elektron i ${SHELL_NAMES[i]}-skallet">+</button></span>`;
       root.insertBefore(row, blockNote.parentNode ? blockNote : null); rows.push(row);
     }
     rows.forEach((r, i) => { r.hidden = i >= count; });
@@ -1420,7 +1512,10 @@ function createEditor(root, { protonsEditable, blockCheck = null }) {
   }
   function render() {
     const t = trimShells(state.shells);
-    ensureRows(Math.min(MAX_SHELLS, Math.max(2, t.length + 1)));
+    // Et nytt, tomt skall vises først når skallet innenfor er fullt
+    const lastIdx = t.length - 1;
+    const outerFull = lastIdx < 0 ? true : (lastIdx === 0 ? t[0] >= 2 : t[lastIdx] >= 8);
+    ensureRows(Math.min(MAX_SHELLS, Math.max(1, t.length + (outerFull ? 1 : 0))));
     root.querySelectorAll('input[data-k]').forEach(inp => {
       const v = inp.dataset.k === 'p' ? state.Z : state.n;
       if (document.activeElement !== inp || +inp.value !== v) inp.value = v;
@@ -1439,21 +1534,31 @@ function createEditor(root, { protonsEditable, blockCheck = null }) {
       row.querySelector('[data-d="-1"]').disabled = c <= 0;
       row.querySelector('[data-d="1"]').disabled = c >= shellCap(i) + 4;
     });
+    hideUnusableRows();
     if (lockedNote) {
       root.querySelectorAll('.erow.shell button').forEach(b => b.disabled = true);
       blockNote.hidden = false; blockNote.innerHTML = lockedNote;
     } else if (blockCheck) {
-      const reasons = new Set();
+      // Knapper som ville gitt et atom som ikke kan eksistere, sperres uten forklaring;
+      // en forklaring på noe som ikke har skjedd, forvirrer mer enn den hjelper
       root.querySelectorAll('button[data-k]').forEach(b => {
         if (b.disabled || (b.closest('.erow') && b.closest('.erow').hidden)) return;
         const t = { Z: state.Z, n: state.n, shells: state.shells.slice() }, d = +b.dataset.d;
         if (b.dataset.k === 'n') t.n += d; else if (b.dataset.k === 's') t.shells[+b.dataset.i] += d; else t.Z += d;
-        const why = blockCheck(t);
-        if (why) { b.disabled = true; reasons.add(why); }
+        if (blockCheck(t)) b.disabled = true;
       });
-      blockNote.hidden = !reasons.size;
-      blockNote.innerHTML = reasons.size ? `<strong>Noen knapper er sperret</strong>, fordi atomet da ikke kunne eksistert:<ul>${[...reasons].slice(0, 4).map(r => `<li>${r}</li>`).join('')}</ul>` : '';
+      blockNote.hidden = true;
+      blockNote.innerHTML = '';
+      hideUnusableRows();
     }
+  }
+  // Et tomt skall som ikke kan fylles, har ingenting å gjøre i lista
+  function hideUnusableRows() {
+    rows.forEach((row, i) => {
+      if (row.hidden) return;
+      const c = state.shells[i] || 0;
+      if (c === 0 && row.querySelector('[data-d="1"]').disabled) row.hidden = true;
+    });
   }
   root.addEventListener('click', ev => {
     const b = ev.target.closest('button[data-k]'); if (!b || !state) return;
@@ -1554,6 +1659,7 @@ function ensureVisible(a) {
 
 // ================= Atomer på arbeidsbordet =================
 function renderAtom(a) {
+  if (!a) return;
   let rec = atomEls.get(a.id);
   if (!rec) {
     const g = document.createElementNS(NS, 'g');
@@ -1660,6 +1766,7 @@ function removeAtom(id) {
   wasBonded.forEach(nb => { if (atomById(nb)) { layoutMolecule(nb); moleculeIds(nb).forEach(i => renderAtom(atomById(i))); } });
   const rec = atomEls.get(id); if (rec) rec.g.remove();
   atomEls.delete(id);
+  renderBonds();          // ellers blir bindingselektronene stående igjen
   if (selectedId === id) select(null);
   refreshMeta();
 }
@@ -1742,6 +1849,18 @@ $('iStatus').addEventListener('click', ev => {
   a.shells = padShells(a.assess.ground); a.geo = null; iEditor.set(a); renderAtom(a); renderBonds(); updateInspector(a); refreshMeta();
 });
 $('iDetach').addEventListener('click', () => { if (selectedId != null) detachAtom(selectedId); });
+$('iDuplicate').addEventListener('click', () => {
+  const a = atomById(selectedId); if (!a) return;
+  const before = atoms.length;
+  addAtom(a.Z, a.n, a.shells.slice());
+  if (atoms.length === before) return;              // feltet var fullt
+  const copy = atoms[atoms.length - 1];
+  copy.origin = { n: a.origin.n, shells: a.origin.shells.slice() };
+  copy.gained = a.gained; copy.gainedFrom = a.gainedFrom;
+  renderAtom(copy);
+  select(copy.id);
+  toast(`Kopi av ${ELEMENTS[a.Z].name.toLowerCase()} lagt i feltet.`);
+});
 $('iClose').addEventListener('click', () => select(null));
 $('iRemove').addEventListener('click', () => { if (selectedId != null) removeAtom(selectedId); });
 $('iReset').addEventListener('click', () => {
@@ -1894,22 +2013,25 @@ function gridPos(Z) {
 }
 function buildTable() {
   const g = $('ptGrid'); let h = '';
-  const grp = (n, row) => `<span class="grp" style="grid-row:${row};grid-column:${n}">${n}</span>`;
+  const grp = (n, row) => `<span class="grp" style="grid-row:${row};grid-column:${n + 1}">${n}</span>`;
+  const per = (n, row) => `<span class="per" style="grid-row:${row};grid-column:1">${n}</span>`;
+  for (let n = 1; n <= 7; n++) h += per(n, n + 1);
+  h += per(6, 10) + per(7, 11);
   h += grp(1, 1) + grp(18, 1) + grp(2, 2);
   for (let n = 13; n <= 17; n++) h += grp(n, 2);
   for (let n = 3; n <= 12; n++) h += grp(n, 4);
-  h += '<div class="legend" aria-hidden="true">' + Object.entries(CATS).map(([k, c]) => `<span style="--cat:var(--c-${k})"><i></i>${c.label}</span>`).join('') + '</div>';
-  h += `<div class="el placeholder" style="grid-row:7;grid-column:3;--cat:var(--c-lanth)" aria-hidden="true">57–71</div>`;
-  h += `<div class="el placeholder" style="grid-row:8;grid-column:3;--cat:var(--c-act)" aria-hidden="true">89–103</div>`;
+  h += `<div class="el placeholder cat-lanth kind-metall" style="grid-row:7;grid-column:4" aria-hidden="true">57–71</div>`;
+  h += `<div class="el placeholder cat-act kind-metall" style="grid-row:8;grid-column:4" aria-hidden="true">89–103</div>`;
   for (let Z = 1; Z <= 118; Z++) {
     const el = ELEMENTS[Z], [r, c] = gridPos(Z), w = el.weightText.replace('.', ',');
-    h += `<button class="el" data-z="${Z}" style="grid-row:${r};grid-column:${c};--cat:var(--c-${el.cat})" title="${el.name}, atomnummer ${Z}, atomvekt ${w} u" aria-label="Legg til ${el.name.toLowerCase()}"><span class="z">${Z}</span><span class="sym">${el.sym}</span><span class="nm">${el.name}</span><span class="w">${w}</span><span class="badge" hidden></span></button>`;
+    const kind = metalWord(el.cat).replace('-', '').replace('ikkemetall', 'ikkemetall');
+    h += `<button class="el cat-${el.cat} kind-${kind}" data-z="${Z}" style="grid-row:${r};grid-column:${c + 1}" aria-label="Legg til ${el.name.toLowerCase()}"><span class="z">${Z}</span><span class="sym">${el.sym}</span><span class="nm">${el.name}</span><span class="w">${w}</span><span class="badge" hidden></span></button>`;
   }
   g.innerHTML = h;
   let lastZ = 0, lastTime = 0, addedAt = 0;
   g.addEventListener('dblclick', ev => {
     const b = ev.target.closest('.el[data-z]'); if (!b) return;
-    if (performance.now() - addedAt < 900) return;  // allerede lagt til av de to klikkene
+    if (performance.now() - addedAt < 250) return;  // allerede lagt til av de to klikkene
     lastTime = 0; addedAt = performance.now(); addAtomFromTable(+b.dataset.z);
   });
   g.addEventListener('click', ev => {
@@ -1924,23 +2046,30 @@ function buildTable() {
 function addAtomFromTable(Z) { addAtom(Z, ELEMENTS[Z].N, neutralShells(Z)); }
 
 // ================= Informasjon om grunnstoffet =================
-let infoZ = null;
+let infoZ = null, infoOpenTimer = null;
 function showInfo(Z, open) {
   infoZ = Z;
   const el = ELEMENTS[Z], inf = INFO[Z], shells = neutralShells(Z);
-  if (open && infoPanel.hidden) toggleInfo(true, true);
-  // Uten musepeker finnes ingen hover, så feltet som nettopp ble bedt om, blir det store
-  if (open && matchMedia('(hover: none)').matches) setActive(infoPanel);
+  if (open && infoPanel.hidden) {
+    // Feltet åpnes med en liten forsinkelse, slik at periodesystemet ikke flytter seg
+    // mellom de to klikkene i et dobbeltklikk
+    clearTimeout(infoOpenTimer);
+    infoOpenTimer = setTimeout(() => {
+      toggleInfo(true, true);
+      if (matchMedia('(hover: none)').matches) setActive(infoPanel);
+    }, 320);
+  } else if (open && matchMedia('(hover: none)').matches) setActive(infoPanel);
   $('infoTitle').textContent = `Om ${el.name.toLowerCase()}`;
-  const st = stateAt(Z);
-  const chip = `<div class="el-chip" style="--cat:var(--c-${el.cat})" aria-hidden="true"><div class="z">${Z}</div><div class="sym">${el.sym}</div><div class="w">${el.weightText.replace('.', ',')}</div></div>`;
+  const st = stateAt(Z, tempC);
+  const chipCls = $('optGroups').checked ? `cat-${el.cat}` : `kind-${metalWord(el.cat).replace('-', '')}`;
+  const chip = `<div class="el-chip chip ${chipCls}" aria-hidden="true"><div class="z">${Z}</div><div class="sym">${el.sym}</div><div class="w">${el.weightText.replace('.', ',')}</div></div>`;
   const rows = [];
   const add = (k, v) => { if (v) rows.push(`<dt>${k}</dt><dd>${v}</dd>`); };
   add('Type', capFirst(metalWord(el.cat)) + (SERIES_LABEL[el.cat] && metalWord(el.cat) !== SERIES_LABEL[el.cat] ? ` (${SERIES_LABEL[el.cat]})` : ''));
   add('Plass', `${groupText(Z)}, periode ${inf.p || periodOf(Z)}`);
   add('Atomnummer', `${Z} protoner`);
   add('Atomvekt', `${el.weightText.replace('.', ',')} u${el.bracket ? ' (massetall for den mest stabile isotopen)' : ''}`);
-  add('Tilstand ved 20 °C', st ? capFirst(st) : 'Ukjent, grunnstoffet finnes bare et øyeblikk');
+  add(`Tilstand ved ${tempC.toLocaleString('nb-NO')} °C`, st ? capFirst(st) : 'Ukjent, grunnstoffet finnes bare et øyeblikk');
   add('Smelter ved', fmtT(inf.mp));
   add('Koker ved', fmtT(inf.bp));
   // Gasser er så lette at g/cm³ blir null komma ingenting, så de oppgis i gram per liter
@@ -1957,7 +2086,7 @@ function showInfo(Z, open) {
   const bar = shells.map((c, i) => `<span><b>${SHELL_NAMES[i]}</b> (skall ${i + 1}): ${c}</span>`).join('');
   $('infoBody').innerHTML = `
     <div class="info-top">${chip}
-      <div class="info-headline"><div class="big">${el.name}</div><div class="sub">${capFirst(metalWord(el.cat))} · ${st ? st + ' ved 20 °C' : 'finnes bare et øyeblikk'}</div></div>
+      <div class="info-headline"><div class="big">${el.name}</div><div class="sub">${capFirst(metalWord(el.cat))} · ${st ? st + ' ved ' + tempC.toLocaleString('nb-NO') + ' °C' : 'finnes bare et øyeblikk'}</div></div>
     </div>
     <p class="info-desc">${inf.t}</p>
     <div class="shellbar" aria-label="Elektroner i skallene">${bar}</div>
@@ -1986,6 +2115,44 @@ function periodOf(Z) {
   const limits = [2, 10, 18, 36, 54, 86, 118];
   return limits.findIndex(l => Z <= l) + 1;
 }
+
+// ================= Temperatur og tilstand =================
+let tempC = 20;
+const STATE_CLASS = { fast: 'state-fast', 'væske': 'state-vaeske', gass: 'state-gass' };
+function setTemp(v) {
+  tempC = Math.max(-273, Math.min(5000, Math.round(v)));
+  $('tempRange').value = tempC;
+  $('tempOut').textContent = `${tempC.toLocaleString('nb-NO')} °C`;
+  $('tempOut').title = `${(tempC + 273).toLocaleString('nb-NO')} K`;
+  $('tempReset').hidden = tempC === 20;
+  paintStates();
+  if (infoZ) showInfo(infoZ, false);
+}
+function paintStates() {
+  document.querySelectorAll('.el[data-z]').forEach(cell => {
+    const Z = +cell.dataset.z, el = ELEMENTS[Z];
+    const st = stateAt(Z, tempC);
+    cell.classList.remove('state-fast', 'state-vaeske', 'state-gass', 'state-ukjent');
+    cell.classList.add(st ? STATE_CLASS[st] : 'state-ukjent');
+    cell.title = `${el.name}, atomnummer ${Z}, atomvekt ${el.weightText.replace('.', ',')} u` +
+      (st ? ` — ${st} ved ${tempC.toLocaleString('nb-NO')} °C` : ' — tilstanden er ukjent');
+  });
+}
+$('tempRange').addEventListener('input', e => setTemp(+e.target.value));
+$('tempDown').addEventListener('click', e => setTemp(tempC - (e.shiftKey ? 100 : 10)));
+$('tempUp').addEventListener('click', e => setTemp(tempC + (e.shiftKey ? 100 : 10)));
+$('tempReset').addEventListener('click', () => setTemp(20));
+const FINE_LEGEND = [['alkali', 'Alkalimetaller'], ['earth', 'Jordalkalimetaller'], ['trans', 'Overgangsmetaller'],
+  ['lanth', 'Lantanoider'], ['act', 'Aktinoider'], ['post', 'Andre metaller'], ['metalloid', 'Halvmetaller'],
+  ['nonmetal', 'Ikke-metaller'], ['halogen', 'Halogener'], ['noble', 'Edelgasser']];
+const KIND_LEGEND = [['kind-metall', 'Metaller'], ['kind-halvmetall', 'Halvmetaller'], ['kind-ikkemetall', 'Ikke-metaller']];
+$('optGroups').addEventListener('change', e => {
+  const fine = e.target.checked;
+  $('ptGrid').classList.toggle('fine', fine);
+  $('kindLegend').innerHTML = (fine ? FINE_LEGEND.map(([k, t]) => [`cat-${k}`, t]) : KIND_LEGEND)
+    .map(([cls, t]) => `<span class="chip ${cls}">${t}</span>`).join('');
+  if (infoZ) showInfo(infoZ, false);
+});
 
 // ================= Atombyggeren =================
 const bEditor = createEditor($('bEditor'), { protonsEditable: true });
@@ -2076,6 +2243,7 @@ function setPanelVisible(rec, on, quiet) {
   rec.panel.hidden = !on; rec.rail.hidden = on;
   stage.classList.toggle(rec.cls, !on);
   if (!on) rec.panel.classList.remove('is-active');
+  stage.classList.toggle('solo', visiblePanels().length === 1);
   updateDividers();
   resetSplit();
   if (quiet) { applyView(); return; }
@@ -2249,6 +2417,7 @@ if (fsSupported) {
 
 // ================= Start =================
 buildTable();
+setTemp(20);
 updateDividers();
 applyOptionClasses();
 applyView();
