@@ -82,6 +82,22 @@ footer { border-top: 1px solid var(--rule); padding: 1.2rem 0 2rem; color: var(-
 footer p { margin: .2rem 0; }
 footer a { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+
+.who { margin-top: .9rem; border: 1px solid var(--rule); background: var(--card); color: var(--ink-soft); border-radius: 99px; padding: .3rem .8rem; font-size: .88rem; cursor: pointer; }
+.who:hover { border-color: var(--ink-soft); color: var(--ink); }
+.session { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 1.2rem; background: rgba(10, 16, 23, .72); }
+.session[hidden] { display: none; }
+.session .sheet { width: min(460px, 100%); background: var(--panel); border: 1px solid var(--rule); border-radius: 18px; padding: 1.4rem 1.5rem 1.5rem; }
+.session h2 { margin: 0 0 .3rem; font-size: 1.5rem; text-transform: none; letter-spacing: -.01em; color: var(--ink); }
+.session p { color: var(--ink-soft); margin: 0 0 1rem; }
+.session .field { display: block; margin: .8rem 0; }
+.session .field span { display: block; font-size: .9rem; color: var(--ink-soft); margin-bottom: .3rem; }
+.session input { width: 100%; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: .55rem .7rem; font: inherit; color: inherit; }
+.session .err { color: #c0262d; min-height: 1.3em; margin: .2rem 0 0; font-size: .9rem; }
+.session .row { display: flex; gap: .6rem; margin-top: 1rem; }
+.btn { border: 1px solid var(--rule); background: var(--card); border-radius: 10px; padding: .55rem 1.1rem; font: inherit; color: inherit; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.btn.ghost { color: var(--ink-soft); }
 </style>
 </head>
 <body>
@@ -89,14 +105,15 @@ footer a { color: var(--accent); }
 <header class="wrap">
   <h1>Naturfag</h1>
   <p class="lead">Interaktive verktøy til undervisning i naturfag. Alt kjører i nettleseren, uten pålogging, og fungerer på tavle, PC og mobil.</p>
+  <button class="who" id="sessionBadge" hidden title="Klikk for å bytte navn eller timekode"></button>
 </header>
 
 <main class="wrap">
   <h2>Kjemi</h2>
-  <ul class="grid few">
+  <ul class="grid">
     <li>
       <!-- LENKEN: endre href hvis periodesystemet ligger et annet sted i repoet -->
-      <a class="card kjemi feature" href="periodesystem.html">
+      <a class="card kjemi" href="periodesystem.html">
         <span class="emoji" aria-hidden="true">⚛️</span>
         <span class="body">
           <h3>Periodesystemet</h3>
@@ -107,6 +124,21 @@ footer a { color: var(--accent); }
             <span class="tag">Kjemisk binding</span>
           </span>
           <span class="go">Åpne →</span>
+        </span>
+      </a>
+    </li>
+
+    <li>
+      <a class="card kjemi" href="bobler.html">
+        <span class="emoji" aria-hidden="true">🫧</span>
+        <span class="body">
+          <h3>Boblejakten</h3>
+          <p>Bobler med grunnstoffnavn vokser på skjermen. Skriv det kjemiske symbolet før skjermen fylles. Alene eller mot en annen elev.</p>
+          <span class="tags">
+            <span class="tag">Kjemiske symboler</span>
+            <span class="tag">Spill</span>
+          </span>
+          <span class="go">Spill →</span>
         </span>
       </a>
     </li>
@@ -131,6 +163,92 @@ footer a { color: var(--accent); }
 <footer class="wrap">
   <p>Lagd for undervisning. Innholdet kan brukes fritt i klasserommet.</p>
 </footer>
+
+
+<div class="session" id="sessionOverlay" hidden>
+  <div class="sheet">
+    <h2>Velkommen</h2>
+    <p>Skriv navnet ditt og timekoden du har fått av læreren. Navnet brukes bare til lærerens oversikt, og vises aldri i spillene. Alt slettes etter et døgn.</p>
+    <label class="field"><span>Ditt navn</span><input type="text" id="sessionName" autocomplete="off"></label>
+    <label class="field"><span>Timekode (fra læreren)</span><input type="text" id="sessionCode" autocomplete="off" maxlength="10" placeholder="Valgfri"></label>
+    <p class="err" id="sessionError" role="status"></p>
+    <div class="row">
+      <button class="btn primary" id="sessionGo">Start</button>
+      <button class="btn ghost" id="sessionSkip">Hopp over</button>
+    </div>
+  </div>
+</div>
+<script type="module">
+  import { database, ref, get } from "./js/firebase-config.js";
+  window._db = database; window._ref = ref; window._get = get; window._fbReady = true;
+</script>
+<script>
+// Samme nøkkel og samme stier som matematikksiden, slik at js/spill-utils.js kan brukes uendret
+const SESSION_KEY = 'matte_session';
+const $ = id => document.getElementById(id);
+function lesSession() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+    if (!s) return null;
+    if (s.expires && Date.now() > s.expires) return null;
+    return s;
+  } catch (e) { return null; }
+}
+function visMerke(s) {
+  const b = $('sessionBadge');
+  if (!s || s.skipped) { b.hidden = true; return; }
+  b.hidden = false;
+  b.textContent = s.code ? `👤 ${s.name} · timekode ${s.code}` : `👤 ${s.name}`;
+}
+window.addEventListener('load', () => {
+  const s = lesSession();
+  if (s) { visMerke(s); return; }
+  // navn og kode kan sendes med i lenken fra matematikksiden
+  const q = new URLSearchParams(location.search);
+  if (q.get('navn')) {
+    const d = { name: q.get('navn'), code: (q.get('kode') || '').toUpperCase() || undefined, ts: Date.now() };
+    if (!d.code) d.noCode = true;
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(d));
+    history.replaceState(null, '', location.pathname);
+    visMerke(d); return;
+  }
+  setTimeout(() => { $('sessionOverlay').hidden = false; $('sessionName').focus(); }, 250);
+});
+$('sessionGo').addEventListener('click', async () => {
+  const navn = $('sessionName').value.trim();
+  const kode = $('sessionCode').value.trim().toUpperCase();
+  const err = $('sessionError');
+  err.textContent = '';
+  if (!navn) { err.textContent = 'Skriv inn navnet ditt.'; $('sessionName').focus(); return; }
+  if (!kode) {
+    const d = { name: navn, noCode: true, ts: Date.now() };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(d));
+    $('sessionOverlay').hidden = true; visMerke(d); return;
+  }
+  err.textContent = 'Sjekker timekoden …';
+  try {
+    const snap = await window._get(window._ref(window._db, 'timecodes/' + kode));
+    const data = snap.val();
+    if (!data) { err.textContent = 'Ugyldig timekode.'; return; }
+    if (Date.now() > data.expires) { err.textContent = 'Timekoden er utløpt.'; return; }
+    const d = { name: navn, code: kode, expires: data.expires, teacher: data.teacher || '', ts: Date.now() };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(d));
+    $('sessionOverlay').hidden = true; visMerke(d);
+  } catch (e) { err.textContent = 'Fikk ikke kontakt. Prøv igjen, eller hopp over.'; }
+});
+$('sessionSkip').addEventListener('click', () => {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ skipped: true, ts: Date.now() }));
+  $('sessionOverlay').hidden = true;
+});
+$('sessionCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('sessionGo').click(); });
+$('sessionName').addEventListener('keydown', e => { if (e.key === 'Enter') $('sessionCode').focus(); });
+$('sessionBadge').addEventListener('click', () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  $('sessionBadge').hidden = true;
+  $('sessionOverlay').hidden = false;
+  $('sessionName').focus();
+});
+</script>
 
 </body>
 </html>
