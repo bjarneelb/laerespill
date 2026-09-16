@@ -40,6 +40,13 @@ button { font: inherit; color: inherit; }
 .scene { position: relative; flex: 1; min-height: 0; }
 #lerret { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 #lerret.griper { cursor: grabbing; }
+.bygg { display: flex; align-items: center; gap: .35rem; }
+.bygg input { background: var(--card); border: 1px solid var(--rule); border-radius: 9px; padding: .4rem .6rem;
+  font: inherit; color: inherit; width: min(230px, 40vw); }
+.bygg input:focus-visible { outline-color: var(--accent); }
+.melding .valg { border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.12); color: #fff;
+  border-radius: 8px; padding: .12rem .5rem; margin: .1rem .1rem; cursor: pointer; font: inherit; }
+.melding .valg:hover { background: rgba(255,255,255,.25); }
 .melding { position: absolute; left: 50%; transform: translateX(-50%); top: .7rem; background: rgba(20,28,36,.9); color: #fff;
            padding: .45rem .8rem; border-radius: 10px; font-size: .9rem; max-width: min(46ch, calc(100% - 2rem)); text-align: center; }
 .info { position: absolute; right: .7rem; top: .7rem; width: min(260px, calc(100% - 1.4rem)); background: var(--panel);
@@ -77,6 +84,7 @@ button { font: inherit; color: inherit; }
 .rom .sym { font-weight: 700; font-size: .95rem; }
 @media (max-width: 560px) {
   .top h1 { font-size: 1rem; } .hint { display: none; }
+  .bygg input { width: 40vw; }
   .rom button { width: 76px; } .rom .kule { width: 36px; height: 36px; }
   .info { width: min(200px, calc(100% - 1.4rem)); font-size: .85rem; }
 }
@@ -87,6 +95,16 @@ button { font: inherit; color: inherit; }
 <header class="top">
   <h1>🧪 Molekylbyggesett</h1>
   <span class="hint" id="hint">Klikk på et rom i esken for å ta ut en kule. Klikk på én kule og så på en annen for å sette inn en pinne mellom dem.</span>
+  <span class="bygg">
+    <input type="text" id="byggInn" list="byggListe" placeholder="skriv navn eller formel …" aria-label="Bygg molekyl fra navn eller formel">
+    <button class="btn" id="byggBtn">Bygg</button>
+    <datalist id="byggListe">
+      <option value="vann"></option><option value="metan"></option><option value="etanol"></option>
+      <option value="eddiksyre"></option><option value="aceton"></option><option value="propan-2-ol"></option>
+      <option value="but-2-en"></option><option value="etyn"></option><option value="ammoniakk"></option>
+      <option value="karbondioksid"></option><option value="glyserol"></option><option value="klormetan"></option>
+    </datalist>
+  </span>
   <span class="grow"></span>
   <button class="btn" id="pinneBtn" hidden>Sett inn én pinne til</button>
   <button class="btn" id="vriBtn" hidden>Vri rundt bindingen</button>
@@ -110,6 +128,13 @@ button { font: inherit; color: inherit; }
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- logging: bare når eleven har timekode -->
+<script type="module">
+  import { database, ref, update } from "./js/firebase-config.js";
+  window._fbReady = true; window._db = database; window._ref = ref; window._update = update;
+</script>
+<script src="./js/spill-utils.js"></script>
+<script src="./js/logg.js"></script>
 <script>
 // ================= Molekylbyggesett i 3D =================
 // Kulene har hull slik et fysisk byggesett har, og hullene bestemmer vinklene.
@@ -378,6 +403,7 @@ function settInnPinne(A, iA, B, iB) {
   tegnPinne(b);
   bindinger.filter(x => (x.a === A.id && x.b === B.id) || (x.a === B.id && x.b === A.id)).forEach(tegnPinne);
   oppdaterInfo();
+  if (window.Logg) Logg.tell('pinner');
   const antall = bindinger.filter(x => (x.a === A.id && x.b === B.id) || (x.a === B.id && x.b === A.id)).length;
   si(antall > 1 ? `${['', 'Enkeltbinding', 'Dobbeltbinding', 'Trippelbinding'][Math.min(3, antall)]} mellom ${ELEMENTER[A.el].navn.toLowerCase()} og ${ELEMENTER[B.el].navn.toLowerCase()}.` : '');
 }
@@ -481,7 +507,10 @@ function oppdaterInfo() {
     const r = analyser(ids);
     let under;
     if (r.ledige) under = `<div class="mangler">${r.ledige} ${r.ledige === 1 ? 'ledig hull' : 'ledige hull'}</div>`;
-    else if (r.navn) under = `<div class="ferdig">✓ ${r.navn}${r.trivial ? ' · ' + r.trivial : ''}</div>`;
+    else if (r.navn) {
+      under = `<div class="ferdig">✓ ${r.navn}${r.trivial ? ' · ' + r.trivial : ''}</div>`;
+      if (window.Logg) Logg.tell('molekyler', `${r.formel} ${r.navn}`);
+    }
     else under = '<div class="mangler">✓ Alle hull er fylt. Strukturen har ikke noe navn her.</div>';
     return `<li><span class="formel">${r.formel}</span>${under}</li>`;
   }).join('');
@@ -644,6 +673,234 @@ function analyser(ids) {
   svar.navn = navn;
   svar.trivial = TRIVIAL[navn] && TRIVIAL[navn] !== navn ? TRIVIAL[navn] : null;
   return svar;
+}
+
+// ================= Bygg fra navn eller formel =================
+// Navnet tolkes motsatt vei av navnsetteren, så alt den kan navngi, kan den også bygge.
+const STAMMENR = { met: 1, et: 2, prop: 3, but: 4, pent: 5, heks: 6, hept: 7, okt: 8 };
+const MENGDENR = { di: 2, tri: 3, tetra: 4 };
+
+// Stoffer uten karbon, og noen få som ikke følger mønsteret
+const OPPSKRIFTER = {
+  'vann': { a: ['O','H','H'], b: [[0,1,1],[0,2,1]] },
+  'hydrogenperoksid': { a: ['O','O','H','H'], b: [[0,1,1],[0,2,1],[1,3,1]] },
+  'ammoniakk': { a: ['N','H','H','H'], b: [[0,1,1],[0,2,1],[0,3,1]] },
+  'hydrogensulfid': { a: ['S','H','H'], b: [[0,1,1],[0,2,1]] },
+  'hydrogenklorid': { a: ['H','Cl'], b: [[0,1,1]] },
+  'saltsyre': { a: ['H','Cl'], b: [[0,1,1]] },
+  'karbondioksid': { a: ['C','O','O'], b: [[0,1,2],[0,2,2]] },
+  'karbonmonoksid': { a: ['C','O'], b: [[0,1,3]] },
+  'karbondisulfid': { a: ['C','S','S'], b: [[0,1,2],[0,2,2]] },
+  'svoveldioksid': { a: ['S','O','O'], b: [[0,1,2],[0,2,2]] },
+  'oksygen': { a: ['O','O'], b: [[0,1,2]] },
+  'nitrogen': { a: ['N','N'], b: [[0,1,3]] },
+  'hydrogen': { a: ['H','H'], b: [[0,1,1]] },
+  'klor': { a: ['Cl','Cl'], b: [[0,1,1]] },
+  'klorgass': { a: ['Cl','Cl'], b: [[0,1,1]] }
+};
+// Trivialnavn peker på det systematiske navnet
+const TRIVIALTIL = {
+  'eddiksyre': 'etansyre', 'maursyre': 'metansyre', 'propionsyre': 'propansyre',
+  'smørsyre': 'butansyre', 'aceton': 'propan-2-on', 'acetylen': 'etyn', 'etylen': 'eten',
+  'formaldehyd': 'metanal', 'glyserol': 'propan-1,2,3-triol', 'allylalkohol': 'prop-2-en-1-ol',
+  'kloroform': 'triklormetan', 'karbontetraklorid': 'tetraklormetan', 'sprit': 'etanol',
+  'metansprit': 'metanol', 'tresprit': 'metanol', 'propylen': 'propen', 'eddik': 'etansyre'
+};
+
+const rens = t => (t || '').toLowerCase().trim()
+  .replace(/[₀₁₂₃₄₅₆₇₈₉]/g, c => '₀₁₂₃₄₅₆₇₈₉'.indexOf(c))
+  .replace(/\s+/g, '').replace(/[–—]/g, '-');
+
+// ---------- tolke et systematisk navn ----------
+function tolkNavn(navnInn) {
+  let s = rens(navnInn);
+  const g = { n: 0, dobbel: [], trippel: [], ol: [], on: [], al: 0, syre: 0, klor: [] };
+  const tall = (t, antall, standard) => {
+    if (t) return t.split(',').map(Number);
+    return Array.from({ length: antall || 1 }, () => standard);
+  };
+  // forstavelse for klor
+  const k = s.match(/^(?:([\d,]+)-)?(di|tri|tetra)?klor/);
+  if (k) {
+    const antall = MENGDENR[k[2]] || 1;
+    g.klor = tall(k[1], antall, 1);
+    if (g.klor.length !== antall) return null;
+    s = s.slice(k[0].length);
+  }
+  // stammen
+  const stamme = Object.keys(STAMMENR).sort((a, b) => b.length - a.length).find(x => s.startsWith(x));
+  if (!stamme) return null;
+  g.n = STAMMENR[stamme];
+  s = s.slice(stamme.length);
+  if (s.startsWith('a') && /^a-?\d/.test(s)) s = s.slice(1);          // buta-1,3-dien
+  // endelsen
+  let m;
+  if ((m = s.match(/(di)?syre$/))) { g.syre = MENGDENR[m[1]] || 1; s = s.slice(0, -m[0].length); }
+  else if ((m = s.match(/(di)?al$/))) { g.al = MENGDENR[m[1]] || 1; s = s.slice(0, -m[0].length); }
+  else if ((m = s.match(/(?:-?([\d,]+)-)?(di|tri)?on$/))) { g.on = tall(m[1], MENGDENR[m[2]] || 1, 2); s = s.slice(0, -m[0].length); }
+  else if ((m = s.match(/(?:-?([\d,]+)-)?(di|tri)?ol$/))) { g.ol = tall(m[1], MENGDENR[m[2]] || 1, 1); s = s.slice(0, -m[0].length); }
+  // dobbelt- og trippelbindinger
+  const re = /(?:-?([\d,]+)-)?(di|tri)?(en|yn)/g;
+  let treff;
+  while ((treff = re.exec(s))) {
+    const liste = tall(treff[1], MENGDENR[treff[2]] || 1, 1);
+    (treff[3] === 'en' ? g.dobbel : g.trippel).push(...liste);
+  }
+  s = s.replace(re, '').replace(/^an/, '').replace(/-/g, '');
+  if (s.length) return null;                                          // rester vi ikke skjønner
+  return lagOppskrift(g);
+}
+
+// ---------- gjøre tolkningen om til atomer og bindinger ----------
+function lagOppskrift(g) {
+  const n = g.n;
+  if (!n || n > 8) return null;
+  const a = [], b = [];
+  const nyC = () => { a.push('C'); return a.length - 1; };
+  const kjede = Array.from({ length: n }, nyC);
+  const orden = Array(Math.max(0, n - 1)).fill(1);
+  for (const p of g.dobbel) { if (p < 1 || p > n - 1) return null; orden[p - 1] = 2; }
+  for (const p of g.trippel) { if (p < 1 || p > n - 1) return null; orden[p - 1] = 3; }
+  orden.forEach((o, i) => b.push([kjede[i], kjede[i + 1], o]));
+  const brukt = Array(n).fill(0);                                     // opptatte bindinger per karbon
+  orden.forEach((o, i) => { brukt[i] += o; brukt[i + 1] += o; });
+
+  const legg = (el) => { a.push(el); return a.length - 1; };
+  for (let i = 0; i < g.syre; i++) {
+    const c = i === 0 ? 0 : n - 1;                                    // syregruppe i enden
+    const o1 = legg('O'), o2 = legg('O'), h = legg('H');
+    b.push([kjede[c], o1, 2], [kjede[c], o2, 1], [o2, h, 1]);
+    brukt[c] += 3;
+  }
+  for (let i = 0; i < g.al; i++) {
+    const c = i === 0 ? 0 : n - 1;
+    const o = legg('O');
+    b.push([kjede[c], o, 2]);
+    brukt[c] += 2;
+  }
+  for (const p of g.on) {
+    if (p < 2 || p > n - 1) return null;                              // keton må ligge inne i kjeden
+    const o = legg('O');
+    b.push([kjede[p - 1], o, 2]);
+    brukt[p - 1] += 2;
+  }
+  for (const p of g.ol) {
+    if (p < 1 || p > n) return null;
+    const o = legg('O'), h = legg('H');
+    b.push([kjede[p - 1], o, 1], [o, h, 1]);
+    brukt[p - 1] += 1;
+  }
+  for (const p of g.klor) {
+    if (p < 1 || p > n) return null;
+    const cl = legg('Cl');
+    b.push([kjede[p - 1], cl, 1]);
+    brukt[p - 1] += 1;
+  }
+  for (let i = 0; i < n; i++) {
+    const mangler = 4 - brukt[i];
+    if (mangler < 0) return null;                                     // for mange grupper på samme karbon
+    for (let j = 0; j < mangler; j++) { const h = legg('H'); b.push([kjede[i], h, 1]); }
+  }
+  return { a, b };
+}
+
+// ---------- formel ----------
+function tellFormel(tekst) {
+  const s = rens(tekst).replace(/[\(\)]/g, m => m);
+  const tall = {};
+  const re = /(\()([^\)]*)(\))(\d*)|(cl|c|h|o|n|s)(\d*)/g;
+  let m, lest = 0;
+  while ((m = re.exec(s))) {
+    if (m.index !== lest) return null;
+    lest = m.index + m[0].length;
+    if (m[1]) {
+      const inni = tellFormel(m[2]); if (!inni) return null;
+      const gange = m[4] ? Number(m[4]) : 1;
+      Object.entries(inni).forEach(([e, v]) => tall[e] = (tall[e] || 0) + v * gange);
+    } else {
+      const el = { cl: 'Cl', c: 'C', h: 'H', o: 'O', n: 'N', s: 'S' }[m[5]];
+      tall[el] = (tall[el] || 0) + (m[6] ? Number(m[6]) : 1);
+    }
+  }
+  return lest === s.length && Object.keys(tall).length ? tall : null;
+}
+const formelNøkkel = tall => Object.keys(tall).sort().map(e => e + tall[e]).join('');
+function oppskriftFormel(o) {
+  const tall = {};
+  o.a.forEach(e => tall[e] = (tall[e] || 0) + 1);
+  return formelNøkkel(tall);
+}
+
+// alle navn siden kan bygge, brukt når man skriver inn en formel
+function alleKjente() {
+  const ut = [];
+  Object.keys(OPPSKRIFTER).forEach(navn => ut.push({ navn, o: OPPSKRIFTER[navn] }));
+  const stammer = Object.keys(STAMMENR);
+  const kandidater = [];
+  stammer.forEach((st, i) => {
+    const n = i + 1;
+    kandidater.push(st + 'an', st + 'ansyre', st + 'anal');
+    if (n >= 2) { kandidater.push(n <= 3 ? st + 'en' : st + '-1-en', n <= 3 ? st + 'yn' : st + '-1-yn'); }
+    // bare plasseringer med lavest mulig tall, ellers får vi samme stoff to ganger
+    for (let p = 2; p * 2 <= n; p++) kandidater.push(st + '-' + p + '-en', st + '-' + p + '-yn');
+    for (let p = 1; p * 2 <= n + 1; p++) kandidater.push(n <= 2 ? st + 'anol' : st + 'an-' + p + '-ol');
+    for (let p = 2; p * 2 <= n + 1; p++) kandidater.push(st + 'an-' + p + '-on');
+    for (let p = 1; p * 2 <= n + 1; p++) kandidater.push(n === 1 ? 'klormetan' : p + '-klor' + st + 'an');
+    kandidater.push('triklormetan', 'tetraklormetan', 'propan-1,2,3-triol', 'prop-2-en-1-ol');
+  });
+  [...new Set(kandidater)].forEach(navn => { const o = tolkNavn(navn); if (o) ut.push({ navn, o }); });
+  return ut;
+}
+
+// ---------- sette det sammen på brettet ----------
+function byggOppskrift(o) {
+  const laget = o.a.map(e => nyttAtom(e));
+  if (laget.some(x => !x)) return false;
+  o.b.forEach(([i, j, n]) => {
+    koble(laget[i], null, laget[j], null);
+    const b = bindinger.find(x => (x.a === laget[i].id && x.b === laget[j].id) || (x.b === laget[i].id && x.a === laget[j].id));
+    if (b) for (let k = 1; k < (n || 1); k++) ekstraPinne(b);
+  });
+  velg(null);
+  midtstill();
+  return laget[0];
+}
+
+function byggFra(tekst) {
+  const t = rens(tekst);
+  if (!t) return;
+  const systematisk = TRIVIALTIL[t] || t;
+  if (OPPSKRIFTER[systematisk]) { fullfør(OPPSKRIFTER[systematisk], systematisk); return; }
+  const fraNavn = tolkNavn(systematisk);
+  if (fraNavn) { fullfør(fraNavn, systematisk); return; }
+  // så prøver vi det som en formel
+  const tall = tellFormel(t);
+  if (tall) {
+    const nøkkel = formelNøkkel(tall);
+    const treff = alleKjente().filter(x => oppskriftFormel(x.o) === nøkkel);
+    const unike = [];
+    treff.forEach(x => { if (!unike.some(y => y.navn === x.navn)) unike.push(x); });
+    if (unike.length === 1) { fullfør(unike[0].o, unike[0].navn); return; }
+    if (unike.length > 1) { visValg(unike); return; }
+  }
+  si(`Kjenner ikke «${tekst}». Prøv for eksempel etanol, but-2-en, eddiksyre, CH₄ eller H₂O.`);
+}
+function fullfør(o, navn) {
+  const laget = byggOppskrift(o);
+  if (!laget) { si('Det er ikke plass til flere kuler på brettet.'); return; }
+  const r = analyser(molekylTil(laget.id));
+  si(`Bygde ${r.navn || navn}${r.formel ? ' – ' + r.formel : ''}.`);
+  $('byggInn').value = '';
+}
+function visValg(liste) {
+  const el = $('melding');
+  el.hidden = false;
+  el.innerHTML = 'Den formelen passer på flere stoffer: ' +
+    liste.map(x => `<button class="valg" data-navn="${x.navn}">${x.navn}${TRIVIAL[x.navn] ? ' (' + TRIVIAL[x.navn] + ')' : ''}</button>`).join(' ');
+  el.querySelectorAll('.valg').forEach(b => b.addEventListener('click', () => {
+    el.hidden = true;
+    byggFra(b.dataset.navn);
+  }));
 }
 
 // ================= Museklikk, drag og berøring =================
@@ -901,12 +1158,17 @@ function nyttAtom(el) {
     if (atomer.every(a => a.pos.distanceTo(p) > a.r + 1.1)) { pos = p; break; }
   }
   const a = lagAtom(el, pos);
+  if (window.Logg) Logg.tell('kuler');
   vendMotKamera(a);
   velg(a);
   oppdaterInfo();
   return a;
 }
 
+$('byggBtn').addEventListener('click', () => byggFra($('byggInn').value));
+$('byggInn').addEventListener('keydown', ev => { if (ev.key === 'Enter') { byggFra($('byggInn').value); ev.preventDefault(); } });
+
+if (window.Logg) Logg.start('molekylbyggesett');
 byggEske();
 tilpassStørrelse();
 settKamera();
