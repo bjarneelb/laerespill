@@ -86,8 +86,9 @@ button { font: inherit; color: inherit; }
 
 <header class="top">
   <h1>🧪 Molekylbyggesett</h1>
-  <span class="hint" id="hint">Klikk på et rom i esken for å ta ut en kule. Klikk på et hull, og så på et annet, for å sette inn en pinne.</span>
+  <span class="hint" id="hint">Klikk på et rom i esken for å ta ut en kule. Klikk på én kule og så på en annen for å sette inn en pinne mellom dem.</span>
   <span class="grow"></span>
+  <button class="btn" id="pinneBtn" hidden>Sett inn én pinne til</button>
   <button class="btn" id="vriBtn" hidden>Vri rundt bindingen</button>
   <button class="btn danger" id="fjernBtn" disabled>Fjern valgt</button>
   <button class="btn" id="midtBtn">Midtstill</button>
@@ -306,6 +307,36 @@ function flyttMolekyl(ids, forskyv, dreie, om) {
   bindinger.forEach(b => { if (ids.includes(b.a) || ids.includes(b.b)) tegnPinne(b); });
 }
 
+// ---------- velge hull automatisk ----------
+// Det hullet som peker best mot det andre atomet, er det man selv ville brukt.
+function bestHull(A, mot) {
+  const retning = mot.clone().sub(A.pos).normalize();
+  let best = -1, beste = -2;
+  A.hull.forEach((h, i) => {
+    if (h.binding) return;
+    const d = hullRetning(A, i).dot(retning);
+    if (d > beste) { beste = d; best = i; }
+  });
+  return best;
+}
+function koble(A, iA, B, iB) {
+  if (A.id === B.id) return;
+  if (iA == null) iA = bestHull(A, B.pos);
+  if (iB == null) iB = bestHull(B, A.pos);
+  if (iA < 0) { si(`${ELEMENTER[A.el].navn} har ingen ledige hull igjen.`); return; }
+  if (iB < 0) { si(`${ELEMENTER[B.el].navn} har ingen ledige hull igjen.`); return; }
+  settInnPinne(A, iA, B, iB);
+}
+// Legger én pinne til mellom to kuler som allerede er festet sammen
+function ekstraPinne(b) {
+  const A = finnAtom(b.a), B = finnAtom(b.b);
+  const antall = mellom(A, B).length;
+  if (antall >= 3) { si('Tre pinner er det meste som får plass.'); return; }
+  const iA = bestHull(A, B.pos), iB = bestHull(B, A.pos);
+  if (iA < 0 || iB < 0) { si('Det er ikke flere ledige hull på begge kulene.'); return; }
+  settInnPinne(A, iA, B, iB);
+}
+
 // ---------- sette inn pinne ----------
 function kanKobles(A, iA, B, iB) {
   if (A.hull[iA].binding || B.hull[iB].binding) return 'Hullet er allerede i bruk.';
@@ -327,12 +358,15 @@ function settInnPinne(A, iA, B, iB) {
     const nå = B.pos.clone();
     flyttMolekyl(ids, mål.sub(nå), null, null);
   } else {
-    // Er de allerede festet til hverandre, vris den ene siden til hullene står best mulig,
-    // akkurat som når man tvinner kulen på plass før pinne nummer to settes inn.
-    const felles = bindinger.find(b => (b.a === A.id && b.b === B.id) || (b.a === B.id && b.b === A.id));
-    if (felles) vriBest(felles, A, iA, B, iB);
-    const avstand = hullPunkt(A, iA).distanceTo(hullPunkt(B, iB));
-    if (avstand > GAP * 3.4) { si('Pinnen når ikke så langt. Prøv et hull som peker mer mot det andre atomet.'); return; }
+    // Sitter de allerede sammen, stiller symmetriser dem etterpå, og da når pinnen alltid.
+    // Ellers, altså ved ringlukking, må hullene faktisk ligge nær nok hverandre.
+    const felles = mellom(A, B);
+    const kanStilles = felles.length && !sidenAv(felles, B.id).has(A.id);
+    if (!kanStilles) {
+      const avstand = hullPunkt(A, iA).distanceTo(hullPunkt(B, iB));
+      const rekkevidde = GAP * 2 + (A.r + B.r) * 1.25;
+      if (avstand > rekkevidde) { si('Pinnen når ikke så langt. Prøv et hull som peker mer mot den andre kulen.'); return; }
+    }
   }
   const b = { id: nesteId++, a: A.id, b: B.id, hullA: iA, hullB: iB, mesh: null };
   A.hull[iA].binding = b.id; B.hull[iB].binding = b.id;
@@ -402,14 +436,14 @@ function symmetriser(A, B) {
 function vriBest(b, A, iA, B, iB) {
   const side = sidenAv(b, B.id === b.b ? b.b : b.a);
   if (side.has(A.id)) return;                       // ring, kan ikke vris
-  let best = 0, bestAvstand = Infinity;
+  const steg = TAU / 72;
+  let best = 0, bestAvstand = Infinity, dreid = 0;
   for (let i = 0; i < 72; i++) {
-    const v = (i / 72) * TAU;
-    vri(b, v - (i ? (1 / 72) * TAU : 0));
+    if (i) { vri(b, steg); dreid += steg; }
     const d = hullPunkt(A, iA).distanceTo(hullPunkt(B, iB));
-    if (d < bestAvstand) { bestAvstand = d; best = v; }
+    if (d < bestAvstand) { bestAvstand = d; best = dreid; }
   }
-  vri(b, best - ((71 / 72) * TAU));
+  vri(b, best - dreid);                 // tilbake til den stillingen som passet best
 }
 
 // ---------- vri rundt en binding ----------
@@ -436,32 +470,20 @@ function vri(b, vinkel) {
 }
 
 // ---------- formel og status ----------
-const NAVN = { 'H₂O': 'vann', 'CO₂': 'karbondioksid', 'CH₄': 'metan', 'NH₃': 'ammoniakk', 'O₂': 'oksygen',
-  'N₂': 'nitrogen', 'H₂': 'hydrogen', 'Cl₂': 'klor', 'HCl': 'hydrogenklorid', 'H₂S': 'hydrogensulfid',
-  'C₂H₆': 'etan', 'C₂H₄': 'eten', 'C₂H₂': 'etyn', 'CH₃Cl': 'klormetan', 'CCl₄': 'tetraklormetan',
-  'C₂H₆O': 'etanol', 'CH₄O': 'metanol', 'C₃H₈': 'propan', 'C₄H₁₀': 'butan', 'CO': 'karbonmonoksid',
-  'C₆H₆': 'benzen', 'SO₂': 'svoveldioksid', 'CS₂': 'karbondisulfid', 'C₆H₁₂': 'sykloheksan' };
 const SUB = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' };
 const sub = n => String(n).split('').map(c => SUB[c]).join('');
-function formel(ids) {
-  const tall = {};
-  ids.forEach(id => { const e = finnAtom(id).el; tall[e] = (tall[e] || 0) + 1; });
-  const rekke = ['C', 'H', 'N', 'O', 'S', 'Cl'].filter(e => tall[e]);
-  Object.keys(tall).forEach(e => { if (!rekke.includes(e)) rekke.push(e); });
-  return rekke.map(e => e + (tall[e] > 1 ? sub(tall[e]) : '')).join('');
-}
+
 function oppdaterInfo() {
   const ul = $('molekyler');
   const grupper = alleMolekyler();
   if (!grupper.length) { ul.innerHTML = '<li class="tom">Ingenting ennå.</li>'; return; }
   ul.innerHTML = grupper.map(ids => {
-    const f = formel(ids);
-    const ledige = ids.reduce((s, id) => s + finnAtom(id).hull.filter(h => !h.binding).length, 0);
-    const navn = NAVN[f];
-    const status = ledige === 0
-      ? '<div class="ferdig">✓ Alle hull er fylt</div>'
-      : `<div class="mangler">${ledige} ${ledige === 1 ? 'ledig hull' : 'ledige hull'}</div>`;
-    return `<li><span class="formel">${f}</span>${navn ? ` <span class="navn">${navn}</span>` : ''}${status}</li>`;
+    const r = analyser(ids);
+    let under;
+    if (r.ledige) under = `<div class="mangler">${r.ledige} ${r.ledige === 1 ? 'ledig hull' : 'ledige hull'}</div>`;
+    else if (r.navn) under = `<div class="ferdig">✓ ${r.navn}${r.trivial ? ' · ' + r.trivial : ''}</div>`;
+    else under = '<div class="mangler">✓ Alle hull er fylt. Strukturen har ikke noe navn her.</div>';
+    return `<li><span class="formel">${r.formel}</span>${under}</li>`;
   }).join('');
 }
 let meldingTimer = null;
@@ -473,10 +495,160 @@ function si(tekst) {
   meldingTimer = setTimeout(() => { el.hidden = true; }, 4200);
 }
 
+// ================= Formel og navn =================
+// Navn settes bare når strukturen er entydig: rett karbonkjede opptil åtte karbon,
+// uten ring og uten forgrening. Ellers viser siden formelen alene.
+const STAMME = ['met', 'et', 'prop', 'but', 'pent', 'heks', 'hept', 'okt'];
+const MENGDE = { 2: 'di', 3: 'tri', 4: 'tetra' };
+const TRIVIAL = {
+  'metansyre': 'maursyre', 'etansyre': 'eddiksyre', 'propansyre': 'propionsyre',
+  'butansyre': 'smørsyre', 'propan-2-on': 'aceton', 'etyn': 'acetylen', 'eten': 'etylen',
+  'metanal': 'formaldehyd', 'propan-1,2,3-triol': 'glyserol', 'prop-2-en-1-ol': 'allylalkohol',
+  'metanol': 'metanol', 'etanol': 'etanol'
+};
+const UORGANISK = { 'H₂O': 'vann', 'CO₂': 'karbondioksid', 'CO': 'karbonmonoksid', 'NH₃': 'ammoniakk',
+  'O₂': 'oksygen', 'N₂': 'nitrogen', 'H₂': 'hydrogen', 'Cl₂': 'klor', 'HCl': 'hydrogenklorid',
+  'H₂S': 'hydrogensulfid', 'SO₂': 'svoveldioksid', 'CS₂': 'karbondisulfid', 'CCl₄': 'tetraklormetan',
+  'H₂O₂': 'hydrogenperoksid', 'NO': 'nitrogenmonoksid', 'N₂O': 'dinitrogenoksid' };
+
+// Rekkefølgen i formler: ... C, N, H, S, Cl, O ... slik NH₃, H₂O, CH₄ og HCl blir riktig
+const FORMELREKKE = ['B', 'Si', 'C', 'Sb', 'As', 'P', 'N', 'H', 'Te', 'Se', 'S', 'I', 'Br', 'Cl', 'O', 'F'];
+const formelRang = e => { const i = FORMELREKKE.indexOf(e); return i < 0 ? 99 : i; };
+const skrivFormel = tall => Object.keys(tall).filter(e => tall[e] > 0)
+  .sort((a, b) => formelRang(a) - formelRang(b))
+  .map(e => e + (tall[e] > 1 ? sub(tall[e]) : '')).join('');
+
+const ordenMellom = (x, y) => bindinger.filter(b => (b.a === x && b.b === y) || (b.a === y && b.b === x)).length;
+const naboListe = id => [...new Set(naboer(id))];
+
+function analyser(ids) {
+  const atom = id => finnAtom(id);
+  const tall = {};
+  ids.forEach(id => { const e = atom(id).el; tall[e] = (tall[e] || 0) + 1; });
+  const ledige = ids.reduce((s, id) => s + atom(id).hull.filter(h => !h.binding).length, 0);
+
+  // ---- funksjonelle grupper ----
+  const erOH = id => {
+    const a = atom(id);
+    if (a.el !== 'O') return false;
+    const n = naboListe(id);
+    if (n.length !== 2 || !n.every(x => ordenMellom(id, x) === 1)) return false;
+    return n.filter(x => atom(x).el === 'H').length === 1;   // vann har to, og er ikke en OH-gruppe
+  };
+  const dobbeltO = id => naboListe(id).find(x => atom(x).el === 'O' && ordenMellom(id, x) === 2);
+  const karboksyl = id => {
+    const a = atom(id);
+    if (a.el !== 'C' || dobbeltO(id) === undefined) return false;
+    return naboListe(id).some(x => erOH(x));
+  };
+  const OHer = ids.filter(erOH);
+  const syrer = ids.filter(karboksyl);
+  const OHiSyre = new Set();
+  syrer.forEach(c => naboListe(c).forEach(x => { if (erOH(x)) OHiSyre.add(x); }));
+  const friOH = OHer.filter(o => !OHiSyre.has(o));
+
+  // ---- formel, med OH og COOH skilt ut ----
+  const rest = { ...tall };
+  const trekk = (e, n) => { rest[e] = (rest[e] || 0) - n; if (rest[e] <= 0) delete rest[e]; };
+  friOH.forEach(() => { trekk('O', 1); trekk('H', 1); });
+  syrer.forEach(() => { trekk('C', 1); trekk('O', 2); trekk('H', 1); });
+  let formel = skrivFormel(rest);
+  const gruppe = (tekst, n) => n === 0 ? '' : n === 1 ? tekst : `(${tekst})${sub(n)}`;
+  formel += gruppe('OH', friOH.length) + gruppe('COOH', syrer.length);
+  if (!formel) formel = skrivFormel(tall);
+
+  const svar = { formel, ledige, navn: null, trivial: null, ukjent: false };
+  if (ledige) return svar;                       // ikke ferdig ennå
+
+  // ---- uorganiske og andre uten karbon ----
+  const heltFormel = skrivFormel(tall);
+  if (!tall.C) { svar.navn = UORGANISK[heltFormel] || null; svar.ukjent = !svar.navn; return svar; }
+  if (UORGANISK[heltFormel]) { svar.navn = UORGANISK[heltFormel]; return svar; }
+
+  // ---- karbonkjeden ----
+  const karboner = ids.filter(id => atom(id).el === 'C');
+  const cNabo = id => naboListe(id).filter(x => atom(x).el === 'C');
+  if (karboner.length > 8) { svar.ukjent = true; return svar; }
+  if (karboner.some(id => cNabo(id).length > 2)) { svar.ukjent = true; return svar; }   // forgrenet
+  const ender = karboner.filter(id => cNabo(id).length <= 1);
+  if (karboner.length > 1 && ender.length !== 2) { svar.ukjent = true; return svar; }   // ring
+  let kjede = [];
+  if (karboner.length === 1) kjede = [karboner[0]];
+  else {
+    let forrige = null, her = ender[0];
+    while (her != null) {
+      kjede.push(her);
+      const neste = cNabo(her).find(x => x !== forrige);
+      forrige = her; her = neste;
+    }
+  }
+  if (kjede.length !== karboner.length) { svar.ukjent = true; return svar; }
+
+  // alt som ikke er C, H, O i en kjent gruppe gjør navnet usikkert
+  const kjent = new Set();
+  kjede.forEach(c => kjent.add(c));
+  friOH.forEach(o => { kjent.add(o); naboListe(o).forEach(x => { if (atom(x).el === 'H') kjent.add(x); }); });
+  syrer.forEach(c => naboListe(c).forEach(x => { if (atom(x).el === 'O') { kjent.add(x); naboListe(x).forEach(y => { if (atom(y).el === 'H') kjent.add(y); }); } }));
+  kjede.forEach(c => { const o = dobbeltO(c); if (o !== undefined) kjent.add(o); });
+  ids.forEach(id => { if (atom(id).el === 'H') kjent.add(id); });
+  kjede.forEach(c => naboListe(c).forEach(x => { if (atom(x).el === 'Cl') kjent.add(x); }));
+  if (ids.some(id => !kjent.has(id))) { svar.ukjent = true; return svar; }
+
+  // ---- grupper langs kjeden, begge veier ----
+  function les(vei) {
+    const plass = new Map(); vei.forEach((id, i) => plass.set(id, i + 1));
+    const dobbel = [], trippel = [], ol = [], on = [], al = [], syre = [], klor = [];
+    for (let i = 0; i < vei.length - 1; i++) {
+      const o = ordenMellom(vei[i], vei[i + 1]);
+      if (o === 2) dobbel.push(i + 1);
+      if (o === 3) trippel.push(i + 1);
+    }
+    vei.forEach((c, i) => {
+      const nr = i + 1;
+      if (karboksyl(c)) { syre.push(nr); return; }
+      const o = dobbeltO(c);
+      if (o !== undefined) { (cNabo(c).length <= 1 ? al : on).push(nr); return; }
+      naboListe(c).forEach(x => { if (friOH.includes(x)) ol.push(nr); });
+    });
+    vei.forEach((c, i) => naboListe(c).forEach(x => { if (atom(x).el === 'Cl') klor.push(i + 1); }));
+    return { dobbel, trippel, ol, on, al, syre, klor };
+  }
+  const fram = les(kjede), bak = les([...kjede].reverse());
+  const nøkkel = g => [g.syre, g.al, g.on, g.ol, g.dobbel.concat(g.trippel), g.klor].map(l => l.length ? Math.min(...l) : 99);
+  const a = nøkkel(fram), b = nøkkel(bak);
+  let g = fram;
+  for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) { g = a[i] < b[i] ? fram : bak; break; } }
+
+  // ---- sett sammen navnet ----
+  const n = kjede.length, stamme = STAMME[n - 1];
+  const list = l => l.sort((x, y) => x - y).join(',');
+  const harEndelse = g.syre.length || g.al.length || g.on.length || g.ol.length;
+  const trengerTall = l => !(n <= 3 && l.length === 1 && !harEndelse);
+  let navn = stamme;
+  if (g.dobbel.length || g.trippel.length) {
+    const del = [];
+    if (g.dobbel.length) del.push((trengerTall(g.dobbel) ? '-' + list(g.dobbel) + '-' : '') + (MENGDE[g.dobbel.length] || '') + 'en');
+    if (g.trippel.length) del.push((trengerTall(g.trippel) ? '-' + list(g.trippel) + '-' : '') + (MENGDE[g.trippel.length] || '') + 'yn');
+    navn += (g.dobbel.length > 1 || g.trippel.length > 1 ? 'a' : '') + del.join('-');
+  } else navn += 'an';
+  if (g.syre.length) navn += (g.syre.length > 1 ? 'di' : '') + 'syre';
+  else if (g.al.length) navn += (g.al.length > 1 ? 'di' : '') + 'al';
+  else if (g.on.length) navn += '-' + list(g.on) + '-' + (MENGDE[g.on.length] || '') + 'on';
+  else if (g.ol.length) navn += (n <= 2 && g.ol.length === 1 ? '' : '-' + list(g.ol) + '-') + (MENGDE[g.ol.length] || '') + 'ol';
+  if (g.klor.length) {
+    const tall = (n === 1 && g.klor.length <= 4) ? '' : list(g.klor) + '-';
+    navn = tall + (MENGDE[g.klor.length] || '') + 'klor' + navn;
+  }
+  navn = navn.replace('anan', 'an');
+
+  svar.navn = navn;
+  svar.trivial = TRIVIAL[navn] && TRIVIAL[navn] !== navn ? TRIVIAL[navn] : null;
+  return svar;
+}
+
 // ================= Museklikk, drag og berøring =================
 const stråle = new THREE.Raycaster();
 const peker = new THREE.Vector2();
-let valgtHull = null;          // {atom, hull} mens man kobler
 let hover = null;
 let drag = null;
 
@@ -517,7 +689,13 @@ function velg(nytt) {
   if (valgt && valgt.hullA !== undefined) valgt.mesh.material = pinneValgtMat;
   else if (valgt) { valgt.mesh.material.emissive.setHex(0x1b3c6e); valgt.mesh.material.emissiveIntensity = 0.45; }
   $('fjernBtn').disabled = !valgt;
-  $('vriBtn').hidden = !(valgt && valgt.hullA !== undefined);
+  const erPinne = !!(valgt && valgt.hullA !== undefined);
+  $('vriBtn').hidden = !erPinne;
+  $('pinneBtn').hidden = !erPinne;
+  if (erPinne) {
+    const A = finnAtom(valgt.a), B = finnAtom(valgt.b);
+    $('pinneBtn').disabled = mellom(A, B).length >= 3 || bestHull(A, B.pos) < 0 || bestHull(B, A.pos) < 0;
+  }
 }
 
 lerret.addEventListener('pointermove', ev => {
@@ -595,18 +773,48 @@ lerret.addEventListener('wheel', ev => {
   settKamera();
 }, { passive: false });
 
+// Første klikk plukker opp en kule, andre klikk kobler. Klikker du rett på et hull,
+// brukes akkurat det hullet. Ellers finner programmet det hullet som peker best.
+let kobling = null;
 function klikk(u) {
-  if (!u) { velg(null); merkHull(null); return; }
-  if (u.type === 'hull') {
-    const a = finnAtom(u.id);
-    if (!valgtHull) { valgtHull = { atom: a, hull: u.hull }; merkHull(valgtHull); si('Klikk på et hull til, så settes pinnen inn.'); return; }
-    if (valgtHull.atom.id === a.id && valgtHull.hull === u.hull) { merkHull(null); valgtHull = null; return; }
-    settInnPinne(valgtHull.atom, valgtHull.hull, a, u.hull);
-    merkHull(null); valgtHull = null;
+  if (!u) { avbrytKobling(); velg(null); return; }
+  const atom = (u.type === 'atom' || u.type === 'hull') ? finnAtom(u.id) : null;
+  if (atom) {
+    const hull = u.type === 'hull' ? u.hull : null;
+    if (!kobling) {
+      if (!atom.hull.some(h => !h.binding)) { velg(atom); si(`${ELEMENTER[atom.el].navn} har ingen ledige hull.`); return; }
+      kobling = { atom, hull };
+      velg(atom);
+      merkHull(hull != null ? { atom, hull } : null);
+      lysOppKandidater(atom);
+      si(hull != null ? 'Klikk på kulen du vil feste den til.' : 'Klikk på en kule til, så settes pinnen inn.');
+      return;
+    }
+    if (kobling.atom.id === atom.id) { avbrytKobling(); velg(null); return; }
+    const A = kobling.atom, iA = kobling.hull;
+    avbrytKobling();
+    koble(A, iA, atom, hull);
+    velg(null);
     return;
   }
-  if (u.type === 'pinne') { velg(finnBinding(u.id)); return; }
-  if (u.type === 'atom') { velg(finnAtom(u.id)); return; }
+  if (u.type === 'pinne') { avbrytKobling(); velg(finnBinding(u.id)); return; }
+}
+function avbrytKobling() {
+  kobling = null;
+  merkHull(null);
+  lysOppKandidater(null);
+}
+let lyser = [];
+function lysOppKandidater(unntatt) {
+  lyser.forEach(a => { if (a.mesh) { a.mesh.material.emissive.setHex(0x000000); a.mesh.material.emissiveIntensity = 1; } });
+  lyser = [];
+  if (!unntatt) return;
+  atomer.forEach(a => {
+    if (a.id === unntatt.id || !a.hull.some(h => !h.binding)) return;
+    a.mesh.material.emissive.setHex(0x1d5c34);
+    a.mesh.material.emissiveIntensity = 0.5;
+    lyser.push(a);
+  });
 }
 let merket = null;
 function merkHull(h) {
@@ -624,16 +832,17 @@ $('fjernBtn').addEventListener('click', () => {
   if (valgt.hullA !== undefined) fjernBinding(valgt); else fjernAtom(valgt);
   velg(null);
 });
+$('pinneBtn').addEventListener('click', () => { if (valgt && valgt.hullA !== undefined) { const b = valgt; ekstraPinne(b); velg(b); } });
 $('vriBtn').addEventListener('mousedown', ev => ev.preventDefault());
 $('vriBtn').addEventListener('click', () => { if (valgt && valgt.hullA !== undefined) vri(valgt, Math.PI / 9); });
 $('tomBtn').addEventListener('click', () => {
   [...atomer].forEach(fjernAtom);
-  velg(null); valgtHull = null; merkHull(null); oppdaterInfo();
+  velg(null); avbrytKobling(); oppdaterInfo();
 });
 $('midtBtn').addEventListener('click', midtstill);
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Delete' || ev.key === 'Backspace') { if (valgt) { $('fjernBtn').click(); ev.preventDefault(); } }
-  if (ev.key === 'Escape') { velg(null); valgtHull = null; merkHull(null); }
+  if (ev.key === 'Escape') { velg(null); avbrytKobling(); }
 });
 
 function midtstill() {
@@ -695,6 +904,7 @@ function nyttAtom(el) {
   vendMotKamera(a);
   velg(a);
   oppdaterInfo();
+  return a;
 }
 
 byggEske();
