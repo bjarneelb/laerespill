@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Molekylbyggesett</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #e7ebef; --panel: #f7f9fb; --card: #fff; --ink: #1b2733; --ink-soft: #5a6773; --rule: #cbd4dc;
+  --accent: #1e66d8; --ok: #2b7a4b;
+  --tre: #6b4f34; --tre-lys: #8a6842; --filt: #2c3540;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10171e; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
+    --accent: #6ea4ff; --ok: #6fcf97; --tre: #4a3826; --tre-lys: #5f4830; --filt: #171d24;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font);
+       display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn { border: 1px solid var(--rule); background: var(--card); border-radius: 9px; padding: .4rem .8rem; cursor: pointer; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--ink-soft); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.danger { color: #c0262d; }
+
+.top { display: flex; align-items: center; gap: .5rem .9rem; flex-wrap: wrap; padding: .55rem .9rem; border-bottom: 1px solid var(--rule); background: var(--panel); }
+.top h1 { margin: 0; font-size: 1.1rem; white-space: nowrap; }
+.hint { color: var(--ink-soft); font-size: .9rem; }
+.grow { flex: 1; }
+
+.scene { position: relative; flex: 1; min-height: 0; }
+#lerret { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#lerret.griper { cursor: grabbing; }
+.melding { position: absolute; left: 50%; transform: translateX(-50%); top: .7rem; background: rgba(20,28,36,.9); color: #fff;
+           padding: .45rem .8rem; border-radius: 10px; font-size: .9rem; max-width: min(46ch, calc(100% - 2rem)); text-align: center; }
+.info { position: absolute; right: .7rem; top: .7rem; width: min(260px, calc(100% - 1.4rem)); background: var(--panel);
+        border: 1px solid var(--rule); border-radius: 12px; padding: .6rem .75rem; font-size: .92rem; max-height: calc(100% - 5rem); overflow: auto; }
+.info h2 { margin: 0 0 .35rem; font-size: .95rem; color: var(--ink-soft); font-weight: 400; }
+.info ul { list-style: none; margin: 0; padding: 0; }
+.info li { padding: .25rem 0; border-top: 1px solid var(--rule); }
+.info li:first-child { border-top: 0; }
+.info .formel { font-size: 1.15rem; font-weight: 700; }
+.info .navn { color: var(--ink-soft); }
+.info .ferdig { color: var(--ok); font-size: .85rem; }
+.info .mangler { color: var(--ink-soft); font-size: .85rem; }
+.info .tom { color: var(--ink-soft); }
+
+/* ---------- esken ---------- */
+.boks {
+  flex: none; background: linear-gradient(180deg, var(--tre-lys), var(--tre)); border-top: 3px solid rgba(0,0,0,.25);
+  padding: .55rem .8rem .7rem; box-shadow: inset 0 8px 18px rgba(0,0,0,.3);
+}
+.rom { display: flex; gap: .5rem; overflow-x: auto; padding: .15rem; }
+.rom button {
+  flex: none; width: 92px; background: var(--filt); border: 1px solid rgba(0,0,0,.45); border-radius: 10px;
+  padding: .45rem .3rem .4rem; cursor: pointer; color: #e8eef4; display: grid; justify-items: center; gap: .25rem;
+  box-shadow: inset 0 6px 12px rgba(0,0,0,.45);
+}
+.rom button:hover { border-color: rgba(255,255,255,.35); }
+.rom button:active { transform: translateY(1px); }
+.rom .kule { width: 44px; height: 44px; border-radius: 50%; position: relative; background: var(--ball);
+  box-shadow: inset -6px -8px 14px rgba(0,0,0,.45), inset 5px 6px 10px rgba(255,255,255,.45); }
+.rom .kule i { position: absolute; width: 11px; height: 11px; border-radius: 50%; background: #1a1a1a;
+  box-shadow: inset 0 2px 3px rgba(0,0,0,.8); transform: translate(-50%, -50%); }
+.rom .pinne { width: 44px; height: 44px; display: grid; place-items: center; }
+.rom .pinne span { width: 40px; height: 9px; border-radius: 5px; background: linear-gradient(180deg, #d8dde2, #9aa3ac); box-shadow: inset 0 -2px 3px rgba(0,0,0,.35); }
+.rom .navn { font-size: .78rem; line-height: 1.1; text-align: center; }
+.rom .sym { font-weight: 700; font-size: .95rem; }
+@media (max-width: 560px) {
+  .top h1 { font-size: 1rem; } .hint { display: none; }
+  .rom button { width: 76px; } .rom .kule { width: 36px; height: 36px; }
+  .info { width: min(200px, calc(100% - 1.4rem)); font-size: .85rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>🧪 Molekylbyggesett</h1>
+  <span class="hint" id="hint">Klikk på et rom i esken for å ta ut en kule. Klikk på et hull, og så på et annet, for å sette inn en pinne.</span>
+  <span class="grow"></span>
+  <button class="btn" id="vriBtn" hidden>Vri rundt bindingen</button>
+  <button class="btn danger" id="fjernBtn" disabled>Fjern valgt</button>
+  <button class="btn" id="midtBtn">Midtstill</button>
+  <button class="btn danger" id="tomBtn">Tøm brettet</button>
+  <a class="btn" href="./">Meny</a>
+</header>
+
+<div class="scene">
+  <canvas id="lerret"></canvas>
+  <p class="melding" id="melding" hidden></p>
+  <aside class="info" id="info">
+    <h2>På brettet</h2>
+    <ul id="molekyler"><li class="tom">Ingenting ennå.</li></ul>
+  </aside>
+</div>
+
+<div class="boks">
+  <div class="rom" id="rom"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ================= Molekylbyggesett i 3D =================
+// Kulene har hull slik et fysisk byggesett har, og hullene bestemmer vinklene.
+// Pinnen mellom to hull er stiv når to deler settes sammen, og bøyelig når den
+// må strekke seg, slik en ekte pinne gjør ved dobbeltbinding og i ringer.
+
+const TAU = Math.PI * 2;
+const $ = id => document.getElementById(id);
+
+// vinkler i grader mellom hullene
+const tetra = [];
+{
+  const a = 1 / Math.sqrt(3);
+  [[a, a, a], [a, -a, -a], [-a, a, -a], [-a, -a, a]].forEach(v => tetra.push(new THREE.Vector3(...v)));
+}
+function bøyd(grader) {                       // to hull med knekk, som i oksygen
+  const h = THREE.MathUtils.degToRad(grader) / 2;
+  return [new THREE.Vector3(Math.sin(h), Math.cos(h), 0), new THREE.Vector3(-Math.sin(h), Math.cos(h), 0)];
+}
+function pyramide(grader) {                   // tre hull, som i nitrogen
+  const t = THREE.MathUtils.degToRad(grader);
+  const z = Math.cos(t), r = Math.sin(t);
+  return [0, 1, 2].map(i => new THREE.Vector3(r * Math.cos(i * TAU / 3), r * Math.sin(i * TAU / 3), z).normalize());
+}
+
+const ELEMENTER = {
+  H:  { navn: 'Hydrogen', farge: 0xf2f4f7, r: 0.30, hull: [new THREE.Vector3(0, 0, 1)] },
+  C:  { navn: 'Karbon',   farge: 0x24282d, r: 0.48, hull: tetra },
+  N:  { navn: 'Nitrogen', farge: 0x2f5fd0, r: 0.46, hull: pyramide(70) },
+  O:  { navn: 'Oksygen',  farge: 0xd42b2b, r: 0.44, hull: bøyd(104.5) },
+  S:  { navn: 'Svovel',   farge: 0xe3c317, r: 0.54, hull: bøyd(104.5) },
+  Cl: { navn: 'Klor',     farge: 0x3ea34a, r: 0.50, hull: [new THREE.Vector3(0, 0, 1)] }
+};
+const REKKEFØLGE = ['C', 'H', 'O', 'N', 'S', 'Cl'];
+const PINNE_R = 0.075, PINNE_FARGE = 0xb9c1c9;
+const HULL_R = 0.115, HULL_DYBDE = 0.16;      // målt for en kule med radius 0,45
+const GAP = 0.52;                              // synlig pinne mellom to kuler
+
+// ---------- scene ----------
+const lerret = $('lerret');
+const renderer = new THREE.WebGLRenderer({ canvas: lerret, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const kamera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+const lys = new THREE.HemisphereLight(0xffffff, 0x4a5560, 0.95);
+scene.add(lys);
+const sol = new THREE.DirectionalLight(0xffffff, 0.85);
+sol.position.set(4, 7, 6); scene.add(sol);
+const fyll = new THREE.DirectionalLight(0xffffff, 0.3);
+fyll.position.set(-5, -2, -4); scene.add(fyll);
+
+// kamera går i bane rundt et midtpunkt
+const bane = { avstand: 9, theta: 0.7, phi: 1.15, mål: new THREE.Vector3(0, 0, 0) };
+function settKamera() {
+  const s = Math.sin(bane.phi), c = Math.cos(bane.phi);
+  kamera.position.set(
+    bane.mål.x + bane.avstand * s * Math.sin(bane.theta),
+    bane.mål.y + bane.avstand * c,
+    bane.mål.z + bane.avstand * s * Math.cos(bane.theta));
+  kamera.lookAt(bane.mål);
+}
+function tilpassStørrelse() {
+  const r = lerret.parentElement.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  kamera.aspect = r.width / Math.max(1, r.height);
+  kamera.updateProjectionMatrix();
+}
+new ResizeObserver(tilpassStørrelse).observe(lerret.parentElement);
+
+// ---------- modellen ----------
+let atomer = [], bindinger = [], nesteId = 1, valgt = null;
+const kuleGeo = new THREE.SphereGeometry(1, 40, 28);
+const hullGeo = new THREE.CylinderGeometry(HULL_R, HULL_R * 0.86, HULL_DYBDE, 18);
+const kantGeo = new THREE.TorusGeometry(HULL_R, 0.012, 8, 20);
+
+function lagAtom(el, pos) {
+  const d = ELEMENTER[el];
+  const mat = new THREE.MeshStandardMaterial({ color: d.farge, roughness: 0.42, metalness: 0.05 });
+  const mesh = new THREE.Mesh(kuleGeo, mat);
+  mesh.scale.setScalar(d.r);
+  const atom = {
+    id: nesteId++, el, r: d.r, mesh,
+    pos: pos.clone(), quat: new THREE.Quaternion(),
+    hull: d.hull.map(v => ({ retning: v.clone().normalize(), binding: null, mesh: null })),
+    molekyl: 0
+  };
+  mesh.userData = { type: 'atom', id: atom.id };
+  scene.add(mesh);
+
+  atom.hull.forEach((h, i) => {
+    const g = new THREE.Group();
+    const merke = { type: 'hull', id: atom.id, hull: i };
+    // selve hullet: et mørkt søkk ned i kulen, med en kant i overflaten
+    const k = d.r / 0.45;                       // hullene skaleres med kulen
+    const hm = new THREE.Mesh(hullGeo, new THREE.MeshStandardMaterial({ color: 0x0b0e11, roughness: 1 }));
+    hm.scale.setScalar(k);
+    hm.position.y = -(HULL_DYBDE * k) / 2 - 0.004;
+    const ring = new THREE.Mesh(kantGeo, new THREE.MeshStandardMaterial({ color: 0x090c0e, roughness: 0.9 }));
+    ring.rotation.x = Math.PI / 2;
+    ring.scale.setScalar(k);
+    ring.position.y = -0.012 * k;               // litt ned, ellers blir kanten ujevn i silhuetten
+    // klikkflaten stikker litt ut, ellers treffer museklikket kulen i stedet
+    const treff = new THREE.Mesh(new THREE.SphereGeometry(HULL_R * 1.5 * k, 12, 10),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    treff.position.y = 0.02;
+    g.add(hm); g.add(ring); g.add(treff);
+    g.userData = merke; hm.userData = merke; ring.userData = merke; treff.userData = merke;
+    h.mesh = g; h.treff = treff;
+    scene.add(g);
+  });
+  atomer.push(atom);
+  atom.molekyl = atom.id;
+  plasserAtom(atom);
+  return atom;
+}
+
+function plasserAtom(a) {
+  a.mesh.position.copy(a.pos);
+  a.mesh.quaternion.copy(a.quat);
+  a.hull.forEach(h => {
+    const v = h.retning.clone().applyQuaternion(a.quat);
+    h.mesh.position.copy(a.pos).addScaledVector(v, a.r);
+    h.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v);
+    h.mesh.visible = !h.binding;
+  });
+}
+const hullPunkt = (a, i) => a.pos.clone().addScaledVector(a.hull[i].retning.clone().applyQuaternion(a.quat), a.r);
+const hullRetning = (a, i) => a.hull[i].retning.clone().applyQuaternion(a.quat);
+
+// ---------- pinner ----------
+const pinneMat = new THREE.MeshStandardMaterial({ color: PINNE_FARGE, roughness: 0.35, metalness: 0.15 });
+const pinneValgtMat = new THREE.MeshStandardMaterial({ color: 0x4a8cf5, roughness: 0.35, metalness: 0.15 });
+
+function tegnPinne(b) {
+  const A = finnAtom(b.a), B = finnAtom(b.b);
+  const p1 = hullPunkt(A, b.hullA), p2 = hullPunkt(B, b.hullB);
+  const d1 = hullRetning(A, b.hullA), d2 = hullRetning(B, b.hullB);
+  const rett = p2.clone().sub(p1);
+  const bøy = rett.clone().normalize().dot(d1) > 0.985 && rett.clone().normalize().dot(d2.clone().negate()) > 0.985;
+  let geo;
+  if (bøy) {
+    geo = new THREE.CylinderGeometry(PINNE_R, PINNE_R, rett.length(), 14);
+    geo.translate(0, rett.length() / 2, 0);
+    geo.rotateX(Math.PI / 2);
+    geo.lookAt = null;
+  } else {
+    // bøyelig pinne: går ut av hullene i riktig retning, og bues mot hverandre
+    const ut = Math.min(0.45, rett.length() * 0.42);
+    const kurve = new THREE.CubicBezierCurve3(p1, p1.clone().addScaledVector(d1, ut), p2.clone().addScaledVector(d2, ut), p2);
+    geo = new THREE.TubeGeometry(kurve, 22, PINNE_R, 10, false);
+  }
+  if (b.mesh) { scene.remove(b.mesh); b.mesh.geometry.dispose(); }
+  const mesh = new THREE.Mesh(geo, b === valgt ? pinneValgtMat : pinneMat);
+  if (bøy) {
+    mesh.position.copy(p1);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), rett.clone().normalize());
+  }
+  mesh.userData = { type: 'pinne', id: b.id };
+  b.mesh = mesh;
+  scene.add(mesh);
+}
+const finnAtom = id => atomer.find(a => a.id === id);
+const finnBinding = id => bindinger.find(b => b.id === id);
+
+// ---------- molekyler ----------
+function naboer(id) {
+  return bindinger.filter(b => b.a === id || b.b === id).map(b => (b.a === id ? b.b : b.a));
+}
+function molekylTil(id) {
+  const sett = new Set([id]), kø = [id];
+  while (kø.length) for (const n of naboer(kø.pop())) if (!sett.has(n)) { sett.add(n); kø.push(n); }
+  return [...sett];
+}
+function alleMolekyler() {
+  const sett = new Set(), ut = [];
+  atomer.forEach(a => {
+    if (sett.has(a.id)) return;
+    const ids = molekylTil(a.id);
+    ids.forEach(i => sett.add(i));
+    ut.push(ids);
+  });
+  return ut;
+}
+// flytter og dreier et helt molekyl
+function flyttMolekyl(ids, forskyv, dreie, om) {
+  ids.forEach(id => {
+    const a = finnAtom(id);
+    if (dreie) {
+      a.pos.sub(om).applyQuaternion(dreie).add(om);
+      a.quat.premultiply(dreie);
+    }
+    if (forskyv) a.pos.add(forskyv);
+    plasserAtom(a);
+  });
+  bindinger.forEach(b => { if (ids.includes(b.a) || ids.includes(b.b)) tegnPinne(b); });
+}
+
+// ---------- sette inn pinne ----------
+function kanKobles(A, iA, B, iB) {
+  if (A.hull[iA].binding || B.hull[iB].binding) return 'Hullet er allerede i bruk.';
+  if (A.id === B.id) return 'Pinnen må gå mellom to ulike kuler.';
+  return null;
+}
+function settInnPinne(A, iA, B, iB) {
+  const feil = kanKobles(A, iA, B, iB);
+  if (feil) { si(feil); return; }
+  const sammeMolekyl = molekylTil(A.id).includes(B.id);
+  if (!sammeMolekyl) {
+    // B-delen snus og flyttes slik at hullene står mot hverandre, som når man trer en pinne inn
+    const ut = hullRetning(A, iA);
+    const inn = hullRetning(B, iB).negate();
+    const dreie = new THREE.Quaternion().setFromUnitVectors(inn, ut);
+    const ids = molekylTil(B.id);
+    flyttMolekyl(ids, null, dreie, B.pos.clone());
+    const mål = hullPunkt(A, iA).addScaledVector(ut, GAP + (B.r - 0));
+    const nå = B.pos.clone();
+    flyttMolekyl(ids, mål.sub(nå), null, null);
+  } else {
+    // Er de allerede festet til hverandre, vris den ene siden til hullene står best mulig,
+    // akkurat som når man tvinner kulen på plass før pinne nummer to settes inn.
+    const felles = bindinger.find(b => (b.a === A.id && b.b === B.id) || (b.a === B.id && b.b === A.id));
+    if (felles) vriBest(felles, A, iA, B, iB);
+    const avstand = hullPunkt(A, iA).distanceTo(hullPunkt(B, iB));
+    if (avstand > GAP * 3.4) { si('Pinnen når ikke så langt. Prøv et hull som peker mer mot det andre atomet.'); return; }
+  }
+  const b = { id: nesteId++, a: A.id, b: B.id, hullA: iA, hullB: iB, mesh: null };
+  A.hull[iA].binding = b.id; B.hull[iB].binding = b.id;
+  bindinger.push(b);
+  plasserAtom(A); plasserAtom(B);
+  // Ved dobbelt- og trippelbinding stiller kulene seg symmetrisk, slik man selv ville
+  // vridd dem for at begge pinnene skal bøye seg like mye.
+  if (mellom(A, B).length > 1) symmetriser(A, B);
+  tegnPinne(b);
+  bindinger.filter(x => (x.a === A.id && x.b === B.id) || (x.a === B.id && x.b === A.id)).forEach(tegnPinne);
+  oppdaterInfo();
+  const antall = bindinger.filter(x => (x.a === A.id && x.b === B.id) || (x.a === B.id && x.b === A.id)).length;
+  si(antall > 1 ? `${['', 'Enkeltbinding', 'Dobbeltbinding', 'Trippelbinding'][Math.min(3, antall)]} mellom ${ELEMENTER[A.el].navn.toLowerCase()} og ${ELEMENTER[B.el].navn.toLowerCase()}.` : '');
+}
+
+function fjernBinding(b) {
+  const A = finnAtom(b.a), B = finnAtom(b.b);
+  if (A) A.hull[b.hullA].binding = null;
+  if (B) B.hull[b.hullB].binding = null;
+  if (b.mesh) { scene.remove(b.mesh); b.mesh.geometry.dispose(); }
+  bindinger = bindinger.filter(x => x !== b);
+  if (A) plasserAtom(A);
+  if (B) plasserAtom(B);
+  oppdaterInfo();
+}
+function fjernAtom(a) {
+  bindinger.filter(b => b.a === a.id || b.b === a.id).forEach(fjernBinding);
+  scene.remove(a.mesh);
+  a.hull.forEach(h => scene.remove(h.mesh));
+  atomer = atomer.filter(x => x !== a);
+  oppdaterInfo();
+}
+
+const mellom = (A, B) => bindinger.filter(x => (x.a === A.id && x.b === B.id) || (x.a === B.id && x.b === A.id));
+
+function symmetriser(A, B) {
+  const par = mellom(A, B);
+  const ids = sidenAv(par, B.id);        // alle pinnene mellom de to holdes utenfor
+  if (ids.has(A.id)) return;                       // ring: kan ikke flyttes fritt
+  const retning = (atom, hullListe) => {
+    const v = new THREE.Vector3();
+    hullListe.forEach(i => v.add(hullRetning(atom, i)));
+    return v.normalize();
+  };
+  const hullA = par.map(b => (b.a === A.id ? b.hullA : b.hullB));
+  const hullB = par.map(b => (b.a === B.id ? b.hullA : b.hullB));
+  const uA = retning(A, hullA);
+  const uB = retning(B, hullB);
+  const dreie = new THREE.Quaternion().setFromUnitVectors(uB.clone().negate(), uA);
+  flyttMolekyl([...ids], null, dreie, B.pos.clone());
+  const mål = A.pos.clone().addScaledVector(uA, A.r + B.r + GAP * 0.82);
+  flyttMolekyl([...ids], mål.sub(B.pos), null, null);
+
+  // Kulene vris også rundt aksen, slik at hull nummer én på hver side peker samme vei.
+  // Ellers ville pinnene krysse hverandre i stedet for å bue ut hver sin vei.
+  const langs = (v) => v.clone().sub(uA.clone().multiplyScalar(v.dot(uA)));
+  const pA = langs(hullRetning(A, hullA[0]));
+  const pB = langs(hullRetning(B, hullB[0]));
+  if (pA.lengthSq() > 1e-6 && pB.lengthSq() > 1e-6) {
+    pA.normalize(); pB.normalize();
+    let vinkel = Math.acos(Math.max(-1, Math.min(1, pA.dot(pB))));
+    if (new THREE.Vector3().crossVectors(pB, pA).dot(uA) < 0) vinkel = -vinkel;
+    flyttMolekyl([...ids], null, new THREE.Quaternion().setFromAxisAngle(uA, vinkel), B.pos.clone());
+  }
+}
+
+function vriBest(b, A, iA, B, iB) {
+  const side = sidenAv(b, B.id === b.b ? b.b : b.a);
+  if (side.has(A.id)) return;                       // ring, kan ikke vris
+  let best = 0, bestAvstand = Infinity;
+  for (let i = 0; i < 72; i++) {
+    const v = (i / 72) * TAU;
+    vri(b, v - (i ? (1 / 72) * TAU : 0));
+    const d = hullPunkt(A, iA).distanceTo(hullPunkt(B, iB));
+    if (d < bestAvstand) { bestAvstand = d; best = v; }
+  }
+  vri(b, best - ((71 / 72) * TAU));
+}
+
+// ---------- vri rundt en binding ----------
+function sidenAv(b, fraId) {
+  const uten = Array.isArray(b) ? b : [b];
+  const sett = new Set([fraId]), kø = [fraId];
+  while (kø.length) {
+    const her = kø.pop();
+    for (const x of bindinger) {
+      if (uten.includes(x)) continue;
+      const neste = x.a === her ? x.b : x.b === her ? x.a : null;
+      if (neste != null && !sett.has(neste)) { sett.add(neste); kø.push(neste); }
+    }
+  }
+  return sett;
+}
+function vri(b, vinkel) {
+  const A = finnAtom(b.a), B = finnAtom(b.b);
+  const side = sidenAv(b, B.id);
+  if (side.has(A.id)) { si('Denne bindingen sitter i en ring, og kan ikke vris.'); return; }
+  const akse = B.pos.clone().sub(A.pos).normalize();
+  const dreie = new THREE.Quaternion().setFromAxisAngle(akse, vinkel);
+  flyttMolekyl([...side], null, dreie, A.pos.clone());
+}
+
+// ---------- formel og status ----------
+const NAVN = { 'H₂O': 'vann', 'CO₂': 'karbondioksid', 'CH₄': 'metan', 'NH₃': 'ammoniakk', 'O₂': 'oksygen',
+  'N₂': 'nitrogen', 'H₂': 'hydrogen', 'Cl₂': 'klor', 'HCl': 'hydrogenklorid', 'H₂S': 'hydrogensulfid',
+  'C₂H₆': 'etan', 'C₂H₄': 'eten', 'C₂H₂': 'etyn', 'CH₃Cl': 'klormetan', 'CCl₄': 'tetraklormetan',
+  'C₂H₆O': 'etanol', 'CH₄O': 'metanol', 'C₃H₈': 'propan', 'C₄H₁₀': 'butan', 'CO': 'karbonmonoksid',
+  'C₆H₆': 'benzen', 'SO₂': 'svoveldioksid', 'CS₂': 'karbondisulfid', 'C₆H₁₂': 'sykloheksan' };
+const SUB = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' };
+const sub = n => String(n).split('').map(c => SUB[c]).join('');
+function formel(ids) {
+  const tall = {};
+  ids.forEach(id => { const e = finnAtom(id).el; tall[e] = (tall[e] || 0) + 1; });
+  const rekke = ['C', 'H', 'N', 'O', 'S', 'Cl'].filter(e => tall[e]);
+  Object.keys(tall).forEach(e => { if (!rekke.includes(e)) rekke.push(e); });
+  return rekke.map(e => e + (tall[e] > 1 ? sub(tall[e]) : '')).join('');
+}
+function oppdaterInfo() {
+  const ul = $('molekyler');
+  const grupper = alleMolekyler();
+  if (!grupper.length) { ul.innerHTML = '<li class="tom">Ingenting ennå.</li>'; return; }
+  ul.innerHTML = grupper.map(ids => {
+    const f = formel(ids);
+    const ledige = ids.reduce((s, id) => s + finnAtom(id).hull.filter(h => !h.binding).length, 0);
+    const navn = NAVN[f];
+    const status = ledige === 0
+      ? '<div class="ferdig">✓ Alle hull er fylt</div>'
+      : `<div class="mangler">${ledige} ${ledige === 1 ? 'ledig hull' : 'ledige hull'}</div>`;
+    return `<li><span class="formel">${f}</span>${navn ? ` <span class="navn">${navn}</span>` : ''}${status}</li>`;
+  }).join('');
+}
+let meldingTimer = null;
+function si(tekst) {
+  const el = $('melding');
+  clearTimeout(meldingTimer);
+  if (!tekst) { el.hidden = true; return; }
+  el.textContent = tekst; el.hidden = false;
+  meldingTimer = setTimeout(() => { el.hidden = true; }, 4200);
+}
+
+// ================= Museklikk, drag og berøring =================
+const stråle = new THREE.Raycaster();
+const peker = new THREE.Vector2();
+let valgtHull = null;          // {atom, hull} mens man kobler
+let hover = null;
+let drag = null;
+
+function traff(ev) {
+  const r = lerret.getBoundingClientRect();
+  peker.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+  peker.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+  stråle.setFromCamera(peker, kamera);
+  const mål = [];
+  atomer.forEach(a => {
+    mål.push(a.mesh);
+    a.hull.forEach(h => { if (h.mesh.visible) mål.push(h.treff, ...h.mesh.children); });
+  });
+  bindinger.forEach(b => { if (b.mesh) mål.push(b.mesh); });
+  const treff = stråle.intersectObjects(mål, false);
+  return treff.length ? treff[0] : null;
+}
+
+function settHover(u) {
+  if (hover && hover.mesh) hover.mesh.scale.setScalar(1);
+  hover = null;
+  lerret.style.cursor = 'grab';
+  if (!u) return;
+  if (u.type === 'hull') {
+    const a = finnAtom(u.id), h = a.hull[u.hull];
+    hover = { mesh: h.mesh };
+    h.mesh.scale.setScalar(1.35);
+    lerret.style.cursor = 'pointer';
+  } else if (u.type === 'pinne' || u.type === 'atom') {
+    lerret.style.cursor = 'pointer';
+  }
+}
+
+function velg(nytt) {
+  if (valgt && valgt.mesh && valgt.hullA !== undefined) valgt.mesh.material = pinneMat;
+  if (valgt && valgt.mesh && valgt.hullA === undefined) valgt.mesh.material.emissive.setHex(0x000000);
+  valgt = nytt;
+  if (valgt && valgt.hullA !== undefined) valgt.mesh.material = pinneValgtMat;
+  else if (valgt) { valgt.mesh.material.emissive.setHex(0x1b3c6e); valgt.mesh.material.emissiveIntensity = 0.45; }
+  $('fjernBtn').disabled = !valgt;
+  $('vriBtn').hidden = !(valgt && valgt.hullA !== undefined);
+}
+
+lerret.addEventListener('pointermove', ev => {
+  if (drag) return;
+  const t = traff(ev);
+  settHover(t ? t.object.userData : null);
+});
+
+let pekere = new Map(), knip = null;
+lerret.addEventListener('pointerdown', ev => {
+  lerret.setPointerCapture(ev.pointerId);
+  pekere.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (pekere.size === 2) {
+    const [p1, p2] = [...pekere.values()];
+    knip = { d0: Math.hypot(p1.x - p2.x, p1.y - p2.y) || 1, a0: bane.avstand };
+    drag = null;
+    return;
+  }
+  const t = traff(ev);
+  const u = t ? t.object.userData : null;
+  if (u && u.type === 'atom') {
+    drag = { type: 'atom', ids: molekylTil(u.id), sx: ev.clientX, sy: ev.clientY, flyttet: false, id: u.id,
+             plan: new THREE.Plane().setFromNormalAndCoplanarPoint(kamera.getWorldDirection(new THREE.Vector3()).negate(), finnAtom(u.id).pos.clone()),
+             start: null };
+    drag.start = planPunkt(ev, drag.plan);
+  } else {
+    drag = { type: 'kamera', sx: ev.clientX, sy: ev.clientY, theta: bane.theta, phi: bane.phi, flyttet: false, u };
+  }
+  lerret.classList.add('griper');
+});
+function planPunkt(ev, plan) {
+  const r = lerret.getBoundingClientRect();
+  peker.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+  peker.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+  stråle.setFromCamera(peker, kamera);
+  const p = new THREE.Vector3();
+  return stråle.ray.intersectPlane(plan, p) ? p : null;
+}
+lerret.addEventListener('pointermove', ev => {
+  if (!pekere.has(ev.pointerId)) return;
+  pekere.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (knip && pekere.size >= 2) {
+    const [p1, p2] = [...pekere.values()];
+    const d = Math.hypot(p1.x - p2.x, p1.y - p2.y) || 1;
+    bane.avstand = Math.max(3, Math.min(30, knip.a0 * knip.d0 / d));
+    settKamera();
+    return;
+  }
+  if (!drag) return;
+  const dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
+  if (!drag.flyttet && Math.hypot(dx, dy) < 5) return;
+  drag.flyttet = true;
+  if (drag.type === 'atom') {
+    const p = planPunkt(ev, drag.plan);
+    if (p && drag.start) { flyttMolekyl(drag.ids, p.clone().sub(drag.start), null, null); drag.start = p; }
+  } else {
+    bane.theta = drag.theta - dx * 0.008;
+    bane.phi = Math.max(0.15, Math.min(Math.PI - 0.15, drag.phi - dy * 0.008));
+    settKamera();
+  }
+});
+function slippPeker(ev) {
+  pekere.delete(ev.pointerId);
+  if (pekere.size < 2) knip = null;
+  lerret.classList.remove('griper');
+  if (!drag) return;
+  if (!drag.flyttet) klikk(drag.u !== undefined ? drag.u : { type: 'atom', id: drag.id });
+  drag = null;
+}
+lerret.addEventListener('pointerup', slippPeker);
+lerret.addEventListener('pointercancel', slippPeker);
+lerret.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  bane.avstand = Math.max(3, Math.min(30, bane.avstand * Math.exp(ev.deltaY * 0.0012)));
+  settKamera();
+}, { passive: false });
+
+function klikk(u) {
+  if (!u) { velg(null); merkHull(null); return; }
+  if (u.type === 'hull') {
+    const a = finnAtom(u.id);
+    if (!valgtHull) { valgtHull = { atom: a, hull: u.hull }; merkHull(valgtHull); si('Klikk på et hull til, så settes pinnen inn.'); return; }
+    if (valgtHull.atom.id === a.id && valgtHull.hull === u.hull) { merkHull(null); valgtHull = null; return; }
+    settInnPinne(valgtHull.atom, valgtHull.hull, a, u.hull);
+    merkHull(null); valgtHull = null;
+    return;
+  }
+  if (u.type === 'pinne') { velg(finnBinding(u.id)); return; }
+  if (u.type === 'atom') { velg(finnAtom(u.id)); return; }
+}
+let merket = null;
+function merkHull(h) {
+  const farge = (m, verdi) => m.children.forEach(c => { if (c.material.emissive) c.material.emissive.setHex(verdi); });
+  if (merket) farge(merket.mesh, 0x000000);
+  merket = null;
+  if (!h) return;
+  merket = h.atom.hull[h.hull];
+  farge(merket.mesh, 0x1e66d8);
+}
+
+// ---------- knapper ----------
+$('fjernBtn').addEventListener('click', () => {
+  if (!valgt) return;
+  if (valgt.hullA !== undefined) fjernBinding(valgt); else fjernAtom(valgt);
+  velg(null);
+});
+$('vriBtn').addEventListener('mousedown', ev => ev.preventDefault());
+$('vriBtn').addEventListener('click', () => { if (valgt && valgt.hullA !== undefined) vri(valgt, Math.PI / 9); });
+$('tomBtn').addEventListener('click', () => {
+  [...atomer].forEach(fjernAtom);
+  velg(null); valgtHull = null; merkHull(null); oppdaterInfo();
+});
+$('midtBtn').addEventListener('click', midtstill);
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Delete' || ev.key === 'Backspace') { if (valgt) { $('fjernBtn').click(); ev.preventDefault(); } }
+  if (ev.key === 'Escape') { velg(null); valgtHull = null; merkHull(null); }
+});
+
+function midtstill() {
+  if (!atomer.length) { bane.mål.set(0, 0, 0); bane.avstand = 9; settKamera(); return; }
+  const boks = new THREE.Box3();
+  atomer.forEach(a => boks.expandByPoint(a.pos));
+  const midt = boks.getCenter(new THREE.Vector3());
+  const str = Math.max(2.5, boks.getSize(new THREE.Vector3()).length());
+  bane.mål.copy(midt);
+  bane.avstand = str * 1.6 + 3;
+  settKamera();
+}
+
+// ---------- esken ----------
+function byggEske() {
+  const rom = $('rom');
+  rom.innerHTML = REKKEFØLGE.map(sym => {
+    const d = ELEMENTER[sym];
+    const n = d.hull.length;
+    const hull = d.hull.map((v, i) => {
+      // hullene tegnes som små prikker plassert etter retningen sin
+      const x = 50 + v.x * 32, y = 50 - v.y * 32;
+      return `<i style="left:${x}%;top:${y}%"></i>`;
+    }).join('');
+    return `<button data-el="${sym}" title="${d.navn} med ${n} ${n === 1 ? 'hull' : 'hull'}">
+        <span class="kule" style="--ball:#${d.farge.toString(16).padStart(6, '0')}">${hull}</span>
+        <span class="navn"><span class="sym">${sym}</span><br>${d.navn}</span>
+      </button>`;
+  }).join('') + `<button data-pinne="1" title="Pinnene brukes ved å klikke på to hull">
+      <span class="pinne"><span></span></span>
+      <span class="navn"><span class="sym">Pinner</span><br>bindinger</span>
+    </button>`;
+  rom.addEventListener('click', ev => {
+    const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.pinne) { si('Pinnene settes inn ved å klikke på et hull, og så på et hull til.'); return; }
+    nyttAtom(b.dataset.el);
+  });
+}
+function vendMotKamera(a) {
+  const snitt = new THREE.Vector3();
+  a.hull.forEach(h => snitt.add(h.retning));
+  if (snitt.lengthSq() < 1e-6) snitt.copy(a.hull[0].retning);
+  const mot = kamera.position.clone().sub(a.pos).normalize();
+  a.quat.setFromUnitVectors(snitt.normalize(), mot);
+  plasserAtom(a);
+}
+function nyttAtom(el) {
+  if (atomer.length >= 60) { si('Det er fullt på brettet.'); return; }
+  // legges et ledig sted foran kameraet
+  const høyre = new THREE.Vector3().crossVectors(kamera.getWorldDirection(new THREE.Vector3()), kamera.up).normalize();
+  const opp = kamera.up.clone();
+  let pos = bane.mål.clone();
+  for (let i = 0; i < 60; i++) {
+    const vinkel = i * 2.4, rad = 0.9 + i * 0.18;
+    const p = bane.mål.clone().addScaledVector(høyre, Math.cos(vinkel) * rad).addScaledVector(opp, Math.sin(vinkel) * rad);
+    if (atomer.every(a => a.pos.distanceTo(p) > a.r + 1.1)) { pos = p; break; }
+  }
+  const a = lagAtom(el, pos);
+  vendMotKamera(a);
+  velg(a);
+  oppdaterInfo();
+}
+
+byggEske();
+tilpassStørrelse();
+settKamera();
+oppdaterInfo();
+(function tegn() { requestAnimationFrame(tegn); renderer.render(scene, kamera); })();
+
+</script>
+</body>
+</html>
