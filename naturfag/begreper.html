@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Begrepsjakten – kjemi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./js/motorer/begrep.css">
+</head>
+<body>
+
+<script type="module">
+  import { database, ref, update } from "./js/firebase-config.js";
+  window._fbReady = true; window._db = database; window._ref = ref; window._update = update;
+</script>
+<script src="./js/spill-utils.js"></script>
+<script src="./js/motorer/begrep.js"></script>
+
+<script>
+// Innholdet i spillet. Motoren ligger i fellesrepoet og brukes av flere fag.
+const KJEMI = [
+  ['proton', 'Partikkel med positiv ladning inne i atomkjernen. Hvor mange det er, bestemmer hvilket grunnstoff atomet er.'],
+  ['nøytron', 'Partikkel uten ladning inne i atomkjernen. Den veier omtrent like mye som et proton.'],
+  ['elektron', 'Liten partikkel med negativ ladning som beveger seg rundt kjernen. Den veier nesten ingenting.'],
+  ['atomkjerne', 'Den lille og tunge midten av atomet, satt sammen av protoner og nøytroner.'],
+  ['elektronskall', 'Område rundt kjernen der elektronene holder til. Det innerste har plass til to elektroner.'],
+  ['atomnummer', 'Tallet som sier hvor mange protoner atomet har, og som bestemmer plassen i periodesystemet.'],
+  ['grunnstoff', 'Stoff som bare består av én type atomer, for eksempel oksygen, jern eller gull.'],
+  ['periodesystemet', 'Tabellen der alle grunnstoffene er ordnet etter atomnummer, slik at stoffer som ligner, står nær hverandre.'],
+  ['gruppe', 'Loddrett kolonne i periodesystemet. Stoffene i den har like mange elektroner i ytterste skall.'],
+  ['periode', 'Vannrett rad i periodesystemet. Alle stoffene i raden har like mange elektronskall.'],
+  ['åtteregelen', 'Regelen om at atomer er mest stabile når det ytterste skallet har åtte elektroner.'],
+  ['molekyl', 'To eller flere atomer som henger sammen fordi de deler elektroner.'],
+  ['kjemisk forbindelse', 'Stoff som er satt sammen av atomer fra minst to ulike grunnstoffer, for eksempel vann.'],
+  ['enkeltbinding', 'Binding der to atomer deler ett elektronpar.'],
+  ['dobbeltbinding', 'Binding der to atomer deler to elektronpar.'],
+  ['ion', 'Atom som har fått ladning fordi det har gitt fra seg eller tatt opp elektroner.'],
+  ['ionebinding', 'Binding som holder positive og negative ioner sammen, fordi motsatte ladninger trekker på hverandre.'],
+  ['salt', 'Stoff bygd opp av positive og negative ioner som ligger i et fast mønster.']
+];
+
+Begrepsspill.start({
+  spillnavn: 'begrep-kjemi',
+  tittel: '🧩 Begrepsjakten',
+  overskrift: 'Begrepsjakten',
+  intro: 'Øv på begrepene i kjemi. I parspill finner du begrepet som hører til forklaringen. I hurtigrunden får du en forklaring og velger blant fire begreper, så raskt du klarer.',
+  sett: [
+    { id: 'kjemi', navn: 'Kjemi', par: KJEMI }
+  ]
+});
+</script>
+</body>
+</html>
