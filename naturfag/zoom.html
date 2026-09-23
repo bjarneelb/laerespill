@@ -141,6 +141,11 @@ function mørkere(hex, f) {
   const r = Math.round((n >> 16) * (1 - f)), g = Math.round(((n >> 8) & 255) * (1 - f)), b = Math.round((n & 255) * (1 - f));
   return `rgb(${r},${g},${b})`;
 }
+// rask kule uten fargeovergang, til når det er mange av dem
+function kuleRask(x, y, r, farge, lys) {
+  sirkel(x, y, r, farge);
+  if (r > 3) sirkel(x - r * .3, y - r * .32, r * .34, lys);
+}
 function tekstMidt(t, x, y, str, farge) {
   ctx.font = `700 ${str}px "Atkinson Hyperlegible", system-ui, sans-serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -163,10 +168,10 @@ function aktive() {
   liste.forEach((s, i) => {
     // scenen er synlig mellom fra og til, med mykt overlapp i endene
     const l = Math.log10(bredde), a = Math.log10(s.fra), b = Math.log10(s.til);
-    if (l > a + 0.35 || l < b - 0.35) return;
+    if (l > a + 0.22 || l < b - 0.22) return;
     let alfa = 1;
-    if (l > a) alfa = 1 - (l - a) / 0.35;
-    if (l < b) alfa = 1 - (b - l) / 0.35;
+    if (l > a) alfa = 1 - (l - a) / 0.22;
+    if (l < b) alfa = 1 - (b - l) / 0.22;
     ut.push({ s, alfa: Math.max(0, Math.min(1, alfa)), f: Math.max(0, Math.min(1, (a - l) / (a - b))) });
   });
   return ut;
@@ -336,17 +341,65 @@ const VANN = [
 ];
 
 // ================= Dyrecelle =================
-function fosfolipid(x, y, r, opp, hale) {
+// Fosfolipidet tegnes forenklet når det er lite, og som ekte molekyl når det blir stort nok.
+// Overgangen skjer gradvis, slik at det ser ut som det samme molekylet hele veien.
+const C_C = 1.54e-10;                                   // bindingslengde karbon–karbon
+function fosfolipid(x, y, r, opp, hale, frø) {
   const d = opp ? 1 : -1;
-  ctx.strokeStyle = 'rgba(240,210,120,.85)'; ctx.lineWidth = Math.max(1, r * .45); ctx.lineCap = 'round';
-  [-0.45, 0.45].forEach(o => {
-    ctx.beginPath();
-    ctx.moveTo(x + r * o, y);
-    ctx.bezierCurveTo(x + r * o * 1.6, y + d * hale * .36, x + r * o * .4, y + d * hale * .73, x + r * o * 1.1, y + d * hale);
-    ctx.stroke();
-  });
-  kule(x, y - d * r * .2, r, '#f2c14e', '#fff0c6');
+  const atomR = px(0.77e-10);
+  if (atomR < 2.2) {                                    // for lite til å vise atomer
+    ctx.strokeStyle = 'rgba(240,210,120,.85)'; ctx.lineWidth = Math.max(1, r * .45); ctx.lineCap = 'round';
+    [-0.45, 0.45].forEach(o => {
+      ctx.beginPath();
+      ctx.moveTo(x + r * o, y);
+      ctx.bezierCurveTo(x + r * o * 1.6, y + d * hale * .36, x + r * o * .4, y + d * hale * .73, x + r * o * 1.1, y + d * hale);
+      ctx.stroke();
+    });
+    kule(x, y - d * r * .2, r, '#f2c14e', '#fff0c6');
+    return;
+  }
+  tegnFosfolipidAtomer(x, y, d, atomR, frø || 0);
 }
+
+// hodet: nitrogen, fosfor og oksygen. halene: kjeder av karbon med hydrogen på
+function tegnFosfolipidAtomer(x, y, d, rC, frø) {
+  const rH = rC * 0.6, steg = px(C_C) * 0.82, sideveis = px(C_C) * 0.55;
+  const rask = rC < 9;
+  const kul = (px_, py, rr, f, l) => (rask ? kuleRask : kule)(px_, py, rr, f, l);
+  const strek = (x1, y1, x2, y2, br) => {
+    ctx.strokeStyle = 'rgba(215,225,235,.45)'; ctx.lineWidth = Math.max(1, br);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  };
+  // hodet
+  const hy = y - d * rC * 1.2;
+  kul(x - sideveis * .9, hy - d * steg * .9, rC * 1.05, '#4f7fd8', '#bcd2ff');       // N
+  kul(x + sideveis * .2, hy, rC * 1.25, '#e8a13c', '#ffe0ac');                        // P
+  kul(x + sideveis * 1.3, hy - d * steg * .5, rC * .95, '#e0534f', '#ffd2d0');        // O
+  kul(x - sideveis * .2, hy + d * steg * .8, rC * .95, '#e0534f', '#ffd2d0');         // O
+  strek(x - sideveis * .9, hy - d * steg * .9, x + sideveis * .2, hy, rC * .34);
+  strek(x + sideveis * .2, hy, x + sideveis * 1.3, hy - d * steg * .5, rC * .34);
+  strek(x + sideveis * .2, hy, x - sideveis * .2, hy + d * steg * .8, rC * .34);
+  // to haler med fjorten karbon hver
+  [-1, 1].forEach((side, t) => {
+    let px_ = x + side * sideveis * 1.15, py = hy + d * steg * 1.6;
+    let forrigeX = px_, forrigeY = py;
+    for (let i = 0; i < 16; i++) {
+      const vri = ((i + t + frø) % 2 ? 1 : -1) * sideveis * .5;
+      const cx = px_ + vri, cy = py + d * steg * i;
+      if (i) strek(forrigeX, forrigeY, cx, cy, rC * .38);
+      [-1, 1].forEach(h => {
+        const hx = cx + h * sideveis * .85, hy2 = cy + d * steg * .2;
+        strek(cx, cy, hx, hy2, rC * .3);
+        kul(hx, hy2, rH, '#eef3f8', '#ffffff');
+      });
+      kul(cx, cy, rC, '#3a4048', '#8f9aa6');
+      forrigeX = cx; forrigeY = cy;
+    }
+  });
+}
+
+// myk overgang, så panoreringen ikke starter og stopper brått
+const jevn = f => f <= 0 ? 0 : f >= 1 ? 1 : f * f * (3 - 2 * f);
 
 const CELLE = [
   { fra: 2e-3, til: 1.2e-4, tittel: 'Celler i et mikroskop', tekst: 'Dyreceller er rundt 20 mikrometer, altså to hundredeler av en millimeter. Her ser vi flere av dem ved siden av hverandre.',
@@ -362,13 +415,15 @@ const CELLE = [
         sirkel(x + r * .1, y - r * .1, r * .3, 'rgba(120,110,200,.6)');
       }
     } },
-  { fra: 1.6e-4, til: 8e-6, tittel: 'Én celle', tekst: 'Cellekjernen i midten, mitokondrier rundt, og ytterst cellemembranen som holder det hele samlet.',
+  { fra: 1.6e-4, til: 8e-6, tittel: 'Én celle', tekst: 'Cellekjernen i midten, mitokondrier rundt, og ytterst cellemembranen som holder det hele samlet. Vi sikter oss inn mot kanten.',
     modell: 'Membranen er tegnet tykkere enn den er. Ellers ville den vært tynnere enn en strek her.',
-    tegn() {
-      const x = W / 2, y = H / 2, r = px(1.05e-5);
+    tegn(f) {
+      // bildet glir ut mot kanten, så det blir tydelig at det er membranen vi går inn i
+      const r = px(1.05e-5);
+      const x = W / 2, y = H / 2 + r * .92 * jevn(f);
       ctx.beginPath(); ctx.ellipse(x, y, r, r * .92, .2, 0, TAU);
       ctx.fillStyle = 'rgba(150,195,235,.22)'; ctx.fill();
-      ctx.strokeStyle = 'rgba(235,175,90,.9)'; ctx.lineWidth = Math.max(2.5, px(8e-9) * 12); ctx.stroke();
+      ctx.strokeStyle = 'rgba(235,175,90,.9)'; ctx.lineWidth = Math.max(2.5, px(4.4e-9) * 12); ctx.stroke();
       sirkel(x + r * .1, y - r * .08, r * .3, 'rgba(120,110,200,.55)');
       ctx.strokeStyle = 'rgba(170,160,230,.8)'; ctx.lineWidth = Math.max(1, r * .012);
       ctx.beginPath(); ctx.arc(x + r * .1, y - r * .08, r * .3, 0, TAU); ctx.stroke();
@@ -382,9 +437,9 @@ const CELLE = [
         ctx.restore();
       }
     } },
-  { fra: 1.1e-5, til: 2.5e-7, tittel: 'Cellemembranen', tekst: 'Kanten på cellen er ikke en vegg, men en hinne på bare 8 nanometer. Den er tegnet som en strek her, men er i virkeligheten to lag med molekyler.',
+  { fra: 1.1e-5, til: 2.5e-7, tittel: 'Cellemembranen', tekst: 'Kanten på cellen er ikke en vegg, men en hinne på bare 4 til 5 nanometer. Den er tegnet som en strek her, men er i virkeligheten to lag med molekyler.',
     tegn() {
-      const y = H / 2, t = px(8e-9);
+      const y = H / 2, t = px(4.4e-9);
       ctx.save();
       ctx.beginPath(); ctx.moveTo(-10, y - px(1e-6));
       ctx.quadraticCurveTo(W / 2, y - px(2.2e-6), W + 10, y - px(1e-6));
@@ -400,48 +455,38 @@ const CELLE = [
       ctx.fillText('inni cellen', 16, y + px(1.6e-6));
       ctx.fillText('utenfor', 16, y - px(2.6e-6));
     } },
-  { fra: 3e-7, til: 8e-9, tittel: 'To lag med fettmolekyler', tekst: 'Membranen består av fosfolipider. Hodene liker vann og vender utover, mens halene skyr vann og vender innover. Her ligger også proteiner som slipper stoffer gjennom.',
-    modell: 'Molekylene er forenklet til hode og to haler.',
+  { fra: 3e-7, til: 4e-9, tittel: 'To lag med fettmolekyler', tekst: 'Membranen består av fosfolipider. Hodene liker vann og vender utover, mens halene skyr vann og vender innover. Zoomer du videre, ser du at hvert molekyl er bygd av atomer.',
+    modell: 'Hodet er forenklet. Halene er tegnet med seksten karbonatomer hver.',
     tegn() {
       const y = H / 2, r = px(0.45e-9), avstand = 0.95e-9;
       const n = Math.ceil(bredde / avstand) + 2;
-      const t = px(4e-9);
+      const t = px(2.2e-9);   // halene er 2 nm, så hvert lag blir 2,2 nm
       ctx.fillStyle = 'rgba(240,210,120,.06)'; ctx.fillRect(0, y - t, W, t * 2);
       for (let i = -1; i < n; i++) {
         const x = px(i * avstand) - px(bredde / 2) + W / 2 + Math.sin(tid + i) * r * .15;
         if (x < -r * 3 || x > W + r * 3) continue;
         if (Math.abs(i - Math.round(n * .62)) < 1.2) continue;            // plass til proteinet
-        fosfolipid(x, y - t, r, true, t * 0.92);     // øverste lag: halene peker innover
-        fosfolipid(x, y + t, r, false, t * 0.92);    // nederste lag: halene peker oppover
+        fosfolipid(x, y - t, r, true, t * 0.92, i);        // øverste lag: halene peker innover
+        fosfolipid(x, y + t, r, false, t * 0.92, i + 1);   // nederste lag: halene peker oppover
       }
       const pxpos = px(Math.round(n * .62) * avstand) - px(bredde / 2) + W / 2;
       ctx.beginPath();
-      ctx.roundRect(pxpos - r * 1.6, y - t - r * 1.6, r * 3.2, t * 2 + r * 3.2, r);
+      ctx.roundRect(pxpos - r * 1.8, y - t - r * 2.2, r * 3.6, t * 2 + r * 4.4, r);
       ctx.fillStyle = 'rgba(120,190,150,.75)'; ctx.fill();
       ctx.strokeStyle = 'rgba(160,230,190,.9)'; ctx.lineWidth = Math.max(1, r * .2); ctx.stroke();
       if (r > 14) tekstMidt('protein', pxpos, y, Math.max(10, r * .55), 'rgba(15,35,25,.85)');
     } },
-  { fra: 1e-8, til: 1.1e-9, tittel: 'Halen på et fettmolekyl', tekst: 'Halene er lange kjeder av karbonatomer med hydrogen på. Nå er vi nede på enkeltatomer.',
-    modell: 'Kulene viser hvor atomene sitter.',
-    tegn() {
-      const rC = px(0.77e-10), rH = px(0.53e-10), d = px(1.54e-10);
-      const x0 = W / 2 - d * 2.6, y = H / 2;
-      for (let i = 0; i < 6; i++) {
-        const x = x0 + i * d * .95, yy = y + (i % 2 ? -1 : 1) * d * .35 + Math.sin(tid + i) * rC * .06;
-        const nx = x0 + (i + 1) * d * .95, ny = y + ((i + 1) % 2 ? -1 : 1) * d * .35;
-        if (i < 5) { ctx.strokeStyle = 'rgba(220,230,240,.5)'; ctx.lineWidth = Math.max(1, rC * .4);
-          ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(nx, ny); ctx.stroke(); }
-        [[-.8, -.9], [.8, -.9]].forEach(([ox, oy]) => {
-          const hx = x + ox * d * .55, hy = yy + oy * d * .55 * (i % 2 ? -1 : 1);
-          ctx.strokeStyle = 'rgba(220,230,240,.4)'; ctx.lineWidth = Math.max(1, rC * .3);
-          ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(hx, hy); ctx.stroke();
-          kule(hx, hy, rH, '#eef3f8', '#ffffff');
-        });
-        kule(x, yy, rC, '#3a4048', '#8f9aa6');
-        if (rC > 24 && rC < Math.min(W, H) * 0.42) tekstMidt('C', x, yy, rC * .9, 'rgba(255,255,255,.9)');
-      }
+  { fra: 5.5e-9, til: 1.4e-9, tittel: 'Ett fosfolipid', tekst: 'Hodet med fosfor, oksygen og nitrogen øverst, og to lange haler av karbon og hydrogen nedover. Det er halene som gjør at membranen stenger vann ute.',
+    modell: 'Kulene viser hvor atomene sitter. Fargene skiller grunnstoffene.',
+    tegn(f) {
+      const rC = px(0.77e-10), steg = px(C_C) * 0.82;
+      // hodet ligger øverst, og vi glir nedover halen mot karbonatomet vi skal inn i
+      // panoreringen starter først når vi har sett hele molekylet
+      const g = jevn(Math.max(0, (f - 0.45) / 0.55));
+      const hodeY = H * 0.24 + (H / 2 - steg * 9.6 - H * 0.24) * g;
+      tegnFosfolipidAtomer(W / 2, hodeY, 1, rC, 0);
     } },
-  atomScene('C', 6, 6, [2, 4], 0.8e-10, 1.6e-9, 4e-12,
+  atomScene('C', 6, 6, [2, 4], 0.8e-10, 1.7e-9, 4e-12,
     'Ett karbonatom. Fire elektroner ytterst er grunnen til at karbon kan binde seg til fire andre atomer, og bygge alt fra fettmolekyler til DNA.'),
   kjerneScene('karbon', 6, 6, 8e-12, 4e-15,
     'Seks protoner og seks nøytroner. Det er antallet protoner som gjør dette til karbon.')
