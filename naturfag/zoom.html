@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zoom inn i stoffet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c1118; --panel: #141c26; --card: #1c2733; --ink: #e8eef4; --ink-soft: #9db0c2; --rule: #2b3947;
+  --accent: #5aa0ff; --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font);
+       display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn { border: 1px solid var(--rule); background: var(--card); border-radius: 10px; padding: .45rem .85rem; cursor: pointer; white-space: nowrap; }
+.btn:hover:not(:disabled) { border-color: var(--ink-soft); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #08121f; font-weight: 700; }
+
+.top { display: flex; align-items: center; gap: .5rem .9rem; flex-wrap: wrap; padding: .55rem .9rem; border-bottom: 1px solid var(--rule); background: var(--panel); }
+.top h1 { margin: 0; font-size: 1.05rem; white-space: nowrap; }
+.velg { display: flex; gap: .35rem; }
+.velg button { border: 1px solid var(--rule); background: var(--card); border-radius: 999px; padding: .35rem .85rem; cursor: pointer; }
+.velg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #08121f; font-weight: 700; }
+.grow { flex: 1; }
+
+.scene { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; cursor: ns-resize; }
+#lerret { width: 100%; height: 100%; display: block; }
+.merke::before { content: ""; position: absolute; left: 50%; top: -.8rem; transform: translateX(-50%);
+  width: 120vw; height: 200%; background: linear-gradient(180deg, rgba(8,12,18,.82), rgba(8,12,18,0)); z-index: -1; }
+.merke { position: absolute; z-index: 2; left: 50%; transform: translateX(-50%); top: .8rem; text-align: center; pointer-events: none;
+         text-shadow: 0 2px 10px rgba(0,0,0,.8); max-width: min(52ch, calc(100% - 2rem)); }
+.merke h2 { margin: 0; font-size: clamp(1.1rem, .8rem + 1.2vw, 1.7rem); }
+.merke p { margin: .25rem 0 0; color: var(--ink-soft); font-size: .95rem; line-height: 1.4; }
+.tall { position: absolute; left: .9rem; bottom: .9rem; background: rgba(12,17,24,.72); border: 1px solid var(--rule);
+        border-radius: 12px; padding: .5rem .8rem; line-height: 1.3; }
+.tall .stor { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tall .liten { font-size: .85rem; color: var(--ink-soft); }
+.modellnote { position: absolute; right: .9rem; bottom: .9rem; max-width: 30ch; font-size: .82rem; color: var(--ink-soft);
+              background: rgba(12,17,24,.72); border: 1px solid var(--rule); border-radius: 12px; padding: .45rem .7rem; }
+
+.styring { display: flex; align-items: center; gap: .6rem; padding: .55rem .9rem; border-top: 1px solid var(--rule); background: var(--panel); }
+.styring input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
+.styring .sq { width: 2.2rem; padding: .35rem 0; text-align: center; font-size: 1.1rem; }
+@media (max-width: 560px) {
+  .top h1 { font-size: .95rem; }
+  .merke p { font-size: .85rem; }
+  .modellnote { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>🔬 Zoom inn i stoffet</h1>
+  <div class="velg" id="velg"></div>
+  <span class="grow"></span>
+  <button class="btn" id="reisBtn">▶ Reis innover</button>
+  <button class="btn" id="utBtn">Helt ut</button>
+  <a class="btn" href="./">Meny</a>
+</header>
+
+<div class="scene" id="scene">
+  <canvas id="lerret"></canvas>
+  <div class="merke"><h2 id="tittel"></h2><p id="tekst"></p></div>
+  <div class="tall"><div class="stor" id="forstorrelse">×1</div><div class="liten" id="bredde"></div></div>
+  <p class="modellnote" id="modellnote" hidden></p>
+</div>
+
+<div class="styring">
+  <button class="btn sq" id="utZoom" aria-label="Zoom ut">−</button>
+  <input type="range" id="skyv" min="0" max="1000" value="0" aria-label="Zoom">
+  <button class="btn sq" id="innZoom" aria-label="Zoom inn">+</button>
+</div>
+
+<script>
+// ================= Zoom inn i stoffet =================
+// Hele reisen styres av ett tall: hvor bredt utsnittet er, målt i meter.
+// Hver scene tegner seg selv i meter, og toner inn og ut der den hører hjemme.
+
+const $ = id => document.getElementById(id);
+const lerret = $('lerret'), ctx = lerret.getContext('2d');
+const TAU = Math.PI * 2;
+
+let bredde = 0.3;                    // utsnittets bredde i meter
+const START = 0.3;
+let W = 0, H = 0, tid = 0, reiser = false, sisteRamme = 0;
+
+function størrelse() {
+  const r = lerret.parentElement.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  W = r.width; H = r.height;
+  lerret.width = Math.round(W * dpr); lerret.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+new ResizeObserver(størrelse).observe(document.getElementById('scene'));
+
+// ---------- tall og tekst ----------
+const NORSK = [[1e12, 'billioner'], [1e9, 'milliarder'], [1e6, 'millioner'], [1e3, 'tusen']];
+function forstørrelse(b) {
+  const f = START / b;
+  if (f < 1000) return '×' + Math.round(f).toLocaleString('nb-NO');
+  for (const [grense, ord] of NORSK) {
+    if (f >= grense) {
+      const t = f / grense;
+      return '×' + (t >= 100 ? Math.round(t) : t.toFixed(t >= 10 ? 0 : 1)).toLocaleString('nb-NO') + ' ' + ord;
+    }
+  }
+}
+function lengde(m) {
+  const enheter = [[1, 'm'], [1e-2, 'cm'], [1e-3, 'mm'], [1e-6, 'µm'], [1e-9, 'nm'], [1e-12, 'pm'], [1e-15, 'fm']];
+  for (const [f, navn] of enheter) {
+    if (m >= f * 0.999) {
+      const v = m / f;
+      return (v >= 100 ? Math.round(v) : v >= 10 ? v.toFixed(0) : v.toFixed(v >= 1 ? 1 : 2)).toString().replace('.', ',') + ' ' + navn;
+    }
+  }
+  return (m / 1e-15).toFixed(1).replace('.', ',') + ' fm';
+}
+
+// ---------- tegnehjelp ----------
+const px = m => m * (W / bredde);                 // meter til piksler
+function sirkel(x, y, r, farge) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = farge; ctx.fill();
+}
+function kule(x, y, r, farge, lys) {
+  const g = ctx.createRadialGradient(x - r * .35, y - r * .4, r * .1, x, y, r);
+  g.addColorStop(0, lys || '#ffffff');
+  g.addColorStop(.35, farge);
+  g.addColorStop(1, mørkere(farge, .45));
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = g; ctx.fill();
+}
+function mørkere(hex, f) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round((n >> 16) * (1 - f)), g = Math.round(((n >> 8) & 255) * (1 - f)), b = Math.round((n & 255) * (1 - f));
+  return `rgb(${r},${g},${b})`;
+}
+function tekstMidt(t, x, y, str, farge) {
+  ctx.font = `700 ${str}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = farge; ctx.fillText(t, x, y);
+}
+// enkel og rask tilfeldighet som er lik fra ramme til ramme
+function rnd(i, j) {
+  const x = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// ---------- scener ----------
+// hver scene: { fra, til (meter), tittel, tekst, modell?, tegn(f) }
+// f er 0 til 1: hvor langt inne i scenen vi er
+let SCENER = {}, valgt = 'vann';
+
+function aktive() {
+  const liste = SCENER[valgt];
+  const ut = [];
+  liste.forEach((s, i) => {
+    // scenen er synlig mellom fra og til, med mykt overlapp i endene
+    const l = Math.log10(bredde), a = Math.log10(s.fra), b = Math.log10(s.til);
+    if (l > a + 0.35 || l < b - 0.35) return;
+    let alfa = 1;
+    if (l > a) alfa = 1 - (l - a) / 0.35;
+    if (l < b) alfa = 1 - (b - l) / 0.35;
+    ut.push({ s, alfa: Math.max(0, Math.min(1, alfa)), f: Math.max(0, Math.min(1, (a - l) / (a - b))) });
+  });
+  return ut;
+}
+
+function tegn(nå) {
+  const dt = Math.min(0.05, (nå - sisteRamme) / 1000 || 0);
+  sisteRamme = nå; tid += dt;
+  if (reiser) {
+    bredde *= Math.pow(10, -dt * 0.32);
+    if (bredde <= SLUTT) { bredde = SLUTT; settReiser(false); }
+    oppdaterSkyv();
+  }
+  ctx.clearRect(0, 0, W, H);
+  const lag = aktive();
+  lag.forEach(({ s, alfa, f }) => {
+    ctx.save(); ctx.globalAlpha = alfa; s.tegn(f); ctx.restore();
+  });
+  const fremst = lag.length ? lag.reduce((a, b) => (b.alfa >= a.alfa ? b : a)) : null;
+  if (fremst) {
+    $('tittel').textContent = fremst.s.tittel;
+    $('tekst').textContent = fremst.s.tekst;
+    $('modellnote').hidden = !fremst.s.modell;
+    if (fremst.s.modell) $('modellnote').textContent = fremst.s.modell;
+  }
+  $('forstorrelse').textContent = forstørrelse(bredde);
+  $('bredde').textContent = 'Utsnittet er ' + lengde(bredde) + ' bredt';
+  requestAnimationFrame(tegn);
+}
+
+// ================= Felles scener: atom og kjerne =================
+function atomScene(sym, Z, N, skall, rAtom, fra, til, tekst) {
+  // rAtom er valgt slik at atomet er like stort som i scenen foran, så overgangen blir jevn
+  return {
+    fra, til, tittel: `Ett ${sym}-atom`, tekst,
+    modell: 'Elektronskallene er tegnet som ringer. I virkeligheten er elektronene «skyer» av sannsynlighet, ikke baner.',
+    tegn() {
+      const x = W / 2, y = H / 2;
+      const r = px(rAtom);
+      // elektronskyen antydes
+      const g = ctx.createRadialGradient(x, y, r * .1, x, y, r * 1.05);
+      g.addColorStop(0, 'rgba(90,160,255,.18)'); g.addColorStop(1, 'rgba(90,160,255,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 1.05, 0, TAU); ctx.fill();
+      skall.forEach((antall, i) => {
+        const rr = r * (0.42 + 0.58 * (skall.length === 1 ? 1 : i / (skall.length - 1)));
+        ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU);
+        ctx.strokeStyle = 'rgba(160,200,255,.35)'; ctx.lineWidth = Math.max(1, r * .006); ctx.stroke();
+        for (let k = 0; k < antall; k++) {
+          const v = (k / antall) * TAU + tid * (0.25 - i * 0.07) + i;
+          kule(x + rr * Math.cos(v), y + rr * Math.sin(v), Math.max(1.5, r * .035), '#5aa0ff', '#cfe3ff');
+        }
+      });
+      // kjernen, en liten prikk på denne skalaen
+      // kjernen tegnes i riktig størrelse, og er bare en prikk på denne skalaen
+      kule(x, y, Math.max(1.2, px(1.2e-15 * Math.cbrt(Z + N))), '#e0534f', '#ffd0ce');
+      if (r > 60) tekstMidt(sym, x, y - r * .78, Math.max(12, r * .18), 'rgba(220,235,255,.85)');
+    }
+  };
+}
+
+function kjerneScene(sym, Z, N, fra, til, tekst) {
+  const rNukleon = 0.85e-15;
+  const rKjerne = 1.2e-15 * Math.cbrt(Z + N);
+  const deler = [];
+  for (let i = 0; i < Z + N; i++) {
+    // pakket i en kule, fast fordeling
+    const u = rnd(i, 1) * 2 - 1, v = rnd(i, 2) * TAU, rr = Math.cbrt(rnd(i, 3)) * (rKjerne - rNukleon);
+    const s = Math.sqrt(1 - u * u);
+    deler.push({ x: rr * s * Math.cos(v), y: rr * s * Math.sin(v), z: rr * u, proton: i < Z, i });
+  }
+  deler.sort((a, b) => a.z - b.z);
+  return {
+    fra, til, tittel: `Kjernen i ${sym}`, tekst,
+    modell: 'Protoner og nøytroner er tegnet som kuler. De er egentlig satt sammen av kvarker.',
+    tegn() {
+      const x = W / 2, y = H / 2;
+      deler.forEach(d => {
+        const dx = Math.sin(tid * 1.7 + d.i) * rNukleon * .18, dy = Math.cos(tid * 1.3 + d.i * 1.7) * rNukleon * .18;
+        const r = px(rNukleon) * (0.86 + 0.14 * (d.z / rKjerne + 1));
+        kule(x + px(d.x + dx), y + px(d.y + dy), r, d.proton ? '#e0534f' : '#9aa6b2', d.proton ? '#ffd2d0' : '#e7edf3');
+        if (r > 26) tekstMidt(d.proton ? '+' : '', x + px(d.x + dx), y + px(d.y + dy), r * .9, 'rgba(255,255,255,.9)');
+      });
+    }
+  };
+}
+
+// ================= Vann =================
+function vannmolekyl(x, y, r, vinkel) {
+  const a = 104.5 * Math.PI / 180;
+  const rO = r, rH = r * 0.62, d = r * 1.5;
+  const h1 = [x + d * Math.cos(vinkel - a / 2), y + d * Math.sin(vinkel - a / 2)];
+  const h2 = [x + d * Math.cos(vinkel + a / 2), y + d * Math.sin(vinkel + a / 2)];
+  ctx.strokeStyle = 'rgba(210,230,255,.5)'; ctx.lineWidth = Math.max(1, r * .28);
+  [h1, h2].forEach(h => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(h[0], h[1]); ctx.stroke(); });
+  kule(h1[0], h1[1], rH, '#eef3f8', '#ffffff');
+  kule(h2[0], h2[1], rH, '#eef3f8', '#ffffff');
+  kule(x, y, rO, '#e0534f', '#ffd2d0');
+  if (rO > 26 && rO < Math.min(W, H) * 0.42) {
+    tekstMidt('O', x, y, rO * .9, 'rgba(255,255,255,.92)');
+    tekstMidt('H', h1[0], h1[1], rH * 1.1, 'rgba(40,60,80,.85)');
+    tekstMidt('H', h2[0], h2[1], rH * 1.1, 'rgba(40,60,80,.85)');
+  }
+}
+
+const VANN = [
+  { fra: 0.6, til: 0.02, tittel: 'Et glass vann', tekst: 'Slik vi ser det med det blotte øyet. Dra, rull eller bruk glidebryteren for å zoome innover.',
+    tegn() {
+      const x = W / 2, y = H / 2, h = px(0.09), b = px(0.062);
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(x - b / 2, y - h / 2); ctx.lineTo(x - b * .42, y + h / 2);
+      ctx.lineTo(x + b * .42, y + h / 2); ctx.lineTo(x + b / 2, y - h / 2); ctx.closePath();
+      ctx.fillStyle = 'rgba(200,225,250,.10)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(210,235,255,.55)'; ctx.lineWidth = Math.max(1, px(0.0012)); ctx.stroke();
+      ctx.clip();
+      const vy = y - h * .22 + Math.sin(tid) * px(0.0008);
+      const g = ctx.createLinearGradient(0, vy, 0, y + h / 2);
+      g.addColorStop(0, 'rgba(90,170,230,.75)'); g.addColorStop(1, 'rgba(30,90,160,.9)');
+      ctx.fillStyle = g; ctx.fillRect(x - b, vy, b * 2, h);
+      ctx.restore();
+    } },
+  { fra: 0.03, til: 1e-3, tittel: 'Overflaten på vannet', tekst: 'Vi er nede på millimeteren. Fortsatt ser vannet helt jevnt ut.',
+    tegn() {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, 'rgba(120,190,240,.55)'); g.addColorStop(1, 'rgba(25,80,150,.85)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 40; i++) {
+        const y = (rnd(i, 7) * H + tid * 8 * (0.4 + rnd(i, 8))) % H;
+        ctx.strokeStyle = `rgba(255,255,255,${0.05 + rnd(i, 9) * 0.06})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.bezierCurveTo(W * .3, y - 12, W * .7, y + 12, W, y); ctx.stroke();
+      }
+    } },
+  { fra: 1.5e-3, til: 5e-9, tittel: 'Vann ser likt ut på alle disse størrelsene', tekst: 'Fra millimeter til nanometer skjer det ingenting nytt. Først når utsnittet er noen få nanometer bredt, dukker molekylene opp.',
+    tegn() {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, 'rgba(70,150,215,.75)'); g.addColorStop(1, 'rgba(20,70,140,.9)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      // svake tetthetsvariasjoner som blir tydeligere jo lenger inn vi kommer
+      const styrke = Math.max(0, Math.min(1, (Math.log10(2e-6) - Math.log10(bredde)) / 2));
+      for (let i = 0; i < 70; i++) {
+        const x = (rnd(i, 1) * 1.4 - .2) * W + Math.sin(tid * .3 + i) * 12;
+        const y = (rnd(i, 2) * 1.4 - .2) * H + Math.cos(tid * .25 + i * 1.3) * 12;
+        sirkel(x, y, W * (.04 + rnd(i, 3) * .07), `rgba(190,225,255,${0.02 + 0.05 * styrke})`);
+      }
+    } },
+  { fra: 4e-9, til: 1.2e-9, tittel: 'Vannmolekyler i bevegelse', tekst: 'Nå ser vi molekylene. De sitter ikke fast, men sklir rundt hverandre og holdes sammen av svake bindinger. Det er derfor vann er flytende.',
+    modell: 'Fargene er valgt for å skille atomene, ikke fordi atomer har farge.',
+    tegn() {
+      const r = px(1.4e-10);
+      const avstand = 3.1e-10;
+      const n = Math.ceil(bredde / avstand) + 3;
+      for (let i = -1; i < n; i++) for (let j = -1; j < n * H / W + 2; j++) {
+        const jitter = Math.sin(tid * 1.6 + i * 2.1 + j) * 0.22, jitter2 = Math.cos(tid * 1.9 + j * 1.7) * 0.22;
+        const x = px((i + rnd(i, j) * .5 + jitter) * avstand) - px(bredde / 2) + W / 2;
+        const y = px((j + rnd(j, i) * .5 + jitter2) * avstand) - px(bredde / 2 * H / W) + H / 2;
+        if (x < -r * 3 || x > W + r * 3 || y < -r * 3 || y > H + r * 3) continue;
+        vannmolekyl(x, y, r, rnd(i + 3, j + 5) * TAU + tid * .3 * (rnd(i, j) - .5));
+      }
+    } },
+  { fra: 1.6e-9, til: 2.2e-10, tittel: 'Ett vannmolekyl', tekst: 'Ett oksygenatom og to hydrogenatomer, med en vinkel på omtrent 105 grader. Molekylet er rundt 0,28 nanometer bredt.',
+    modell: 'Kulene viser hvor atomene er, ikke hvordan de egentlig ser ut.',
+    tegn() { vannmolekyl(W / 2, H / 2 + px(0.3e-10), px(1.3e-10), -Math.PI / 2 + Math.sin(tid * .5) * .15); } },
+  atomScene('O', 8, 8, [2, 6], 1.3e-10, 3.2e-10, 4e-12,
+    'Oksygenatomet. Nesten hele atomet er tomrom: elektronene holder til langt ute, mens all massen ligger i den bittelille kjernen i midten.'),
+  kjerneScene('oksygen', 8, 8, 8e-12, 4e-15,
+    'Åtte protoner og åtte nøytroner. Legg merke til hvor lenge kjernen bare er en prikk: den er omtrent hundre tusen ganger mindre enn atomet, men har nesten all massen.')
+];
+
+// ================= Dyrecelle =================
+function fosfolipid(x, y, r, opp, hale) {
+  const d = opp ? 1 : -1;
+  ctx.strokeStyle = 'rgba(240,210,120,.85)'; ctx.lineWidth = Math.max(1, r * .45); ctx.lineCap = 'round';
+  [-0.45, 0.45].forEach(o => {
+    ctx.beginPath();
+    ctx.moveTo(x + r * o, y);
+    ctx.bezierCurveTo(x + r * o * 1.6, y + d * hale * .36, x + r * o * .4, y + d * hale * .73, x + r * o * 1.1, y + d * hale);
+    ctx.stroke();
+  });
+  kule(x, y - d * r * .2, r, '#f2c14e', '#fff0c6');
+}
+
+const CELLE = [
+  { fra: 2e-3, til: 1.2e-4, tittel: 'Celler i et mikroskop', tekst: 'Dyreceller er rundt 20 mikrometer, altså to hundredeler av en millimeter. Her ser vi flere av dem ved siden av hverandre.',
+    tegn() {
+      const r = px(1.1e-5);
+      for (let i = -2; i < 6; i++) for (let j = -2; j < 6; j++) {
+        const x = W / 2 + px((i - 1.5 + rnd(i, j) * .4) * 2.6e-5);
+        const y = H / 2 + px((j - 1.5 + rnd(j, i) * .4) * 2.6e-5);
+        if (x < -r * 2 || x > W + r * 2 || y < -r * 2 || y > H + r * 2) continue;
+        ctx.beginPath(); ctx.ellipse(x, y, r * (0.85 + rnd(i, j + 9) * .3), r * (0.8 + rnd(j, i + 4) * .3), rnd(i, j) * 3, 0, TAU);
+        ctx.fillStyle = 'rgba(150,190,230,.30)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(190,225,255,.6)'; ctx.lineWidth = Math.max(1, r * .05); ctx.stroke();
+        sirkel(x + r * .1, y - r * .1, r * .3, 'rgba(120,110,200,.6)');
+      }
+    } },
+  { fra: 1.6e-4, til: 8e-6, tittel: 'Én celle', tekst: 'Cellekjernen i midten, mitokondrier rundt, og ytterst cellemembranen som holder det hele samlet.',
+    modell: 'Membranen er tegnet tykkere enn den er. Ellers ville den vært tynnere enn en strek her.',
+    tegn() {
+      const x = W / 2, y = H / 2, r = px(1.05e-5);
+      ctx.beginPath(); ctx.ellipse(x, y, r, r * .92, .2, 0, TAU);
+      ctx.fillStyle = 'rgba(150,195,235,.22)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(235,175,90,.9)'; ctx.lineWidth = Math.max(2.5, px(8e-9) * 12); ctx.stroke();
+      sirkel(x + r * .1, y - r * .08, r * .3, 'rgba(120,110,200,.55)');
+      ctx.strokeStyle = 'rgba(170,160,230,.8)'; ctx.lineWidth = Math.max(1, r * .012);
+      ctx.beginPath(); ctx.arc(x + r * .1, y - r * .08, r * .3, 0, TAU); ctx.stroke();
+      for (let i = 0; i < 9; i++) {
+        const v = i * 1.9 + .4, rr = r * (.45 + rnd(i, 2) * .38);
+        const mx = x + rr * Math.cos(v), my = y + rr * Math.sin(v) * .9;
+        ctx.save(); ctx.translate(mx, my); ctx.rotate(v + 1);
+        ctx.beginPath(); ctx.ellipse(0, 0, r * .16, r * .075, 0, 0, TAU);
+        ctx.fillStyle = 'rgba(230,140,120,.55)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(240,170,150,.8)'; ctx.lineWidth = Math.max(1, r * .008); ctx.stroke();
+        ctx.restore();
+      }
+    } },
+  { fra: 1.1e-5, til: 2.5e-7, tittel: 'Cellemembranen', tekst: 'Kanten på cellen er ikke en vegg, men en hinne på bare 8 nanometer. Den er tegnet som en strek her, men er i virkeligheten to lag med molekyler.',
+    tegn() {
+      const y = H / 2, t = px(8e-9);
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(-10, y - px(1e-6));
+      ctx.quadraticCurveTo(W / 2, y - px(2.2e-6), W + 10, y - px(1e-6));
+      ctx.lineTo(W + 10, H + 10); ctx.lineTo(-10, H + 10); ctx.closePath();
+      ctx.fillStyle = 'rgba(150,195,235,.18)'; ctx.fill();
+      ctx.restore();
+      ctx.beginPath(); ctx.moveTo(-10, y - px(1e-6));
+      ctx.quadraticCurveTo(W / 2, y - px(2.2e-6), W + 10, y - px(1e-6));
+      ctx.strokeStyle = 'rgba(240,190,110,.95)'; ctx.lineWidth = Math.max(2, t); ctx.stroke();
+      ctx.fillStyle = 'rgba(200,225,250,.55)';
+      ctx.font = `600 ${Math.max(11, W * .018)}px "Atkinson Hyperlegible", sans-serif`;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('inni cellen', 16, y + px(1.6e-6));
+      ctx.fillText('utenfor', 16, y - px(2.6e-6));
+    } },
+  { fra: 3e-7, til: 8e-9, tittel: 'To lag med fettmolekyler', tekst: 'Membranen består av fosfolipider. Hodene liker vann og vender utover, mens halene skyr vann og vender innover. Her ligger også proteiner som slipper stoffer gjennom.',
+    modell: 'Molekylene er forenklet til hode og to haler.',
+    tegn() {
+      const y = H / 2, r = px(0.45e-9), avstand = 0.95e-9;
+      const n = Math.ceil(bredde / avstand) + 2;
+      const t = px(4e-9);
+      ctx.fillStyle = 'rgba(240,210,120,.06)'; ctx.fillRect(0, y - t, W, t * 2);
+      for (let i = -1; i < n; i++) {
+        const x = px(i * avstand) - px(bredde / 2) + W / 2 + Math.sin(tid + i) * r * .15;
+        if (x < -r * 3 || x > W + r * 3) continue;
+        if (Math.abs(i - Math.round(n * .62)) < 1.2) continue;            // plass til proteinet
+        fosfolipid(x, y - t, r, true, t * 0.92);     // øverste lag: halene peker innover
+        fosfolipid(x, y + t, r, false, t * 0.92);    // nederste lag: halene peker oppover
+      }
+      const pxpos = px(Math.round(n * .62) * avstand) - px(bredde / 2) + W / 2;
+      ctx.beginPath();
+      ctx.roundRect(pxpos - r * 1.6, y - t - r * 1.6, r * 3.2, t * 2 + r * 3.2, r);
+      ctx.fillStyle = 'rgba(120,190,150,.75)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(160,230,190,.9)'; ctx.lineWidth = Math.max(1, r * .2); ctx.stroke();
+      if (r > 14) tekstMidt('protein', pxpos, y, Math.max(10, r * .55), 'rgba(15,35,25,.85)');
+    } },
+  { fra: 1e-8, til: 1.1e-9, tittel: 'Halen på et fettmolekyl', tekst: 'Halene er lange kjeder av karbonatomer med hydrogen på. Nå er vi nede på enkeltatomer.',
+    modell: 'Kulene viser hvor atomene sitter.',
+    tegn() {
+      const rC = px(0.77e-10), rH = px(0.53e-10), d = px(1.54e-10);
+      const x0 = W / 2 - d * 2.6, y = H / 2;
+      for (let i = 0; i < 6; i++) {
+        const x = x0 + i * d * .95, yy = y + (i % 2 ? -1 : 1) * d * .35 + Math.sin(tid + i) * rC * .06;
+        const nx = x0 + (i + 1) * d * .95, ny = y + ((i + 1) % 2 ? -1 : 1) * d * .35;
+        if (i < 5) { ctx.strokeStyle = 'rgba(220,230,240,.5)'; ctx.lineWidth = Math.max(1, rC * .4);
+          ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(nx, ny); ctx.stroke(); }
+        [[-.8, -.9], [.8, -.9]].forEach(([ox, oy]) => {
+          const hx = x + ox * d * .55, hy = yy + oy * d * .55 * (i % 2 ? -1 : 1);
+          ctx.strokeStyle = 'rgba(220,230,240,.4)'; ctx.lineWidth = Math.max(1, rC * .3);
+          ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(hx, hy); ctx.stroke();
+          kule(hx, hy, rH, '#eef3f8', '#ffffff');
+        });
+        kule(x, yy, rC, '#3a4048', '#8f9aa6');
+        if (rC > 24 && rC < Math.min(W, H) * 0.42) tekstMidt('C', x, yy, rC * .9, 'rgba(255,255,255,.9)');
+      }
+    } },
+  atomScene('C', 6, 6, [2, 4], 0.8e-10, 1.6e-9, 4e-12,
+    'Ett karbonatom. Fire elektroner ytterst er grunnen til at karbon kan binde seg til fire andre atomer, og bygge alt fra fettmolekyler til DNA.'),
+  kjerneScene('karbon', 6, 6, 8e-12, 4e-15,
+    'Seks protoner og seks nøytroner. Det er antallet protoner som gjør dette til karbon.')
+];
+
+// ================= Valg, zoom og knapper =================
+SCENER = { vann: VANN, celle: CELLE };
+const EMNER = [
+  { id: 'vann', navn: '💧 Vann' },
+  { id: 'celle', navn: '🔬 Dyrecelle' }
+];
+const SLUTT = 4e-15;
+
+$('velg').innerHTML = EMNER.map((e, i) =>
+  `<button data-id="${e.id}" aria-pressed="${i === 0}">${e.navn}</button>`).join('');
+$('velg').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  valgt = b.dataset.id;
+  $('velg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  bredde = SCENER[valgt][0].fra * 0.5;
+  settReiser(false);
+  oppdaterSkyv();
+});
+
+// glidebryteren går logaritmisk, fra start til kjernen
+const LOGSTART = Math.log10(START), LOGSLUTT = Math.log10(SLUTT);
+function oppdaterSkyv() {
+  const t = (LOGSTART - Math.log10(bredde)) / (LOGSTART - LOGSLUTT);
+  $('skyv').value = Math.round(Math.max(0, Math.min(1, t)) * 1000);
+}
+function settBredde(b) {
+  bredde = Math.max(SLUTT, Math.min(START, b));
+  oppdaterSkyv();
+}
+$('skyv').addEventListener('input', e => {
+  settReiser(false);
+  bredde = Math.pow(10, LOGSTART - (e.target.value / 1000) * (LOGSTART - LOGSLUTT));
+});
+const zoom = faktor => { settReiser(false); settBredde(bredde * faktor); };
+$('innZoom').addEventListener('click', () => zoom(1 / 2));
+$('utZoom').addEventListener('click', () => zoom(2));
+$('utBtn').addEventListener('click', () => { settReiser(false); settBredde(START); });
+
+function settReiser(på) {
+  reiser = på;
+  $('reisBtn').textContent = på ? '⏸ Stopp' : '▶ Reis innover';
+  $('reisBtn').classList.toggle('primary', på);
+}
+$('reisBtn').addEventListener('click', () => {
+  if (!reiser && bredde <= SLUTT * 1.01) settBredde(START);
+  settReiser(!reiser);
+});
+
+// mus, berøring og tastatur
+const scene = $('scene');
+scene.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  settReiser(false);
+  settBredde(bredde * Math.exp(ev.deltaY * 0.0016));
+}, { passive: false });
+
+let dra = null, knip = null;
+const pekere = new Map();
+scene.addEventListener('pointerdown', ev => {
+  scene.setPointerCapture(ev.pointerId);
+  pekere.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (pekere.size === 2) {
+    const [a, b] = [...pekere.values()];
+    knip = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, b0: bredde };
+    dra = null;
+  } else dra = { y: ev.clientY, b0: bredde };
+  settReiser(false);
+});
+scene.addEventListener('pointermove', ev => {
+  if (!pekere.has(ev.pointerId)) return;
+  pekere.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (knip && pekere.size >= 2) {
+    const [a, b] = [...pekere.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    settBredde(knip.b0 * knip.d0 / d);
+  } else if (dra) {
+    settBredde(dra.b0 * Math.exp((ev.clientY - dra.y) * 0.006));
+  }
+});
+const slipp = ev => {
+  pekere.delete(ev.pointerId);
+  if (pekere.size < 2) knip = null;
+  if (!pekere.size) dra = null;
+};
+scene.addEventListener('pointerup', slipp);
+scene.addEventListener('pointercancel', slipp);
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'ArrowDown' || ev.key === '+') { zoom(1 / 1.4); ev.preventDefault(); }
+  if (ev.key === 'ArrowUp' || ev.key === '-') { zoom(1.4); ev.preventDefault(); }
+  if (ev.key === ' ') { $('reisBtn').click(); ev.preventDefault(); }
+});
+
+størrelse();
+oppdaterSkyv();
+requestAnimationFrame(tegn);
+
+</script>
+</body>
+</html>

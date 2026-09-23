@@ -117,6 +117,12 @@ body.manual-split .auto-btn { display: inline-block; }
 .el-chip .z { font-size: .78rem; }
 .el-chip .sym { font-size: 2.1rem; font-weight: 700; }
 .el-chip .w { font-size: .72rem; }
+.mini-skall { flex: none; width: 92px; height: 92px; }
+.mini-skall .ms-kjerne { fill: var(--proton); }
+.mini-skall .ms-skall { fill: none; stroke: var(--rule); stroke-width: 1; }
+.mini-skall .ms-elektron { fill: var(--electron); }
+.mini-skall .ms-tall { fill: #fff; font-size: 13px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+@container info (width < 300px) { .mini-skall { width: 72px; height: 72px; } }
 .info-headline { flex: 1 1 12ch; min-width: 0; }
 .info-headline .big { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 .info-headline .sub { color: var(--ink-soft); font-size: .92rem; }
@@ -193,9 +199,35 @@ body.manual-split .auto-btn { display: inline-block; }
 .el.placeholder { cursor: default; border-style: dashed; font-size: calc(var(--cell) * .17); color: var(--ink-soft); }
 .el.placeholder:hover { outline: none; }
 .grp { align-self: end; text-align: center; font-size: calc(var(--cell) * .24); font-weight: 700; color: var(--ink-soft); padding-bottom: calc(var(--cell) * .04); }
+.grp, .per { border: 0; background: none; cursor: pointer; border-radius: calc(var(--cell) * .12); padding: 0; }
+.grp:hover, .per:hover { background: color-mix(in srgb, var(--focus) 18%, transparent); }
+.grp.valgt, .per.valgt { background: var(--focus); color: #fff; }
+.forklaring {
+  display: flex; flex-direction: column; justify-content: center; gap: calc(var(--cell) * .06);
+  font-size: calc(var(--cell) * .17); color: var(--ink-soft); line-height: 1.25; padding-left: calc(var(--cell) * .1);
+}
+.forklaring b { color: var(--ink); }
+.forklaring .tips { font-size: calc(var(--cell) * .15); }
+.pt-grid.fokus .forklaring { display: none; }
+.el.skjult { visibility: hidden; }
+.pt-grid.fokus .el.krympet .z, .pt-grid.fokus .el.krympet .nm,
+.pt-grid.fokus .el.krympet .w, .pt-grid.fokus .el.krympet .badge { display: none; }
+.pt-grid.fokus .el.krympet .sym { font-size: calc(var(--cell) * .26); margin: 0; }
+.pt-grid.fokus .el.krympet.smal .sym { font-size: calc(var(--cell) * .2); letter-spacing: -.03em; }
+.pt-grid.fokus .el.krympet { border-radius: calc(var(--cell) * .05); }
+.fokusboks { display: flex; gap: calc(var(--cell) * .06); align-items: stretch; justify-content: center; min-width: 0; min-height: 0; overflow: hidden; }
+.fokusboks.loddrett { flex-direction: column; }
+.fm { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--cat, var(--panel)); border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: calc(var(--cell) * .07); padding: calc(var(--cell) * .04); }
+.fm .fm-sym { font-weight: 700; font-size: calc(var(--cell) * .3); line-height: 1; color: var(--st, var(--ink)); }
+.fm .mini-skall { flex: 1 1 auto; min-height: 0; min-width: 0; height: auto; width: auto; max-width: 100%; max-height: 100%; }
+.fm.vannrett { flex-direction: row; gap: calc(var(--cell) * .08); justify-content: flex-start; }
+.fm.vannrett .fm-sym { font-size: calc(var(--cell) * .34); }
+.fm.vannrett .mini-skall { height: 100%; width: auto; }
 .per { display: grid; place-items: center; justify-self: stretch; font-size: calc(var(--cell) * .24); font-weight: 700; color: var(--ink-soft); }
 @container pt (width < 780px) or (height < 440px) { .el .nm { display: none; } }
-@container pt (width < 520px) or (height < 300px) { .el .w, .grp, .per { visibility: hidden; } .el .sym { margin-top: calc(var(--cell) * .14); } }
+@container pt (width < 520px) or (height < 300px) { .el .w { visibility: hidden; } .el .sym { margin-top: calc(var(--cell) * .14); } .grp, .per { font-size: calc(var(--cell) * .3); } }
 
 /* Atombyggeren */
 .build-view { container: build / inline-size; overflow: auto; }
@@ -409,6 +441,7 @@ svg .shl { fill: var(--ink-soft); font-weight: 700; text-anchor: middle; dominan
             <span class="chip kind-ikkemetall">Ikke-metaller</span>
           </div>
           <label class="pt-check"><input type="checkbox" id="optGroups"> Vis grupper</label>
+          <label class="pt-check"><input type="checkbox" id="optInfo" checked> Vis info om grunnstoffet</label>
           <div class="pt-temp">
             <span class="state-legend" aria-hidden="true"><b class="st-fast">Fe</b> fast<b class="st-vaeske">Hg</b> væske<b class="st-gass">He</b> gass</span>
             <span class="temp-ctrl">
@@ -2023,13 +2056,18 @@ function gridPos(Z) {
 }
 function buildTable() {
   const g = $('ptGrid'); let h = '';
-  const grp = (n, row) => `<span class="grp" style="grid-row:${row};grid-column:${n + 1}">${n}</span>`;
-  const per = (n, row) => `<span class="per" style="grid-row:${row};grid-column:1">${n}</span>`;
+  const grp = (n, row) => `<button class="grp" data-grp="${n}" style="grid-row:${row};grid-column:${n + 1}" title="Klikk for å se skallmodellene i gruppe ${n}">${n}</button>`;
+  const per = (n, row) => `<button class="per" data-per="${n}" style="grid-row:${row};grid-column:1" title="Klikk for å se skallmodellene i periode ${n}">${n}</button>`;
   for (let n = 1; n <= 7; n++) h += per(n, n + 1);
   h += per(6, 10) + per(7, 11);
   h += grp(1, 1) + grp(18, 1) + grp(2, 2);
   for (let n = 13; n <= 17; n++) h += grp(n, 2);
   for (let n = 3; n <= 12; n++) h += grp(n, 4);
+  h += `<div class="forklaring" id="ptForklaring" style="grid-row:2;grid-column:4 / 13">
+      <span><b>Gruppe →</b> tallene over kolonnene</span>
+      <span><b>Periode ↓</b> tallene til venstre</span>
+      <span class="tips">Klikk på et tall for å se skallmodellene</span>
+    </div>`;
   h += `<div class="el placeholder cat-lanth kind-metall" style="grid-row:7;grid-column:4" aria-hidden="true">57–71</div>`;
   h += `<div class="el placeholder cat-act kind-metall" style="grid-row:8;grid-column:4" aria-hidden="true">89–103</div>`;
   for (let Z = 1; Z <= 118; Z++) {
@@ -2038,6 +2076,11 @@ function buildTable() {
     h += `<button class="el cat-${el.cat} kind-${kind}" data-z="${Z}" style="grid-row:${r};grid-column:${c + 1}" aria-label="Legg til ${el.name.toLowerCase()}"><span class="z">${Z}</span><span class="sym">${el.sym}</span><span class="nm">${el.name}</span><span class="w">${w}</span><span class="badge" hidden></span></button>`;
   }
   g.innerHTML = h;
+  g.addEventListener('click', ev => {
+    const per = ev.target.closest('.per'), grp = ev.target.closest('.grp');
+    if (per) settFokus('per', +per.dataset.per);
+    else if (grp) settFokus('grp', +grp.dataset.grp);
+  });
   let lastZ = 0, lastTime = 0, addedAt = 0;
   g.addEventListener('dblclick', ev => {
     const b = ev.target.closest('.el[data-z]'); if (!b) return;
@@ -2061,7 +2104,7 @@ function showInfo(Z, open) {
   infoZ = Z;
   if (window.Logg) Logg.tell('grunnstoffer', ELEMENTS[Z].sym);
   const el = ELEMENTS[Z], inf = INFO[Z], shells = neutralShells(Z);
-  if (open && infoPanel.hidden) {
+  if (open && infoPanel.hidden && $('optInfo').checked) {
     // Feltet åpnes med en liten forsinkelse, slik at periodesystemet ikke flytter seg
     // mellom de to klikkene i et dobbeltklikk
     clearTimeout(infoOpenTimer);
@@ -2096,7 +2139,7 @@ function showInfo(Z, open) {
   if (inf.rad) add('Radioaktivt', 'Ja, alle isotopene er radioaktive');
   const bar = shells.map((c, i) => `<span><b>${SHELL_NAMES[i]}</b> (skall ${i + 1}): ${c}</span>`).join('');
   $('infoBody').innerHTML = `
-    <div class="info-top">${chip}
+    <div class="info-top">${chip}${miniSkall(Z)}
       <div class="info-headline"><div class="big">${el.name}</div><div class="sub">${capFirst(metalWord(el.cat))} · ${st ? st + ' ved ' + tempC.toLocaleString('nb-NO') + ' °C' : 'finnes bare et øyeblikk'}</div></div>
     </div>
     <p class="info-desc">${inf.t}</p>
@@ -2122,9 +2165,129 @@ function openWiki(Z) {
   if (!tab) toast('Nettleseren blokkerte vinduet. Tillat popup-vinduer for denne siden.');
 }
 
+// Liten skallmodell til informasjonsfeltet, tegnet ut fra grunntilstanden
+function miniSkall(Z, klasse) {
+  const shells = neutralShells(Z), n = shells.length;
+  const S = 96, m = S / 2, kjerne = 13;
+  const ytre = m - 4, indre = kjerne + 6;
+  let s = `<svg class="mini-skall ${klasse || ''}" viewBox="0 0 ${S} ${S}" role="img" aria-label="Skallmodell av ${ELEMENTS[Z].name.toLowerCase()}">`;
+  s += `<circle cx="${m}" cy="${m}" r="${kjerne}" class="ms-kjerne"/>`;
+  s += `<text x="${m}" y="${m}" class="ms-tall">${Z}+</text>`;
+  shells.forEach((antall, i) => {
+    const r = n === 1 ? (indre + ytre) / 2 : indre + (ytre - indre) * (i / (n - 1));
+    s += `<circle cx="${m}" cy="${m}" r="${r.toFixed(1)}" class="ms-skall"/>`;
+    const prikk = Math.max(1.1, Math.min(2.6, 2.6 - (antall - 8) * 0.06));
+    for (let k = 0; k < antall; k++) {
+      const v = (k / antall) * Math.PI * 2 - Math.PI / 2;
+      s += `<circle cx="${(m + r * Math.cos(v)).toFixed(1)}" cy="${(m + r * Math.sin(v)).toFixed(1)}" r="${prikk.toFixed(1)}" class="ms-elektron"/>`;
+    }
+  });
+  return s + '</svg>';
+}
+
 function periodOf(Z) {
   const limits = [2, 10, 18, 36, 54, 86, 118];
   return limits.findIndex(l => Z <= l) + 1;
+}
+
+// ================= Skallmodeller rett i tabellen =================
+// Klikk på et radnummer eller kolonnenummer: de andre radene eller kolonnene krymper,
+// og grunnstoffene i den valgte raden tegnes som skallmodeller der de står.
+let fokus = null;
+function settFokus(type, n) {
+  fokus = (fokus && fokus.type === type && fokus.n === n) ? null : { type, n };
+  tegnFokus();
+}
+function modellKort(Z) {
+  const el = ELEMENTS[Z];
+  const kind = metalWord(el.cat).replace('-', '');
+  const st = stateAt(Z, tempC);
+  const stKlasse = st ? { fast: 'state-fast', 'væske': 'state-vaeske', gass: 'state-gass' }[st] : 'state-ukjent';
+  return `<span class="fm-sym">${el.sym}</span>${miniSkall(Z)}`;
+}
+function tegnFokus() {
+  const g = $('ptGrid');
+  g.querySelectorAll('.fm').forEach(e => e.remove());
+  g.querySelectorAll('.el').forEach(e => e.classList.remove('skjult', 'krympet'));
+  g.querySelectorAll('.grp, .per').forEach(e => e.classList.remove('valgt'));
+  g.classList.toggle('fokus', !!fokus);
+  if (!fokus) { g.style.gridTemplateRows = ''; g.style.gridTemplateColumns = ''; return; }
+
+  const { type, n } = fokus;
+  // grunnstoffene slik de står i tabellen, så hver modell havner i sin egen rute
+  const iFokus = [];
+  for (let Z = 1; Z <= 118; Z++) {
+    const [r, c] = gridPos(Z);
+    if (type === 'per' ? r === n + 1 : c + 1 === n + 1) iFokus.push({ Z, r, c });
+  }
+  if (!iFokus.length) { fokus = null; g.classList.remove('fokus'); return; }
+
+  const krympet = new Set();
+  if (type === 'per') {
+    // kolonner uten grunnstoff i denne perioden krymper, så modellene får plassen
+    const brukte = new Set(iFokus.map(x => x.c));
+    const bredde = (17.05 - (18 - brukte.size) * 0.52) / brukte.size;   // 17,05 = plassen minus mellomrom
+    const høyde = Math.max(1.6, Math.min(4.5, bredde + 0.55));   // modellen er rund, så høyden følger bredden
+    const kol = ['calc(var(--cell) * .5)'];
+    for (let i = 1; i <= 18; i++) {
+      kol.push(`calc(var(--cell) * ${(brukte.has(i) ? bredde : 0.52).toFixed(3)})`);
+      if (!brukte.has(i)) krympet.add('k' + i);
+    }
+    const rader = ['calc(var(--cell) * .5)'];
+    for (let i = 1; i <= 7; i++) rader.push(`calc(var(--cell) * ${i === n ? høyde.toFixed(3) : '.55'})`);
+    rader.push('calc(var(--cell) * .3)', 'calc(var(--cell) * .55)', 'calc(var(--cell) * .55)');
+    for (let i = 1; i <= 11; i++) if (i !== n) krympet.add('r' + (i + 1));
+    g.style.gridTemplateColumns = kol.join(' ');
+    g.style.gridTemplateRows = rader.join(' ');
+    g.querySelector(`.per[data-per="${n}"]`).classList.add('valgt');
+  } else {
+    // rader uten grunnstoff i denne gruppen krymper
+    const brukte = new Set(iFokus.map(x => x.r));
+    const høy = (9.0 - (9 - brukte.size) * 0.45) / brukte.size;
+    const bredde = Math.max(2.2, Math.min(4.5, høy * 1.9));
+    const restBredde = ((17.05 - bredde) / 17).toFixed(3);
+    const rader = ['calc(var(--cell) * .5)'];
+    for (let i = 2; i <= 8; i++) {
+      rader.push(`calc(var(--cell) * ${(brukte.has(i) ? høy : 0.45).toFixed(3)})`);
+      if (!brukte.has(i)) krympet.add('r' + i);
+    }
+    rader.push('calc(var(--cell) * .3)');
+    for (let i = 10; i <= 11; i++) {
+      rader.push(`calc(var(--cell) * ${(brukte.has(i) ? høy : 0.45).toFixed(3)})`);
+      if (!brukte.has(i)) krympet.add('r' + i);
+    }
+    const kol = ['calc(var(--cell) * .5)'];
+    for (let i = 1; i <= 18; i++) {
+      kol.push(`calc(var(--cell) * ${i === n ? bredde.toFixed(3) : restBredde})`);
+      if (i !== n) krympet.add('k' + i);
+    }
+    g.style.gridTemplateColumns = kol.join(' ');
+    g.style.gridTemplateRows = rader.join(' ');
+    g.querySelector(`.grp[data-grp="${n}"]`).classList.add('valgt');
+  }
+  // ruter som er klemt sammen viser bare fargen, ellers flyter teksten utenfor
+  g.querySelectorAll('.el[data-z]').forEach(e => {
+    const [r, c] = gridPos(+e.dataset.z);
+    if (krympet.has('r' + r) || krympet.has('k' + c)) {
+      e.classList.add('krympet');
+      if (krympet.has('k' + c)) e.classList.add('smal');   // smal rute: mindre skrift
+    }
+  });
+
+  iFokus.forEach(({ Z, r, c }) => {
+    const el = ELEMENTS[Z];
+    const rute = g.querySelector(`.el[data-z="${Z}"]`);
+    if (rute) rute.classList.add('skjult');
+    const st = stateAt(Z, tempC);
+    const stKlasse = st ? { fast: 'state-fast', 'væske': 'state-vaeske', gass: 'state-gass' }[st] : 'state-ukjent';
+    const d = document.createElement('div');
+    d.className = `fm ${type === 'grp' ? 'vannrett' : ''} cat-${el.cat} kind-${metalWord(el.cat).replace('-', '')} ${stKlasse}`;
+    d.style.gridRow = r;
+    d.style.gridColumn = c + 1;
+    d.title = `${el.name}, atomnummer ${Z}`;
+    d.innerHTML = modellKort(Z);
+    g.appendChild(d);
+  });
 }
 
 // ================= Temperatur og tilstand =================
@@ -2157,6 +2320,12 @@ const FINE_LEGEND = [['alkali', 'Alkalimetaller'], ['earth', 'Jordalkalimetaller
   ['lanth', 'Lantanoider'], ['act', 'Aktinoider'], ['post', 'Andre metaller'], ['metalloid', 'Halvmetaller'],
   ['nonmetal', 'Ikke-metaller'], ['halogen', 'Halogener'], ['noble', 'Edelgasser']];
 const KIND_LEGEND = [['kind-metall', 'Metaller'], ['kind-halvmetall', 'Halvmetaller'], ['kind-ikkemetall', 'Ikke-metaller']];
+$('optInfo').addEventListener('change', e => {
+  if (e.target.checked) {
+    setPanelVisible(PANELS[1], true);
+    if (infoZ) showInfo(infoZ, false);
+  } else setPanelVisible(PANELS[1], false);
+});
 $('optGroups').addEventListener('change', e => {
   const fine = e.target.checked;
   $('ptGrid').classList.toggle('fine', fine);
@@ -2254,6 +2423,7 @@ function setPanelVisible(rec, on, quiet) {
   rec.panel.hidden = !on; rec.rail.hidden = on;
   stage.classList.toggle(rec.cls, !on);
   if (!on) rec.panel.classList.remove('is-active');
+  if (rec === PANELS[1] && $('optInfo')) $('optInfo').checked = on;   // boksen følger feltet
   stage.classList.toggle('solo', visiblePanels().length === 1);
   updateDividers();
   resetSplit();
