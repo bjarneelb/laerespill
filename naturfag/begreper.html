@@ -41,7 +41,20 @@ const KJEMI = [
   ['salt', 'Stoff bygd opp av positive og negative ioner som ligger i et fast mønster.']
 ];
 
-Begrepsspill.start({
+
+function manglerMotor(navn, fil) {
+  document.body.innerHTML = `
+    <div style="font-family:system-ui,sans-serif;max-width:46ch;margin:12vh auto;padding:0 1.5rem;line-height:1.5;color:#1b2733">
+      <h1 style="font-size:1.4rem;margin:0 0 .5rem">Spillet kunne ikke starte</h1>
+      <p style="color:#5a6773">Fant ikke ${navn}. Filen <code>${fil}</code> hentes fra fellesrepoet.
+      Sjekk at den er publisert der, og at omskrivingen i <code>netlify.toml</code> peker riktig.</p>
+      <p><a href="./" style="color:#1e66d8">Tilbake til menyen</a></p>
+    </div>`;
+  document.body.style.background = '#e6eaee';
+}
+
+if (!window.Begrepsspill) manglerMotor('begrepsmotoren', 'js/motorer/begrep.js');
+else Begrepsspill.start({
   spillnavn: 'begrep-kjemi',
   tittel: '🧩 Begrepsjakten',
   overskrift: 'Begrepsjakten',
