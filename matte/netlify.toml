@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------
+# Dette er IKKE en fil til naturfagrepoet.
+# Innholdet skal inn i netlify.toml i matematikkrepoet (ligningsvekt).
+# Behold det som allerede står der, og legg til blokken nederst.
+# ---------------------------------------------------------------
+
 [functions]
   directory = "netlify/functions"
 
@@ -6,12 +12,12 @@
 
 [build.environment]
   SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
- 
+
 # NYTT: hent de felles filene fra fellesrepoet.
 # Slett mappen js/ i matematikkrepoet samtidig, ellers ligger det igjen en kopi
 # som ikke brukes. force = true gjør at fellesfilene alltid vinner.
 [[redirects]]
   from = "/js/*"
-  to = "https://felles.netlify.app/js/:splat"
+  to = "https://fellesting.netlify.app/js/:splat"
   status = 200
   force = true
