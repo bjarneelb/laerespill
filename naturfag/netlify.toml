@@ -7,13 +7,13 @@
 # og nettleseren ser filene som om de kom fra denne siden.
 [[redirects]]
   from = "/js/*"
-  to = "https://felles.netlify.app/js/:splat"
+  to = "https://fellesting.netlify.app/js/:splat"
   status = 200
   force = true
 
 # Når banene flyttes til fellesrepoet, fjern kommentartegnene her:
 # [[redirects]]
 #   from = "/baner/*"
-#   to = "https://felles.netlify.app/baner/:splat"
+#   to = "https://fellesting.netlify.app/baner/:splat"
 #   status = 200
 #   force = true
