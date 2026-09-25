@@ -172,7 +172,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 </div>
 
 <div class="header">
-  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v2.1</span></div>
+  <div class="header-title">🏫 Lærerside <span style="font-size:0.65rem;opacity:0.6;font-family:monospace;font-weight:400">v2.3</span></div>
   <div class="header-right">
     <a class="btn-menu" href="./">← Meny</a>
     <button class="btn-logout" onclick="doLogout()">Logg ut</button>
@@ -372,6 +372,7 @@ function randomCode(){
 }
 
 window.createTimecode=async function(){
+  if(!window._fbReady){ showToast('Venter på tilkobling...','error'); return; }
   let code=document.getElementById('tcCodeInput').value.trim().toUpperCase()||randomCode();
   document.getElementById('tcCodeInput').value='';
   const minutes=Math.max(5,Math.min(240,parseInt(document.getElementById('tcMinutes').value)||60));
@@ -642,6 +643,23 @@ const GAME_LEVELS={
     8:'kalkulator med negative tall og desimaltall',
     9:'kalkulator med brøkkoeffisienter',
   },
+  'balansevekt':{
+    1:'løse x + b = c på en vektskål ved å legge til eller trekke fra det samme på begge sider',
+    2:'løse likninger med x på begge sider (ax + b = cx + d) ved å gjøre det samme på begge sider',
+    3:'løse blandede likninger med negative ledd og x på ulike sider',
+    4:'løse likninger med større koeffisienter og x på begge sider',
+    5:'løse likninger der det trengs å dele begge sider på et tall',
+    6:'løse likninger med store koeffisienter som krever både flytting og deling',
+    7:'løse likninger med én brøk foran x',
+    8:'løse likninger med brøker med samme nevner',
+    9:'løse likninger med brøker med ulike nevnere',
+    10:'løse likninger med x i nevneren ved å gange begge sider med x',
+    11:'løse likninger med flere brøker med x i nevneren',
+    12:'løse likninger med negative løsninger',
+    13:'løse blandede likninger fra alle nivåene',
+    14:'bygge likningen selv på vektskålen og deretter løse den',
+  },
+
   'koordinatslag':{
     0:'koordinatslag (skyte på koordinater i et koordinatsystem)',
   },

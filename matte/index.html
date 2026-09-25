@@ -262,6 +262,15 @@
     <div class="section-title">📐 Likninger</div>
     <div class="card-grid">
 
+      <!-- Balansevekten -->
+      <a class="card c-teal" href="balansevekt.html">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Balansevekten</div>
+        <div class="card-desc">Gjør det samme på begge sider! Legg til motsatte blokker, gang og del, og få x alene. 14 nivåer fra enkle likninger til brøker.</div>
+        <div class="card-tag">🚧 Ny</div>
+        <div class="card-btn">Spill →</div>
+      </a>
+
       <!-- Ligningsvekten -->
       <a class="card c-teal" href="spill.html">
         <div class="card-icon">⚖️</div>
@@ -406,7 +415,7 @@
 </div>
 
 <footer>
-  Likningsspill — utviklet for visuell forståelse av algebra · v1.8
+  Likningsspill — utviklet for visuell forståelse av algebra · v1.12
 </footer>
 
 <!-- SESSION OVERLAY -->
@@ -485,6 +494,14 @@ window.addEventListener('load',()=>{
   },300);
 });
 
+const NICK_WORDS=['Tiger','Drage','Ørn','Falk','Ulv','Bjørn','Rev','Hauk','Puma','Leopard',
+  'Kobra','Delfin','Hai','Panter','Gaupe','Jerv','Vandrefalk','Kongeørn','Lynx','Wolverine'];
+function generateNickname(){
+  const word=NICK_WORDS[Math.floor(Math.random()*NICK_WORDS.length)];
+  const num=Math.floor(Math.random()*90)+10; // 10-99
+  return word+num;
+}
+
 window.submitSession=async function(){
   const name=document.getElementById('sessionName').value.trim();
   const code=document.getElementById('sessionCode').value.trim().toUpperCase();
@@ -499,13 +516,12 @@ window.submitSession=async function(){
   if(!name){ nameInp.classList.add('error'); err.textContent='Skriv inn navnet ditt.'; return; }
 
   if(!code){
-    // No code — save name only, no logging
-    saveSession({name, skipped:false, noCode:true, ts:Date.now()});
-    closeOverlay({name, noCode:true});
+    const nickname=generateNickname();
+    saveSession({name, nickname, skipped:false, noCode:true, ts:Date.now()});
+    closeOverlay({name, nickname, noCode:true});
     return;
   }
 
-  // Validate code against Firebase
   err.textContent='Sjekker timekode...';
   const waitFb=()=>new Promise(r=>{ if(window._fbReady) r(); else setTimeout(()=>waitFb().then(r),200); });
   await waitFb();
@@ -515,10 +531,20 @@ window.submitSession=async function(){
     const data=snap.val();
     if(!data){ codeInp.classList.add('error'); err.textContent='Ugyldig timekode.'; return; }
     if(Date.now()>data.expires){ codeInp.classList.add('error'); err.textContent='Timekoden er utløpt.'; return; }
-    // Valid!
-    const session={name, code, expires:data.expires, teacher:data.teacher||'', ts:Date.now()};
+    // Sikre unikt nickname innenfor denne timekoden
+    const existingNames=Object.keys(data.players||{});
+    let nickname=generateNickname();
+    let attempts=0;
+    while(existingNames.includes(nickname)&&attempts<20){
+      nickname=generateNickname();
+      attempts++;
+    }
+    if(existingNames.includes(nickname)){
+      // Svært uflaks — legg til ekstra siffer for å garantere unikhet
+      nickname=nickname+Math.floor(Math.random()*10);
+    }
+    const session={name, nickname, code, expires:data.expires, teacher:data.teacher||'', ts:Date.now()};
     saveSession(session);
-    // Register in Firebase
     window._get && registerInSession(session);
     closeOverlay(session);
   } catch(e){
@@ -551,7 +577,7 @@ function showBadge(s){
     txt.textContent='Utløpt økt';
   } else {
     dot.className='dot';
-    txt.textContent=s.name+' · '+s.code;
+    txt.textContent=(s.nickname||s.name)+(s.code?' · '+s.code:'');
   }
 }
 
