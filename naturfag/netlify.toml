@@ -1,19 +1,24 @@
-# Naturfagsiden
+# Naturfagsiden (naturfagting.netlify.app)
 [build]
   publish = "."
 
-# De felles filene ligger i fellesrepoet, og hentes derfra.
-# Omskrivingen gjør at stiene i spillene fortsatt kan være ./js/...,
-# og nettleseren ser filene som om de kom fra denne siden.
+# Felles filer hentes fra fellesrepoet. Adressen i nettleseren blir stående,
+# så stiene i spillene kan fortsatt være ./js/... og ./baner/...
 [[redirects]]
   from = "/js/*"
   to = "https://fellesting.netlify.app/js/:splat"
   status = 200
   force = true
 
-# Når banene flyttes til fellesrepoet, fjern kommentartegnene her:
-# [[redirects]]
-#   from = "/baner/*"
-#   to = "https://fellesting.netlify.app/baner/:splat"
-#   status = 200
-#   force = true
+[[redirects]]
+  from = "/baner/*"
+  to = "https://fellesting.netlify.app/baner/:splat"
+  status = 200
+  force = true
+
+# Lærersiden ligger i felles
+[[redirects]]
+  from = "/laerer.html"
+  to = "https://fellesting.netlify.app/laerer.html"
+  status = 301
+  force = true
