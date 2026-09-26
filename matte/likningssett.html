@@ -179,6 +179,7 @@
   .timeup-card p { color:var(--muted); margin-bottom:24px; }
   .btn-again { padding:13px 32px; background:var(--accent); color:white; border:none; border-radius:12px; font-family:'Nunito',sans-serif; font-weight:800; font-size:1rem; cursor:pointer; }
 </style>
+<script src="./js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -346,20 +347,7 @@
   import { database, ref, set, update, onValue, get } from "./js/firebase-config.js";
   window._fbReady=true; window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get;
   window._fbInit=function(room){
-  const rb=document.getElementById('roomBadge');
-  const rc=document.getElementById('roomBadgeCode');
-  if(rb) rb.style.display='';
-  if(rc) rc.textContent=room;
-    _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
-    _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateSB(snap.val()); });
-    _onValue(_ref(_db,'rooms/'+room+'/matchOver'),(snap)=>{
-      if(snap.val()===true){
-        get(ref(_db,'rooms/'+room)).then(s=>{
-          const d=s.val()||{};
-          if(typeof showMatchOverToast==='function') showMatchOverToast(d.result||'Kampen er over!');
-        }).catch(()=>{ if(typeof showMatchOverToast==='function') showMatchOverToast('Kampen er over!'); });
-      }
-    });
+    initRoom(room, updateSB);
   };
   window.syncScore=function(score){
     if(!window.roomCode)return;
@@ -381,7 +369,7 @@
 </script>
 
 <script>
-const VERSION='1.7';
+const VERSION='2.1';
 document.querySelectorAll('.version-num').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -389,12 +377,11 @@ const adj=['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flink
 const ani=['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger','Ørn','Gepard','Panter','Falken'];
 const _used=new Set();
 function genName(){ const pool=[]; adj.forEach(a=>ani.forEach(b=>pool.push(a+' '+b))); const avail=pool.filter(n=>!_used.has(n)); const name=avail.length?avail[Math.floor(Math.random()*avail.length)]:pool[Math.floor(Math.random()*pool.length)]; _used.add(name); return name; }
-window.playerName=genName();
 document.getElementById('displayName').textContent='🚗 '+window.playerName;
 
 // ── MODE ──
 let gameMode='practice', timedMinutes=5, timedSecondsLeft=0, timedInterval=null;
-window.selectMode=function(mode){ gameMode=mode; document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode)); document.getElementById('opts-solo').classList.toggle('visible',mode==='solo'); document.getElementById('opts-multi').classList.toggle('visible',mode==='multi'); };
+;
 
 // ── STATE ──
 let idCounter=0, currentScore=0, totalSolved=0, currentLevel=1, taskStartTime=Date.now();
@@ -411,22 +398,11 @@ window.lsSetLevel=function(n){
 // ── TIMECODE SYNC ──
 
 let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0, tcMaxLevel=1, tcStartLevel=1;
-function syncToTimecode(){
-  const s=getActiveSession(); if(!s) return;
-  const name=s.name||window.playerName; if(!name) return;
-  const waitFb=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name+'/games/likningssett'),
-      {level:currentLevel,maxLevel:Math.max(currentLevel,tcMaxLevel),startLevel:tcStartLevel,score:currentScore,
-       correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
-       sessionStart:tcSyncSessionStart});
-    else setTimeout(waitFb,200);
-  }; waitFb();
-  // Update root
-  const root='timecodes/'+s.code+'/players/'+name;
-  const waitRoot=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
-    else setTimeout(waitRoot,200);
-  }; waitRoot();
+const tcLv=levelTracker();
+function syncTC(extra={}){
+  tcLv.note(currentLevel);
+  syncToTimecode('likningssett',Object.assign({level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSyncSessionStart},extra));
 }
 
 function lsRecordResult(correct){
@@ -434,7 +410,7 @@ function lsRecordResult(correct){
   taskStartTime=Date.now();
   if(correct) tcCorrect++; else tcWrong++;
   tcMaxLevel=Math.max(tcMaxLevel,currentLevel);
-  syncToTimecode();
+  syncTC();
   if(correct){
     lsErrorStreak=0; lsStreak++;
     if(elapsed>LS_TIME*2){lsStreak=Math.max(0,lsStreak-1);lsErrorStreak=1;}
@@ -994,11 +970,10 @@ window.startGame=function(){
   else { window.syncScore=()=>{}; document.getElementById('scoreTitle').textContent='🏆 Poeng'; updateSoloScore(); }
   if(gameMode==='solo') startTimed();
   initGame();
+  syncTC();
 };
 </script>
-<script src="./js/spill-utils.js"></script>
 <script src="./js/touch-dnd.js"></script>
-<script src="./js/spill-utils.js"></script>
 <script src="./js/touch-dnd.js"></script>
 </body>
 </html>

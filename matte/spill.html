@@ -215,6 +215,7 @@
     .sidebar { order: -1; }
   }
 </style>
+<script src="./js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -455,25 +456,7 @@
   window._fbReady=true; window._db=database; window._ref=ref;
   window._set=set; window._update=update; window._onValue=onValue;
   window._fbInit=function(room){
-  const rb=document.getElementById('roomBadge');
-  const rc=document.getElementById('roomBadgeCode');
-  if(rb) rb.style.display='';
-  if(rc) rc.textContent=room;
-    _set(_ref(_db,'rooms/'+room+'/players/'+window.playerName),{score:0,lastUpdated:Date.now()});
-    _onValue(_ref(_db,'rooms/'+room+'/players'),(snap)=>{ if(snap.val()) updateScoreboard(snap.val()); });
-    // Listen for match over
-    _onValue(_ref(_db,'rooms/'+room+'/matchOver'),(snap)=>{
-      if(snap.val()===true){
-        // Get result
-        _ref(_db,'rooms/'+room);
-        import('./js/firebase-config.js').then(({get,ref})=>{
-          get(ref(_db,'rooms/'+room)).then(s=>{
-            const d=s.val()||{};
-            showMatchOverToast(d.result||'Kampen er over!');
-          });
-        }).catch(()=>showMatchOverToast('Kampen er over!'));
-      }
-    });
+    initRoom(room, updateScoreboard);
   };
   window.syncScore=function(score){
     if(!window.roomCode) return;
@@ -510,7 +493,7 @@
 
 <!-- MAIN SCRIPT -->
 <script>
-const VERSION='1.8';
+const VERSION='2.2';
 document.querySelectorAll('.vn').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -518,7 +501,6 @@ const adj=['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flink
 const ani=['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger','Ørn','Gepard','Panter','Falken'];
 const _usedN=new Set();
 function genName(){ const pool=[]; adj.forEach(a=>ani.forEach(b=>pool.push(a+' '+b))); const av=pool.filter(n=>!_usedN.has(n)); const name=av.length?av[Math.floor(Math.random()*av.length)]:pool[Math.floor(Math.random()*pool.length)]; _usedN.add(name); return name; }
-window.playerName=genName();
 document.getElementById('displayName').textContent='⚖️ '+window.playerName;
 
 // ── LEVEL DEFINITIONS ──
@@ -586,12 +568,7 @@ function updateLevelBadge(){
 let taskStartTime=Date.now();
 
 // ── MODE SELECTION ──
-window.selectMode=function(mode){
-  gameMode=mode;
-  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-  document.getElementById('opts-solo').classList.toggle('visible',mode==='solo');
-  document.getElementById('opts-multi').classList.toggle('visible',mode==='multi');
-};
+;
 
 // ── LEVEL INFO ──
 function updateLevelUI(){
@@ -1400,7 +1377,7 @@ window.checkSolution=function(){
     totalWins++; winsOnLevel++;
     document.getElementById('winCount').textContent=totalWins;
     recordLevelResult(true);
-    tcCorrect++; tcMaxLevel=Math.max(tcMaxLevel,currentLevel); syncToTimecode();
+    tcCorrect++; tcMaxLevel=Math.max(tcMaxLevel,currentLevel); syncTC();
 
     let bonus=0;
     if(gameMode!=='practice'){
@@ -1421,7 +1398,7 @@ window.checkSolution=function(){
     setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) newTask(); },1400);
   } else {
     recordLevelResult(false);
-    tcWrong++; syncToTimecode();
+    tcWrong++; syncTC();
     showToast('❌ Ikke i balanse ennå – prøv igjen!','error');
   }
 };
@@ -1464,22 +1441,11 @@ function updCD(){ const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60;
 // ── TIMECODE SYNC ──
 
 let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0, tcMaxLevel=1, tcStartLevel=1;
-function syncToTimecode(extra={}){
-  const s=getActiveSession(); if(!s) return;
-  const name=s.name||window.playerName; if(!name) return;
-  const waitFb=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name+'/games/ligningsvekt'),
-      {level:currentLevel,score:currentScore,
-       correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
-       sessionStart:tcSyncSessionStart,...extra});
-    else setTimeout(waitFb,200);
-  }; waitFb();
-  // Update root
-  const root='timecodes/'+s.code+'/players/'+name;
-  const waitRoot=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
-    else setTimeout(waitRoot,200);
-  }; waitRoot();
+const tcLv=levelTracker();
+function syncTC(extra={}){
+  tcLv.note(currentLevel);
+  syncToTimecode('ligningsvekt',Object.assign({level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSyncSessionStart},extra));
 }
 
 window.startGame=function(){
@@ -1518,6 +1484,7 @@ window.startGame=function(){
   startLevel=slVal;
 
   initGame();
+  syncTC();
 };
 
 // ── KEYBOARD ──
@@ -1526,7 +1493,6 @@ document.addEventListener('keydown',e=>{
   if(e.key==='z'&&(e.ctrlKey||e.metaKey)) doUndo();
 });
 </script>
-<script src="./js/spill-utils.js"></script>
 <script src="./js/touch-dnd.js"></script>
 </body>
 </html>

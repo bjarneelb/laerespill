@@ -156,6 +156,7 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
 .build-input{padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:800;outline:none;width:170px;}
 .build-input:focus{border-color:var(--accent);}
 </style>
+<script src="./js/spill-utils.js"></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -166,7 +167,7 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
     <div style="font-size:3rem">⚖️</div>
     <h1>Balansevekten</h1>
     <p>Gjør det samme på begge sider, så holder vekten seg i balanse.</p>
-    <div class="version">v1.0</div>
+    <div class="version">v1.1</div>
     <div class="lbl">Start på nivå</div>
     <div class="level-select" id="levelSelect"></div>
     <div class="level-desc" id="levelDesc"></div>
@@ -939,6 +940,5 @@ buildLevels();
   import { database, ref, set, update, onValue, get } from "./js/firebase-config.js";
   window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._fbReady=true;
 </script>
-<script src="./js/spill-utils.js"></script>
 </body>
 </html>

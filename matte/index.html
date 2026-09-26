@@ -246,6 +246,7 @@
     .card-grid { grid-template-columns: 1fr; }
   }
 </style>
+<script src="./js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -402,7 +403,7 @@
   <div>
     <div class="section-title">🏫 For læreren</div>
     <div class="card-grid">
-      <a class="card c-green" href="laerer.html">
+      <a class="card c-green" href="https://fellesting.netlify.app/laerer.html">
         <div class="card-icon">🔐</div>
         <div class="card-title">Lærerside</div>
         <div class="card-desc">Se aktive spillrom, hvem som spiller og poengstilling. Avslutt ett eller flere rom med ett klikk. Passordbeskyttet.</div>
@@ -415,7 +416,7 @@
 </div>
 
 <footer>
-  Likningsspill — utviklet for visuell forståelse av algebra · v1.12
+  Likningsspill — utviklet for visuell forståelse av algebra · v1.13
 </footer>
 
 <!-- SESSION OVERLAY -->
@@ -494,13 +495,7 @@ window.addEventListener('load',()=>{
   },300);
 });
 
-const NICK_WORDS=['Tiger','Drage','Ørn','Falk','Ulv','Bjørn','Rev','Hauk','Puma','Leopard',
-  'Kobra','Delfin','Hai','Panter','Gaupe','Jerv','Vandrefalk','Kongeørn','Lynx','Wolverine'];
-function generateNickname(){
-  const word=NICK_WORDS[Math.floor(Math.random()*NICK_WORDS.length)];
-  const num=Math.floor(Math.random()*90)+10; // 10-99
-  return word+num;
-}
+// generateNickname() kommer fra js/spill-utils.js
 
 window.submitSession=async function(){
   const name=document.getElementById('sessionName').value.trim();
@@ -532,7 +527,7 @@ window.submitSession=async function(){
     if(!data){ codeInp.classList.add('error'); err.textContent='Ugyldig timekode.'; return; }
     if(Date.now()>data.expires){ codeInp.classList.add('error'); err.textContent='Timekoden er utløpt.'; return; }
     // Sikre unikt nickname innenfor denne timekoden
-    const existingNames=Object.keys(data.players||{});
+    const existingNames=Object.values(data.players||{}).map(p=>p&&p.nickname).filter(Boolean);
     let nickname=generateNickname();
     let attempts=0;
     while(existingNames.includes(nickname)&&attempts<20){
@@ -606,6 +601,7 @@ async function registerInSession(session){
   update(ref(window._db,'timecodes/'+session.code+'/players/'+session.name),{
     joined:Date.now(),
     active:true,
+    nickname:session.nickname||'',
   });
 }
 

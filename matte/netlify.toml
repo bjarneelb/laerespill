@@ -1,23 +1,31 @@
-# ---------------------------------------------------------------
-# Dette er IKKE en fil til naturfagrepoet.
-# Innholdet skal inn i netlify.toml i matematikkrepoet (ligningsvekt).
-# Behold det som allerede står der, og legg til blokken nederst.
-# ---------------------------------------------------------------
-
-[functions]
-  directory = "netlify/functions"
-
+# Matematikksiden (likningsspill.netlify.app)
 [build]
   publish = "."
+
+# ai-proxy brukes fortsatt av Likningsbyggeren
+[functions]
+  directory = "netlify/functions"
 
 [build.environment]
   SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
 
-# NYTT: hent de felles filene fra fellesrepoet.
-# Slett mappen js/ i matematikkrepoet samtidig, ellers ligger det igjen en kopi
-# som ikke brukes. force = true gjør at fellesfilene alltid vinner.
+# Felles filer hentes fra fellesrepoet. Adressen i nettleseren blir stående,
+# så stiene i spillene kan fortsatt være ./js/... og ./baner/...
 [[redirects]]
   from = "/js/*"
   to = "https://fellesting.netlify.app/js/:splat"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/baner/*"
+  to = "https://fellesting.netlify.app/baner/:splat"
+  status = 200
+  force = true
+
+# Lærersiden ligger i felles. Gamle bokmerker sendes videre dit.
+[[redirects]]
+  from = "/laerer.html"
+  to = "https://fellesting.netlify.app/laerer.html"
+  status = 301
   force = true
