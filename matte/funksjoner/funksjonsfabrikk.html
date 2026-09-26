@@ -180,6 +180,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   cursor:pointer;transition:background 0.2s;}
 .start-btn:hover{background:#4338ca;}
 </style>
+<script src="../js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -190,8 +191,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.12</div>
-    <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.16</div>
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
       <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')">⏱️ Enkeltspiller</button>
@@ -359,53 +359,16 @@ function fbRootPath(){
 }
 
 function syncToFirebase(){
-  const path=fbGamePath();
-  if(!window._fbReady) return;
   sessionMaxLevel=Math.max(currentLevel,sessionMaxLevel);
-  // Sync to timecode path
-  if(path) window._update(window._ref(window._db,path),{
-    score:currentScore, level:currentLevel,
-    maxLevel:sessionMaxLevel, startLevel:sessionStartLevel,
-    correct:sessionCorrect, wrong:sessionWrong,
-    lastUpdated:Date.now(), sessionStart:sessionStartTime,
-  });
-  const root=fbRootPath();
-  if(root) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name:playerName});
-  // Sync to room (for baner)
-  if(roomCode&&gameMode==='multi'){
-    window._update(window._ref(window._db,'rooms/'+roomCode+'/players/'+playerName),{
-      score:currentScore, lastUpdated:Date.now()
-    });
-  }
+  syncToTimecode('funksjonsfabrikk',{score:currentScore,level:currentLevel,
+    maxLevel:sessionMaxLevel,startLevel:sessionStartLevel,
+    correct:sessionCorrect,wrong:sessionWrong,sessionStart:sessionStartTime});
+  if(roomCode&&gameMode==='multi') syncRoomScore(currentScore);
 }
 
 function registerPlayer(){
-  const path=fbGamePath();
-  if(!window._fbReady) return;
-  if(path) window._update(window._ref(window._db,path),{
-    score:0, level:currentLevel, maxLevel:currentLevel,
-    startLevel:currentLevel, correct:0, wrong:0,
-    lastUpdated:Date.now(), sessionStart:sessionStartTime,
-  });
-  const root=fbRootPath();
-  if(root) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name:playerName});
-  // Register in room (for baner)
-  if(roomCode&&gameMode==='multi'){
-    window._set(window._ref(window._db,'rooms/'+roomCode+'/players/'+playerName),{
-      score:0, lastUpdated:Date.now()
-    });
-    window._onValue(window._ref(window._db,'rooms/'+roomCode+'/players'),(snap)=>{
-      if(snap.val()) updateScoreboard(snap.val());
-    });
-    window._onValue(window._ref(window._db,'rooms/'+roomCode+'/matchOver'),(snap)=>{
-      if(snap.val()===true){
-        window._get(window._ref(window._db,'rooms/'+roomCode)).then(s=>{
-          const d=s.val()||{};
-          if(typeof showMatchOverToast==='function') showMatchOverToast(d.result||'Kampen er over!');
-        }).catch(()=>{ if(typeof showMatchOverToast==='function') showMatchOverToast('Kampen er over!'); });
-      }
-    });
-  }
+  syncToFirebase();
+  if(roomCode&&gameMode==='multi') initRoom(roomCode, updateScoreboard);
 }
 
 function updateScoreboard(players){
@@ -422,45 +385,13 @@ const DOWN_ERRORS=2;    // feil på rad → ned
 const DOWN_TIME_FACTOR=2; // > 2x forventet tid → ned
 let streak=0;           // riktige på rad
 let errorStreak=0;      // feil på rad
+// Teller riktige og feil til rapporten, og bruker felles nivålogikk
+function recordResult(correct){
+  if(correct) sessionCorrect++; else sessionWrong++;
+  SU.recordResult(correct);
+}
 let taskStartTime=0;    // når oppgaven ble vist
 let recentResults=[];   // siste 5: true/false
-
-function recordResult(correct){
-  const elapsed=(Date.now()-taskStartTime)/1000;
-  if(correct) sessionCorrect++; else sessionWrong++;
-  syncToFirebase();
-  recentResults.push(correct);
-  if(recentResults.length>5) recentResults.shift();
-
-  if(correct){
-    errorStreak=0;
-    streak++;
-    // For lang tid teller som halv fremgang
-    if(elapsed>EXPECTED_TIME*DOWN_TIME_FACTOR){
-      streak=Math.max(0,streak-1);
-      errorStreak=1; // myk nedtrekk
-    }
-    if(streak>=UP_STREAK) changeLevel(1);
-  } else {
-    streak=0;
-    errorStreak++;
-    if(errorStreak>=DOWN_ERRORS) changeLevel(-1);
-  }
-}
-
-function changeLevel(delta){
-  const newLevel=Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,currentLevel+delta));
-  if(newLevel===currentLevel) return;
-  currentLevel=newLevel;
-  streak=0; errorStreak=0;
-  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
-  showToast(delta>0?'⬆️ '+LEVELS[currentLevel].name+'!':'⬇️ '+LEVELS[currentLevel].name,'success');
-  // Rebuild level selector highlight
-  document.querySelectorAll('.level-btn').forEach(b=>{
-    b.classList.toggle('active',parseInt(b.textContent)===currentLevel);
-  });
-  syncToFirebase();
-}
 
 // ── LEVELS ──
 const LEVELS={
@@ -922,7 +853,7 @@ function checkSolution(){
   const bonus=Math.round(Math.max(50,200-elapsed)*levelMult);
   currentScore+=bonus;
   document.getElementById('scoreBadge').textContent=currentScore+' p';
-  if(gameMode!=='practice') syncToFirebase();
+  syncToFirebase();
 
   // Show props auto if needed
   if(!lv.needProps&&!lv.inputMode&&!lv.exprMode){
@@ -1251,12 +1182,7 @@ function newTask(){
 }
 
 // ── MODE & START ──
-window.selectMode=function(mode){
-  gameMode=mode;
-  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-  document.getElementById('soloOpts').style.display=mode==='solo'?'block':'none';
-  document.getElementById('multiOpts').style.display=mode==='multi'?'block':'none';
-};
+;
 
 window.startGame=function(){
   const session=getActiveSession();
@@ -1295,29 +1221,11 @@ function updateTimerDisplay(){
 }
 
 // ── LEVEL SELECT ──
-function buildLevelSelect(){
-  const el=document.getElementById('levelSelect');
-  el.innerHTML='';
-  Object.keys(LEVELS).forEach(l=>{
-    const btn=document.createElement('button');
-    btn.className='level-btn'+(parseInt(l)===currentLevel?' active':'');
-    btn.textContent=l;
-    btn.title=LEVELS[l].desc;
-    btn.onclick=()=>{
-      currentLevel=parseInt(l);
-      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-    };
-    el.appendChild(btn);
-  });
-}
-
 // ── TOAST ──
 
 // ── INIT ──
 buildLevelSelect();
 </script>
-<script src="../js/spill-utils.js"></script>
 <script src="../js/touch-dnd.js"></script>
 </body>
 </html>

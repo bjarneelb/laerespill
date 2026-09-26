@@ -322,6 +322,7 @@ body {
   100% { r: 22; opacity: 0; }
 }
 </style>
+<script src="../js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -353,8 +354,8 @@ body {
   <div class="screen-card">
     <h1>⚓ KOORDINATSLAG</h1>
     <p>Senk motstanderens flåte ved å skyte på koordinater!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.4</div>
-    <div class="field-group">
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v1.5</div>
+    <div class="field-group" style="display:none">
       <div class="field-label">Ditt navn</div>
       <input class="field-input" id="playerNameInput" placeholder="KAPTEIN..." maxlength="16">
     </div>
@@ -780,8 +781,8 @@ let animatingCells=new Set(); // for ripple animation
 // ── PLAYER NAME ──
 const adj=['Kaptein','Admiral','Kommandør','Løytnant','Vise-Admiral'];
 const ani=['Hauk','Ulv','Bjørn','Rev','Ørn'];
-window.myPlayerName = adj[Math.floor(Math.random()*adj.length)]+' '+ani[Math.floor(Math.random()*ani.length)];
-document.getElementById('playerNameInput').placeholder = window.myPlayerName;
+window.myPlayerName = window.playerName;
+
 
 // ── GRID HELPERS ──
 function cellToSVG(x,y){ return {sx:(x-GRID_MIN)*CELL, sy:(GRID_MAX-y)*CELL}; }
@@ -1110,24 +1111,11 @@ function aiPickTarget(){
 // ── TIMECODE SYNC ──
 
 let tcShots=0, tcHits=0, tcSessionStart=Date.now();
-function syncToTimecode(won=null){
-  const s=getActiveSession(); if(!s) return;
-  const rawName=document.getElementById('playerNameInput')?.value.trim()||s.name||'Spiller';
-  const name=s.name||rawName; if(!name) return;
-  const data={game:'koordinatslag',level:null,score:tcHits*10,
-    correct:tcHits,wrong:tcShots-tcHits,lastUpdated:Date.now(),
-    sessionStart:tcSessionStart};
+const tcLv=null;
+function syncTC(won=null){
+  const data={score:tcHits*10,correct:tcHits,wrong:tcShots-tcHits,sessionStart:tcSessionStart};
   if(won!==null) data.won=won;
-  const waitFb=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name),data);
-    else setTimeout(waitFb,200);
-  }; waitFb();
-  // Update root
-  const root='timecodes/'+s.code+'/players/'+name;
-  const waitRoot=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
-    else setTimeout(waitRoot,200);
-  }; waitRoot();
+  syncToTimecode('koordinatslag',data);
 }
 
 function waitFb(cb){ if(window._fbReady){cb();}else{setTimeout(()=>waitFb(cb),50);} }
@@ -1356,7 +1344,7 @@ function fireShot(){
 
     tcShots++;
     if(hit) tcHits++;
-    syncToTimecode();
+    syncTC();
 
     const updatedHits=JSON.stringify([...oppHits,newHit]);
     const nextTurn=mySlot==='p1'?'p2':'p1';
@@ -1447,7 +1435,7 @@ function setStatus(msg){ document.getElementById('statusMsg').textContent=msg; }
 
 function showResult(won){
   if(gameOver) return; gameOver=true;
-  syncToTimecode(won);
+  syncTC(won);
   document.getElementById('fireBtn').disabled=true;
   document.getElementById('winTitle').textContent=won?'SEIER!':'NEDERLAGET...';
   document.getElementById('winSub').textContent=won?'Du senket alle motstanderens skip!':'Alle dine skip er senket!';
@@ -1459,7 +1447,6 @@ window.addEventListener('beforeunload',()=>{
   if(roomCode&&window._fbReady) window._remove(window._ref(window._db,'rooms/'+roomCode));
 });
 </script>
-<script src="../js/spill-utils.js"></script>
 <script src="../js/touch-dnd.js"></script>
 </body>
 </html>

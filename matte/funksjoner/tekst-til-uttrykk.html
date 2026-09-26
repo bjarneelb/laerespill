@@ -106,6 +106,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   .mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
   .mode-row{display:flex;gap:8px;}
 </style>
+<script src="../js/spill-utils.js"></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -115,8 +116,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   <div class="start-card">
     <h1>📖 Fra tekst til uttrykk</h1>
     <h2>Les situasjonen og finn funksjonsuttrykket</h2>
-    <div class="version">v1.20</div>
-    <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
+    <div class="version">v1.22</div>
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800">START PÅ NIVÅ</div>
     <div class="level-select" id="levelSelect"></div>
     <div class="mode-row" style="display:flex;gap:8px;margin-bottom:10px">
@@ -346,24 +346,25 @@ const MAX_LEVEL=4, MIN_LEVEL=1;
 let gameMode='practice', roomCode='', currentLevel=1, currentScore=0, playerName='';
 let currentTask=null;
 let streak=0, errorStreak=0, taskStartTime=0;
+// Rapport til læreren (timekode)
+const tcLv=levelTracker(), tcSessionStart=Date.now();
+let tcCorrect=0, tcWrong=0;
+function syncTC(){
+  tcLv.note(currentLevel);
+  syncToTimecode('tekst-til-uttrykk',{level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSessionStart});
+}
+function recordResult(correct){
+  tcLv.note(currentLevel);
+  if(correct) tcCorrect++; else tcWrong++;
+  SU.recordResult(correct);
+  syncTC();
+}
 let stepsCompleted=0, totalSteps=4;
 let usedScenarios=[];
 
 // ── ADAPTIVE ──
 const UP_STREAK=3, DOWN_ERRORS=2, EXPECTED_TIME=60;
-function recordResult(correct){
-  if(correct){errorStreak=0;streak++;if(streak>=UP_STREAK) changeLevel(1);}
-  else{streak=0;errorStreak++;if(errorStreak>=DOWN_ERRORS) changeLevel(-1);}
-}
-function changeLevel(d){
-  const n=Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,currentLevel+d));
-  if(n===currentLevel) return;
-  currentLevel=n; streak=0; errorStreak=0;
-  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
-  showToast(d>0?'⬆️ '+LEVELS[currentLevel].name+'!':'⬇️ '+LEVELS[currentLevel].name,'success');
-  document.querySelectorAll('.level-btn').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===currentLevel));
-}
-
 // ── PICK TASK ──
 function pickTask(level){
   const pool=SCENARIOS.filter(s=>s.level<=level&&!usedScenarios.includes(s));
@@ -592,15 +593,10 @@ window.resetTask=function(){
 
 // ── START ──
 
-window.selectMode=function(mode){
-  gameMode=mode;
-  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-  const mo=document.getElementById('multiOpts');
-  if(mo) mo.style.display=mode==='multi'?'block':'none';
-};
+;
 
 window.startGame=function(){
-  playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  playerName=window.playerName||'Spiller';
   window.playerName=playerName;
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainArea').style.display='flex';
@@ -611,23 +607,8 @@ window.startGame=function(){
   }
   currentTask=pickTask(currentLevel);
   renderTask();
+  syncTC();
 };
-
-function buildLevelSelect(){
-  const el=document.getElementById('levelSelect');
-  Object.keys(LEVELS).forEach(l=>{
-    const btn=document.createElement('button');
-    btn.className='level-btn'+(parseInt(l)===currentLevel?' active':'');
-    btn.textContent=l;
-    btn.title=LEVELS[l].desc;
-    btn.onclick=()=>{
-      currentLevel=parseInt(l);
-      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-    };
-    el.appendChild(btn);
-  });
-}
 
 buildLevelSelect();
 </script>
@@ -635,7 +616,6 @@ buildLevelSelect();
   import { database, ref, set, update, onValue } from "../js/firebase-config.js";
   window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._fbReady=true;
 </script>
-<script src="../js/spill-utils.js"></script>
 <script src="../js/touch-dnd.js"></script>
 </body>
 </html>

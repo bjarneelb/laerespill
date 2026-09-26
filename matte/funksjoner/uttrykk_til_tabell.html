@@ -105,6 +105,7 @@ table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border
 .start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
 .start-btn:hover{background:#4338ca;}
 </style>
+<script src="../js/spill-utils.js"></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -114,8 +115,7 @@ table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border
   <div class="start-card">
     <h1>📋 Lineære funksjoner</h1>
     <h2>Fra uttrykk til tabell</h2>
-    <div class="version">v1.7</div>
-    <input class="name-input" id="nameInput" placeholder="Ditt navn..." maxlength="20">
+    <div class="version">v1.9</div>
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
       <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')">⏱️ Enkeltspiller</button>
@@ -223,22 +223,11 @@ table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border
 // ── TIMECODE SYNC ──
 
 let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0;
-function syncToTimecode(){
-  const s=getActiveSession(); if(!s) return;
-  const name=s.name||playerName; if(!name) return;
-  const waitFb=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,'timecodes/'+s.code+'/players/'+name+'/games/uttrykk-til-tabell'),
-      {level:currentLevel,score:currentScore,
-       correct:tcCorrect,wrong:tcWrong,lastUpdated:Date.now(),
-       sessionStart:tcSyncSessionStart});
-    else setTimeout(waitFb,200);
-  }; waitFb();
-  // Update root
-  const root='timecodes/'+s.code+'/players/'+name;
-  const waitRoot=()=>{
-    if(window._fbReady) window._update(window._ref(window._db,root),{lastSeen:Date.now(),name});
-    else setTimeout(waitRoot,200);
-  }; waitRoot();
+const tcLv=levelTracker();
+function syncTC(extra={}){
+  tcLv.note(currentLevel);
+  syncToTimecode('uttrykk-til-tabell',Object.assign({level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSyncSessionStart},extra));
 }
 
 // ── LEVELS ──
@@ -266,20 +255,6 @@ let streak=0, errorStreak=0, taskStartTime=0;
 
 // Adaptive
 const UP_STREAK=3, DOWN_ERRORS=2, EXPECTED_TIME=60;
-function recordResult(correct){
-  const elapsed=(Date.now()-taskStartTime)/1000;
-  if(correct){errorStreak=0;streak++;if(elapsed>EXPECTED_TIME*2){streak=Math.max(0,streak-1);errorStreak=1;}if(streak>=UP_STREAK) changeLevel(1);}
-  else{streak=0;errorStreak++;if(errorStreak>=DOWN_ERRORS) changeLevel(-1);}
-}
-function changeLevel(d){
-  const n=Math.max(MIN_LEVEL,Math.min(MAX_LEVEL,currentLevel+d));
-  if(n===currentLevel) return;
-  currentLevel=n; streak=0; errorStreak=0;
-  document.getElementById('levelBadge').textContent=LEVELS[currentLevel].name;
-  showToast(d>0?'⬆️ '+LEVELS[currentLevel].name+'!':'⬇️ '+LEVELS[currentLevel].name,'success');
-  document.querySelectorAll('.level-btn').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===currentLevel));
-}
-
 // ── TASK GENERATION ──
 function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
 function randDec(min,max){return Math.round((Math.random()*(max-min)+min)*10)/10;}
@@ -632,7 +607,7 @@ window.checkTable=function(){
   });
 
   if(allOk){
-    recordResult(true); tcCorrect++; syncToTimecode();
+    recordResult(true); tcCorrect++; syncTC();
     showToast('🎉 Riktig tabell!','success');
     const elapsed=(Date.now()-taskStartTime)/1000;
     const levelMult=1+((currentLevel-1)*0.1);
@@ -643,7 +618,7 @@ window.checkTable=function(){
     document.getElementById('checkBtn').style.display='none';
     document.getElementById('nextBtn').style.display='inline-block';
   } else {
-    recordResult(false); tcWrong++; syncToTimecode();
+    recordResult(false); tcWrong++; syncTC();
     showToast('❌ Noen verdier er feil — prøv igjen!','error');
   }
 };
@@ -679,14 +654,10 @@ window.resetTask=function(){
 };
 
 // ── START ──
-window.selectMode=function(mode){
-  gameMode=mode;
-  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-  document.getElementById('multiOpts').style.display=mode==='multi'?'block':'none';
-};
+;
 
 window.startGame=function(){
-  playerName=document.getElementById('nameInput').value.trim()||'Spiller';
+  playerName=window.playerName||'Spiller';
   window.playerName=playerName;
   document.getElementById('startScreen').style.display='none';
   document.getElementById('mainArea').style.display='flex';
@@ -699,29 +670,13 @@ window.startGame=function(){
   }
   currentTask=genTask(currentLevel);
   renderTask();
+  syncTC();
 };
-
-function buildLevelSelect(){
-  const el=document.getElementById('levelSelect');
-  Object.keys(LEVELS).forEach(l=>{
-    const btn=document.createElement('button');
-    btn.className='level-btn'+(parseInt(l)===currentLevel?' active':'');
-    btn.textContent=l;
-    btn.title=LEVELS[l].desc;
-    btn.onclick=()=>{
-      currentLevel=parseInt(l);
-      document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-    };
-    el.appendChild(btn);
-  });
-}
 
 // ── TOAST ──
 
 buildLevelSelect();
 </script>
-<script src="../js/spill-utils.js"></script>
 <script src="../js/touch-dnd.js"></script>
 <script type="module">
   import { database, ref, update } from "../js/firebase-config.js";
