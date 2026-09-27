@@ -155,6 +155,11 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
 .op-btn.div{background:#0284c7;}
 .build-input{padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:800;outline:none;width:170px;}
 .build-input:focus{border-color:var(--accent);}
+.ctx-menu{position:fixed;z-index:1200;background:white;border:2px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px;min-width:230px;font-family:'Nunito',sans-serif;animation:appear .15s ease;}
+.ctx-head{font-size:0.78rem;font-weight:800;color:var(--muted);padding:4px 8px 6px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.ctx-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:9px 10px;border:none;background:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;color:var(--text);cursor:pointer;}
+.ctx-item:hover,.ctx-item:focus-visible{background:#f0f4ff;outline:none;}
+.ctx-preview{font-size:0.76rem;font-weight:700;color:var(--muted);}
 </style>
 <script src="./js/spill-utils.js"></script>
 </head>
@@ -167,7 +172,7 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
     <div style="font-size:3rem">⚖️</div>
     <h1>Balansevekten</h1>
     <p>Gjør det samme på begge sider, så holder vekten seg i balanse.</p>
-    <div class="version">v1.1</div>
+    <div class="version">v1.3</div>
     <div class="lbl">Start på nivå</div>
     <div class="level-select" id="levelSelect"></div>
     <div class="level-desc" id="levelDesc"></div>
@@ -199,7 +204,7 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
 <div class="main" id="mainArea" style="display:none">
 
   <div class="help" id="helpBox">
-    <b>Høyreklikk</b> på en blokk (eller <b>hold fingeren inne</b>) for å legge til en blokk med motsatt fortegn. Den samme blokken havner i banken og må legges i den <b>andre</b> skålen.
+    <b>Høyreklikk</b> på en blokk (eller <b>hold fingeren inne</b>) og velg <b>Lag blokker med motsatt fortegn</b>. To like blokker havner i banken. Legg <b>én i hver skål</b>, så holder vekten seg i balanse.
     Dra blokker av samme type <b>oppå hverandre</b> for å slå dem sammen eller nulle dem ut. Bruk <b>Gang</b> og <b>Del</b> for å gjøre det samme med alle ledd. Målet er å få <b>x alene</b> på én side.
     <button class="help-close" onclick="document.getElementById('helpBox').style.display='none'" aria-label="Lukk hjelp">✕</button>
   </div>
@@ -233,7 +238,7 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
     </div>
 
     <div class="bank" id="bankWrap">
-      <div class="bank-label">📦 Banken<br><span style="font-weight:700">Legg blokken herfra i den andre skålen</span></div>
+      <div class="bank-label">📦 Banken<br><span style="font-weight:700">Legg én blokk i hver skål</span></div>
       <div class="bank-blocks" id="bankBlocks"></div>
     </div>
 
@@ -433,6 +438,7 @@ function updateTilt(){
 }
 
 function render(appearIds=[],pulseIds=[]){
+  closeBlockMenu();
   ['L','R'].forEach(p=>{
     const box=document.getElementById('blocks'+p);
     box.innerHTML='';
@@ -468,7 +474,7 @@ function makeBlk(b,src,appearIds,pulseIds){
     e.preventDefault();
     if(src==='bank') return;
     cancelDrag();
-    createOpposite(b,src);
+    openBlockMenu(b,src,e.clientX,e.clientY);
   });
   return el;
 }
@@ -487,28 +493,61 @@ window.undo=function(){
   render();
 };
 
-// ── MOTSATT BLOKK ──
-function createOpposite(b,pan){
+// ── HURTIGMENY PÅ BLOKK ──
+let menuEl=null;
+function closeBlockMenu(){
+  if(menuEl){ menuEl.remove(); menuEl=null; }
+}
+function openBlockMenu(b,pan,x,y){
   if(solved||busy) return;
   if(buildPhase){say('Bygg likningen først. Trykk på en blokk for å fjerne den.','error');return;}
-  if(Date.now()-lastOpp<800) return;
-  if(bank.length){say('Legg først blokken i banken i den andre skålen.','error');return;}
+  if(Date.now()-lastOpp<800) return; // hindrer dobbel åpning ved langt trykk
   lastOpp=Date.now();
+  closeBlockMenu();
+  const opp={kind:b.kind,num:-b.num,den:b.den};
+  menuEl=document.createElement('div');
+  menuEl.className='ctx-menu';
+  menuEl.setAttribute('role','menu');
+  menuEl.innerHTML=`
+    <div class="ctx-head">Blokk: <b>${blockHTML(b)}</b></div>
+    <button class="ctx-item" role="menuitem">
+      Lag blokker med motsatt fortegn
+      <span class="ctx-preview">2 × <b>${blockHTML(opp)}</b> til banken</span>
+    </button>`;
+  menuEl.querySelector('.ctx-item').addEventListener('click',()=>{ closeBlockMenu(); createOppositePair(b); });
+  document.body.appendChild(menuEl);
+  // Hold menyen innenfor skjermen
+  const r=menuEl.getBoundingClientRect();
+  const left=Math.min(x,window.innerWidth-r.width-8), top=Math.min(y,window.innerHeight-r.height-8);
+  menuEl.style.left=Math.max(8,left)+'px';
+  menuEl.style.top=Math.max(8,top)+'px';
+  menuEl.querySelector('.ctx-item').focus();
+}
+document.addEventListener('pointerdown',e=>{ if(menuEl&&!menuEl.contains(e.target)) closeBlockMenu(); },true);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeBlockMenu(); });
+window.addEventListener('scroll',closeBlockMenu,true);
+
+// ── BLOKKPAR MED MOTSATT FORTEGN ──
+// Begge blokkene havner i banken. Eleven må legge én i hver skål.
+let pairCounter=0;
+function createOppositePair(b){
+  if(solved||busy||buildPhase) return;
+  if(bank.length){say('Legg først blokkene i banken i skålene.','error');return;}
   saveHistory();
-  const opp={id:nid(),kind:b.kind,num:-b.num,den:b.den};
-  const bk={id:nid(),kind:b.kind,num:-b.num,den:b.den,target:other(pan)};
-  pans[pan].push(opp);
-  bank.push(bk);
-  render([opp.id,bk.id]);
+  const pairId='p'+(++pairCounter);
+  const b1={id:nid(),kind:b.kind,num:-b.num,den:b.den,pairId};
+  const b2={id:nid(),kind:b.kind,num:-b.num,den:b.den,pairId};
+  bank.push(b1,b2);
+  render([b1.id,b2.id]);
   touchActivity();
-  say(`Du la ${lblText(opp)} i ${panName(pan)} skål. Hva må du gjøre med ${panName(other(pan))} skål?`,'info');
+  hint('pair',`To blokker med ${lblText(b1)} ligger i banken. Legg én i hver skål!`);
 }
 
 // ── GANGE OG DELE ──
 function canOperate(){
   if(solved||busy) return false;
   if(buildPhase){say('Bygg likningen først.','error');return false;}
-  if(bank.length){say('Legg først blokken i banken i den andre skålen.','error');return false;}
+  if(bank.length){say('Legg først blokkene i banken i skålene.','error');return false;}
   return true;
 }
 window.stepOp=function(d){
@@ -531,7 +570,7 @@ window.operate=function(t){
   });
   render([],ids);
   touchActivity();
-  say(t==='mul'?`Alle ledd på begge sider er ganget med ${v}`:`Alle ledd på begge sider er delt på ${v}`,'info');
+  hint('operate',t==='mul'?`Alle ledd på begge sider er ganget med ${v}`:`Alle ledd på begge sider er delt på ${v}`);
   checkSolved();
 };
 window.operateX=function(){
@@ -549,7 +588,7 @@ window.operateX=function(){
   });
   render([],ids);
   touchActivity();
-  say('Alle ledd på begge sider er ganget med x','info');
+  hint('mulx','Alle ledd på begge sider er ganget med x');
   checkSolved();
 };
 
@@ -595,7 +634,7 @@ function checkBuilt(){
     original={L:clone(pans.L),R:clone(pans.R)};
     taskStart=Date.now();
     render();
-    say('✅ Likningen er bygget, og vekten er i balanse. Løs den nå!','success');
+    hint('built','✅ Likningen er bygget, og vekten er i balanse. Løs den nå!','success');
   }
 }
 
@@ -608,7 +647,7 @@ function onDown(e,b,src){
   drag={b,src,el:e.currentTarget,sx:e.clientX,sy:e.clientY,moved:false,ghost:null,lp:null};
   if(e.pointerType!=='mouse'&&src!=='bank'&&!buildPhase){
     drag.lp=setTimeout(()=>{
-      if(drag&&!drag.moved){const d=drag;cancelDrag();createOpposite(d.b,d.src);}
+      if(drag&&!drag.moved){const d=drag;cancelDrag();openBlockMenu(d.b,d.src,d.sx,d.sy);}
     },550);
   }
   window.addEventListener('pointermove',onMove);
@@ -642,7 +681,7 @@ function setHover(t){
   if(!t||!drag) return;
   if(drag.src==='bank'){
     const p=t.closest('.pan-wrap');
-    if(p) p.classList.add(p.dataset.pan===drag.b.target?'drop-ok':'drop-bad');
+    if(p) p.classList.add(!drag.b.target||p.dataset.pan===drag.b.target?'drop-ok':'drop-bad');
   } else {
     const tb=t.closest('.blk');
     if(tb&&tb!==drag.el&&tb.dataset.src===drag.src) tb.classList.add('drop-hover');
@@ -685,14 +724,18 @@ function handleDrop(d,t){
   if(d.src==='bank'){
     const p=t.closest('.pan-wrap');
     if(!p) return;
-    if(p.dataset.pan!==d.b.target){invalid('Denne skålen har allerede fått blokken. Prøv den andre skålen!');return;}
+    const pan=p.dataset.pan;
+    if(d.b.target&&pan!==d.b.target){invalid('Denne skålen har allerede fått en slik blokk. Legg den i den andre skålen!');return;}
     saveHistory();
     bank=bank.filter(x=>x.id!==d.b.id);
+    // Makker-blokken i banken må nå i den andre skålen
+    bank.forEach(x=>{ if(x.pairId&&x.pairId===d.b.pairId) x.target=other(pan); });
     const nb={id:d.b.id,kind:d.b.kind,num:d.b.num,den:d.b.den};
     pans[p.dataset.pan].push(nb);
     render([],[nb.id]);
     touchActivity();
-    if(isBalanced()) say('⚖️ Likevekt igjen! Du har gjort det samme på begge sider.','success');
+    if(bank.length) hint('pairPlaced',`Vekten er i ubalanse. Legg den andre blokken i ${panName(other(pan))} skål!`);
+    else if(isBalanced()) hint('balanced','⚖️ Likevekt igjen! Du har gjort det samme på begge sider.','success');
     checkSolved();
     return;
   }
@@ -725,7 +768,7 @@ function tryCombine(p,a,b){
   pans[p]=pans[p].filter(x=>x.id!==a.id);
   render([],[nb.id]);
   touchActivity();
-  say(`${lblText(b)} og ${lblText(a)} blir til ${lblText(nb)}`,'info');
+  hint('combine',`${lblText(b)} og ${lblText(a)} blir til ${lblText(nb)}`);
   checkBuilt();
   checkSolved();
 }
@@ -792,8 +835,8 @@ function checkSolved(){
     if(x.num===1&&x.den===1){onSolved(x,O[0]);return;}
     if(!hintShown){
       hintShown=true;
-      if(x.num===-1&&x.den===1) say('Du har −x alene. Hva kan du gange begge sider med?','info');
-      else say('Nå står bare x-leddet igjen. Hva kan du gjøre med alle ledd for å få x alene?','info');
+      if(x.num===-1&&x.den===1) hint('minusX','Du har −x alene. Hva kan du gange begge sider med?');
+      else hint('xAlone','Nå står bare x-leddet igjen. Hva kan du gjøre med alle ledd for å få x alene?');
     }
   }
 }
@@ -854,6 +897,7 @@ function doSync(){
 
 // ── OPPGAVEFLYT ──
 function loadTask(){
+  taskNo++;
   const t=genTask(currentLevel);
   xValue=t.x;
   if(currentLevel===14){
@@ -884,6 +928,21 @@ window.resetTask=function(){
   startFresh();
 };
 window.nextTask=function(){cancelDrag();loadTask();};
+
+// ── HJELPETEKSTER ──
+// Hver hjelpetekst vises bare i den første oppgaven der det nye dukker opp:
+// på nivået der det introduseres (null = første gang det skjer, uansett nivå).
+// Starter eleven på et høyere nivå, vises ikke tekstene for de lavere nivåene.
+const HINT_LEVEL={pair:1,pairPlaced:1,balanced:1,combine:1,xAlone:5,operate:5,mulx:10,built:14,minusX:null};
+const hintTask={};
+let taskNo=0;
+function hint(key,msg,type='info'){
+  const lv=HINT_LEVEL[key];
+  if(lv!==null&&currentLevel!==lv) return;
+  if(hintTask[key]===undefined) hintTask[key]=taskNo;
+  if(hintTask[key]!==taskNo) return;
+  say(msg,type);
+}
 
 // ── TOAST ──
 let toastTimer=null;
