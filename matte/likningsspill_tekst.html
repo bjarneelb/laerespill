@@ -491,7 +491,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '3.1';
+const VERSION = '3.2';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
@@ -739,11 +739,14 @@ function triggerIncident(type) {
 
 async function loadIncidentTaskIntoSolver() {
   updateIncidentBadge();
+  const gen=++taskGen;
+  clearTimer();
   try {
     incidentTask = await fetchAITask(Math.min(currentLevel, 3));
   } catch(e) {
     incidentTask = generateFallback(Math.min(currentLevel, 2));
   }
+  if(gen!==taskGen) return;
   applyTask(incidentTask);
   startTimer();
   showToast('🔧 Løs denne oppgaven for å kjøre videre!','error');
@@ -845,7 +848,11 @@ function pickTemplate(level) {
 }
 
 // ── INIT GAME ──
+let taskGen=0, taskLoading=false;
 async function initGame() {
+  if(taskLoading) return; // en oppgave hentes allerede
+  taskLoading=true;
+  const gen=++taskGen;
   clearTimer();
   sides = {left:[],right:[],bank:[]};
   lastChangedId = null;
@@ -855,13 +862,17 @@ async function initGame() {
   document.getElementById('storyIcon').textContent = icons[Math.floor(Math.random()*icons.length)];
   updateLevelUI();
 
+  let task;
   try {
-    const task = await fetchAITask(currentLevel);
-    applyTask(task);
+    task = await fetchAITask(currentLevel);
   } catch(e) {
     console.warn('AI feilet:', e);
-    applyTask(generateFallback(currentLevel));
+    task = generateFallback(currentLevel);
+  } finally {
+    taskLoading=false;
   }
+  if(gen!==taskGen) return; // en nyere oppgave har tatt over
+  applyTask(task);
   startTimer();
 }
 window.initGame = initGame;
@@ -904,10 +915,16 @@ Svar KUN med gyldig JSON (ingen markdown):
   }
 }`;
 
-  const res = await fetch('/.netlify/functions/ai-proxy', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({messages:[{role:'user',content:prompt}]})
-  });
+  const ctrl = new AbortController();
+  const timeout = setTimeout(()=>ctrl.abort(), 15000);
+  let res;
+  try {
+    res = await fetch('/.netlify/functions/ai-proxy', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({messages:[{role:'user',content:prompt}]}),
+      signal: ctrl.signal
+    });
+  } finally { clearTimeout(timeout); }
   if (!res.ok) throw new Error('HTTP '+res.status);
   const data = await res.json();
   const clean = data.content[0].text.trim().replace(/```json|```/g,'').trim();
@@ -1161,7 +1178,9 @@ window.checkSolution=function(){
     showToast(msg,'success');
     builderBlocks=[];
     hasMovedBlock=false; hasOperated=false; hasBuiltBlock=false;
-    setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) initGame(); },incidentActive?0:1600);
+    clearTimer();
+    const genOk=taskGen;
+    setTimeout(()=>{ if(genOk!==taskGen) return; maybeIncident(speedRate); if(!incidentActive) initGame(); },incidentActive?0:1600);
   } else {
     adjustLevel(0);
     showToast('❌ Ikke løst ennå – prøv igjen!','error');
@@ -1181,11 +1200,20 @@ document.addEventListener('click',()=>document.getElementById('ctxMenu').style.d
 
 // ── TIMER ──
 function startTimer(){
+  clearTimer(); // aldri mer enn én tidtaker samtidig
   timerSeconds=maxSeconds;updateTimerBar();
-  timerInterval=setInterval(()=>{
+  const myId=setInterval(()=>{
+    if(timerInterval!==myId){ clearInterval(myId); return; } // gammel tidtaker: stopp den
     timerSeconds=Math.max(0,timerSeconds-1);updateTimerBar();
-    if(timerSeconds===0){clearTimer();adjustLevel(0);showToast('⏱️ Tiden er ute på denne oppgaven!','error');setTimeout(()=>initGame(),1200);}
+    if(timerSeconds===0){
+      clearTimer();
+      adjustLevel(0);
+      showToast('⏱️ Tiden er ute på denne oppgaven!','error');
+      const gen=taskGen;
+      setTimeout(()=>{ if(gen===taskGen) initGame(); },1200);
+    }
   },1000);
+  timerInterval=myId;
 }
 function clearTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}}
 function updateTimerBar(){document.getElementById('timerBar').style.width=(timerSeconds/maxSeconds*100)+'%';}
