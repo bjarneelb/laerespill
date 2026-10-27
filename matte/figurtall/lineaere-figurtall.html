@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lineære figurtall</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f4ff;--panel:#fff;--border:#dde3f0;
+  --accent:#5b4fcf;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --cell:#60a5fa;--cell-edge:#2563eb;
+  --vekst:#a78bfa;--vekst-edge:#6d28d9;
+  --fast:#fbbf24;--fast-edge:#b45309;
+  --r:14px;--shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 12px rgba(91,79,207,0.3);}
+.header-left h1{font-size:1rem;font-weight:900;}
+.header-left p{font-size:0.7rem;opacity:0.8;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.level-badge{background:rgba(255,255,255,0.2);color:white;}
+.score-badge{background:var(--yellow);color:#78350f;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+/* START */
+.overlay{position:fixed;inset:0;background:rgba(240,244,255,0.97);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:30px 32px;width:460px;max-width:100%;text-align:center;box-shadow:var(--shadow);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card p{font-size:0.88rem;color:var(--muted);font-weight:700;margin-bottom:14px;line-height:1.5;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.lbl{font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800;}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px;}
+.level-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.level-desc{font-size:0.8rem;color:var(--accent);font-weight:800;margin-bottom:12px;min-height:18px;}
+.mode-row{display:flex;gap:8px;margin-bottom:10px;}
+.mode-btn{flex:1;padding:8px;background:white;border:2px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:800;cursor:pointer;}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;outline:none;margin-bottom:10px;text-align:center;text-transform:uppercase;letter-spacing:2px;}
+.name-input:focus{border-color:var(--accent);}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.start-btn:hover{background:#4338ca;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px;gap:12px;max-width:880px;margin:0 auto;width:100%;}
+.card{width:100%;background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);}
+.task-type{font-size:0.75rem;font-weight:800;color:var(--accent);margin-bottom:4px;}
+.task-q{font-size:1.08rem;font-weight:800;line-height:1.5;margin-bottom:12px;}
+.fn{font-style:italic;font-weight:900;}
+.fn sub{font-size:0.7em;}
+
+/* FIGURER */
+.figs{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:flex-end;margin-bottom:12px;}
+.fig{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 12px 8px;border:2px solid var(--border);border-radius:12px;background:#f8faff;}
+.fig-lbl{font-size:0.8rem;font-weight:800;color:var(--muted);}
+.fig svg{display:block;}
+.legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:0.78rem;font-weight:800;color:var(--muted);margin:-4px 0 10px;}
+.sw{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;margin-right:4px;}
+
+/* SVAR */
+.answer{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:800;}
+.num-in,.txt-in{padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;outline:none;text-align:center;}
+.num-in{width:84px;}
+.txt-in{width:200px;}
+.num-in:focus,.txt-in:focus{border-color:var(--accent);}
+.ok{border-color:var(--green)!important;background:#f0fdf4;}
+.bad{border-color:var(--red)!important;background:#fef2f2;}
+.num-in::-webkit-inner-spin-button,.num-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.num-in{-moz-appearance:textfield;}
+
+.vt-wrap{max-width:100%;overflow-x:auto;}
+table.vt{border-collapse:collapse;}
+table.vt th,table.vt td{border:2px solid var(--border);padding:6px 8px;text-align:center;font-weight:800;}
+table.vt th{background:#eef2ff;color:var(--accent);min-width:46px;}
+table.vt td .num-in{width:58px;padding:6px;}
+
+.choices{display:flex;flex-direction:column;gap:8px;width:100%;max-width:360px;}
+.choice-btn{padding:10px 14px;background:white;border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;text-align:left;color:var(--text);}
+.choice-btn:not(:disabled):hover{background:#f0f4ff;border-color:var(--accent);}
+.choice-btn.ok{color:var(--green);}
+.choice-btn.bad{color:var(--red);}
+.choice-btn:disabled{cursor:default;}
+.yn{display:flex;gap:10px;}
+.yn .choice-btn{text-align:center;min-width:150px;}
+
+/* BYGGERUTENETT */
+.grid{display:grid;gap:3px;padding:8px;background:#f8faff;border:2px dashed var(--border);border-radius:12px;touch-action:manipulation;}
+.gcell{width:var(--gs);height:var(--gs);border:1.5px solid #dbe3f3;border-radius:4px;background:white;cursor:pointer;}
+.gcell.on{background:var(--cell);border-color:var(--cell-edge);}
+.build-count{font-size:0.82rem;font-weight:800;color:var(--muted);}
+
+/* TILBAKEMELDING */
+.fb{margin-top:12px;border-radius:12px;padding:12px 14px;font-weight:800;line-height:1.55;display:none;}
+.fb.err{display:block;background:#fef2f2;border:2px solid #fecaca;color:#991b1b;}
+.fb.win{display:block;background:#f0fdf4;border:2px solid #86efac;color:#14532d;}
+.fb.info{display:block;background:#eef2ff;border:2px solid #c7d2fe;color:#312e81;}
+.fb .big{font-size:1.15rem;display:block;margin-bottom:4px;}
+
+/* KONTROLLER */
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;}
+.btn-check{background:var(--accent);color:white;}
+.btn-next{background:var(--green);color:white;}
+.btn-soft{background:#f3f4f6;color:var(--muted);}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 22px;border-radius:10px;font-weight:800;font-size:0.9rem;opacity:0;transition:all .3s;z-index:1100;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);color:white;}
+.toast.error{background:var(--red);color:white;}
+.toast.info{background:var(--accent);color:white;}
+
+@media (max-width:600px){
+  .header{padding:8px 12px;}
+  .header-left p{display:none;}
+  .task-q{font-size:1rem;}
+  table.vt th,table.vt td{padding:3px;}
+  table.vt th{min-width:34px;}
+  table.vt td .num-in{width:36px;padding:5px 2px;font-size:0.95rem;}
+}
+</style>
+<script src="../js/spill-utils.js"></script>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- START -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <div style="font-size:2.6rem">🔷</div>
+    <h1>Lineære figurtall</h1>
+    <p>Finn mønsteret, regn ut figurene og lag formelen for f<sub>n</sub>.</p>
+    <div class="version">v1.0</div>
+    <div class="lbl">Start på nivå</div>
+    <div class="level-select" id="levelSelect"></div>
+    <div class="level-desc" id="levelDesc"></div>
+    <div class="mode-row">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">🏎️ Flerspiller</button>
+    </div>
+    <div id="multiOpts" style="display:none">
+      <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" autocomplete="off">
+    </div>
+    <button class="start-btn" onclick="startGame()">🚀 Start</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>🔷 Lineære figurtall</h1>
+    <p>Finn mønsteret og formelen</p>
+  </div>
+  <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
+    <span class="badge level-badge" id="levelBadge">Nivå 1</span>
+    <span class="badge score-badge" id="scoreBadge">0 p</span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+  <div class="card">
+    <div class="task-type" id="taskType"></div>
+    <div class="task-q" id="taskQ"></div>
+    <div class="figs" id="figs"></div>
+    <div class="legend" id="legend" style="display:none">
+      <span><i class="sw" style="background:var(--fast)"></i>Lik i alle figurene</span>
+      <span><i class="sw" style="background:var(--vekst)"></i>Vokser med figurnummeret</span>
+    </div>
+    <div class="answer" id="answer"></div>
+    <div class="fb" id="fb"></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-check" id="checkBtn" onclick="checkAnswer()">✅ Sjekk svar</button>
+    <button class="btn btn-soft" id="showBtn" onclick="showSolution()" style="display:none">💡 Vis løsningen</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextTask()" style="display:none">Neste oppgave ➡️</button>
+    <button class="btn btn-soft" id="skipBtn" onclick="nextTask()">⏭️ Ny oppgave</button>
+  </div>
+</div>
+
+<script>
+// ═════════════ LOGIKK (ingen DOM) ═════════════
+
+// Figurfamilier. Hver figur er en liste med ruter {x,y,role}, der role er
+// 'fast' (lik i alle figurene) eller 'vekst' (øker med figurnummeret n).
+// Antall ruter i figur n er alltid a·n + b.
+const FAMILIES={
+  rader:{ struct:true, cells(a,b,n){ // a rader som vokser + en fast søyle med b ruter
+    const c=[]; for(let y=0;y<b;y++) c.push({x:0,y,role:'fast'});
+    const x0=b>0?1:0;
+    for(let r=0;r<a;r++) for(let i=0;i<n;i++) c.push({x:x0+i,y:r,role:'vekst'});
+    return c; }},
+  taarn:{ struct:true, cells(a,b,n){ // a tårn med høyde n på en fast sokkel med b ruter
+    const c=[]; for(let i=0;i<b;i++) c.push({x:i,y:0,role:'fast'});
+    const y0=b>0?1:0;
+    for(let col=0;col<a;col++) for(let h=0;h<n;h++) c.push({x:col,y:y0+h,role:'vekst'});
+    return c; }},
+  armer:{ struct:true, cells(a,b,n){ // én fast midtrute og a armer med n ruter (b = 1)
+    const d=[[1,0],[0,1],[-1,0],[0,-1]], c=[{x:0,y:0,role:'fast'}];
+    for(let k=0;k<a;k++) for(let i=1;i<=n;i++) c.push({x:d[k][0]*i,y:d[k][1]*i,role:'vekst'});
+    return c; }},
+  ramme:{ struct:false, cells(a,b,n){ // hul firkant med side n + 1: 4n
+    const s=n+1, c=[];
+    for(let x=0;x<s;x++) for(let y=0;y<s;y++) if(x===0||y===0||x===s-1||y===s-1) c.push({x,y,role:'vekst'});
+    return c; }},
+  vinkel:{ struct:false, cells(a,b,n){ // to armer med n ruter som deler hjørnet: 2n − 1
+    const c=[]; for(let i=0;i<n;i++) c.push({x:i,y:0,role:'vekst'});
+    for(let j=1;j<n;j++) c.push({x:0,y:j,role:'vekst'});
+    return c; }},
+};
+function figCells(p,n){
+  const c=FAMILIES[p.fam].cells(p.a,p.b,n);
+  const mx=Math.min(...c.map(q=>q.x)), my=Math.min(...c.map(q=>q.y));
+  return c.map(q=>({x:q.x-mx,y:q.y-my,role:q.role}));
+}
+const fval=(p,n)=>p.a*n+p.b;
+
+const rint=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// Hvilke figurer hvert nivå bruker. needStruct: bare figurer med en tydelig fast del.
+function pickPattern(level,needStruct){
+  const L=Math.min(level,6);
+  const opts=[];
+  const rader=(aLo,aHi,bLo,bHi)=>()=>{let a=rint(aLo,aHi),b=rint(bLo,bHi); if(a===1&&b===0) b=1; return {fam:'rader',a,b};};
+  const taarn=(aLo,aHi)=>()=>{const a=rint(aLo,aHi); return {fam:'taarn',a,b:Math.random()<0.35?0:rint(a,a+3)};};
+  const armer=(aLo,aHi)=>()=>({fam:'armer',a:rint(aLo,aHi),b:1});
+  const ramme=()=>({fam:'ramme',a:4,b:0});
+  const vinkel=()=>({fam:'vinkel',a:2,b:-1});
+  if(L===1){ opts.push(rader(1,2,0,2),rader(1,2,0,2),armer(2,2)); }
+  else if(L===2){ opts.push(rader(2,3,0,4),taarn(1,3),armer(2,3)); }
+  else if(L<=4){ opts.push(rader(2,4,0,5),taarn(2,4),armer(2,4)); if(!needStruct) opts.push(ramme); }
+  else if(L===5){ opts.push(rader(2,5,0,6),taarn(2,4),armer(2,4)); if(!needStruct) opts.push(ramme,vinkel); }
+  else { opts.push(rader(3,6,1,8),taarn(2,5),armer(3,4)); if(!needStruct) opts.push(ramme,vinkel); }
+  const p=pick(opts)();
+  // Strukturoppgaver trenger en fast del å finne
+  if(needStruct&&p.b<=0) p.b=p.fam==='taarn'?rint(p.a,p.a+3):rint(1,3);
+  return p;
+}
+
+// Oppgavetyper per nivå
+const TASK_POOL={
+  1:['bygg','bygg','antall'],
+  2:['tabell','bygg','antall'],
+  3:['stor','struktur'],
+  4:['velg','struktur','rett'],
+  5:['skriv','omvendt','skriv','rett'],
+  6:['stor','velg','skriv','omvendt','rett','tabell'],
+};
+
+// Formel som tekst: 3n + 1, 4n, n + 2, 2n − 1
+function fmt(a,b){
+  const an=a===1?'n':a+'n';
+  return b>0?an+' + '+b:b<0?an+' − '+(-b):an;
+}
+
+// Tolker en formel eleven har skrevet, og returnerer en funksjon av n (eller null)
+function parseFormula(str){
+  let s=String(str||'').toLowerCase().replace(/\s+/g,'')
+    .replace(/[·×⋅]/g,'*').replace(/[−–]/g,'-').replace(/,/g,'.').replace(/ₙ/g,'n');
+  s=s.replace(/^f(_?n|\(n\))?=/,'');
+  if(!s||!/^[0-9n+\-*/().]+$/.test(s)) return null;
+  s=s.replace(/(\d|n|\))(?=[n(])/g,'$1*').replace(/\)(?=\d)/g,')*').replace(/n(?=\d)/g,'n*');
+  try{
+    const f=new Function('n','"use strict";return ('+s+');');
+    if(!Number.isFinite(f(1))) return null;
+    return f;
+  }catch(e){ return null; }
+}
+function sameFormula(f,p){
+  for(let n=1;n<=8;n++){ const v=f(n); if(!Number.isFinite(v)||Math.abs(v-fval(p,n))>1e-9) return false; }
+  return true;
+}
+
+// Feilsvar som ligner på vanlige misforståelser
+function distractors(p){
+  const {a,b}=p, cand=[[a+b,0],[a,0],[1,b],[b,a],[a,a+b],[a,b-a],[a+1,b],[a,b+1],[a-1,b]];
+  const seen=new Set([a+','+b]), out=[];
+  for(const [x,y] of shuffle(cand)){
+    if(x<1) continue;
+    const k=x+','+y; if(seen.has(k)) continue;
+    seen.add(k); out.push({a:x,b:y});
+  }
+  return out;
+}
+const sameCells=(A,B)=>{
+  if(A.length!==B.length) return false;
+  const norm=S=>{const mx=Math.min(...S.map(q=>q.x)),my=Math.min(...S.map(q=>q.y));
+    return S.map(q=>(q.x-mx)+','+(q.y-my)).sort().join('|');};
+  return norm(A)===norm(B);
+};
+
+// Lager en oppgave for et nivå
+const NAMES=['Ola','Emma','Noah','Sofia','Lucas','Leah','Mia','Jonas','Ida','Elias','Nora','Ali'];
+function makeTask(level){
+  const type=pick(TASK_POOL[Math.min(level,6)]);
+  const p=pickPattern(level,type==='struktur');
+  const t={type,p,level,shown:[1,2,3]};
+  if(type==='antall'){ t.N=level<=1?4:rint(4,6); }
+  if(type==='stor'){ t.N=level<=3?pick([10,12,15,20]):pick([20,25,50,100]); }
+  if(type==='omvendt'){ t.N=rint(8,level>=6?40:25); t.X=fval(p,t.N); }
+  if(type==='velg'){ t.opts=shuffle([{a:p.a,b:p.b,right:true},...distractors(p).slice(0,3)]); }
+  if(type==='rett'){
+    t.name=pick(NAMES);
+    t.truth=Math.random()<0.5;
+    if(t.truth){ t.claim=(p.b===p.a&&p.a>1)?p.a+'(n + 1)':fmt(p.a,p.b); }
+    else { const d=distractors(p)[0]; t.claim=fmt(d.a,d.b); t.wrongP=d; }
+  }
+  t.colored=type==='struktur'&&level<=3;
+  return t;
+}
+
+// ═════════════ SPILL OG VISNING ═════════════
+const LEVELS={
+  1:{name:'Nivå 1',desc:'Fortsett mønsteret og bygg neste figur'},
+  2:{name:'Nivå 2',desc:'Tabell og økning fra figur til figur'},
+  3:{name:'Nivå 3',desc:'Store figurer og hva som er likt i alle figurene'},
+  4:{name:'Nivå 4',desc:'Velg riktig formel for fₙ'},
+  5:{name:'Nivå 5',desc:'Skriv formelen selv, og finn figuren baklengs'},
+  6:{name:'Nivå 6',desc:'Blanding med større tall'},
+};
+const MIN_LEVEL=1, MAX_LEVEL=6;
+let currentLevel=1, currentScore=0, gameMode='practice';
+let streak=0, errorStreak=0;
+let task=null, taskStart=0, tries=0, done=false, buildSet=new Set();
+
+// Rapport til læreren
+const tcLv=levelTracker(), tcSessionStart=Date.now();
+let tcCorrect=0, tcWrong=0;
+function syncTC(){
+  tcLv.note(currentLevel);
+  syncToTimecode('figurtall-lineaere',{level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSessionStart});
+}
+
+const $=id=>document.getElementById(id);
+const fnHTML='<span class="fn">f<sub>n</sub></span>';
+const fHTML=n=>`<span class="fn">f<sub>${n}</sub></span>`;
+
+// ── TEGNING AV FIGURER ──
+function figSVG(p,n,cs,colored){
+  const cells=figCells(p,n);
+  const W=Math.max(...cells.map(c=>c.x))+1, H=Math.max(...cells.map(c=>c.y))+1;
+  const pad=2;
+  let r='';
+  cells.forEach(c=>{
+    const fill=colored?(c.role==='fast'?'var(--fast)':'var(--vekst)'):'var(--cell)';
+    const edge=colored?(c.role==='fast'?'var(--fast-edge)':'var(--vekst-edge)'):'var(--cell-edge)';
+    r+=`<rect x="${pad+c.x*cs+1}" y="${pad+(H-1-c.y)*cs+1}" width="${cs-2}" height="${cs-2}" rx="3" fill="${fill}" stroke="${edge}" stroke-width="1.5"/>`;
+  });
+  return `<svg width="${W*cs+pad*2}" height="${H*cs+pad*2}" role="img" aria-label="Figur ${n} med ${cells.length} ruter">${r}</svg>`;
+}
+function cellSize(p,ns){
+  let maxW=1,maxH=1;
+  ns.forEach(n=>{const c=figCells(p,n); maxW=Math.max(maxW,Math.max(...c.map(q=>q.x))+1); maxH=Math.max(maxH,Math.max(...c.map(q=>q.y))+1);});
+  const room=Math.max(160,Math.min(260,(window.innerWidth-80)/ns.length));
+  return Math.max(9,Math.min(24,Math.floor(room/maxW),Math.floor(170/maxH)));
+}
+function drawFigs(ns,colored){
+  const cs=cellSize(task.p,ns);
+  $('figs').innerHTML=ns.map(n=>`<div class="fig">${figSVG(task.p,n,cs,colored)}<div class="fig-lbl">Figur ${n}</div></div>`).join('');
+  $('legend').style.display=colored?'':'none';
+}
+
+// ── OPPGAVER ──
+const TYPE_LABEL={bygg:'🧱 Bygg neste figur',antall:'🔢 Tell og fortsett',tabell:'📋 Fyll ut tabellen',
+  stor:'🔭 Store figurer',struktur:'🔍 Se strukturen',velg:'🔤 Velg formel',skriv:'✏️ Skriv formelen',
+  omvendt:'🔁 Baklengs',rett:'🤔 Hvem har rett?'};
+
+function renderTask(){
+  const t=task, p=t.p;
+  tries=0; done=false; taskStart=Date.now();
+  $('taskType').textContent=TYPE_LABEL[t.type];
+  $('fb').className='fb'; $('fb').innerHTML='';
+  $('checkBtn').style.display=(t.type==='velg'||t.type==='rett')?'none':'';
+  $('checkBtn').disabled=false;
+  $('showBtn').style.display='none';
+  $('nextBtn').style.display='none';
+  $('skipBtn').style.display='';
+  drawFigs(t.shown,t.colored);
+  const A=$('answer');
+  if(t.type==='bygg'){
+    $('taskQ').innerHTML='Se på mønsteret. Bygg <b>figur 4</b> ved å klikke på rutene.';
+    const target=figCells(p,4);
+    const W=Math.max(...target.map(c=>c.x))+3, H=Math.max(...target.map(c=>c.y))+3;
+    const gs=Math.max(20,Math.min(34,Math.floor((Math.min(window.innerWidth,860)-80)/W)));
+    buildSet=new Set();
+    let h=`<div class="grid" id="grid" style="--gs:${gs}px;grid-template-columns:repeat(${W},var(--gs))">`;
+    for(let y=H-1;y>=0;y--) for(let x=0;x<W;x++) h+=`<button class="gcell" data-k="${x},${y}" aria-label="Rute ${x+1},${y+1}"></button>`;
+    h+='</div><div class="build-count" id="buildCount">0 ruter</div>';
+    A.innerHTML=h;
+    A.querySelectorAll('.gcell').forEach(b=>b.addEventListener('click',()=>{
+      if(done) return;
+      const k=b.dataset.k;
+      if(buildSet.has(k)){buildSet.delete(k);b.classList.remove('on');} else {buildSet.add(k);b.classList.add('on');}
+      $('buildCount').textContent=buildSet.size+' ruter';
+    }));
+    $('buildCount').style.visibility='hidden';
+  } else if(t.type==='antall'||t.type==='stor'){
+    $('taskQ').innerHTML=`Hvor mange ruter har <b>figur ${t.N}</b>?`;
+    A.innerHTML=`<div class="row">${fHTML(t.N)} = <input class="num-in" id="in1" type="number" inputmode="numeric"></div>`;
+  } else if(t.type==='tabell'){
+    $('taskQ').innerHTML='Fyll ut tabellen. Hvor mange ruter kommer til fra én figur til den neste?';
+    let h='<div class="vt-wrap"><table class="vt"><tr><th>n</th>'; for(let n=1;n<=6;n++) h+=`<th>${n}</th>`;
+    h+=`</tr><tr><th>${fnHTML}</th>`; for(let n=1;n<=6;n++) h+=`<td><input class="num-in" id="tb${n}" type="number" inputmode="numeric" aria-label="f${n}"></td>`;
+    h+='</tr></table></div><div class="row">Økning per figur: <input class="num-in" id="in1" type="number" inputmode="numeric"></div>';
+    A.innerHTML=h;
+  } else if(t.type==='struktur'){
+    $('taskQ').innerHTML=t.colored
+      ?'Se på fargene. Noe er likt i alle figurene, og noe vokser.'
+      :'Se på figurene. Hva er likt i alle figurene, og hva vokser?';
+    A.innerHTML=`<div class="row">Hvor mange ruter kommer til for hver ny figur? <input class="num-in" id="in1" type="number" inputmode="numeric"></div>
+      <div class="row">Hvor mange ruter er like i alle figurene? <input class="num-in" id="in2" type="number" inputmode="numeric"></div>`;
+  } else if(t.type==='velg'){
+    $('taskQ').innerHTML=`Hvilken formel gir antall ruter i figur n?`;
+    A.innerHTML='<div class="choices">'+t.opts.map((o,i)=>`<button class="choice-btn" data-i="${i}">${fnHTML} = ${fmt(o.a,o.b)}</button>`).join('')+'</div>';
+    A.querySelectorAll('.choice-btn').forEach(b=>b.addEventListener('click',()=>answerChoice(b)));
+  } else if(t.type==='skriv'){
+    $('taskQ').innerHTML=`Skriv en formel for antall ruter i figur n.`;
+    A.innerHTML=`<div class="row">${fnHTML} = <input class="txt-in" id="in1" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="f.eks. 2n + 3"></div>`;
+  } else if(t.type==='omvendt'){
+    $('taskQ').innerHTML=`Mønsteret fortsetter. Hvilken figur har <b>${t.X} ruter</b>?`;
+    A.innerHTML=`<div class="row">Figur nummer <input class="num-in" id="in1" type="number" inputmode="numeric"></div>`;
+  } else if(t.type==='rett'){
+    $('taskQ').innerHTML=`${t.name} sier at formelen for figurene er <b>${fnHTML} = ${t.claim}</b>. Stemmer det?`;
+    A.innerHTML=`<div class="yn"><button class="choice-btn" data-v="1">✓ Ja, det stemmer</button><button class="choice-btn" data-v="0">✗ Nei, det stemmer ikke</button></div>`;
+    A.querySelectorAll('.choice-btn').forEach(b=>b.addEventListener('click',()=>answerYN(b)));
+  }
+  const first=A.querySelector('input'); if(first) first.focus();
+}
+
+const numVal=id=>{const el=$(id); const v=el?parseFloat(String(el.value).replace(',','.')):NaN; return v;};
+const mark=(id,ok)=>{const el=$(id); if(el){el.classList.remove('ok','bad'); el.classList.add(ok?'ok':'bad');}};
+
+window.checkAnswer=function(){
+  if(done||!task) return;
+  const t=task, p=t.p;
+  let ok=false, hint='';
+  if(t.type==='bygg'){
+    const cells=[...buildSet].map(k=>{const [x,y]=k.split(',').map(Number); return {x,y};});
+    const target=figCells(p,4);
+    ok=sameCells(cells,target);
+    if(!ok){
+      $('buildCount').style.visibility='';
+      hint=cells.length===target.length
+        ?'Riktig antall ruter, men formen stemmer ikke helt. Se hvordan figurene vokser.'
+        :`Du har ${cells.length} ruter. Hvor mange ruter kom til fra figur 2 til figur 3? Like mange skal komme til igjen.`;
+    }
+  } else if(t.type==='antall'||t.type==='stor'){
+    ok=numVal('in1')===fval(p,t.N); mark('in1',ok);
+    if(!ok) hint=t.type==='antall'
+      ?'Tell ruter i figur 1, 2 og 3. Hvor mange kommer til hver gang?'
+      :`Tegning tar for lang tid her. Hvor mange ruter kommer til for hver figur, og hvor mange er det i figur 1?`;
+  } else if(t.type==='tabell'){
+    ok=true;
+    for(let n=1;n<=6;n++){ const r=numVal('tb'+n)===fval(p,n); mark('tb'+n,r); if(!r) ok=false; }
+    const r=numVal('in1')===p.a; mark('in1',r); if(!r) ok=false;
+    if(!ok) hint='Tell de tre første figurene, og fortsett med samme økning hver gang. Røde felt er feil.';
+  } else if(t.type==='struktur'){
+    const r1=numVal('in1')===p.a, r2=numVal('in2')===p.b;
+    mark('in1',r1); mark('in2',r2); ok=r1&&r2;
+    if(!ok) hint=!r1?'Sammenlign figur 1 og figur 2: hvor mange ruter er nye?':'Finn rutene som står på samme sted i alle tre figurene.';
+  } else if(t.type==='skriv'){
+    const f=parseFormula($('in1').value);
+    if(!f){ $('fb').className='fb err'; $('fb').innerHTML='Formelen kan bare inneholde tall, n, +, −, · og parenteser. For eksempel <b>3n + 2</b>.'; return; }
+    ok=sameFormula(f,p); mark('in1',ok);
+    if(!ok){
+      const n=[1,2,3].find(k=>Math.abs(f(k)-fval(p,k))>1e-9)||1;
+      hint=`Formelen din gir ${fHTML(n)} = ${+f(n).toFixed(2)}, men figur ${n} har ${fval(p,n)} ruter.`;
+    }
+  } else if(t.type==='omvendt'){
+    ok=numVal('in1')===t.N; mark('in1',ok);
+    if(!ok) hint=`Finn formelen først. Hvilken n gir ${fnHTML} = ${t.X}?`;
+  }
+  ok?onRight():onWrong(hint);
+};
+
+function answerChoice(btn){
+  if(done) return;
+  const o=task.opts[+btn.dataset.i];
+  if(o.right){
+    btn.classList.add('ok');
+    document.querySelectorAll('#answer .choice-btn').forEach(b=>b.disabled=true);
+    onRight();
+  } else {
+    btn.classList.add('bad'); btn.disabled=true;
+    const v=[1,2,3].map(n=>o.a*n+o.b);
+    onWrong(`Den formelen gir ${v.join(', ')} ruter for figur 1, 2 og 3. Stemmer det med figurene?`);
+  }
+}
+function answerYN(btn){
+  if(done) return;
+  const t=task, said=btn.dataset.v==='1', ok=said===t.truth;
+  document.querySelectorAll('#answer .choice-btn').forEach(b=>b.disabled=true);
+  btn.classList.add(ok?'ok':'bad');
+  if(ok){ onRight(); return; }
+  // Én sjanse på ja/nei: vis forklaringen med en gang
+  registerWrong();
+  finishTask(false, claimExplanation());
+}
+function claimExplanation(){
+  const t=task, p=t.p;
+  if(t.truth) return `Formelen stemmer: den gir ${[1,2,3].map(n=>fval(p,n)).join(', ')} ruter, akkurat som figur 1, 2 og 3.`;
+  const q=t.wrongP, n=[1,2,3].find(k=>q.a*k+q.b!==fval(p,k))||1;
+  return `Formelen til ${t.name} gir ${fHTML(n)} = ${q.a*n+q.b}, men figur ${n} har ${fval(p,n)} ruter.`;
+}
+
+// ── RIKTIG / FEIL ──
+let firstWrongCounted=false;
+function registerWrong(){
+  tcWrong++;
+  if(!firstWrongCounted){ firstWrongCounted=true; SU.recordResult(false); }
+  syncTC();
+}
+function onWrong(hint){
+  tries++;
+  registerWrong();
+  $('fb').className='fb err';
+  $('fb').innerHTML='✗ Ikke helt. '+hint;
+  if(tries>=2) $('showBtn').style.display='';
+}
+function onRight(){
+  const elapsed=(Date.now()-taskStart)/1000;
+  const bonus=Math.max(10,Math.round(Math.max(20,100+currentLevel*15-elapsed)-tries*15));
+  currentScore+=bonus;
+  $('scoreBadge').textContent=currentScore+' p';
+  tcCorrect++;
+  if(tries===0) SU.recordResult(true);
+  syncTC();
+  if(gameMode==='multi') syncRoomScore(currentScore);
+  finishTask(true,`+${bonus} poeng`);
+}
+function finishTask(won,extra){
+  done=true;
+  const t=task, p=t.p, struct=FAMILIES[p.fam].struct&&p.b>0;
+  let why='';
+  if(p.fam==='ramme') why='Rammen har fire sider. Hver side har n ruter når vi ikke teller et hjørne to ganger.';
+  else if(p.fam==='vinkel') why='To armer med n ruter hver, men hjørneruta er med i begge armene. Derfor trekker vi fra 1.';
+  else if(struct) why=`For hver ny figur kommer det til ${p.a} ruter. ${p.b} ${p.b===1?'rute er lik':'ruter er like'} i alle figurene.`;
+  else why=`For hver ny figur kommer det til ${p.a} ruter.`;
+  if(struct) drawFigs(t.shown,true);
+  $('fb').className='fb '+(won?'win':'info');
+  $('fb').innerHTML=`<span class="big">${won?'⭐ Riktig! '+extra:'💡 '+extra}</span>${fnHTML} = ${fmt(p.a,p.b)}. ${why}`;
+  $('checkBtn').style.display='none';
+  $('showBtn').style.display='none';
+  $('skipBtn').style.display='none';
+  $('nextBtn').style.display='';
+  $('nextBtn').focus();
+}
+window.showSolution=function(){
+  if(done) return;
+  const t=task, p=t.p;
+  let ans='';
+  if(t.type==='bygg'){
+    const target=new Set(figCells(p,4).map(c=>c.x+','+c.y));
+    document.querySelectorAll('.gcell').forEach(b=>b.classList.toggle('on',target.has(b.dataset.k)));
+    ans=`Figur 4 har ${fval(p,4)} ruter.`;
+  } else if(t.type==='antall'||t.type==='stor') ans=`Figur ${t.N} har ${fval(p,t.N)} ruter.`;
+  else if(t.type==='tabell') ans='Tabellen: '+[1,2,3,4,5,6].map(n=>fval(p,n)).join(', ')+'. Økningen er '+p.a+'.';
+  else if(t.type==='struktur') ans=`Det kommer til ${p.a} ruter for hver figur, og ${p.b} er like i alle.`;
+  else if(t.type==='omvendt') ans=`Figur ${t.N} har ${t.X} ruter, fordi ${p.a}·${t.N}${p.b>=0?' + '+p.b:' − '+(-p.b)} = ${t.X}.`;
+  else if(t.type==='velg'){ document.querySelectorAll('#answer .choice-btn').forEach((b,i)=>{b.disabled=true; if(task.opts[i].right) b.classList.add('ok');}); ans='Riktig formel er markert.'; }
+  else ans='Løsningen:';
+  finishTask(false,ans);
+};
+
+// ── FLYT ──
+window.nextTask=function(){
+  firstWrongCounted=false;
+  task=makeTask(currentLevel);
+  renderTask();
+};
+function selectLevelDesc(){ $('levelDesc').textContent=LEVELS[currentLevel].desc; }
+window.startGame=function(){
+  if(gameMode==='multi'){
+    const rc=$('roomInput').value.trim().toUpperCase();
+    if(!rc){ showToast('Skriv inn romkoden','error'); return; }
+    initRoom(rc);
+  }
+  $('levelBadge').textContent=LEVELS[currentLevel].name;
+  $('startScreen').style.display='none';
+  $('mainArea').style.display='flex';
+  nextTask();
+  syncTC();
+};
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||$('mainArea').style.display==='none') return;
+  if(e.target&&e.target.tagName==='BUTTON') return; // knappen håndterer Enter selv
+  if(done) nextTask(); else if($('checkBtn').style.display!=='none') checkAnswer();
+});
+buildLevelSelect();
+$('levelSelect').addEventListener('click',selectLevelDesc);
+selectLevelDesc();
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get } from "../js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._fbReady=true;
+</script>
+</body>
+</html>
