@@ -191,7 +191,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   <div class="start-card">
     <h1>🏭 Funksjonsfabrikken</h1>
     <p>Bygg funksjoner av blokker og se hva som skjer inne i fabrikken!</p>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.16</div>
+    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">v2.17</div>
     <div class="mode-row">
       <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
       <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')">⏱️ Enkeltspiller</button>
@@ -1186,8 +1186,7 @@ function newTask(){
 
 window.startGame=function(){
   const session=getActiveSession();
-  playerName=session?.name||document.getElementById('nameInput').value.trim()||'Spiller';
-  if(session?.name) document.getElementById('nameInput').value=session.name;
+  playerName=window.playerName||'Spiller'; // kallenavn, aldri det ekte navnet
   if(gameMode==='solo') timedMinutes=parseInt(document.getElementById('timedMin').value)||5;
   if(gameMode==='multi') roomCode=document.getElementById('roomInput').value.trim().toUpperCase();
   if(gameMode==='solo') roomCode='SOLO-'+playerName.replace(/\s+/g,'-').toUpperCase().slice(0,10);

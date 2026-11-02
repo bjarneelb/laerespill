@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arealruter</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f4ff;--panel:#fff;--border:#dde3f0;
+  --accent:#0891b2;--accent-dark:#0e7490;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --fill:#93c5fd;--edge:#1d4ed8;--sel:#fbbf24;--sel-edge:#b45309;
+  --r:14px;--shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 12px rgba(8,145,178,0.3);}
+.header-left h1{font-size:1rem;font-weight:900;}
+.header-left p{font-size:0.7rem;opacity:0.85;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.level-badge{background:rgba(255,255,255,0.2);color:white;}
+.score-badge{background:var(--yellow);color:#78350f;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+/* START */
+.overlay{position:fixed;inset:0;background:rgba(240,244,255,0.97);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:30px 32px;width:460px;max-width:100%;text-align:center;box-shadow:var(--shadow);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card p{font-size:0.88rem;color:var(--muted);font-weight:700;margin-bottom:14px;line-height:1.5;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.lbl{font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800;}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px;}
+.level-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.level-desc{font-size:0.8rem;color:var(--accent);font-weight:800;margin-bottom:12px;min-height:18px;}
+.mode-row{display:flex;gap:8px;margin-bottom:10px;}
+.mode-btn{flex:1;padding:8px;background:white;border:2px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:800;cursor:pointer;}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;outline:none;margin-bottom:10px;text-align:center;text-transform:uppercase;letter-spacing:2px;}
+.name-input:focus{border-color:var(--accent);}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.start-btn:hover{background:var(--accent-dark);}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px;gap:12px;max-width:880px;margin:0 auto;width:100%;}
+.card{width:100%;background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);}
+.task-type{font-size:0.75rem;font-weight:800;color:var(--accent);margin-bottom:4px;}
+.task-q{font-size:1.08rem;font-weight:800;line-height:1.5;margin-bottom:12px;}
+.hintbox{background:#ecfeff;border:2px solid #a5f3fc;color:#155e75;border-radius:12px;padding:10px 14px;font-weight:800;font-size:0.9rem;line-height:1.5;margin-bottom:12px;display:none;}
+.hintbox.show{display:block;}
+
+/* FIGUR */
+.figwrap{display:flex;justify-content:center;margin-bottom:12px;max-width:100%;overflow-x:auto;}
+.figwrap svg{display:block;background:#f8faff;border:2px solid var(--border);border-radius:12px;}
+
+/* MARKERINGSRUTENETT */
+.mgrid{display:grid;gap:2px;padding:8px;background:#f8faff;border:2px dashed var(--border);border-radius:12px;touch-action:none;user-select:none;-webkit-user-select:none;}
+.mcell{width:var(--gs);height:var(--gs);border:1.5px solid #dbe3f3;border-radius:3px;background:white;cursor:pointer;padding:0;}
+.mcell.on{background:var(--sel);border-color:var(--sel-edge);}
+.mcell.anchor{outline:3px solid var(--sel-edge);outline-offset:-3px;}
+.mcell.sol{background:#86efac;border-color:#15803d;}
+.mstat{font-size:0.85rem;font-weight:800;color:var(--muted);min-height:20px;text-align:center;}
+
+/* SVAR */
+.answer{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:800;}
+.num-in{padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;outline:none;text-align:center;width:90px;}
+.num-in:focus{border-color:var(--accent);}
+.inl{display:grid;grid-template-columns:auto auto auto;gap:8px 10px;align-items:center;font-weight:800;}
+.inl .u{color:var(--muted);font-size:0.9rem;}
+.ok{border-color:var(--green)!important;background:#f0fdf4;}
+.bad{border-color:var(--red)!important;background:#fef2f2;}
+
+/* TILBAKEMELDING */
+.fb{margin-top:12px;border-radius:12px;padding:12px 14px;font-weight:800;line-height:1.55;display:none;}
+.fb.err{display:block;background:#fef2f2;border:2px solid #fecaca;color:#991b1b;}
+.fb.win{display:block;background:#f0fdf4;border:2px solid #86efac;color:#14532d;}
+.fb.info{display:block;background:#eef2ff;border:2px solid #c7d2fe;color:#312e81;}
+.fb .big{font-size:1.15rem;display:block;margin-bottom:4px;}
+
+/* KONTROLLER */
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;}
+.btn-check{background:var(--accent);color:white;}
+.btn-next{background:var(--green);color:white;}
+.btn-soft{background:#f3f4f6;color:var(--muted);}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 22px;border-radius:10px;font-weight:800;font-size:0.9rem;opacity:0;transition:all .3s;z-index:1100;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);color:white;}
+.toast.error{background:var(--red);color:white;}
+.toast.info{background:var(--accent);color:white;}
+
+@media (max-width:600px){
+  .header{padding:8px 12px;}
+  .header-left p{display:none;}
+  .task-q{font-size:1rem;}
+  .card{padding:12px;}
+}
+</style>
+<script src="../js/spill-utils.js"></script>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- START -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <div style="font-size:2.6rem">🟦</div>
+    <h1>Arealruter</h1>
+    <p>Tell ruter, merk av figurer og finn arealet på rutenettet.</p>
+    <div class="version">v1.0</div>
+    <div class="lbl">Start på nivå</div>
+    <div class="level-select" id="levelSelect"></div>
+    <div class="level-desc" id="levelDesc"></div>
+    <div class="mode-row">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">🏎️ Flerspiller</button>
+    </div>
+    <div id="multiOpts" style="display:none">
+      <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" autocomplete="off">
+    </div>
+    <button class="start-btn" onclick="startGame()">🚀 Start</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>🟦 Arealruter</h1>
+    <p>Areal på rutenett</p>
+  </div>
+  <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
+    <span class="badge level-badge" id="levelBadge">Nivå 1</span>
+    <span class="badge score-badge" id="scoreBadge">0 p</span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+  <div class="card">
+    <div class="task-type" id="taskType"></div>
+    <div class="task-q" id="taskQ"></div>
+    <div class="hintbox" id="hintBox"></div>
+    <div class="figwrap" id="fig"></div>
+    <div class="answer" id="answer"></div>
+    <div class="fb" id="fb"></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-check" id="checkBtn" onclick="checkAnswer()">✅ Sjekk svar</button>
+    <button class="btn btn-soft" id="showBtn" onclick="showSolution()" style="display:none">💡 Vis løsningen</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextTask()" style="display:none">Neste oppgave ➡️</button>
+    <button class="btn btn-soft" id="skipBtn" onclick="nextTask()">⏭️ Ny oppgave</button>
+  </div>
+</div>
+
+<script>
+// ═════════════ LOGIKK (ingen DOM) ═════════════
+const rint=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const fmtN=v=>String(Math.round(v*1000)/1000).replace('.',',');
+
+// Areal av mangekant (skolissformelen)
+function polyArea(pts){
+  let s=0;
+  for(let i=0;i<pts.length;i++){const [x1,y1]=pts[i],[x2,y2]=pts[(i+1)%pts.length]; s+=x1*y2-x2*y1;}
+  return Math.abs(s)/2;
+}
+const shapeArea=sh=>polyArea(sh.outer)-(sh.hole?polyArea(sh.hole):0);
+
+// Hvor mye av ruta (x,y)–(x+1,y+1) som ligger inni mangekanten (klipping mot ruta)
+function clipArea(pts,x,y){
+  const sides=[
+    [p=>p[0]>=x-1e-9,(a,b)=>{const t=(x-a[0])/(b[0]-a[0]);return [x,a[1]+t*(b[1]-a[1])];}],
+    [p=>p[0]<=x+1+1e-9,(a,b)=>{const t=(x+1-a[0])/(b[0]-a[0]);return [x+1,a[1]+t*(b[1]-a[1])];}],
+    [p=>p[1]>=y-1e-9,(a,b)=>{const t=(y-a[1])/(b[1]-a[1]);return [a[0]+t*(b[0]-a[0]),y];}],
+    [p=>p[1]<=y+1+1e-9,(a,b)=>{const t=(y+1-a[1])/(b[1]-a[1]);return [a[0]+t*(b[0]-a[0]),y+1];}],
+  ];
+  let out=pts;
+  for(const [inside,cut] of sides){
+    const inp=out; out=[];
+    if(!inp.length) break;
+    for(let i=0;i<inp.length;i++){
+      const cur=inp[i], prev=inp[(i+inp.length-1)%inp.length];
+      if(inside(cur)){ if(!inside(prev)) out.push(cut(prev,cur)); out.push(cur); }
+      else if(inside(prev)) out.push(cut(prev,cur));
+    }
+  }
+  return out.length>=3?polyArea(out):0;
+}
+// Teller hele og halve ruter i en figur
+function cellCounts(sh){
+  const xs=sh.outer.map(p=>p[0]), ys=sh.outer.map(p=>p[1]);
+  let full=0,half=0,other=0;
+  for(let x=Math.min(...xs);x<Math.max(...xs);x++) for(let y=Math.min(...ys);y<Math.max(...ys);y++){
+    const c=clipArea(sh.outer,x,y)-(sh.hole?clipArea(sh.hole,x,y):0);
+    if(c>1-1e-6) full++; else if(Math.abs(c-0.5)<1e-6) half++; else if(c>1e-6) other++;
+  }
+  return {full,half,other};
+}
+
+// Flytter figuren så minste x og y blir 0, og speiler den eventuelt
+function normalize(sh,flipX,flipY){
+  const tf=pts=>pts&&pts.map(([x,y])=>[flipX?-x:x,flipY?-y:y]);
+  let o=tf(sh.outer), h=tf(sh.hole);
+  const mx=Math.min(...o.map(p=>p[0])), my=Math.min(...o.map(p=>p[1]));
+  const mv=pts=>pts&&pts.map(([x,y])=>[x-mx,y-my]);
+  return {...sh,outer:mv(o),hole:mv(h),helpers:(sh.helpers||[]).map(hp=>({...hp,pts:mv(tf(hp.pts))}))};
+}
+const rect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+
+// ── Generatorer ──
+// Tilfeldig sammenhengende rutefigur (polyomino)
+function genPolyomino(n){
+  const set=new Set(['0,0']), cells=[[0,0]];
+  while(cells.length<n){
+    const [x,y]=pick(cells), [dx,dy]=pick([[1,0],[-1,0],[0,1],[0,-1]]);
+    const nx=x+dx, ny=y+dy, k=nx+','+ny;
+    if(set.has(k)||nx<-3||nx>3||ny<-2||ny>2) continue;
+    set.add(k); cells.push([nx,ny]);
+  }
+  const mx=Math.min(...cells.map(c=>c[0])), my=Math.min(...cells.map(c=>c[1]));
+  return cells.map(([x,y])=>[x-mx,y-my]);
+}
+
+// Merk av: krav til rektangelet eleven skal markere
+const MW=12, MH=8;
+function factorPairs(A){const r=[];for(let w=1;w<=MW;w++) if(A%w===0&&A/w<=MH) r.push([w,A/w]);return r;}
+function genMerk(level){
+  const kinds=level<=2?['rekt','rekt','kvadrat']:['rekt','kvadrat','side','ikkekv'];
+  const kind=pick(kinds);
+  if(kind==='kvadrat'){ const s=rint(2,level<=2?5:7); return {kind,A:s*s}; }
+  if(kind==='ikkekv'){ return {kind,A:pick([16,36,24,12,18])}; }
+  let A; do{ A=rint(level<=2?6:12,level<=2?24:40); }while(factorPairs(A).filter(([w,h])=>w>1&&h>1).length<1);
+  if(kind==='side'){ const ps=factorPairs(A).filter(([w,h])=>w>1&&h>1); const [w,h]=pick(ps); return {kind,A,side:pick([w,h])}; }
+  return {kind,A};
+}
+function checkMerk(spec,w,h){
+  if(!w||!h) return {ok:false,why:'Merk av et rektangel først.'};
+  if(w*h!==spec.A) return {ok:false,why:`Figuren din er ${w} · ${h} = ${w*h} ruter. Den skal ha ${spec.A} ruter.`};
+  if(spec.kind==='kvadrat'&&w!==h) return {ok:false,why:`Riktig areal, men et kvadrat har like lange sider. Ditt er ${w} og ${h} ruter.`};
+  if(spec.kind==='ikkekv'&&w===h) return {ok:false,why:'Riktig areal, men dette er et kvadrat. Finn et rektangel der sidene er ulike.'};
+  if(spec.kind==='side'&&w!==spec.side&&h!==spec.side) return {ok:false,why:`Riktig areal, men ingen av sidene er ${spec.side} ruter lang.`};
+  return {ok:true};
+}
+function merkSolution(spec){
+  const ps=factorPairs(spec.A).filter(([w,h])=>
+    spec.kind==='kvadrat'?w===h:spec.kind==='ikkekv'?w!==h:spec.kind==='side'?(w===spec.side||h===spec.side):true);
+  ps.sort((a,b)=>Math.abs(a[0]-a[1])-Math.abs(b[0]-b[1]));
+  return ps[0];
+}
+
+// Nivå 4: figurer med halve ruter (bare vannrette, loddrette og 45° kanter)
+function genHalve(){
+  const t=pick(['tri','tak','hjorne','para','diamant']);
+  let sh;
+  if(t==='tri'){const k=rint(2,6); sh={outer:[[0,0],[k,0],[0,k]],name:'trekant'};}
+  else if(t==='tak'){const k=rint(1,3),h=rint(1,4); sh={outer:[[0,0],[2*k,0],[2*k,h],[k,h+k],[0,h]],name:'hus'};}
+  else if(t==='hjorne'){const W=rint(3,7),H=rint(3,6),k=rint(1,Math.min(W,H)-1); sh={outer:[[0,0],[W,0],[W,H-k],[W-k,H],[0,H]],name:'figur'};}
+  else if(t==='para'){const b=rint(2,5),h=rint(1,4); sh={outer:[[0,0],[b,0],[b+h,h],[h,h]],name:'parallellogram'};}
+  else {const k=rint(1,3); sh={outer:[[k,0],[2*k,k],[k,2*k],[0,k]],name:'rombe'};}
+  return normalize(sh,Math.random()<0.5,t==='tri'&&Math.random()<0.5);
+}
+
+// Nivå 5: trekant, parallellogram og trapes med vannrett grunnlinje
+function genSkraa(){
+  const t=pick(['trekant','trekant','parallellogram','trapes']);
+  if(t==='trekant'){
+    const g=rint(2,8), h=rint(2,6), ax=Math.random()<0.25?pick([-2,-1,g+1,g+2]):rint(0,g);
+    const helpers=[{kind:'height',pts:[[ax,h],[ax,0]]}];
+    if(ax<0) helpers.push({kind:'ext',pts:[[ax,0],[0,0]]});
+    if(ax>g) helpers.push({kind:'ext',pts:[[g,0],[ax,0]]});
+    return {...normalize({outer:[[0,0],[g,0],[ax,h]],helpers},false,false),type:t,g,h,ask:['g','h']};
+  }
+  if(t==='parallellogram'){
+    const g=rint(2,7), h=rint(2,5); let s=rint(-3,3); if(s===0) s=2;
+    const hx=s>0?s:0;
+    return {...normalize({outer:[[0,0],[g,0],[g+s,h],[s,h]],helpers:[{kind:'height',pts:[[s,h],[s,0]]}].concat(s<0?[{kind:'ext',pts:[[s,0],[0,0]]}]:[])},false,false),type:t,g,h,ask:['g','h']};
+  }
+  const b=rint(4,9), a=rint(2,b-1), h=rint(2,5), x1=rint(0,b-a);
+  return {...normalize({outer:[[0,0],[b,0],[x1+a,h],[x1,h]],helpers:[{kind:'height',pts:[[x1,h],[x1,0]]}]},false,false),type:t,a,b,h,ask:['a','b','h']};
+}
+
+// Nivå 6: sammensatte figurer
+function genSammensatt(){
+  const t=pick(['L','T','U','hus','sidetrekant','skraahjorne','hull']);
+  let sh, expl;
+  if(t==='L'){
+    const W=rint(4,9),H=rint(4,7),cw=rint(1,W-2),ch=rint(1,H-2);
+    sh={outer:[[0,0],[W,0],[W,H-ch],[W-cw,H-ch],[W-cw,H],[0,H]]};
+    expl=`Del figuren i to rektangler: ${W-cw} · ${H} = ${(W-cw)*H} og ${cw} · ${H-ch} = ${cw*(H-ch)}. Til sammen ${(W-cw)*H+cw*(H-ch)} ruter.`;
+  } else if(t==='T'){
+    let W=rint(5,9),s=rint(1,W-2); if((W-s)%2) s++; const tt=rint(1,3),hs=rint(2,5),x0=(W-s)/2;
+    sh={outer:[[x0,0],[x0+s,0],[x0+s,hs],[W,hs],[W,hs+tt],[0,hs+tt],[0,hs],[x0,hs]]};
+    expl=`Del figuren i to rektangler: ${W} · ${tt} = ${W*tt} øverst og ${s} · ${hs} = ${s*hs} nederst. Til sammen ${W*tt+s*hs} ruter.`;
+  } else if(t==='U'){
+    const W=rint(5,9),H=rint(4,7),nw=rint(1,W-2),nx=rint(1,W-1-nw),nh=rint(1,H-1);
+    sh={outer:[[0,0],[W,0],[W,H],[nx+nw,H],[nx+nw,H-nh],[nx,H-nh],[nx,H],[0,H]]};
+    expl=`Hele rektangelet er ${W} · ${H} = ${W*H} ruter. Hakket er ${nw} · ${nh} = ${nw*nh} ruter. ${W*H} − ${nw*nh} = ${W*H-nw*nh} ruter.`;
+  } else if(t==='hus'){
+    const w=rint(3,8),h=rint(2,5),tt=rint(1,4),px=rint(0,w);
+    sh={outer:[[0,0],[w,0],[w,h],[px,h+tt],[0,h]]};
+    expl=`Rektangelet er ${w} · ${h} = ${w*h} ruter. Taket er en trekant: ${w} · ${tt} / 2 = ${fmtN(w*tt/2)}. Til sammen ${fmtN(w*h+w*tt/2)} ruter.`;
+  } else if(t==='sidetrekant'){
+    const w=rint(2,6),h=rint(2,5),k=rint(1,4);
+    sh={outer:[[0,0],[w+k,0],[w,h],[0,h]]};
+    expl=`Rektangelet er ${w} · ${h} = ${w*h} ruter. Trekanten er ${k} · ${h} / 2 = ${fmtN(k*h/2)}. Til sammen ${fmtN(w*h+k*h/2)} ruter.`;
+  } else if(t==='skraahjorne'){
+    const W=rint(4,8),H=rint(3,6),c=rint(1,H-1),d=rint(1,W-1);
+    sh={outer:[[0,0],[W,0],[W,H-c],[W-d,H],[0,H]]};
+    expl=`Hele rektangelet er ${W} · ${H} = ${W*H} ruter. Hjørnet som mangler er en trekant: ${d} · ${c} / 2 = ${fmtN(c*d/2)}. ${W*H} − ${fmtN(c*d/2)} = ${fmtN(W*H-c*d/2)} ruter.`;
+  } else {
+    const W=rint(5,10),H=rint(4,7),w=rint(1,W-2),h=rint(1,H-2),hx=rint(1,W-1-w),hy=rint(1,H-1-h);
+    sh={outer:rect(0,0,W,H),hole:rect(hx,hy,w,h)};
+    expl=`Hele rektangelet er ${W} · ${H} = ${W*H} ruter. Hullet er ${w} · ${h} = ${w*h} ruter. ${W*H} − ${w*h} = ${W*H-w*h} ruter.`;
+  }
+  return {...normalize(sh,Math.random()<0.5,false),expl,type:t};
+}
+
+// Oppgavetyper per nivå
+const TASK_POOL={
+  1:['tell','tell','tellfri'],
+  2:['merk','merk','tell'],
+  3:['lb','lbskjult','merk'],
+  4:['halve'],
+  5:['skraa'],
+  6:['sammensatt','sammensatt','skraa','halve'],
+};
+function makeTask(level){
+  const type=pick(TASK_POOL[Math.min(level,6)]);
+  const t={type,level};
+  if(type==='tell'){ const w=rint(2,level<=1?5:7), h=rint(2,level<=1?4:5); t.sh={outer:rect(0,0,w,h)}; t.w=w; t.h=h; t.A=w*h; }
+  if(type==='tellfri'){ t.cells=genPolyomino(rint(5,11)); t.A=t.cells.length; }
+  if(type==='merk'){ t.spec=genMerk(level); }
+  if(type==='lb'){ t.w=rint(6,12); t.h=rint(4,8); t.sh={outer:rect(0,0,t.w,t.h)}; t.A=t.w*t.h; }
+  if(type==='lbskjult'){ t.w=rint(8,15); t.h=rint(5,10); t.sh={outer:rect(0,0,t.w,t.h)}; t.A=t.w*t.h; }
+  if(type==='halve'){ t.sh=genHalve(); t.cnt=cellCounts(t.sh); t.A=shapeArea(t.sh); }
+  if(type==='skraa'){ t.sh=genSkraa(); t.A=shapeArea(t.sh); }
+  if(type==='sammensatt'){ t.sh=genSammensatt(); t.A=shapeArea(t.sh); }
+  return t;
+}
+
+// ═════════════ SPILL OG VISNING ═════════════
+const LEVELS={
+  1:{name:'Nivå 1',desc:'Tell rutene i figuren'},
+  2:{name:'Nivå 2',desc:'Merk av rektangler og kvadrater med gitt areal'},
+  3:{name:'Nivå 3',desc:'Bruk lengde og bredde: areal = l · b'},
+  4:{name:'Nivå 4',desc:'Hele og halve ruter'},
+  5:{name:'Nivå 5',desc:'Trekant, parallellogram og trapes på rutenett'},
+  6:{name:'Nivå 6',desc:'Sammensatte figurer og blanding'},
+};
+const MIN_LEVEL=1, MAX_LEVEL=6;
+let currentLevel=1, currentScore=0, gameMode='practice';
+let streak=0, errorStreak=0;
+let task=null, taskStart=0, tries=0, done=false;
+const seenHints=new Set();
+
+// Rapport til læreren
+const tcLv=levelTracker(), tcSessionStart=Date.now();
+let tcCorrect=0, tcWrong=0;
+function syncTC(){
+  tcLv.note(currentLevel);
+  syncToTimecode('areal-ruter',{level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSessionStart});
+}
+
+const $=id=>document.getElementById(id);
+
+// ── TEGNING ──
+// o: {sh, cells, grid, ticks, showHelpers, extra}
+function figSVG(o){
+  const pts=o.cells?o.cells.flatMap(([x,y])=>[[x,y],[x+1,y+1]]):o.sh.outer.concat((o.sh.helpers||[]).flatMap(h=>h.pts));
+  const maxX=Math.max(...pts.map(p=>p[0])), maxY=Math.max(...pts.map(p=>p[1]));
+  const minX=Math.min(0,...pts.map(p=>p[0]));
+  const m=o.grid===false?0.6:1;
+  const cols=maxX-minX+2*m, rows=maxY+2*m;
+  const avail=Math.min(window.innerWidth-70,760);
+  const cs=Math.max(14,Math.min(40,Math.floor(avail/cols),Math.floor(330/rows)));
+  const W=cols*cs, H=rows*cs;
+  const X=x=>(x-minX+m)*cs, Y=y=>(rows-m-y)*cs;
+  const path=p=>'M'+p.map(([x,y])=>X(x)+','+Y(y)).join('L')+'Z';
+  let s='';
+  const gridLines=(col,op)=>{
+    let g='';
+    for(let i=0;i<=cols;i++) g+=`<line x1="${i*cs}" y1="0" x2="${i*cs}" y2="${H}" stroke="${col}" stroke-opacity="${op}"/>`;
+    for(let j=0;j<=rows;j++) g+=`<line x1="0" y1="${j*cs}" x2="${W}" y2="${j*cs}" stroke="${col}" stroke-opacity="${op}"/>`;
+    return g;
+  };
+  if(o.grid!==false) s+=gridLines('#cbd5e1',1);
+  if(o.cells){
+    o.cells.forEach(([x,y])=>{ s+=`<rect x="${X(x)+1}" y="${Y(y+1)+1}" width="${cs-2}" height="${cs-2}" rx="3" fill="#60a5fa" stroke="#2563eb" stroke-width="1.5"/>`; });
+  } else {
+    const d=path(o.sh.outer)+(o.sh.hole?path(o.sh.hole):'');
+    s+=`<path d="${d}" fill="var(--fill)" fill-rule="evenodd"/>`;
+    if(o.grid!==false) s+=`<g>${gridLines('#334155',0.28)}</g>`;
+    if(o.extra) s+=o.extra(X,Y,cs);
+    s+=`<path d="${d}" fill="none" stroke="var(--edge)" stroke-width="3" stroke-linejoin="round" fill-rule="evenodd"/>`;
+    if(o.ticks){
+      const [x0,y0]=[0,0];
+      for(let i=0;i<=o.ticks.w;i++) s+=`<line x1="${X(i)}" y1="${Y(0)}" x2="${X(i)}" y2="${Y(0)+8}" stroke="var(--edge)" stroke-width="2"/>`;
+      for(let j=0;j<=o.ticks.h;j++) s+=`<line x1="${X(0)-8}" y1="${Y(j)}" x2="${X(0)}" y2="${Y(j)}" stroke="var(--edge)" stroke-width="2"/>`;
+    }
+    if(o.showHelpers&&o.sh.helpers) o.sh.helpers.forEach(h=>{
+      const [[x1,y1],[x2,y2]]=h.pts;
+      s+=`<line x1="${X(x1)}" y1="${Y(y1)}" x2="${X(x2)}" y2="${Y(y2)}" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="6 4"/>`;
+      if(h.kind==='height'){ const r=Math.min(10,cs/2.5), sx=X(x2), sy=Y(y2); s+=`<path d="M${sx} ${sy-r}h${r}v${r}" fill="none" stroke="#dc2626" stroke-width="2"/>`; }
+    });
+  }
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Figur på rutenett">${s}</svg>`;
+}
+
+// Hjelperektangel rundt en trekant (vises i løsningen)
+function helperRect(t){
+  if(t.type!=='skraa'||t.sh.type!=='trekant') return null;
+  const xs=t.sh.outer.map(p=>p[0]); const x0=Math.min(...xs), x1=Math.max(...xs), h=Math.max(...t.sh.outer.map(p=>p[1]));
+  const base=t.sh.outer.filter(p=>p[1]===0).map(p=>p[0]);
+  const bx0=Math.min(...base), bx1=Math.max(...base);
+  return (X,Y)=>`<rect x="${X(bx0)}" y="${Y(h)}" width="${X(bx1)-X(bx0)}" height="${Y(0)-Y(h)}" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-dasharray="7 5"/>`;
+}
+
+// ── OPPGAVER ──
+const TYPE_LABEL={tell:'🔢 Tell rutene',tellfri:'🔢 Tell rutene',merk:'✏️ Merk av',lb:'📏 Lengde og bredde',
+  lbskjult:'📏 Lengde og bredde',halve:'◩ Hele og halve ruter',skraa:'📐 Skrå figurer',sammensatt:'🧩 Sammensatt figur'};
+const SHAPE_NAME={trekant:'trekanten',parallellogram:'parallellogrammet',trapes:'trapeset'};
+
+// Tips som bare vises første gang noe nytt dukker opp
+const HINTS={
+  tell:'Arealet er hvor mange ruter figuren dekker.',
+  merk:'Dra fra ett hjørne til det motsatte hjørnet. Du kan også trykke på to hjørner etter hverandre.',
+  lb:'Du trenger ikke telle alle rutene. Tell hvor mange ruter det er langs bunnen og langs siden, og gang tallene: areal = lengde · bredde.',
+  lbskjult:'Her er rutene skjult inni rektangelet. Bruk merkene langs kantene til å finne lengde og bredde.',
+  halve:'To halve ruter er like mye som én hel rute.',
+  trekant:'En trekant er halvparten av et rektangel med samme grunnlinje og høyde: A = g · h / 2. Høyden er den stiplede linjen.',
+  parallellogram:'Klipp av en trekant på den ene siden og flytt den over til den andre. Da får du et rektangel: A = g · h.',
+  trapes:'Et trapes har to parallelle sider, a og b: A = (a + b) · h / 2.',
+  sammensatt:'Del figuren opp i rektangler og trekanter du kan regne ut, og legg sammen. Eller regn ut et stort rektangel og trekk fra det som mangler.',
+};
+function hintKey(t){ return t.type==='skraa'?t.sh.type:t.type==='tellfri'?'tell':t.type; }
+function showHint(t){
+  const k=hintKey(t), box=$('hintBox');
+  if(!seenHints.has(k)&&HINTS[k]){ seenHints.add(k); box.innerHTML='📘 '+HINTS[k]; box.classList.add('show'); }
+  else box.classList.remove('show');
+}
+
+const inRow=(id,label,unit)=>`<span>${label}</span><input class="num-in" id="${id}" type="text" inputmode="decimal" autocomplete="off"><span class="u">${unit}</span>`;
+
+function renderTask(){
+  const t=task;
+  tries=0; done=false; taskStart=Date.now();
+  $('taskType').textContent=TYPE_LABEL[t.type];
+  $('fb').className='fb'; $('fb').innerHTML='';
+  $('checkBtn').style.display=''; $('checkBtn').disabled=false;
+  $('showBtn').style.display='none';
+  $('nextBtn').style.display='none';
+  $('skipBtn').style.display='';
+  showHint(t);
+  const A=$('answer'), F=$('fig');
+  F.innerHTML=''; A.innerHTML='';
+  if(t.type==='tell'||t.type==='tellfri'){
+    $('taskQ').innerHTML='Hvor stort er arealet av figuren? Tell rutene.';
+    F.innerHTML=t.cells?figSVG({cells:t.cells}):figSVG({sh:t.sh});
+    A.innerHTML=`<div class="inl">${inRow('inA','Areal =','ruter')}</div>`;
+  } else if(t.type==='merk'){
+    const s=t.spec;
+    $('taskQ').innerHTML=s.kind==='kvadrat'?`Merk av et <b>kvadrat</b> med areal <b>${s.A} ruter</b>.`
+      :s.kind==='ikkekv'?`Merk av et <b>rektangel</b> med areal <b>${s.A} ruter</b> som <b>ikke</b> er et kvadrat.`
+      :s.kind==='side'?`Merk av et <b>rektangel</b> med areal <b>${s.A} ruter</b> der den ene siden er <b>${s.side} ruter</b> lang.`
+      :`Merk av et <b>rektangel</b> med areal <b>${s.A} ruter</b>.`;
+    buildMarkGrid(A);
+  } else if(t.type==='lb'||t.type==='lbskjult'){
+    $('taskQ').innerHTML='Finn lengden og bredden av rektangelet, og regn ut arealet.';
+    F.innerHTML=t.type==='lb'?figSVG({sh:t.sh}):figSVG({sh:t.sh,grid:false,ticks:{w:t.w,h:t.h}});
+    A.innerHTML=`<div class="inl">${inRow('inL','Lengde =','ruter')}${inRow('inB','Bredde =','ruter')}${inRow('inA','Areal =','ruter')}</div>`;
+  } else if(t.type==='halve'){
+    $('taskQ').innerHTML='Tell hele og halve ruter. Hvor stort er arealet?';
+    F.innerHTML=figSVG({sh:t.sh});
+    A.innerHTML=`<div class="inl">${inRow('inF','Hele ruter:','')}${inRow('inH','Halve ruter:','')}${inRow('inA','Areal =','ruter')}</div>`;
+  } else if(t.type==='skraa'){
+    const sh=t.sh;
+    $('taskQ').innerHTML=sh.type==='trapes'
+      ?'Finn de to parallelle sidene <b>a</b> (øverst) og <b>b</b> (nederst), høyden <b>h</b>, og regn ut arealet av trapeset.'
+      :`Finn grunnlinjen <b>g</b> og høyden <b>h</b>, og regn ut arealet av ${SHAPE_NAME[sh.type]}.`;
+    F.innerHTML=figSVG({sh,showHelpers:true});
+    A.innerHTML='<div class="inl">'+(sh.type==='trapes'
+      ?inRow('ina','a =','ruter')+inRow('inb','b =','ruter')+inRow('inh','h =','ruter')
+      :inRow('ing','g =','ruter')+inRow('inh','h =','ruter'))+inRow('inA','Areal =','ruter')+'</div>';
+  } else if(t.type==='sammensatt'){
+    $('taskQ').innerHTML='Hvor stort er arealet av figuren?';
+    F.innerHTML=figSVG({sh:t.sh});
+    A.innerHTML=`<div class="inl">${inRow('inA','Areal =','ruter')}</div>`;
+  }
+  const first=A.querySelector('input'); if(first&&window.innerWidth>600) first.focus();
+}
+
+// ── MARKERING PÅ RUTENETT ──
+let mk={anchor:null,end:null,dragging:false,moved:false,pending:false};
+function buildMarkGrid(A){
+  const gs=Math.max(22,Math.min(38,Math.floor((Math.min(window.innerWidth,860)-90)/MW)));
+  let h=`<div class="mgrid" id="mgrid" style="--gs:${gs}px;grid-template-columns:repeat(${MW},var(--gs))">`;
+  for(let y=MH-1;y>=0;y--) for(let x=0;x<MW;x++) h+=`<button class="mcell" data-x="${x}" data-y="${y}" tabindex="-1" aria-label="Rute ${x+1},${y+1}"></button>`;
+  h+='</div><div class="mstat" id="mstat">Dra over rutenettet for å merke av</div>';
+  A.innerHTML=h;
+  mk={anchor:null,end:null,dragging:false,moved:false,pending:false};
+  const g=$('mgrid');
+  const cellAt=e=>{const el=document.elementFromPoint(e.clientX,e.clientY); return el&&el.classList.contains('mcell')?[+el.dataset.x,+el.dataset.y]:null;};
+  g.addEventListener('pointerdown',e=>{
+    if(done) return;
+    const c=cellAt(e); if(!c) return;
+    e.preventDefault();
+    if(mk.pending){ mk.end=c; mk.pending=false; paintMark(); return; }
+    mk.anchor=c; mk.end=c; mk.dragging=true; mk.moved=false;
+    paintMark();
+  });
+  g.addEventListener('pointermove',e=>{
+    if(!mk.dragging||done) return;
+    const c=cellAt(e); if(!c) return;
+    if(c[0]!==mk.end[0]||c[1]!==mk.end[1]){ mk.end=c; mk.moved=true; paintMark(); }
+  });
+  const up=()=>{ if(!mk.dragging) return; mk.dragging=false; if(!mk.moved){ mk.pending=true; paintMark(); } };
+  g.addEventListener('pointerup',up);
+  g.addEventListener('pointercancel',up);
+  document.addEventListener('pointerup',up);
+}
+function markRect(){
+  if(!mk.anchor) return null;
+  const x0=Math.min(mk.anchor[0],mk.end[0]), x1=Math.max(mk.anchor[0],mk.end[0]);
+  const y0=Math.min(mk.anchor[1],mk.end[1]), y1=Math.max(mk.anchor[1],mk.end[1]);
+  return {x0,y0,w:x1-x0+1,h:y1-y0+1};
+}
+function paintMark(){
+  const r=markRect();
+  document.querySelectorAll('.mcell').forEach(b=>{
+    const x=+b.dataset.x, y=+b.dataset.y;
+    b.classList.toggle('on',!!r&&x>=r.x0&&x<r.x0+r.w&&y>=r.y0&&y<r.y0+r.h);
+    b.classList.toggle('anchor',mk.pending&&mk.anchor&&x===mk.anchor[0]&&y===mk.anchor[1]);
+    b.classList.remove('sol');
+  });
+  $('mstat').textContent=mk.pending?'Trykk på det motsatte hjørnet':r?`${r.w} ruter bred og ${r.h} ruter høy`:'';
+}
+
+const numVal=id=>{const el=$(id); return el?parseFloat(String(el.value).trim().replace(',','.')):NaN;};
+const eq=(a,b)=>Number.isFinite(a)&&Math.abs(a-b)<1e-9;
+const mark=(id,ok)=>{const el=$(id); if(el){el.classList.remove('ok','bad'); el.classList.add(ok?'ok':'bad');}};
+
+window.checkAnswer=function(){
+  if(done||!task) return;
+  const t=task;
+  let ok=false, hint='';
+  if(t.type==='tell'||t.type==='tellfri'){
+    ok=eq(numVal('inA'),t.A); mark('inA',ok);
+    if(!ok) hint=t.type==='tell'?'Tell rutene rad for rad. Hvor mange er det i hver rad, og hvor mange rader?':'Tell rutene én og én. Pass på at du ikke teller noen to ganger.';
+  } else if(t.type==='merk'){
+    const r=markRect(); const res=checkMerk(t.spec,r&&r.w,r&&r.h);
+    ok=res.ok; hint=res.why||'';
+  } else if(t.type==='lb'||t.type==='lbskjult'){
+    const L=numVal('inL'), B=numVal('inB');
+    const lbOk=(eq(L,t.w)&&eq(B,t.h))||(eq(L,t.h)&&eq(B,t.w));
+    mark('inL',lbOk||eq(L,t.w)||eq(L,t.h)); mark('inB',lbOk||eq(B,t.w)||eq(B,t.h));
+    const aOk=eq(numVal('inA'),t.A); mark('inA',aOk);
+    ok=lbOk&&aOk;
+    if(!ok) hint=!lbOk?'Tell rutene langs bunnen og langs siden.':'Gang lengden med bredden.';
+  } else if(t.type==='halve'){
+    const f=eq(numVal('inF'),t.cnt.full), h=eq(numVal('inH'),t.cnt.half), a=eq(numVal('inA'),t.A);
+    mark('inF',f); mark('inH',h); mark('inA',a);
+    ok=f&&h&&a;
+    if(!ok) hint=(!f||!h)?'Tell de hele rutene først, og så de halve.':'Areal = hele ruter + halve ruter / 2.';
+  } else if(t.type==='skraa'){
+    const sh=t.sh; let partsOk=true;
+    sh.ask.forEach(k=>{const r=eq(numVal('in'+k),sh[k]); mark('in'+k,r); if(!r) partsOk=false;});
+    const a=eq(numVal('inA'),t.A); mark('inA',a);
+    ok=partsOk&&a;
+    if(!ok) hint=!partsOk?'Høyden er den stiplede linjen. Den står vinkelrett på grunnlinjen.'
+      :sh.type==='trekant'?'Husk å dele på 2: A = g · h / 2.':sh.type==='trapes'?'A = (a + b) · h / 2.':'A = g · h.';
+  } else if(t.type==='sammensatt'){
+    ok=eq(numVal('inA'),t.A); mark('inA',ok);
+    if(!ok) hint='Del figuren i rektangler og trekanter, eller trekk fra det som mangler i et stort rektangel.';
+  }
+  if(!ok&&!hint) hint='Prøv igjen.';
+  ok?onRight():onWrong(hint);
+};
+
+// ── RIKTIG / FEIL ──
+let firstWrongCounted=false;
+function registerWrong(){
+  tcWrong++;
+  if(!firstWrongCounted){ firstWrongCounted=true; SU.recordResult(false); }
+  syncTC();
+}
+function onWrong(hint){
+  tries++;
+  registerWrong();
+  $('fb').className='fb err';
+  $('fb').innerHTML='✗ Ikke helt. '+hint;
+  if(tries>=2) $('showBtn').style.display='';
+}
+function onRight(){
+  const elapsed=(Date.now()-taskStart)/1000;
+  const bonus=Math.max(10,Math.round(Math.max(20,100+currentLevel*15-elapsed)-tries*15));
+  currentScore+=bonus;
+  $('scoreBadge').textContent=currentScore+' p';
+  tcCorrect++;
+  if(tries===0) SU.recordResult(true);
+  syncTC();
+  if(gameMode==='multi') syncRoomScore(currentScore);
+  finishTask(true,`+${bonus} poeng`);
+}
+function explanation(t){
+  if(t.type==='tell') return `Figuren er ${t.w} ruter lang og ${t.h} ruter høy: ${t.w} · ${t.h} = ${t.A} ruter.`;
+  if(t.type==='tellfri') return `Figuren dekker ${t.A} ruter.`;
+  if(t.type==='merk'){ const [w,h]=merkSolution(t.spec); return `For eksempel ${w} · ${h} = ${t.spec.A} ruter.`; }
+  if(t.type==='lb'||t.type==='lbskjult') return `Lengde ${t.w} og bredde ${t.h}: ${t.w} · ${t.h} = ${t.A} ruter.`;
+  if(t.type==='halve'){ const c=t.cnt; return `${c.full} hele ruter og ${c.half} halve ruter. ${c.half} halve ruter er ${fmtN(c.half/2)} hele. Areal = ${c.full} + ${fmtN(c.half/2)} = ${fmtN(t.A)} ruter.`; }
+  if(t.type==='skraa'){
+    const s=t.sh;
+    if(s.type==='trekant') return `g = ${s.g} og h = ${s.h}. Trekanten er halvparten av det grønne rektangelet: ${s.g} · ${s.h} / 2 = ${fmtN(t.A)} ruter.`;
+    if(s.type==='parallellogram') return `g = ${s.g} og h = ${s.h}: A = ${s.g} · ${s.h} = ${t.A} ruter.`;
+    return `a = ${s.a}, b = ${s.b} og h = ${s.h}: A = (${s.a} + ${s.b}) · ${s.h} / 2 = ${fmtN(t.A)} ruter.`;
+  }
+  if(t.type==='sammensatt') return t.sh.expl;
+  return '';
+}
+function finishTask(won,extra){
+  done=true;
+  const t=task;
+  if(t.type==='skraa'&&t.sh.type==='trekant') $('fig').innerHTML=figSVG({sh:t.sh,showHelpers:true,extra:helperRect(t)});
+  $('fb').className='fb '+(won?'win':'info');
+  $('fb').innerHTML=`<span class="big">${won?'⭐ Riktig! '+extra:'💡 Løsningen'}</span>${explanation(t)}`;
+  $('checkBtn').style.display='none';
+  $('showBtn').style.display='none';
+  $('skipBtn').style.display='none';
+  $('nextBtn').style.display='';
+  $('nextBtn').focus();
+}
+window.showSolution=function(){
+  if(done) return;
+  const t=task;
+  if(t.type==='merk'){
+    const [w,h]=merkSolution(t.spec);
+    document.querySelectorAll('.mcell').forEach(b=>{const x=+b.dataset.x,y=+b.dataset.y; b.classList.remove('on','anchor'); b.classList.toggle('sol',x<w&&y<h);});
+    $('mstat').textContent=`${w} ruter bred og ${h} ruter høy`;
+  }
+  finishTask(false);
+};
+
+// ── FLYT ──
+window.nextTask=function(){
+  firstWrongCounted=false;
+  task=makeTask(currentLevel);
+  renderTask();
+};
+function selectLevelDesc(){ $('levelDesc').textContent=LEVELS[currentLevel].desc; }
+window.startGame=function(){
+  if(gameMode==='multi'){
+    const rc=$('roomInput').value.trim().toUpperCase();
+    if(!rc){ showToast('Skriv inn romkoden','error'); return; }
+    initRoom(rc);
+  }
+  $('levelBadge').textContent=LEVELS[currentLevel].name;
+  $('startScreen').style.display='none';
+  $('mainArea').style.display='flex';
+  nextTask();
+  syncTC();
+};
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||$('mainArea').style.display==='none') return;
+  if(e.target&&e.target.tagName==='BUTTON') return;
+  if(done) nextTask(); else if($('checkBtn').style.display!=='none') checkAnswer();
+});
+buildLevelSelect();
+$('levelSelect').addEventListener('click',selectLevelDesc);
+selectLevelDesc();
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get } from "../js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._fbReady=true;
+</script>
+</body>
+</html>

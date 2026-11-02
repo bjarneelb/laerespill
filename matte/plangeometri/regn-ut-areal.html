@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regn ut arealet</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff7ed;--panel:#fff;--border:#f1dccb;
+  --accent:#ea580c;--accent-dark:#c2410c;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --fill:#fed7aa;--edge:#c2410c;
+  --r:14px;--shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 12px rgba(234,88,12,0.3);}
+.header-left h1{font-size:1rem;font-weight:900;}
+.header-left p{font-size:0.7rem;opacity:0.85;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.level-badge{background:rgba(255,255,255,0.2);color:white;}
+.score-badge{background:var(--yellow);color:#78350f;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+/* START */
+.overlay{position:fixed;inset:0;background:rgba(255,247,237,0.97);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:30px 32px;width:480px;max-width:100%;text-align:center;box-shadow:var(--shadow);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card p{font-size:0.88rem;color:var(--muted);font-weight:700;margin-bottom:14px;line-height:1.5;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.lbl{font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800;}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px;}
+.level-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.level-desc{font-size:0.8rem;color:var(--accent);font-weight:800;margin-bottom:12px;min-height:18px;}
+.mode-row{display:flex;gap:8px;margin-bottom:10px;}
+.mode-btn{flex:1;padding:8px;background:white;border:2px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:800;cursor:pointer;}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;outline:none;margin-bottom:10px;text-align:center;text-transform:uppercase;letter-spacing:2px;}
+.name-input:focus{border-color:var(--accent);}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.start-btn:hover{background:var(--accent-dark);}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px;gap:12px;max-width:880px;margin:0 auto;width:100%;}
+.card{width:100%;background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);}
+.task-type{font-size:0.75rem;font-weight:800;color:var(--accent);margin-bottom:4px;}
+.task-q{font-size:1.08rem;font-weight:800;line-height:1.5;margin-bottom:12px;}
+.hintbox{background:#fff7ed;border:2px solid #fdba74;color:#7c2d12;border-radius:12px;padding:10px 14px;font-weight:800;font-size:0.9rem;line-height:1.5;margin-bottom:12px;display:none;}
+.hintbox.show{display:block;}
+
+/* FIGUR */
+.figwrap{display:flex;justify-content:center;margin-bottom:12px;max-width:100%;overflow-x:auto;}
+.figwrap svg{display:block;background:#fffdfa;border:2px solid var(--border);border-radius:12px;}
+.figwrap text{font-family:'Nunito',sans-serif;font-weight:800;}
+
+/* SVAR */
+.answer{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:800;font-size:1.1rem;}
+.num-in{padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;outline:none;text-align:center;width:120px;}
+.num-in:focus{border-color:var(--accent);}
+.u{color:var(--muted);}
+.ok{border-color:var(--green)!important;background:#f0fdf4;}
+.bad{border-color:var(--red)!important;background:#fef2f2;}
+
+/* TILBAKEMELDING */
+.fb{margin-top:12px;border-radius:12px;padding:12px 14px;font-weight:800;line-height:1.6;display:none;}
+.fb.err{display:block;background:#fef2f2;border:2px solid #fecaca;color:#991b1b;}
+.fb.win{display:block;background:#f0fdf4;border:2px solid #86efac;color:#14532d;}
+.fb.info{display:block;background:#eef2ff;border:2px solid #c7d2fe;color:#312e81;}
+.fb .big{font-size:1.15rem;display:block;margin-bottom:4px;}
+
+/* KONTROLLER */
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;}
+.btn-check{background:var(--accent);color:white;}
+.btn-next{background:var(--green);color:white;}
+.btn-soft{background:#f3f4f6;color:var(--muted);}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 22px;border-radius:10px;font-weight:800;font-size:0.9rem;opacity:0;transition:all .3s;z-index:1100;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);color:white;}
+.toast.error{background:var(--red);color:white;}
+.toast.info{background:var(--accent);color:white;}
+
+@media (max-width:600px){
+  .header{padding:8px 12px;}
+  .header-left p{display:none;}
+  .task-q{font-size:1rem;}
+  .card{padding:12px;}
+}
+</style>
+<script src="../js/spill-utils.js"></script>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- START -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <div style="font-size:2.6rem">📐</div>
+    <h1>Regn ut arealet</h1>
+    <p>Rektangel, kvadrat, trekant, parallellogram, rombe, trapes, sirkel og sammensatte figurer.</p>
+    <div class="version">v1.0</div>
+    <div class="lbl">Start på nivå</div>
+    <div class="level-select" id="levelSelect"></div>
+    <div class="level-desc" id="levelDesc"></div>
+    <div class="mode-row">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">🏎️ Flerspiller</button>
+    </div>
+    <div id="multiOpts" style="display:none">
+      <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" autocomplete="off">
+    </div>
+    <button class="start-btn" onclick="startGame()">🚀 Start</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>📐 Regn ut arealet</h1>
+    <p>Areal med formler</p>
+  </div>
+  <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
+    <span class="badge level-badge" id="levelBadge">Nivå 1</span>
+    <span class="badge score-badge" id="scoreBadge">0 p</span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+  <div class="card">
+    <div class="task-type" id="taskType"></div>
+    <div class="task-q" id="taskQ"></div>
+    <div class="hintbox" id="hintBox"></div>
+    <div class="figwrap" id="fig"></div>
+    <div class="answer" id="answer"></div>
+    <div class="fb" id="fb"></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-check" id="checkBtn" onclick="checkAnswer()">✅ Sjekk svar</button>
+    <button class="btn btn-soft" id="showBtn" onclick="showSolution()" style="display:none">💡 Vis løsningen</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextTask()" style="display:none">Neste oppgave ➡️</button>
+    <button class="btn btn-soft" id="skipBtn" onclick="nextTask()">⏭️ Ny oppgave</button>
+  </div>
+</div>
+
+<script>
+// ═════════════ LOGIKK (ingen DOM) ═════════════
+const PI=3.14;
+const rint=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const rnd=(v,d=6)=>Math.round(v*10**d)/10**d;
+// Tall med desimalkomma, uten unødvendige nuller
+const fmtN=(v,d=4)=>String(rnd(v,d)).replace('.',',');
+const UNIT_M={mm:0.001,cm:0.01,dm:0.1,m:1};
+const UNITS=['mm','cm','dm','m'];
+const sq=u=>u+'²';
+
+// Geometri-hjelpere
+const rect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+function arcPts(cx,cy,r,a0,a1,n){const p=[];for(let i=0;i<=n;i++){const a=(a0+(a1-a0)*i/n)*Math.PI/180;p.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);}return p;}
+const circlePts=(cx,cy,r)=>arcPts(cx,cy,r,0,360,72).slice(0,72);
+const semiPts=(cx,cy,r,dir)=>arcPts(cx,cy,r,dir-90,dir+90,36);   // halvsirkel som buler ut i retning dir (grader)
+const dist=(a,b)=>Math.hypot(b[0]-a[0],b[1]-a[1]);
+// Mål langs en kant, med etiketten på yttersiden (figuren går mot klokka)
+function edge(a,b,val,extra){const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);return {t:'dim',a,b,val,side:[dy/L,-dx/L],...extra};}
+const dim=(a,b,val,side,extra)=>({t:'dim',a,b,val,side,...extra});
+
+// Tilfeldige mål
+const dec1=(lo,hi)=>rint(lo*10,hi*10)/10;
+const half=(lo,hi)=>rint(lo*2,hi*2)/2;
+function measure(level,lo,hi){
+  if(level===2) return Math.random()<0.6?pick([half(lo,hi),dec1(lo,hi)]):rint(lo,hi);
+  if(level===8&&Math.random()<0.35) return half(lo,hi);
+  return rint(lo,hi);
+}
+
+// ── ENKLE FIGURER ──
+// Hver figur: parts (tegning), labels (mål), area, kind, calc (utregning), mistakes (vanlige feil)
+const FORMULA={rektangel:'A = l · b',kvadrat:'A = s · s',trekant:'A = g · h / 2',parallellogram:'A = g · h',
+  rombe:'A = d₁ · d₂ / 2',trapes:'A = (a + b) · h / 2',sirkel:'A = π · r²'};
+const NAME={rektangel:'rektangelet',kvadrat:'kvadratet',trekant:'trekanten',parallellogram:'parallellogrammet',
+  rombe:'romben',trapes:'trapeset',sirkel:'sirkelen'};
+
+function mkRektangel(l,b){
+  return {kind:'rektangel',m:{l,b},parts:[{pts:rect(0,0,l,b),sign:1}],
+    labels:[edge([0,0],[l,0],l),edge([l,0],[l,b],b)],area:l*b,
+    calc:v=>`A = l · b = ${v.l} · ${v.b} = ${v.A}`,mistakes:[{val:2*(l+b),msg:'Det er omkretsen. Arealet er lengde · bredde.'},{val:l+b,msg:'Du har lagt sammen. Arealet er lengde · bredde.'}]};
+}
+function mkKvadrat(s){
+  return {kind:'kvadrat',m:{s},parts:[{pts:rect(0,0,s,s),sign:1}],labels:[edge([0,0],[s,0],s)],area:s*s,
+    calc:v=>`A = s · s = ${v.s} · ${v.s} = ${v.A}`,mistakes:[{val:4*s,msg:'Det er omkretsen. Arealet er side · side.'},{val:2*s,msg:'Arealet er side · side, ikke side · 2.'}]};
+}
+function mkTrekant(g,h,ax,distr){
+  const P=[[0,0],[g,0],[ax,h]];
+  const labels=[edge(P[0],P[1],g),{t:'height',a:[ax,h],b:[ax,0],val:h}];
+  if(ax<0) labels.push({t:'ext',a:[ax,0],b:[0,0]});
+  if(ax>g) labels.push({t:'ext',a:[g,0],b:[ax,0]});
+  // Den skrå siden som ikke skal brukes, legges på motsatt side av høyden
+  if(distr){ const [a,b]=ax>g/2?[P[2],P[0]]:[P[1],P[2]]; labels.push(edge(a,b,rnd(dist(a,b),1))); }
+  return {kind:'trekant',m:{g,h},parts:[{pts:P,sign:1}],labels,area:g*h/2,
+    calc:v=>`A = g · h / 2 = ${v.g} · ${v.h} / 2 = ${v.A}`,mistakes:[{val:g*h,msg:'Husk å dele på 2. En trekant er halvparten av et rektangel.'}]};
+}
+function mkParallellogram(g,h,s,distr){
+  const P=[[0,0],[g,0],[g+s,h],[s,h]];
+  const hx=s>0?s:g+s;
+  const labels=[edge(P[0],P[1],g),{t:'height',a:[hx,h],b:[hx,0],val:h}];
+  const sl=rnd(dist(P[1],P[2]),1);
+  if(distr) labels.push(edge(P[1],P[2],sl));
+  return {kind:'parallellogram',m:{g,h},parts:[{pts:P,sign:1}],labels,area:g*h,
+    calc:v=>`A = g · h = ${v.g} · ${v.h} = ${v.A}`,mistakes:[{val:g*h/2,msg:'Et parallellogram er ikke en trekant. Ikke del på 2.'},{val:g*sl,msg:'Bruk høyden (stiplet), ikke den skrå siden.'}]};
+}
+function mkRombe(d1,d2,distr){
+  const P=[[d1/2,0],[d1,d2/2],[d1/2,d2],[0,d2/2]];
+  const labels=[{t:'diag',a:[0,d2/2],b:[d1,d2/2],val:d1,pos:0.25},{t:'diag',a:[d1/2,0],b:[d1/2,d2],val:d2,pos:0.25}];
+  if(distr) labels.push(edge(P[0],P[1],rnd(dist(P[0],P[1]),1)));
+  return {kind:'rombe',m:{d1,d2},parts:[{pts:P,sign:1}],labels,area:d1*d2/2,
+    calc:v=>`A = d₁ · d₂ / 2 = ${v.d1} · ${v.d2} / 2 = ${v.A}`,mistakes:[{val:d1*d2,msg:'Husk å dele på 2. Romben er halvparten av rektangelet rundt diagonalene.'}]};
+}
+function mkTrapes(a,b,h,x1,distr){
+  const P=[[0,0],[b,0],[x1+a,h],[x1,h]];
+  const hx=(x1>=0&&x1<=b)?x1:x1+a;
+  const labels=[edge(P[0],P[1],b),edge(P[2],P[3],a),{t:'height',a:[hx,h],b:[hx,0],val:h}];
+  if(hx<0) labels.push({t:'ext',a:[hx,0],b:[0,0]});
+  if(distr) labels.push(edge(P[1],P[2],rnd(dist(P[1],P[2]),1)));
+  return {kind:'trapes',m:{a,b,h},parts:[{pts:P,sign:1}],labels,area:(a+b)*h/2,
+    calc:v=>`A = (a + b) · h / 2 = (${v.a} + ${v.b}) · ${v.h} / 2 = ${v.A}`,mistakes:[{val:(a+b)*h,msg:'Husk å dele på 2.'},{val:a*b*h/2,msg:'Legg sammen a og b først: (a + b) · h / 2.'}]};
+}
+function mkSirkel(r,byD){
+  const labels=byD?[{t:'diag',a:[0,r],b:[2*r,r],val:2*r,pos:0.5,solid:true}]
+    :[{t:'diag',a:[r,r],b:[r+r*Math.cos(Math.PI/6),r+r*Math.sin(Math.PI/6)],val:r,pos:0.5,solid:true}];
+  labels.push({t:'dot',c:[r,r]});
+  return {kind:'sirkel',m:{r,d:2*r},byD,parts:[{pts:circlePts(r,r,r),sign:1}],labels,area:PI*r*r,circle:true,
+    calc:v=>(byD?`r = d / 2 = ${v.d} / 2 = ${v.r}. `:'')+`A = π · r² ≈ 3,14 · ${v.r} · ${v.r} = ${v.A}`,
+    mistakes:[{val:PI*4*r*r,msg:'Du har brukt diameteren. Bruk radien: r = d / 2.'},{val:2*PI*r,msg:'Det er omkretsen. Arealet er π · r · r.'},{val:PI*2*r,msg:'Arealet er π · r · r, ikke π · 2 · r.'}]};
+}
+
+// Lager en enkel figur av en gitt type
+function makeSimple(kind,level){
+  const big=level>=8, distr=level>=8||(level===4||level===6)&&Math.random()<0.5;
+  const M=(lo,hi)=>measure(level,lo,hi);
+  if(kind==='rektangel'){ let l=M(2,level===2?20:12), b=M(2,level===2?15:10); if(l===b) l+=1; return mkRektangel(Math.max(l,b),Math.min(l,b)); }
+  if(kind==='kvadrat') return mkKvadrat(M(2,level===2?15:12));
+  if(kind==='trekant'){
+    const g=M(3,14), h=M(2,10), r=Math.random();
+    const ax=r<0.35?pick([0,g]):r<0.8||level===3&&r<0.9?rnd(g*(0.2+0.6*Math.random()),1):pick([-rint(1,3),g+rint(1,3)]);
+    return mkTrekant(g,h,ax,distr);
+  }
+  if(kind==='parallellogram'){ const g=M(4,14), h=M(2,9); let s=rint(1,Math.max(1,Math.floor(g/2))); if(Math.random()<0.4) s=-s; return mkParallellogram(g,h,s,distr); }
+  if(kind==='rombe') return mkRombe(M(3,16),M(3,14),big&&Math.random()<0.5);
+  if(kind==='trapes'){ const b=M(5,15); let a=M(2,b-1); if(a>=b) a=b-1; const h=M(2,9); const x1=rnd(Math.random()<0.8?(b-a)*Math.random():-rint(1,2),1); return mkTrapes(a,b,h,x1,distr); }
+  if(kind==='sirkel') return mkSirkel(rint(1,big?15:10),Math.random()<0.4);
+}
+
+// ── SAMMENSATTE FIGURER ──
+// seams: stiplede delelinjer (vises på nivå 10)
+function compHus(){
+  const w=rint(4,12),h=rint(3,8),t=rint(2,6),px=rnd(w/2,1);
+  return {kind:'sammensatt',sub:'hus',parts:[{pts:[[0,0],[w,0],[w,h],[px,h+t],[0,h]],sign:1}],seams:[[[0,h],[w,h]]],
+    labels:[edge([0,0],[w,0],w),dim([0,0],[0,h],h,[-1,0]),{t:'height',a:[px,h+t],b:[px,h],val:t}],
+    area:w*h+w*t/2,steps:[['Rektangel',`${w} · ${h}`,w*h],['Trekant',`${w} · ${t} / 2`,w*t/2]]};
+}
+function compL(){
+  const W=rint(6,14),H=rint(5,11),cw=rint(2,W-3),ch=rint(2,H-2);
+  return {kind:'sammensatt',sub:'L',parts:[{pts:[[0,0],[W,0],[W,H-ch],[W-cw,H-ch],[W-cw,H],[0,H]],sign:1}],seams:[[[W-cw,0],[W-cw,H-ch]]],
+    labels:[edge([0,0],[W,0],W),dim([0,0],[0,H],H,[-1,0]),dim([0,H],[W-cw,H],W-cw,[0,1]),dim([W,0],[W,H-ch],H-ch,[1,0])],
+    area:W*H-cw*ch,steps:[['Venstre rektangel',`${W-cw} · ${H}`,(W-cw)*H],['Høyre rektangel',`${cw} · ${H-ch}`,cw*(H-ch)]],
+    hintExtra:`Bredden av den høyre delen er ${W} − ${W-cw} = ${cw}.`};
+}
+function compSemi(){
+  const w=rint(4,12),h=2*rint(2,5),r=h/2;
+  return {kind:'sammensatt',sub:'halvsirkel',circle:true,parts:[{pts:rect(0,0,w,h).slice(0,2).concat(semiPts(w,r,r,0)).concat([[0,h]]),sign:1}],seams:[[[w,0],[w,h]]],
+    labels:[edge([0,0],[w,0],w),dim([0,0],[0,h],h,[-1,0]),{t:'dot',c:[w,r]}],
+    area:w*h+PI*r*r/2,steps:[['Rektangel',`${w} · ${h}`,w*h],['Halvsirkel',`3,14 · ${r} · ${r} / 2`,PI*r*r/2]],
+    hintExtra:`Radien i halvsirkelen er ${h} / 2 = ${r}.`};
+}
+function compSideTri(){
+  const w=rint(3,10),h=rint(3,8),k=rint(2,6);
+  return {kind:'sammensatt',sub:'sidetrekant',parts:[{pts:[[0,0],[w+k,0],[w,h],[0,h]],sign:1}],seams:[[[w,0],[w,h]]],
+    labels:[edge([0,0],[w+k,0],w+k),dim([0,h],[w,h],w,[0,1]),dim([0,0],[0,h],h,[-1,0])],
+    area:w*h+k*h/2,steps:[['Rektangel',`${w} · ${h}`,w*h],['Trekant',`${k} · ${h} / 2`,k*h/2]],
+    hintExtra:`Grunnlinjen i trekanten er ${w+k} − ${w} = ${k}.`};
+}
+function compPil(){
+  const w=rint(4,10),h=rint(2,4),e=rint(1,3),H=h+2*e,k=rint(2,5);
+  return {kind:'sammensatt',sub:'pil',parts:[{pts:[[0,e],[w,e],[w,0],[w+k,H/2],[w,H],[w,e+h],[0,e+h]],sign:1}],seams:[[[w,e],[w,e+h]]],
+    labels:[dim([0,e],[w,e],w,[0,-1]),dim([0,e],[0,e+h],h,[-1,0]),dim([w,0],[w+k,0],k,[0,-1]),dim([w+k,0],[w+k,H],H,[1,0])],
+    area:w*h+k*H/2,steps:[['Rektangel',`${w} · ${h}`,w*h],['Trekant',`${H} · ${k} / 2`,k*H/2]]};
+}
+function compHullRekt(){
+  const W=rint(8,16),H=rint(6,12),w=rint(2,W-4),h=rint(2,H-4),hx=rint(2,W-2-w),hy=rint(2,H-2-h);
+  return {kind:'sammensatt',sub:'hull',hole:true,parts:[{pts:rect(0,0,W,H),sign:1},{pts:rect(hx,hy,w,h),sign:-1}],seams:[],
+    labels:[edge([0,0],[W,0],W),dim([0,0],[0,H],H,[-1,0]),dim([hx,hy],[hx+w,hy],w,[0,1],{inside:true}),dim([hx+w,hy],[hx+w,hy+h],h,[-1,0],{inside:true})],
+    area:W*H-w*h,steps:[['Stort rektangel',`${W} · ${H}`,W*H],['− Hull',`${w} · ${h}`,-w*h]]};
+}
+function compHullSirkel(){
+  const r=rint(1,4),W=rint(2*r+3,2*r+9),H=rint(2*r+3,2*r+7),cx=rnd(W/2,1),cy=rnd(H/2,1);
+  return {kind:'sammensatt',sub:'hull',hole:true,circle:true,parts:[{pts:rect(0,0,W,H),sign:1},{pts:circlePts(cx,cy,r),sign:-1}],seams:[],
+    labels:[edge([0,0],[W,0],W),dim([0,0],[0,H],H,[-1,0]),{t:'diag',a:[cx,cy],b:[cx+r,cy],val:r,pos:0.5,solid:true},{t:'dot',c:[cx,cy]}],
+    area:W*H-PI*r*r,steps:[['Rektangel',`${W} · ${H}`,W*H],['− Sirkel',`3,14 · ${r} · ${r}`,-PI*r*r]]};
+}
+function compStadion(){
+  const w=rint(4,12),r=rint(2,5);
+  const pts=[[0,0],[w,0]].concat(semiPts(w,r,r,0).slice(1)).concat([[0,2*r]]).concat(semiPts(0,r,r,180).slice(1,-1));
+  return {kind:'sammensatt',sub:'stadion',circle:true,parts:[{pts,sign:1}],seams:[[[0,0],[0,2*r]],[[w,0],[w,2*r]]],
+    labels:[dim([0,0],[w,0],w,[0,-1]),{t:'diag',a:[w,0],b:[w,2*r],val:2*r,pos:0.5}],
+    area:w*2*r+PI*r*r,steps:[['Rektangel',`${w} · ${2*r}`,w*2*r],['To halvsirkler = én sirkel',`3,14 · ${r} · ${r}`,PI*r*r]],
+    hintExtra:`Radien er ${2*r} / 2 = ${r}.`};
+}
+function compHusDor(){
+  const b=compHus(); const w=b.labels[0].val, h=b.labels[1].val;
+  const dw=Math.max(1,Math.min(rint(1,3),w-2)), dh=Math.max(1,Math.min(rint(2,4),h-1)), dx=rnd((w-dw)/2,1);
+  b.sub='husdor'; b.hole=true;
+  b.parts.push({pts:rect(dx,0,dw,dh),sign:-1});
+  b.labels.push(dim([dx,dh],[dx+dw,dh],dw,[0,1],{inside:true}),dim([dx+dw,0],[dx+dw,dh],dh,[1,0],{inside:true}));
+  b.area-=dw*dh; b.steps.push(['− Dør',`${dw} · ${dh}`,-dw*dh]);
+  return b;
+}
+const COMP2=[compHus,compL,compSemi,compSideTri];
+const COMP3=[compHullRekt,compHullSirkel,compStadion,compHusDor,compPil,compL];
+
+// ── MANGLENDE MÅL (nivå 9) ──
+function makeMissing(){
+  const k=pick(['rektangel','kvadrat','trekant','parallellogram','trapes','sirkel']);
+  let s, ask, val, calc;
+  if(k==='rektangel'){ const l=rint(4,15),b=rint(2,l-1); s=mkRektangel(l,b); ask='b'; val=b; s.labels[1].val=null;
+    calc=v=>`A = l · b, så b = A / l = ${v.A} / ${v.l} = ${v.ans}`; }
+  else if(k==='kvadrat'){ const q=rint(2,15); s=mkKvadrat(q); ask='s'; val=q; s.labels[0].val=null;
+    calc=v=>`A = s · s. Hvilket tall ganget med seg selv blir ${v.A}? s = ${v.ans}, fordi ${v.ans} · ${v.ans} = ${v.A}`; }
+  else if(k==='trekant'){ const g=rint(3,14),h=rint(2,12); s=mkTrekant(g,h,rnd(g*(0.2+0.6*Math.random()),1)); ask='h'; val=h; s.labels[1].val=null;
+    calc=v=>`A = g · h / 2, så h = 2 · A / g = 2 · ${v.A} / ${v.g} = ${v.ans}`; }
+  else if(k==='parallellogram'){ const g=rint(4,14),h=rint(2,10); s=mkParallellogram(g,h,rint(1,3)); ask='h'; val=h; s.labels[1].val=null;
+    calc=v=>`A = g · h, så h = A / g = ${v.A} / ${v.g} = ${v.ans}`; }
+  else if(k==='trapes'){ const b=rint(6,15),a=rint(2,b-2),h=rint(2,10); s=mkTrapes(a,b,h,rnd((b-a)*Math.random(),1)); ask='h'; val=h; s.labels[2].val=null;
+    calc=v=>`A = (a + b) · h / 2, så h = 2 · A / (a + b) = 2 · ${v.A} / (${v.a} + ${v.b}) = ${v.ans}`; }
+  else { const r=rint(1,10); s=mkSirkel(r,false); ask='r'; val=r; s.labels[0].val=null;
+    calc=v=>`A = 3,14 · r², så r² = ${v.A} / 3,14 = ${fmtN(r*r)}, og r = ${v.ans}`; }
+  s.missing={ask,val}; s.calc=calc; s.mistakes=[];
+  return s;
+}
+
+// ── ENHETER ──
+// Gjør om en lengde fra enhet u til enhet v
+const conv=(x,u,v)=>rnd(x*UNIT_M[u]/UNIT_M[v],8);
+const nice=x=>Math.abs(rnd(x,2)-x)<1e-9&&x>=0.01&&x<=100000;
+function pickUnits(task,mixed){
+  const base=pick(mixed?['cm','dm','m','mm']:['cm','cm','cm','m','m','mm','dm']);
+  task.unit=base;
+  task.labels.forEach(l=>{ if(l.val!=null) l.unit=base; });
+  if(!mixed){ task.ansUnit=base; return true; }
+  // Svarenhet: samme eller nabo-enhet
+  const i=UNITS.indexOf(base);
+  const cand=UNITS.filter((u,j)=>Math.abs(j-i)<=2&&nice(conv(conv(task.area,base,u),base,u))&&conv(conv(task.area,base,u),base,u)>=0.01);
+  task.ansUnit=pick(cand.length?cand:[base]);
+  // Vis noen av målene i en annen enhet
+  const vl=task.labels.filter(l=>l.val!=null&&l.t!=='dot');
+  let changed=0;
+  vl.forEach(l=>{
+    const opts=UNITS.filter(u=>u!==base&&nice(conv(l.val,base,u))&&Math.abs(UNITS.indexOf(u)-i)<=2);
+    if(opts.length&&(Math.random()<0.6||changed===0&&l===vl[vl.length-1])){ l.unit=pick(opts); changed++; }
+  });
+  const used=new Set(vl.map(l=>l.unit)); used.add(task.ansUnit);
+  return used.size>=2;
+}
+
+// ── OPPGAVE PER NIVÅ ──
+const LEVEL_KINDS={1:['rektangel','kvadrat'],2:['rektangel','kvadrat'],3:['trekant'],4:['parallellogram'],5:['rombe'],
+  6:['trapes'],7:['sirkel'],8:['rektangel','trekant','parallellogram','rombe','trapes','sirkel','kvadrat']};
+function makeTask(level){
+  let t;
+  if(level<=8){
+    const kinds=LEVEL_KINDS[level];
+    t=makeSimple(pick(level===8?kinds:kinds),level);
+    // Nivå 4–7: litt repetisjon av tidligere figurer
+    if(level>=4&&level<=7&&Math.random()<0.2) t=makeSimple(pick(['rektangel','trekant','parallellogram','rombe','trapes'].slice(0,level-2)),level);
+  } else if(level===9) t=makeMissing();
+  else if(level===10) t=Math.random()<0.85?pick(COMP2)():makeSimple(pick(LEVEL_KINDS[8]),8);
+  else if(level===11) t=Math.random()<0.75?pick(COMP3)():pick(COMP2)();
+  else {
+    const r=Math.random();
+    t=r<0.45?makeSimple(pick(['rektangel','trekant','parallellogram','trapes','rombe','kvadrat']),8):r<0.8?pick(COMP2.concat(COMP3))():makeSimple('sirkel',8);
+  }
+  t.level=level;
+  t.seamsOn=level===10;
+  let ok=pickUnits(t,level>=12);
+  if(level>=12&&!ok) return makeTask(level);
+  t.mixed=level>=12;
+  // Svaret i svarenheten
+  const f=(UNIT_M[t.unit]/UNIT_M[t.ansUnit])**2;
+  t.answer=t.missing?conv(t.missing.val,t.unit,t.ansUnit):t.area*f;
+  t.mistakes=(t.mistakes||[]).map(m=>({...m,val:m.val*f}));
+  if(t.mixed){
+    const g=t.area*(UNIT_M[t.unit]/UNIT_M[t.ansUnit]); // vanlig feil: gjort om som lengde, ikke areal
+    t.mistakes.push({val:g,msg:`Husk at areal har kvadratenheter. 1 m² = 100 dm² = 10 000 cm² = 1 000 000 mm².`});
+  }
+  return t;
+}
+
+// Er svaret riktig? Sirkler: godta 3,14 og π fra kalkulator (litt slingringsmonn)
+function isCorrect(t,ans){
+  if(!Number.isFinite(ans)) return false;
+  const v=t.answer;
+  if(t.circle&&!t.missing) return Math.abs(ans-v)<=Math.max(0.011*Math.max(1,(UNIT_M[t.unit]/UNIT_M[t.ansUnit])**2),Math.abs(v)*0.003);
+  return Math.abs(ans-v)<=Math.max(1e-9,Math.abs(v)*1e-9);
+}
+function findMistake(t,ans){
+  return (t.mistakes||[]).find(m=>Math.abs(ans-m.val)<=Math.max(0.011,Math.abs(m.val)*0.003)&&!isCorrect(t,m.val));
+}
+const parseNum=s=>parseFloat(String(s).replace(/\s/g,'').replace(',','.'));
+
+// ═════════════ SPILL OG VISNING ═════════════
+const LEVELS={
+  1:{name:'Nivå 1',desc:'Rektangel og kvadrat med hele tall'},
+  2:{name:'Nivå 2',desc:'Rektangel og kvadrat med desimaltall'},
+  3:{name:'Nivå 3',desc:'Trekant'},
+  4:{name:'Nivå 4',desc:'Parallellogram'},
+  5:{name:'Nivå 5',desc:'Rombe'},
+  6:{name:'Nivå 6',desc:'Trapes'},
+  7:{name:'Nivå 7',desc:'Sirkel (π ≈ 3,14)'},
+  8:{name:'Nivå 8',desc:'Blanding av alle figurene'},
+  9:{name:'Nivå 9',desc:'Finn målet som mangler'},
+  10:{name:'Nivå 10',desc:'Sammensatte figurer med to deler'},
+  11:{name:'Nivå 11',desc:'Sammensatte figurer med hull og flere deler'},
+  12:{name:'Nivå 12',desc:'Blandede enheter (mm, cm, dm og m)'},
+};
+const MIN_LEVEL=1, MAX_LEVEL=12;
+let currentLevel=1, currentScore=0, gameMode='practice';
+let streak=0, errorStreak=0;
+let task=null, taskStart=0, tries=0, done=false;
+const seenHints=new Set();
+
+// Rapport til læreren
+const tcLv=levelTracker(), tcSessionStart=Date.now();
+let tcCorrect=0, tcWrong=0;
+function syncTC(){
+  tcLv.note(currentLevel);
+  syncToTimecode('areal-regn',{level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSessionStart});
+}
+const $=id=>document.getElementById(id);
+
+// ── TEGNING ──
+const lenTxt=l=>l.val==null?'?':fmtN(l.val==null?0:conv(l.val,task.unit,l.unit||task.unit))+' '+(l.unit||task.unit);
+function figSVG(t,showSeams){
+  const all=t.parts.flatMap(p=>p.pts).concat(t.labels.flatMap(l=>[l.a,l.b,l.c].filter(Boolean)));
+  const xs=all.map(p=>p[0]), ys=all.map(p=>p[1]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const MX=window.innerWidth<500?70:84, MY=46;
+  const maxW=Math.min(window.innerWidth-60,600), maxH=Math.min(340,Math.max(240,window.innerHeight*0.42));
+  const k=Math.min((maxW-2*MX)/Math.max(x1-x0,0.1),(maxH-2*MY)/Math.max(y1-y0,0.1),60);
+  const W=Math.round((x1-x0)*k+2*MX), H=Math.round((y1-y0)*k+2*MY);
+  const X=x=>MX+(x-x0)*k, Y=y=>H-MY-(y-y0)*k;
+  const path=pts=>'M'+pts.map(([x,y])=>X(x).toFixed(1)+','+Y(y).toFixed(1)).join('L')+'Z';
+  const pos=t.parts.filter(p=>p.sign>0), neg=t.parts.filter(p=>p.sign<0);
+  let s='';
+  // Kantlinje først, så fyll oppå: da forsvinner skjøtene mellom delene
+  pos.forEach(p=>{ s+=`<path d="${path(p.pts)}" fill="var(--fill)" stroke="var(--edge)" stroke-width="5" stroke-linejoin="round"/>`; });
+  pos.forEach(p=>{ s+=`<path d="${path(p.pts)}" fill="var(--fill)"/>`; });
+  neg.forEach(p=>{ s+=`<path d="${path(p.pts)}" fill="#fffdfa" stroke="var(--edge)" stroke-width="2.5" stroke-linejoin="round"/>`; });
+  if(showSeams&&t.seams) t.seams.forEach(([a,b])=>{ s+=`<line x1="${X(a[0])}" y1="${Y(a[1])}" x2="${X(b[0])}" y2="${Y(b[1])}" stroke="var(--edge)" stroke-width="1.8" stroke-dasharray="5 5"/>`; });
+  const txt=(x,y,str,anchor='middle',col='#0f172a')=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" font-size="15" fill="${col}" stroke="#fffdfa" stroke-width="4" paint-order="stroke">${str}</text>`;
+  t.labels.forEach(l=>{
+    if(l.t==='dim'){
+      const off=l.inside?10:16, [sx,sy]=[l.side[0],-l.side[1]];
+      const ax=X(l.a[0])+sx*off, ay=Y(l.a[1])+sy*off, bx=X(l.b[0])+sx*off, by=Y(l.b[1])+sy*off;
+      const tk=5;
+      s+=`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#64748b" stroke-width="1.5"/>`;
+      s+=`<line x1="${ax-sx*tk}" y1="${ay-sy*tk}" x2="${ax+sx*tk}" y2="${ay+sy*tk}" stroke="#64748b" stroke-width="1.5"/>`;
+      s+=`<line x1="${bx-sx*tk}" y1="${by-sy*tk}" x2="${bx+sx*tk}" y2="${by+sy*tk}" stroke="#64748b" stroke-width="1.5"/>`;
+      const mx=(ax+bx)/2+sx*14, my=(ay+by)/2+sy*12;
+      const anchor=Math.abs(sx)>0.7?(sx>0?'start':'end'):'middle';
+      s+=txt(mx+(anchor==='start'?-6:anchor==='end'?6:0),my,lenTxt(l),anchor,l.val==null?'#dc2626':'#0f172a');
+    } else if(l.t==='height'){
+      const ax=X(l.a[0]),ay=Y(l.a[1]),bx=X(l.b[0]),by=Y(l.b[1]);
+      s+=`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#2563eb" stroke-width="2.2" stroke-dasharray="6 4"/>`;
+      s+=`<path d="M${bx} ${by-10}h10v10" fill="none" stroke="#2563eb" stroke-width="1.8"/>`;
+      s+=txt(ax+8,(ay+by)/2,lenTxt(l),'start',l.val==null?'#dc2626':'#1d4ed8');
+    } else if(l.t==='ext'){
+      s+=`<line x1="${X(l.a[0])}" y1="${Y(l.a[1])}" x2="${X(l.b[0])}" y2="${Y(l.b[1])}" stroke="var(--edge)" stroke-width="1.8" stroke-dasharray="4 4"/>`;
+    } else if(l.t==='diag'){
+      const ax=X(l.a[0]),ay=Y(l.a[1]),bx=X(l.b[0]),by=Y(l.b[1]);
+      s+=`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#2563eb" stroke-width="2.2" ${l.solid?'':'stroke-dasharray="6 4"'}/>`;
+      const p=l.pos||0.5, mx=ax+(bx-ax)*p, my=ay+(by-ay)*p;
+      const vert=Math.abs(bx-ax)<Math.abs(by-ay);
+      s+=txt(mx+(vert?8:0),my+(vert?0:-12),lenTxt(l),vert?'start':'middle',l.val==null?'#dc2626':'#1d4ed8');
+    } else if(l.t==='dot'){
+      s+=`<circle cx="${X(l.c[0])}" cy="${Y(l.c[1])}" r="3.5" fill="#1d4ed8"/>`;
+    }
+  });
+  if(t.missing){
+    const p=t.parts[0].pts, cx=p.reduce((a,q)=>a+q[0],0)/p.length, cy=p.reduce((a,q)=>a+q[1],0)/p.length;
+    s+=txt(X(cx),Y(cy)+(t.kind==='sirkel'?22:0),`A = ${fmtN(t.area)} ${sq(t.unit)}`);
+  }
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Figur med mål">${s}</svg>`;
+}
+
+// ── TIPS (bare første gang noe nytt dukker opp) ──
+const HINTS={
+  rektangel:'Areal av et rektangel: A = l · b (lengde · bredde).',
+  kvadrat:'Et kvadrat har fire like lange sider: A = s · s.',
+  trekant:'A = g · h / 2. Høyden h (blå og stiplet) står vinkelrett på grunnlinjen g. Den kan også ligge utenfor trekanten.',
+  parallellogram:'A = g · h. Bruk høyden (blå og stiplet), ikke den skrå siden.',
+  rombe:'A = d₁ · d₂ / 2, der d₁ og d₂ er de to diagonalene (blå og stiplet).',
+  trapes:'A = (a + b) · h / 2, der a og b er de to parallelle sidene.',
+  sirkel:'A = π · r². Bruk π ≈ 3,14. Radien er halve diameteren: r = d / 2. Svar med to desimaler.',
+  mangler:'Sett inn det du vet i formelen, og regn baklengs for å finne målet som mangler.',
+  sammensatt:'Del figuren i kjente figurer (de stiplede linjene). Regn ut arealet av hver del, og legg sammen.',
+  hull:'Regn ut arealet av hele figuren, og trekk fra arealet av hullet.',
+  enheter:'Målene har ulike enheter. Gjør om alle mål til enheten i svaret før du regner. 1 m = 10 dm = 100 cm = 1000 mm.',
+};
+function hintKey(t){ return t.mixed?'enheter':t.missing?'mangler':t.kind==='sammensatt'?(t.hole?'hull':'sammensatt'):t.kind; }
+function showHint(t){
+  const k=hintKey(t), box=$('hintBox');
+  if(!seenHints.has(k)&&HINTS[k]){ seenHints.add(k); box.innerHTML='📘 '+HINTS[k]; box.classList.add('show'); }
+  else box.classList.remove('show');
+}
+
+// ── OPPGAVER ──
+function renderTask(){
+  const t=task;
+  tries=0; done=false; taskStart=Date.now();
+  $('taskType').textContent=t.mixed?'📏 Blandede enheter':t.missing?'🔍 Finn målet som mangler':t.kind==='sammensatt'?'🧩 Sammensatt figur':'📐 '+NAME[t.kind][0].toUpperCase()+NAME[t.kind].slice(1);
+  $('fb').className='fb'; $('fb').innerHTML='';
+  $('checkBtn').style.display=''; $('showBtn').style.display='none'; $('nextBtn').style.display='none'; $('skipBtn').style.display='';
+  showHint(t);
+  const name=t.kind==='sammensatt'?'figuren':NAME[t.kind];
+  const circ=t.circle&&!t.missing?' Bruk π ≈ 3,14.':'';
+  const kv=t.kind==='kvadrat'?' Figuren er et kvadrat.':'';
+  if(t.missing){
+    const what={b:'bredden b',s:'siden s',h:'høyden h',r:'radien r'}[t.missing.ask];
+    $('taskQ').innerHTML=`Arealet av ${name} er ${fmtN(t.area)} ${sq(t.unit)}. Finn ${what}.${kv}`;
+    $('answer').innerHTML=`<div class="row">${t.missing.ask} = <input class="num-in" id="inA" type="text" inputmode="decimal" autocomplete="off"><span class="u">${t.ansUnit}</span></div>`;
+  } else {
+    $('taskQ').innerHTML=`Regn ut arealet av ${name}.${kv}${circ}${t.mixed?` Svar i <b>${sq(t.ansUnit)}</b>.`:''}`;
+    $('answer').innerHTML=`<div class="row">A = <input class="num-in" id="inA" type="text" inputmode="decimal" autocomplete="off"><span class="u">${sq(t.ansUnit)}</span></div>`;
+  }
+  $('fig').innerHTML=figSVG(t,t.seamsOn);
+  if(window.innerWidth>600) $('inA').focus();
+}
+
+// Utregning som tekst
+function solutionHTML(t){
+  const u=t.unit, A=fmtN(rnd(t.area,2));
+  let h='';
+  if(t.mixed){
+    const shown=t.labels.filter(l=>l.val!=null&&l.unit&&l.unit!==t.unit);
+    if(shown.length) h+='Gjør om til '+u+': '+shown.map(l=>`${fmtN(conv(l.val,u,l.unit))} ${l.unit} = ${fmtN(l.val)} ${u}`).join(', ')+'.<br>';
+  }
+  if(t.kind==='sammensatt'){
+    if(t.hintExtra) h+=t.hintExtra+'<br>';
+    t.steps.forEach(([n,e,v])=>{ h+=`${n}: ${e} = ${fmtN(rnd(Math.abs(v),2))} ${sq(u)}<br>`; });
+    h+=`Til sammen: <b>${A} ${sq(u)}</b>`;
+  } else if(t.missing){
+    h+=t.calc({...t.m,A:fmtN(t.area),ans:fmtN(t.missing.val)})+' '+u;
+  } else {
+    h+=t.calc({...Object.fromEntries(Object.entries(t.m).map(([k,v])=>[k,fmtN(v)])),A:A+' '+sq(u)});
+  }
+  if(t.ansUnit!==t.unit&&!t.missing) h+=`<br>${A} ${sq(u)} = <b>${fmtN(rnd(t.answer,6))} ${sq(t.ansUnit)}</b>`;
+  return h;
+}
+
+window.checkAnswer=function(){
+  if(done||!task) return;
+  const t=task, ans=parseNum($('inA').value);
+  if(!Number.isFinite(ans)){ $('fb').className='fb err'; $('fb').innerHTML='Skriv et tall. Bruk komma for desimaler, for eksempel <b>12,5</b>.'; return; }
+  const ok=isCorrect(t,ans);
+  $('inA').classList.remove('ok','bad'); $('inA').classList.add(ok?'ok':'bad');
+  if(ok){ onRight(); return; }
+  const m=findMistake(t,ans);
+  let hint=m?m.msg:t.missing?`Sett inn i formelen: ${FORMULA[t.kind]}.`
+    :t.kind==='sammensatt'?(t.hole?'Regn ut hele figuren og trekk fra hullet.':'Del figuren i to kjente figurer og legg sammen arealene.')
+    :`Bruk formelen ${FORMULA[t.kind]}.`;
+  if(t.mixed&&!m) hint='Gjør om alle målene til '+t.unit+' først, eller sjekk at du har gjort om svaret riktig til '+sq(t.ansUnit)+'.';
+  if(t.circle&&!t.missing&&!m) hint+=' Svar med to desimaler.';
+  onWrong(hint);
+};
+
+// ── RIKTIG / FEIL ──
+let firstWrongCounted=false;
+function registerWrong(){
+  tcWrong++;
+  if(!firstWrongCounted){ firstWrongCounted=true; SU.recordResult(false); }
+  syncTC();
+}
+function onWrong(hint){
+  tries++;
+  registerWrong();
+  $('fb').className='fb err';
+  $('fb').innerHTML='✗ Ikke helt. '+hint;
+  if(tries>=2) $('showBtn').style.display='';
+}
+function onRight(){
+  const elapsed=(Date.now()-taskStart)/1000;
+  const bonus=Math.max(10,Math.round(Math.max(20,100+currentLevel*15-elapsed)-tries*15));
+  currentScore+=bonus;
+  $('scoreBadge').textContent=currentScore+' p';
+  tcCorrect++;
+  if(tries===0) SU.recordResult(true);
+  syncTC();
+  if(gameMode==='multi') syncRoomScore(currentScore);
+  finishTask(true,`+${bonus} poeng`);
+}
+function finishTask(won,extra){
+  done=true;
+  if(task.kind==='sammensatt') $('fig').innerHTML=figSVG(task,true);
+  $('fb').className='fb '+(won?'win':'info');
+  $('fb').innerHTML=`<span class="big">${won?'⭐ Riktig! '+extra:'💡 Løsningen'}</span>${solutionHTML(task)}`;
+  $('checkBtn').style.display='none'; $('showBtn').style.display='none'; $('skipBtn').style.display='none';
+  $('nextBtn').style.display=''; $('nextBtn').focus();
+}
+window.showSolution=function(){ if(!done) finishTask(false); };
+
+// ── FLYT ──
+window.nextTask=function(){
+  firstWrongCounted=false;
+  task=makeTask(currentLevel);
+  renderTask();
+};
+function selectLevelDesc(){ $('levelDesc').textContent=LEVELS[currentLevel].desc; }
+window.startGame=function(){
+  if(gameMode==='multi'){
+    const rc=$('roomInput').value.trim().toUpperCase();
+    if(!rc){ showToast('Skriv inn romkoden','error'); return; }
+    initRoom(rc);
+  }
+  $('levelBadge').textContent=LEVELS[currentLevel].name;
+  $('startScreen').style.display='none';
+  $('mainArea').style.display='flex';
+  nextTask();
+  syncTC();
+};
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||$('mainArea').style.display==='none') return;
+  if(e.target&&e.target.tagName==='BUTTON') return;
+  if(done) nextTask(); else checkAnswer();
+});
+buildLevelSelect();
+$('levelSelect').addEventListener('click',selectLevelDesc);
+selectLevelDesc();
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get } from "../js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._fbReady=true;
+</script>
+</body>
+</html>
