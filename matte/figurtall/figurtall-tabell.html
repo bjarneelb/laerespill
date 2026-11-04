@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Figurtall med tabell</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ff;--panel:#fff;--border:#e2dcf7;
+  --accent:#7c3aed;--accent-dark:#6d28d9;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --cell:#60a5fa;--cell-edge:#2563eb;
+  --r:14px;--shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 12px rgba(124,58,237,0.3);}
+.header-left h1{font-size:1rem;font-weight:900;}
+.header-left p{font-size:0.7rem;opacity:0.85;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.level-badge{background:rgba(255,255,255,0.2);color:white;}
+.score-badge{background:var(--yellow);color:#78350f;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+/* START */
+.overlay{position:fixed;inset:0;background:rgba(245,243,255,0.97);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:30px 32px;width:480px;max-width:100%;text-align:center;box-shadow:var(--shadow);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card p{font-size:0.88rem;color:var(--muted);font-weight:700;margin-bottom:14px;line-height:1.5;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.lbl{font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800;}
+.level-select{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:6px;}
+.level-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:0.85rem;cursor:pointer;color:var(--muted);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.level-desc{font-size:0.8rem;color:var(--accent);font-weight:800;margin-bottom:12px;min-height:18px;}
+.mode-row{display:flex;gap:8px;margin-bottom:10px;}
+.mode-btn{flex:1;padding:8px;background:white;border:2px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:800;cursor:pointer;}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;outline:none;margin-bottom:10px;text-align:center;text-transform:uppercase;letter-spacing:2px;}
+.name-input:focus{border-color:var(--accent);}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.start-btn:hover{background:var(--accent-dark);}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px;gap:12px;max-width:900px;margin:0 auto;width:100%;}
+.card{width:100%;background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);}
+.task-type{font-size:0.75rem;font-weight:800;color:var(--accent);margin-bottom:4px;}
+.task-q{font-size:1.05rem;font-weight:800;line-height:1.5;margin-bottom:12px;}
+.hintbox{background:#f5f3ff;border:2px solid #c4b5fd;color:#4c1d95;border-radius:12px;padding:10px 14px;font-weight:800;font-size:0.9rem;line-height:1.5;margin-bottom:12px;display:none;}
+.hintbox.show{display:block;}
+
+/* FIGURER */
+.figs{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:flex-end;margin-bottom:14px;}
+.fig{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 12px 8px;border:2px solid var(--border);border-radius:12px;background:#faf9ff;}
+.fig.zero{border-style:dashed;border-color:#a78bfa;background:#f5f3ff;animation:pop .5s ease-out;}
+.fig-lbl{font-size:0.8rem;font-weight:800;color:var(--muted);}
+.fig svg{display:block;}
+
+/* TABELL MED FORSKJØVET DIFFERANSE */
+.tbl-wrap{max-width:100%;overflow-x:auto;margin-bottom:12px;}
+.tbl-wrap table{margin:0 auto;}
+.sm-lbl{display:none;}
+table.dt{border-collapse:collapse;}
+table.dt th,table.dt td{border:2px solid var(--border);padding:5px 6px;text-align:center;font-weight:800;min-width:48px;height:44px;}
+table.dt th{background:#ede9fe;color:var(--accent-dark);}
+table.dt th.rowh{text-align:left;padding:5px 10px;white-space:nowrap;}
+table.dt td.gap,table.dt th.gap{background:#f3f4f6;min-width:34px;}
+table.dt td.val{font-size:1.1rem;}
+table.dt td.pulse,.pulse{animation:pulse 1s ease-in-out 2;}
+@keyframes pulse{0%,100%{box-shadow:none;}50%{box-shadow:0 0 0 4px #fbbf24 inset;}}
+@keyframes pop{0%{transform:scale(.6);opacity:0;}100%{transform:scale(1);opacity:1;}}
+
+/* SVAR */
+.num-in,.txt-in{padding:7px 8px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;outline:none;text-align:center;}
+.num-in{width:58px;}
+.txt-in{width:200px;}
+.num-in:focus,.txt-in:focus{border-color:var(--accent);}
+.num-in[readonly]{background:#f8fafc;}
+.ok{border-color:var(--green)!important;background:#f0fdf4!important;}
+.bad{border-color:var(--red)!important;background:#fef2f2!important;}
+.step{display:flex;flex-direction:column;align-items:center;gap:8px;margin:8px 0 4px;padding:12px;border:2px solid var(--border);border-radius:12px;background:#fcfbff;animation:pop .35s ease-out;}
+.step-title{font-size:0.8rem;font-weight:900;color:var(--accent);letter-spacing:0.5px;}
+.eq{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:900;font-size:1.2rem;}
+.slot{display:inline-flex;align-items:center;justify-content:center;min-width:46px;height:40px;padding:0 8px;border:2px dashed #a78bfa;border-radius:8px;background:white;color:var(--accent-dark);}
+.slot.filled{border-style:solid;border-color:var(--accent);background:#ede9fe;animation:pop .3s ease-out;}
+.result{color:var(--green);animation:pop .4s ease-out;}
+.fade{animation:pop .4s ease-out;}
+.sign-btn{width:46px;height:40px;border:2px solid var(--border);border-radius:8px;background:white;font-family:'Nunito',sans-serif;font-size:1.3rem;font-weight:900;cursor:pointer;color:var(--accent-dark);}
+.sign-btn:hover{border-color:var(--accent);}
+.explain{font-size:0.9rem;font-weight:800;color:#4c1d95;text-align:center;line-height:1.5;max-width:560px;}
+.flyer{position:fixed;transform:translate(-50%,-50%);z-index:500;background:var(--yellow);color:#78350f;font-weight:900;font-size:1.15rem;padding:5px 12px;border-radius:9px;box-shadow:0 4px 14px rgba(0,0,0,0.25);pointer-events:none;}
+
+/* TILBAKEMELDING */
+.fb{margin-top:12px;border-radius:12px;padding:12px 14px;font-weight:800;line-height:1.55;display:none;}
+.fb.err{display:block;background:#fef2f2;border:2px solid #fecaca;color:#991b1b;}
+.fb.win{display:block;background:#f0fdf4;border:2px solid #86efac;color:#14532d;}
+.fb.info{display:block;background:#eef2ff;border:2px solid #c7d2fe;color:#312e81;}
+.fb .big{font-size:1.15rem;display:block;margin-bottom:4px;}
+
+/* KONTROLLER */
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;}
+.btn:disabled{opacity:0.5;cursor:default;}
+.btn-check{background:var(--accent);color:white;}
+.btn-next{background:var(--green);color:white;}
+.btn-soft{background:#f3f4f6;color:var(--muted);}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 22px;border-radius:10px;font-weight:800;font-size:0.9rem;opacity:0;transition:all .3s;z-index:1100;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);color:white;}
+.toast.error{background:var(--red);color:white;}
+.toast.info{background:var(--accent);color:white;}
+
+@media (max-width:600px){
+  .header{padding:8px 12px;}
+  .header-left p{display:none;}
+  .task-q{font-size:0.98rem;}
+  .card{padding:12px 6px;}
+  table.dt th,table.dt td{padding:2px 1px;min-width:34px;height:40px;}
+  table.dt td.gap,table.dt th.gap{min-width:30px;}
+  table.dt .num-in{width:34px;padding:6px 1px;font-size:0.95rem;}
+  table.dt th.rowh{padding:2px 4px;font-size:0.72rem;}
+  .lg-lbl{display:none;} .sm-lbl{display:inline;}
+  .num-in{width:40px;padding:6px 2px;font-size:0.98rem;}
+  .eq{font-size:1.05rem;gap:6px;}
+}
+@media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important;} }
+</style>
+<script src="../js/spill-utils.js"></script>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- START -->
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <div style="font-size:2.6rem">📊</div>
+    <h1>Figurtall med tabell</h1>
+    <p>Fyll ut tabellen, finn førstedifferansen og f<sub>0</sub>, og lag formelen for f<sub>n</sub>.</p>
+    <div class="version">v1.0</div>
+    <div class="lbl">Start på nivå</div>
+    <div class="level-select" id="levelSelect"></div>
+    <div class="level-desc" id="levelDesc"></div>
+    <div class="mode-row">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øvemodus</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">🏎️ Flerspiller</button>
+    </div>
+    <div id="multiOpts" style="display:none">
+      <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" autocomplete="off">
+    </div>
+    <button class="start-btn" onclick="startGame()">🚀 Start</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>📊 Figurtall med tabell</h1>
+    <p>Tabell, førstedifferanse, f₀ og formel</p>
+  </div>
+  <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
+    <span class="badge level-badge" id="levelBadge">Nivå 1</span>
+    <span class="badge score-badge" id="scoreBadge">0 p</span>
+    <a class="btn-menu" href="../">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+  <div class="card">
+    <div class="task-type" id="taskType"></div>
+    <div class="task-q" id="taskQ"></div>
+    <div class="hintbox" id="hintBox"></div>
+    <div class="figs" id="figs"></div>
+    <div class="tbl-wrap" id="tblWrap"></div>
+    <div id="steps"></div>
+    <div class="fb" id="fb"></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-check" id="checkBtn" onclick="checkAnswer()">✅ Sjekk svar</button>
+    <button class="btn btn-soft" id="showBtn" onclick="showSolution()" style="display:none">💡 Vis løsningen</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextTask()" style="display:none">Neste oppgave ➡️</button>
+    <button class="btn btn-soft" id="skipBtn" onclick="nextTask()">⏭️ Ny oppgave</button>
+  </div>
+</div>
+
+<script>
+// ═════════════ LOGIKK (ingen DOM) ═════════════
+const rint=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const minus=v=>v<0?'−'+(-v):String(v);
+
+// Figurfamilier (samme utseende som i Lineære figurtall). Figur n har a·n + b ruter, og f₀ = b.
+const FAMILIES={
+  rader:(a,b,n)=>{ // a rader som vokser + en fast søyle med b ruter
+    const c=[]; for(let y=0;y<b;y++) c.push({x:0,y});
+    const x0=b>0?1:0;
+    for(let r=0;r<a;r++) for(let i=0;i<n;i++) c.push({x:x0+i,y:r});
+    return c; },
+  taarn:(a,b,n)=>{ // a tårn med høyde n på en fast sokkel med b ruter
+    const c=[]; for(let i=0;i<b;i++) c.push({x:i,y:0});
+    const y0=b>0?1:0;
+    for(let col=0;col<a;col++) for(let h=0;h<n;h++) c.push({x:col,y:y0+h});
+    return c; },
+  armer:(a,b,n)=>{ // én midtrute og a armer med n ruter (b = 1)
+    const d=[[1,0],[0,1],[-1,0],[0,-1]], c=[{x:0,y:0}];
+    for(let k=0;k<a;k++) for(let i=1;i<=n;i++) c.push({x:d[k][0]*i,y:d[k][1]*i});
+    return c; },
+  ramme:(a,b,n)=>{ // hul firkant med side n + 1: 4n
+    const s=n+1, c=[];
+    for(let x=0;x<s;x++) for(let y=0;y<s;y++) if(x===0||y===0||x===s-1||y===s-1) c.push({x,y});
+    return c; },
+  stjerne:(a,b,n)=>{ // a armer med n ruter som deler midtruta: a·n − (a − 1)
+    const d=[[1,0],[0,1],[-1,0],[0,-1]], c=[{x:0,y:0}];
+    for(let k=0;k<a;k++) for(let i=1;i<n;i++) c.push({x:d[k][0]*i,y:d[k][1]*i});
+    return c; },
+};
+function figCells(p,n){
+  const c=FAMILIES[p.fam](p.a,p.b,n);
+  if(!c.length) return c;
+  const mx=Math.min(...c.map(q=>q.x)), my=Math.min(...c.map(q=>q.y));
+  return c.map(q=>({x:q.x-mx,y:q.y-my}));
+}
+const fval=(p,n)=>p.a*n+p.b;
+
+// Mønster per nivå. Nivå 1–3: f₀ er alltid positiv. Fra nivå 4: også f₀ = 0 og negativ f₀.
+function pickPattern(level){
+  const rader=(aLo,aHi,bLo,bHi)=>()=>({fam:'rader',a:rint(aLo,aHi),b:rint(bLo,bHi)});
+  const taarn=(aLo,aHi)=>()=>{const a=rint(aLo,aHi); return {fam:'taarn',a,b:rint(a,a+3)};};
+  const armer=(aLo,aHi)=>()=>({fam:'armer',a:rint(aLo,aHi),b:1});
+  const nullF0=()=>Math.random()<0.5?{fam:'ramme',a:4,b:0}:{fam:'rader',a:rint(2,4),b:0};
+  const negF0=()=>{const a=rint(2,4); return {fam:'stjerne',a,b:1-a};};
+  let opts;
+  if(level<=1) opts=[rader(1,3,1,4),rader(2,3,1,3),armer(2,3)];
+  else if(level<=3) opts=[rader(1,4,1,5),taarn(1,3),armer(2,4)];
+  else opts=[rader(1,5,1,6),taarn(2,4),armer(2,4),nullF0,negF0,negF0];
+  return pick(opts)();
+}
+
+// Stegene i hver oppgave, per nivå
+const STEPS={
+  1:['tabell','anim0'],
+  2:['tabell','f0hjelp'],
+  3:['tabell','f0','animFormel'],
+  4:['bokser'],
+  5:['tabell','f0','bokser'],
+  6:['tabell','f0','fri'],
+  7:['tabell','f0','fri','ekstra'],
+};
+const EXTRA_N=[5,6,7,8,9,10,15,20];
+
+function makeTask(level){
+  const L=Math.min(Math.max(level,1),7);
+  const p=pickPattern(L);
+  const t={level:L,p,steps:STEPS[L],d:p.a,f0:p.b,f:[1,2,3,4].map(n=>fval(p,n))};
+  if(L===7) t.extra=shuffle(EXTRA_N.slice()).slice(0,2).sort((a,b)=>a-b);
+  return t;
+}
+
+// Formel som tekst: 3n + 1, 4n, n + 2, 2n − 1
+function fmt(a,b){
+  const an=a===1?'n':a+'n';
+  return b>0?an+' + '+b:b<0?an+' − '+(-b):an;
+}
+// Tolker en formel eleven har skrevet, og returnerer en funksjon av n (eller null)
+function parseFormula(str){
+  let s=String(str||'').toLowerCase().replace(/\s+/g,'')
+    .replace(/[·×⋅]/g,'*').replace(/[−–]/g,'-').replace(/,/g,'.').replace(/ₙ/g,'n');
+  s=s.replace(/^f(_?n|\(n\))?=/,'');
+  if(!s||!/^[0-9n+\-*/().]+$/.test(s)) return null;
+  s=s.replace(/(\d|n|\))(?=[n(])/g,'$1*').replace(/\)(?=\d)/g,')*').replace(/n(?=\d)/g,'n*');
+  try{
+    const f=new Function('n','"use strict";return ('+s+');');
+    if(!Number.isFinite(f(1))) return null;
+    return f;
+  }catch(e){ return null; }
+}
+function sameFormula(f,p){
+  for(let n=0;n<=8;n++){ const v=f(n); if(!Number.isFinite(v)||Math.abs(v-fval(p,n))>1e-9) return false; }
+  return true;
+}
+const parseInt2=s=>{ const v=String(s||'').trim().replace(/[−–]/g,'-'); return /^-?\d+$/.test(v)?parseInt(v,10):NaN; };
+
+// ═════════════ SPILL OG VISNING ═════════════
+const LEVELS={
+  1:{name:'Nivå 1',desc:'Fyll ut tabellen og førstedifferansen, og se hvordan f₀ finnes'},
+  2:{name:'Nivå 2',desc:'Finn f₀ med f₁ og førstedifferansen'},
+  3:{name:'Nivå 3',desc:'Regn ut f₀ selv, og se hvordan formelen lages'},
+  4:{name:'Nivå 4',desc:'Lag formelen av førstedifferansen og f₀'},
+  5:{name:'Nivå 5',desc:'Tabell, f₀ og formelen i ruter'},
+  6:{name:'Nivå 6',desc:'Tabell, f₀ og hele formelen selv'},
+  7:{name:'Nivå 7',desc:'Alt sammen, og regn ut flere figurtall'},
+};
+const MIN_LEVEL=1, MAX_LEVEL=7;
+let currentLevel=1, currentScore=0, gameMode='practice';
+let streak=0, errorStreak=0;
+let task=null, taskStart=0, tries=0, stepTries=0, done=false, stepIdx=0, busy=false;
+let firstWrongCounted=false;
+const seenHints=new Set();
+
+// Rapport til læreren
+const tcLv=levelTracker(), tcSessionStart=Date.now();
+let tcCorrect=0, tcWrong=0;
+function syncTC(){
+  tcLv.note(currentLevel);
+  syncToTimecode('figurtall-tabell',{level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSessionStart});
+}
+const $=id=>document.getElementById(id);
+const wait=ms=>new Promise(r=>setTimeout(r,matchMedia('(prefers-reduced-motion: reduce)').matches?Math.min(ms,80):ms));
+
+// ── TEGNING ──
+function figSVG(p,n,cs){
+  const cells=figCells(p,n);
+  const W=Math.max(1,...cells.map(c=>c.x+1)), H=Math.max(1,...cells.map(c=>c.y+1));
+  const pad=2;
+  const r=cells.map(c=>`<rect x="${pad+c.x*cs+1}" y="${pad+(H-1-c.y)*cs+1}" width="${cs-2}" height="${cs-2}" rx="3" fill="var(--cell)" stroke="var(--cell-edge)" stroke-width="1.5"/>`).join('');
+  return `<svg width="${W*cs+pad*2}" height="${H*cs+pad*2}" role="img" aria-label="Figur ${n} med ${cells.length} ruter">${r}</svg>`;
+}
+function cellSize(p){
+  let maxW=1,maxH=1;
+  [1,2,3,4].forEach(n=>{const c=figCells(p,n); maxW=Math.max(maxW,...c.map(q=>q.x+1)); maxH=Math.max(maxH,...c.map(q=>q.y+1));});
+  const room=Math.max(70,Math.min(220,(Math.min(window.innerWidth,900)-110)/4));
+  return Math.max(7,Math.min(22,Math.floor(room/maxW),Math.floor(150/maxH)));
+}
+function drawFigs(){
+  const cs=cellSize(task.p);
+  $('figs').innerHTML=[1,2,3,4].map(n=>`<div class="fig" id="fig${n}">${figSVG(task.p,n,cs)}<div class="fig-lbl">Figur ${n}</div></div>`).join('');
+}
+// Viser figur 0 (bare når f₀ er positiv)
+function showFigZero(){
+  if(task.f0<=0||$('fig0')) return;
+  const cs=cellSize(task.p);
+  $('figs').insertAdjacentHTML('afterbegin',`<div class="fig zero" id="fig0">${figSVG(task.p,0,cs)}<div class="fig-lbl">Figur 0</div></div>`);
+}
+
+// Tabell der førstedifferansen står mellom figurtallene. editable: eleven fyller ut.
+function drawTable(editable){
+  const t=task;
+  const cell=(id,val)=>editable?`<td><input class="num-in" id="${id}" inputmode="numeric" autocomplete="off" aria-label="${id}"></td>`:`<td class="val" id="${id}c">${minus(val)}</td>`;
+  let h='<table class="dt"><tr><th class="rowh">n</th>';
+  for(let n=1;n<=4;n++){ h+=`<th>${n}</th>`; if(n<4) h+='<th class="gap"></th>'; }
+  h+='</tr><tr><th class="rowh">f<sub>n</sub></th>';
+  for(let n=1;n<=4;n++){ h+=cell('f'+n,t.f[n-1]); if(n<4) h+='<td class="gap"></td>'; }
+  h+='</tr><tr><th class="rowh" title="Førstedifferanse"><span class="lg-lbl">Førstedifferanse</span><span class="sm-lbl">1. diff.</span></th>';
+  for(let n=1;n<=4;n++){ h+='<td class="gap"></td>'; if(n<4) h+=cell('d'+n,t.d); }
+  h+='</tr></table>';
+  $('tblWrap').innerHTML=h;
+}
+// Låser tabellen etter riktig svar, så tallene står fast
+function lockTable(){
+  ['f1','f2','f3','f4','d1','d2','d3'].forEach(id=>{const el=$(id); if(el){ el.readOnly=true; el.classList.add('ok'); el.tabIndex=-1; }});
+}
+
+// Flytter et tall fra ett sted til et annet, så eleven ser hvor det kommer fra
+function flyTo(fromEl,toEl,text,ms=850){
+  return new Promise(res=>{
+    if(!fromEl||!toEl||matchMedia('(prefers-reduced-motion: reduce)').matches){ res(); return; }
+    const a=fromEl.getBoundingClientRect(), b=toEl.getBoundingClientRect();
+    const el=document.createElement('div'); el.className='flyer'; el.textContent=text;
+    el.style.left=(a.left+a.width/2)+'px'; el.style.top=(a.top+a.height/2)+'px';
+    document.body.appendChild(el);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      el.style.transition=`left ${ms}ms ease-in-out, top ${ms}ms ease-in-out`;
+      el.style.left=(b.left+b.width/2)+'px'; el.style.top=(b.top+b.height/2)+'px';
+    }));
+    setTimeout(()=>{ el.remove(); res(); },ms+60);
+  });
+}
+const tableCell=id=>{ const el=$(id)||$(id+'c'); return el&&el.closest('td'); };
+function fillSlot(id,text){ const s=$(id); if(s){ s.textContent=text; s.classList.add('filled'); } }
+
+// ── TIPS (bare første gang noe nytt dukker opp) ──
+const HINTS={
+  tabell:'Tell rutene i hver figur og skriv antallet under figurnummeret. Førstedifferansen er hvor mye f<sub>n</sub> øker fra én figur til den neste, for eksempel f<sub>2</sub> − f<sub>1</sub>.',
+  f0hjelp:'Figur 0 er figuren før figur 1. Den har førstedifferansen færre ruter enn figur 1: f<sub>0</sub> = f<sub>1</sub> − førstedifferansen.',
+  f0:'Finn f<sub>0</sub>: trekk førstedifferansen fra f<sub>1</sub>.',
+  bokser:'Formelen har formen f<sub>n</sub> = førstedifferansen · n + f<sub>0</sub>. Er f<sub>0</sub> negativ, bytter du + til −.',
+  fri:'Skriv hele formelen, for eksempel 3n + 2 eller 2n − 1.',
+  ekstra:'Sett figurnummeret inn for n i formelen din.',
+  neg:'Her er f<sub>0</sub> negativ eller 0. Figur 0 «finnes ikke», men tallet passer likevel i formelen.',
+};
+function showHints(){
+  const keys=task.steps.filter(k=>HINTS[k]);
+  if(task.level>=4&&task.f0<=0) keys.push('neg');
+  const fresh=keys.filter(k=>!seenHints.has(k));
+  const box=$('hintBox');
+  if(fresh.length){ fresh.forEach(k=>seenHints.add(k)); box.innerHTML=fresh.map(k=>'📘 '+HINTS[k]).join('<br>'); box.classList.add('show'); }
+  else box.classList.remove('show');
+}
+
+// ── STEG ──
+// Hvert steg: render() legger til innhold, check() gir {ok,hint}, solve() fyller inn løsningen,
+// after() kjøres når steget er riktig (animasjoner). auto: steget trenger ikke svar fra eleven.
+const STEP={
+  tabell:{
+    render(){ drawTable(true); const f=$('f1'); if(f&&window.innerWidth>600) f.focus(); },
+    check(){
+      const t=task; let okF=true, okD=true;
+      [1,2,3,4].forEach(n=>{const r=parseInt2($('f'+n).value)===t.f[n-1]; mark('f'+n,r); if(!r) okF=false;});
+      [1,2,3].forEach(n=>{const r=parseInt2($('d'+n).value)===t.d; mark('d'+n,r); if(!r) okD=false;});
+      return {ok:okF&&okD,hint:!okF?'Tell rutene i figurene på nytt.':'Førstedifferansen er forskjellen mellom to figurtall ved siden av hverandre, for eksempel f<sub>2</sub> − f<sub>1</sub>.'};
+    },
+    solve(){ [1,2,3,4].forEach(n=>{$('f'+n).value=task.f[n-1];}); [1,2,3].forEach(n=>{$('d'+n).value=task.d;}); },
+    after(){ lockTable(); },
+  },
+  anim0:{ auto:true,
+    async render(box){
+      const t=task;
+      box.innerHTML=`<div class="step-title">HVOR MANGE RUTER HAR FIGUR 0?</div>
+        <div class="eq fade"><span>f<sub>0</sub> = f<sub>1</sub> − førstedifferansen</span></div>
+        <div class="eq"><span>f<sub>0</sub> =</span><span class="slot" id="sA"></span><span>−</span><span class="slot" id="sB"></span><span id="sR"></span></div>
+        <div class="explain" id="sX"></div>`;
+      await wait(700);
+      const c1=tableCell('f1'), cd=tableCell('d1');
+      c1&&c1.classList.add('pulse'); await flyTo(c1,$('sA'),t.f[0]); fillSlot('sA',t.f[0]);
+      cd&&cd.classList.add('pulse'); await flyTo(cd,$('sB'),t.d); fillSlot('sB',t.d);
+      await wait(400);
+      $('sR').innerHTML=`<span class="result">= ${t.f0}</span>`;
+      await wait(500);
+      showFigZero();
+      $('sX').innerHTML=`Figur 0 har ${t.f0} rute${t.f0===1?'':'r'}. Fra figur 1 til figur 0 går vi ett steg tilbake, så vi tar bort førstedifferansen.`;
+    },
+  },
+  f0hjelp:{
+    render(box){
+      box.innerHTML=`<div class="step-title">FINN f<sub>0</sub></div>
+        <div class="eq"><span>f<sub>0</sub> = f<sub>1</sub> − førstedifferansen =</span>
+        <input class="num-in" id="hA" inputmode="numeric" autocomplete="off" aria-label="f1"><span>−</span>
+        <input class="num-in" id="hB" inputmode="numeric" autocomplete="off" aria-label="førstedifferansen"><span id="hR"></span></div>`;
+      if(window.innerWidth>600) $('hA').focus();
+    },
+    check(){
+      const a=parseInt2($('hA').value)===task.f[0], b=parseInt2($('hB').value)===task.d;
+      mark('hA',a); mark('hB',b);
+      return {ok:a&&b,hint:!a?'Hva står under figur 1 i tabellen?':'Førstedifferansen står i den nederste raden i tabellen.'};
+    },
+    solve(){ $('hA').value=task.f[0]; $('hB').value=task.d; },
+    async after(){
+      $('hA').readOnly=$('hB').readOnly=true;
+      await wait(300);
+      $('hR').innerHTML=`<span class="result">= ${task.f0}</span>`;
+      await wait(500); showFigZero();
+    },
+  },
+  f0:{
+    render(box){
+      if(task.steps[0]!=='tabell'&&task.level===4) return;
+      box.innerHTML=`<div class="step-title">FINN f<sub>0</sub></div>
+        <div class="eq"><span>f<sub>0</sub> =</span><input class="num-in" id="in0" inputmode="numeric" autocomplete="off" aria-label="f0"></div>`;
+      if(window.innerWidth>600) $('in0').focus();
+    },
+    check(){
+      const ok=parseInt2($('in0').value)===task.f0; mark('in0',ok);
+      return {ok,hint:'f<sub>0</sub> = f<sub>1</sub> − førstedifferansen = '+task.f[0]+' − '+task.d+'.'};
+    },
+    solve(){ $('in0').value=task.f0; },
+    after(){ $('in0').readOnly=true; },
+  },
+  animFormel:{ auto:true,
+    async render(box){
+      const t=task;
+      box.innerHTML=`<div class="step-title">SLIK LAGES FORMELEN</div>
+        <div class="eq"><span>f<sub>n</sub> =</span><span class="slot" id="sD"></span><span>· n +</span><span class="slot" id="sF"></span></div>
+        <div class="eq" id="sRes"></div>
+        <div class="explain" id="sX"></div>`;
+      await wait(600);
+      const cd=tableCell('d1'); cd&&cd.classList.add('pulse');
+      await flyTo(cd,$('sD'),t.d); fillSlot('sD',t.d);
+      await wait(250);
+      const f0el=$('in0'); f0el&&f0el.classList.add('pulse');
+      await flyTo(f0el,$('sF'),t.f0); fillSlot('sF',t.f0);
+      await wait(450);
+      $('sRes').innerHTML=`<span class="result">f<sub>n</sub> = ${fmt(t.d,t.f0)}</span>`;
+      await wait(300);
+      $('sX').innerHTML=`For hver ny figur kommer det ${t.d} rute${t.d===1?'':'r'} til (${t.d===1?'n':t.d+' · n'}), og vi starter med ${t.f0} rute${t.f0===1?'':'r'} i figur 0.`;
+    },
+  },
+  bokser:{
+    render(box){
+      box.innerHTML=`<div class="step-title">LAG FORMELEN</div>
+        <div class="eq"><span>f<sub>n</sub> =</span><input class="num-in" id="bA" inputmode="numeric" autocomplete="off" aria-label="tallet foran n">
+        <span>n</span><button class="sign-btn" id="bS" type="button" aria-label="Bytt mellom pluss og minus" onclick="toggleSign()">+</button>
+        <input class="num-in" id="bB" inputmode="numeric" autocomplete="off" aria-label="konstantleddet"></div>
+        <div class="explain" style="font-size:0.8rem;color:var(--muted)">Trykk på + for å bytte til −</div>`;
+      if(window.innerWidth>600) $('bA').focus();
+    },
+    check(){
+      const a=parseInt2($('bA').value), raw=$('bB').value.trim();
+      const bv=raw===''?0:parseInt2(raw), sign=$('bS').textContent==='−'?-1:1;
+      const okA=a===task.d, okB=Number.isFinite(bv)&&(bv===0?task.f0===0:sign*bv===task.f0);
+      mark('bA',okA); mark('bB',okB); $('bS').classList.toggle('bad',!okB); $('bS').classList.toggle('ok',okB);
+      let hint=!okA?'Tallet foran n er førstedifferansen.':'Det siste tallet er f<sub>0</sub>.';
+      if(okA&&!okB&&Number.isFinite(bv)&&bv===Math.abs(task.f0)) hint='Riktig tall, men sjekk fortegnet. f<sub>0</sub> er '+minus(task.f0)+'.';
+      return {ok:okA&&okB,hint};
+    },
+    solve(){ $('bA').value=task.d; $('bS').textContent=task.f0<0?'−':'+'; $('bB').value=Math.abs(task.f0); },
+    after(){ $('bA').readOnly=$('bB').readOnly=true; $('bS').disabled=true;
+      $('fb').className='fb info'; $('fb').innerHTML=`f<sub>n</sub> = ${fmt(task.d,task.f0)}`; },
+  },
+  fri:{
+    render(box){
+      box.innerHTML=`<div class="step-title">SKRIV FORMELEN</div>
+        <div class="eq"><span>f<sub>n</sub> =</span><input class="txt-in" id="fr" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="formelen" placeholder="for eksempel 3n + 2"></div>`;
+      if(window.innerWidth>600) $('fr').focus();
+    },
+    check(){
+      const f=parseFormula($('fr').value);
+      const ok=!!f&&sameFormula(f,task.p); mark('fr',ok);
+      let hint='f<sub>n</sub> = førstedifferansen · n + f<sub>0</sub>.';
+      if(!f) hint='Skriv formelen med n, for eksempel 3n + 2.';
+      else if(sameFormula(f,{a:task.d,b:-task.f0})&&task.f0!==0) hint='Sjekk fortegnet foran f<sub>0</sub>.';
+      return {ok,hint};
+    },
+    solve(){ $('fr').value=fmt(task.d,task.f0); },
+    after(){ $('fr').readOnly=true; },
+  },
+  ekstra:{
+    render(box){
+      box.innerHTML=`<div class="step-title">REGN UT FLERE FIGURTALL</div>
+        <div class="eq">${task.extra.map((n,i)=>`<span>f<sub>${n}</sub> =</span><input class="num-in" id="x${i}" inputmode="numeric" autocomplete="off" aria-label="f${n}" style="margin-right:12px">`).join('')}</div>`;
+      if(window.innerWidth>600) $('x0').focus();
+    },
+    check(){
+      let ok=true;
+      task.extra.forEach((n,i)=>{const r=parseInt2($('x'+i).value)===fval(task.p,n); mark('x'+i,r); if(!r) ok=false;});
+      const n=task.extra[0];
+      return {ok,hint:`Sett inn figurnummeret for n, for eksempel f<sub>${n}</sub> = ${task.d} · ${n} ${task.f0<0?'−':'+'} ${Math.abs(task.f0)}.`};
+    },
+    solve(){ task.extra.forEach((n,i)=>{$('x'+i).value=fval(task.p,n);}); },
+    after(){ task.extra.forEach((n,i)=>{$('x'+i).readOnly=true;}); },
+  },
+};
+window.toggleSign=function(){ const b=$('bS'); if(b.disabled) return; b.textContent=b.textContent==='+'?'−':'+'; b.classList.remove('ok','bad'); };
+function mark(id,ok){ const el=$(id); if(el){ el.classList.remove('ok','bad'); el.classList.add(ok?'ok':'bad'); } }
+
+// ── OPPGAVEFLYT ──
+const TASK_Q={
+  1:'Tell rutene og fyll ut tabellen. Finn førstedifferansen mellom figurene.',
+  2:'Fyll ut tabellen og førstedifferansen. Så finner du f<sub>0</sub>.',
+  3:'Fyll ut tabellen, finn førstedifferansen og regn ut f<sub>0</sub>.',
+  4:'Tabellen og f<sub>0</sub> er ferdig utfylt. Sett førstedifferansen og f<sub>0</sub> inn i formelen.',
+  5:'Fyll ut tabellen og finn f<sub>0</sub>. Sett så tallene inn i formelen.',
+  6:'Fyll ut tabellen, finn f<sub>0</sub> og skriv hele formelen.',
+  7:'Fyll ut tabellen, finn f<sub>0</sub>, skriv formelen og regn ut flere figurtall.',
+};
+function renderTask(){
+  const t=task;
+  tries=0; stepTries=0; done=false; stepIdx=0; busy=false; firstWrongCounted=false; taskStart=Date.now();
+  $('taskType').textContent='📊 '+LEVELS[t.level].desc;
+  $('taskQ').innerHTML=TASK_Q[t.level];
+  $('fb').className='fb'; $('fb').innerHTML='';
+  $('steps').innerHTML='';
+  $('nextBtn').style.display='none'; $('skipBtn').style.display=''; $('showBtn').style.display='none';
+  drawFigs();
+  showHints();
+  // Nivå 4: tabell og f₀ er ferdig utfylt
+  if(t.steps[0]!=='tabell'){
+    drawTable(false);
+    $('steps').insertAdjacentHTML('beforeend',`<div class="step"><div class="eq"><span>f<sub>0</sub> =</span><span class="slot filled" id="in0">${minus(t.f0)}</span></div></div>`);
+  }
+  startStep();
+}
+async function startStep(){
+  const key=task.steps[stepIdx];
+  stepTries=0;
+  $('showBtn').style.display='none';
+  if(key==='tabell'){ STEP.tabell.render(); }
+  else {
+    const box=document.createElement('div'); box.className='step'; box.id='step'+stepIdx;
+    $('steps').appendChild(box);
+    if(STEP[key].auto){
+      busy=true; $('checkBtn').disabled=true;
+      await STEP[key].render(box);
+      busy=false; $('checkBtn').disabled=false;
+      return finishStep();
+    }
+    STEP[key].render(box);
+  }
+  $('checkBtn').style.display=''; $('checkBtn').disabled=false;
+}
+async function finishStep(){
+  stepIdx++;
+  if(stepIdx>=task.steps.length) return completeTask();
+  startStep();
+}
+window.checkAnswer=async function(){
+  if(done||busy||!task) return;
+  const key=task.steps[stepIdx], st=STEP[key];
+  if(!st||st.auto) return;
+  const res=st.check();
+  if(!res.ok){
+    tries++; stepTries++;
+    registerWrong();
+    $('fb').className='fb err'; $('fb').innerHTML='✗ Ikke helt. '+res.hint;
+    if(stepTries>=2) $('showBtn').style.display='';
+    return;
+  }
+  $('fb').className='fb'; $('fb').innerHTML='';
+  busy=true; $('checkBtn').disabled=true;
+  if(st.after) await st.after();
+  busy=false;
+  finishStep();
+};
+window.showSolution=async function(){
+  if(done||busy) return;
+  const key=task.steps[stepIdx], st=STEP[key];
+  if(!st||st.auto) return;
+  st.solve(); st.check();
+  task.usedSolution=true;
+  $('fb').className='fb info'; $('fb').innerHTML='💡 Her er løsningen på dette steget.';
+  busy=true; $('checkBtn').disabled=true; $('showBtn').style.display='none';
+  if(st.after) await st.after();
+  busy=false;
+  finishStep();
+};
+function registerWrong(){
+  tcWrong++;
+  if(!firstWrongCounted){ firstWrongCounted=true; SU.recordResult(false); }
+  syncTC();
+}
+function completeTask(){
+  done=true;
+  $('checkBtn').style.display='none'; $('showBtn').style.display='none'; $('skipBtn').style.display='none';
+  const t=task;
+  let msg;
+  if(t.usedSolution){
+    msg='<span class="big">💡 Oppgaven er ferdig</span>Prøv en ny oppgave på egen hånd.';
+  } else {
+    const elapsed=(Date.now()-taskStart)/1000;
+    const base=100+t.level*25+t.steps.length*10;
+    const bonus=Math.max(10,Math.round(Math.max(30,base-elapsed*0.6)-tries*15));
+    currentScore+=bonus; $('scoreBadge').textContent=currentScore+' p';
+    tcCorrect++;
+    if(tries===0) SU.recordResult(true);
+    syncTC();
+    if(gameMode==='multi') syncRoomScore(currentScore);
+    msg=`<span class="big">⭐ Riktig! +${bonus} poeng</span>f<sub>n</sub> = ${fmt(t.d,t.f0)}`+
+      (t.extra?` · `+t.extra.map(n=>`f<sub>${n}</sub> = ${fval(t.p,n)}`).join(' · '):'');
+  }
+  $('fb').className='fb '+(t.usedSolution?'info':'win'); $('fb').innerHTML=msg;
+  $('nextBtn').style.display=''; $('nextBtn').focus();
+}
+
+window.nextTask=function(){
+  if(busy) return;
+  task=makeTask(currentLevel);
+  renderTask();
+};
+function selectLevelDesc(){ $('levelDesc').textContent=LEVELS[currentLevel].desc; }
+window.startGame=function(){
+  if(gameMode==='multi'){
+    const rc=$('roomInput').value.trim().toUpperCase();
+    if(!rc){ showToast('Skriv inn romkoden','error'); return; }
+    initRoom(rc);
+  }
+  $('levelBadge').textContent=LEVELS[currentLevel].name;
+  $('startScreen').style.display='none';
+  $('mainArea').style.display='flex';
+  nextTask();
+  syncTC();
+};
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||$('mainArea').style.display==='none') return;
+  if(e.target&&e.target.tagName==='BUTTON') return;
+  if(done) nextTask(); else checkAnswer();
+});
+buildLevelSelect();
+$('levelSelect').addEventListener('click',selectLevelDesc);
+selectLevelDesc();
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get } from "../js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._fbReady=true;
+</script>
+</body>
+</html>
