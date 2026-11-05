@@ -106,6 +106,7 @@ table.dt td.pulse,.pulse{animation:pulse 1s ease-in-out 2;}
 .btn{padding:10px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;}
 .btn:disabled{opacity:0.5;cursor:default;}
 .btn-check{background:var(--accent);color:white;}
+.step-btn{margin-top:4px;font-size:1rem;padding:11px 24px;animation:pop .3s ease-out;box-shadow:0 3px 10px rgba(124,58,237,0.3);}
 .btn-next{background:var(--green);color:white;}
 .btn-soft{background:#f3f4f6;color:var(--muted);}
 button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
@@ -142,7 +143,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
     <div style="font-size:2.6rem">📊</div>
     <h1>Figurtall med tabell</h1>
     <p>Fyll ut tabellen, finn førstedifferansen og f<sub>0</sub>, og lag formelen for f<sub>n</sub>.</p>
-    <div class="version">v1.1</div>
+    <div class="version">v1.2</div>
     <div class="lbl">Start på nivå</div>
     <div class="level-select" id="levelSelect"></div>
     <div class="level-desc" id="levelDesc"></div>
@@ -359,7 +360,7 @@ function lockTable(){
 }
 
 // Flytter et tall fra ett sted til et annet, så eleven ser hvor det kommer fra
-function flyTo(fromEl,toEl,text,ms=850){
+function flyTo(fromEl,toEl,text,ms=1100){
   return new Promise(res=>{
     if(!fromEl||!toEl||matchMedia('(prefers-reduced-motion: reduce)').matches){ res(); return; }
     const a=fromEl.getBoundingClientRect(), b=toEl.getBoundingClientRect();
@@ -371,6 +372,17 @@ function flyTo(fromEl,toEl,text,ms=850){
       el.style.left=(b.left+b.width/2)+'px'; el.style.top=(b.top+b.height/2)+'px';
     }));
     setTimeout(()=>{ el.remove(); res(); },ms+60);
+  });
+}
+// Viser en knapp i steget og venter til eleven trykker på den
+let stepBtnWaiting=false;
+function stepButton(box,label){
+  return new Promise(res=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='btn btn-check step-btn'; b.innerHTML=label;
+    b.onclick=()=>{ b.remove(); stepBtnWaiting=false; res(); };
+    box.appendChild(b); stepBtnWaiting=true;
+    b.focus({preventScroll:true});
   });
 }
 const tableCell=id=>{ const el=$(id)||$(id+'c'); return el&&el.closest('td'); };
@@ -417,7 +429,7 @@ const STEP={
         <div class="eq fade"><span>f<sub>0</sub> = f<sub>1</sub> − førstedifferansen</span></div>
         <div class="eq"><span>f<sub>0</sub> =</span><span class="slot" id="sA"></span><span>−</span><span class="slot" id="sB"></span><span id="sR"></span></div>
         <div class="explain" id="sX"></div>`;
-      await wait(700);
+      await stepButton(box,'🔍 Finn f<sub>0</sub>');
       const c1=tableCell('f1'), cd=tableCell('d1');
       c1&&c1.classList.add('pulse'); await flyTo(c1,$('sA'),t.f[0]); fillSlot('sA',t.f[0]);
       cd&&cd.classList.add('pulse'); await flyTo(cd,$('sB'),t.d); fillSlot('sB',t.d);
@@ -470,10 +482,10 @@ const STEP={
         <div class="eq"><span>f<sub>n</sub> =</span><span class="slot" id="sD"></span><span>· n +</span><span class="slot" id="sF"></span></div>
         <div class="eq" id="sRes"></div>
         <div class="explain" id="sX"></div>`;
-      await wait(600);
+      await stepButton(box,'⬇️ Bruk førstedifferansen');
       const cd=tableCell('d1'); cd&&cd.classList.add('pulse');
       await flyTo(cd,$('sD'),t.d); fillSlot('sD',t.d);
-      await wait(250);
+      await stepButton(box,'⬇️ Bruk f<sub>0</sub>');
       const f0el=$('in0'); f0el&&f0el.classList.add('pulse');
       await flyTo(f0el,$('sF'),t.f0); fillSlot('sF',t.f0);
       await wait(450);
@@ -576,9 +588,13 @@ async function startStep(){
     const box=document.createElement('div'); box.className='step'; box.id='step'+stepIdx;
     $('steps').appendChild(box);
     if(STEP[key].auto){
-      busy=true; $('checkBtn').disabled=true;
+      busy=true; $('checkBtn').style.display='none';
+      const myTask=task;
       await STEP[key].render(box);
-      busy=false; $('checkBtn').disabled=false;
+      if(task!==myTask) return;               // eleven har gått til en ny oppgave
+      if(stepIdx===task.steps.length-1) await wait(2500);   // la den ferdige utregningen stå litt
+      if(task!==myTask) return;
+      busy=false;
       return finishStep();
     }
     STEP[key].render(box);
@@ -649,7 +665,8 @@ function completeTask(){
 }
 
 window.nextTask=function(){
-  if(busy) return;
+  if(busy&&!stepBtnWaiting) return;
+  busy=false; stepBtnWaiting=false;
   task=makeTask(currentLevel);
   renderTask();
 };

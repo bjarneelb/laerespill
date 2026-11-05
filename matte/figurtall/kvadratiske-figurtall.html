@@ -107,6 +107,7 @@ table.dt td.pulse,.pulse{animation:pulse 1s ease-in-out 2;}
 .btn{padding:10px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;}
 .btn:disabled{opacity:0.5;cursor:default;}
 .btn-check{background:var(--accent);color:white;}
+.step-btn{margin-top:4px;font-size:1rem;padding:11px 24px;animation:pop .3s ease-out;box-shadow:0 3px 10px rgba(13,148,136,0.3);}
 .btn-next{background:var(--green);color:white;}
 .btn-soft{background:#f3f4f6;color:var(--muted);}
 button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
@@ -145,7 +146,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
     <div style="font-size:2.6rem">🟩</div>
     <h1>Kvadratiske figurtall</h1>
     <p>Fyll ut tabellen med første- og andredifferanse, finn f<sub>0</sub> og lag formelen for f<sub>n</sub>.</p>
-    <div class="version">v1.0</div>
+    <div class="version">v1.1</div>
     <div class="lbl">Start på nivå</div>
     <div class="level-select" id="levelSelect"></div>
     <div class="level-desc" id="levelDesc"></div>
@@ -375,7 +376,7 @@ function drawTable(editable){
 const TABLE_IDS=['f1','f2','f3','f4','f5','d1','d2','d3','d4','D2','D3','D4'];
 function lockTable(){ TABLE_IDS.forEach(id=>{const el=$(id); if(el){ el.readOnly=true; el.classList.add('ok'); el.tabIndex=-1; }}); }
 
-function flyTo(fromEl,toEl,text,ms=850){
+function flyTo(fromEl,toEl,text,ms=1100){
   return new Promise(res=>{
     if(!fromEl||!toEl||matchMedia('(prefers-reduced-motion: reduce)').matches){ res(); return; }
     const a=fromEl.getBoundingClientRect(), b=toEl.getBoundingClientRect();
@@ -387,6 +388,17 @@ function flyTo(fromEl,toEl,text,ms=850){
       el.style.left=(b.left+b.width/2)+'px'; el.style.top=(b.top+b.height/2)+'px';
     }));
     setTimeout(()=>{ el.remove(); res(); },ms+60);
+  });
+}
+// Viser en knapp i steget og venter til eleven trykker på den
+let stepBtnWaiting=false;
+function stepButton(box,label){
+  return new Promise(res=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='btn btn-check step-btn'; b.innerHTML=label;
+    b.onclick=()=>{ b.remove(); stepBtnWaiting=false; res(); };
+    box.appendChild(b); stepBtnWaiting=true;
+    b.focus({preventScroll:true});
   });
 }
 const tableCell=id=>{ const el=$(id)||$(id+'c'); return el&&el.closest('td'); };
@@ -441,14 +453,14 @@ const STEP={
         <div class="explain" id="sX"></div>`;
       ['d1','d2','d3','d4'].forEach(id=>tableCell(id)&&tableCell(id).classList.add('pulse'));
       $('sI').innerHTML=`Førstedifferansene ${t.d.map(numTxt).join(', ')} er ikke like.`;
-      await wait(1500);
+      await stepButton(box,'👀 Se på andredifferansen');
       ['D2','D3','D4'].forEach(id=>tableCell(id)&&tableCell(id).classList.add('pulse'));
       $('sI').innerHTML+=` Men andredifferansen er ${numTxt(t.D)} hele tiden.<br>Lineære figurtall har konstant <b>førstedifferanse</b>. Når <b>andredifferansen</b> er konstant, er figurtallet <b>kvadratisk</b>.`;
-      await wait(2200);
+      await stepButton(box,'⬅️ Finn førstedifferansen før figur 1');
       await flyTo(tableCell('d1'),$('sA'),numTxt(t.d[0])); fillSlot('sA',numTxt(t.d[0]));
       await flyTo(tableCell('D2'),$('sB'),numTxt(t.D)); fillSlot('sB',numTxt(t.D));
       await wait(300); $('sR1').innerHTML=`<span class="result">= ${numTxt(t.d0)}</span>`;
-      await wait(600);
+      await stepButton(box,'🔍 Finn f<sub>0</sub>');
       await flyTo(tableCell('f1'),$('sC'),numTxt(t.F[0])); fillSlot('sC',numTxt(t.F[0]));
       await flyTo($('sR1'),$('sE'),numTxt(t.d0)); fillSlot('sE',numTxt(t.d0));
       await wait(300); $('sR2').innerHTML=`<span class="result">= ${numTxt(t.f0)}</span>`;
@@ -499,11 +511,13 @@ const STEP={
         <div class="explain" id="sI">Figur n er ${sh.desc}${t.p.c?`, pluss ${t.p.c} rute${t.p.c===1?'':'r'} som er der i alle figurene`:''}.</div>
         <div class="eq"><span>f<sub>n</sub> =</span><span class="slot" id="sL"></span><span>·</span><span class="slot" id="sW"></span>${sh.half?'<span>/ 2</span>':''}<span>+</span><span class="slot" id="sF"></span></div>
         <div class="eq" id="sRes"></div>`;
-      await wait(1400);
-      const fig=$('fig3'); fig&&fig.classList.add('pulse');
+      const fig=$('fig3');
+      await stepButton(box,'⬇️ Bruk lengden');
+      fig&&fig.classList.add('pulse');
       await flyTo(fig,$('sL'),sh.L); fillSlot('sL',sh.L);
+      await stepButton(box,'⬇️ Bruk høyden');
       await flyTo(fig,$('sW'),sh.B); fillSlot('sW',sh.B);
-      await wait(250);
+      await stepButton(box,'⬇️ Bruk f<sub>0</sub>');
       const f0el=$('in0'); f0el&&f0el.classList.add('pulse');
       await flyTo(f0el,$('sF'),numTxt(t.f0)); fillSlot('sF',numTxt(t.f0));
       await wait(450);
@@ -622,9 +636,13 @@ async function startStep(){
     const box=document.createElement('div'); box.className='step'; box.id='step'+stepIdx;
     $('steps').appendChild(box);
     if(STEP[key].auto){
-      busy=true; $('checkBtn').disabled=true;
+      busy=true; $('checkBtn').style.display='none';
+      const myTask=task;
       await STEP[key].render(box);
-      busy=false; $('checkBtn').disabled=false;
+      if(task!==myTask) return;               // eleven har gått til en ny oppgave
+      if(stepIdx===task.steps.length-1) await wait(2500);   // la den ferdige utregningen stå litt
+      if(task!==myTask) return;
+      busy=false;
       return finishStep();
     }
     STEP[key].render(box);
@@ -695,7 +713,8 @@ function completeTask(){
 }
 
 window.nextTask=function(){
-  if(busy) return;
+  if(busy&&!stepBtnWaiting) return;
+  busy=false; stepBtnWaiting=false;
   task=makeTask(currentLevel);
   renderTask();
 };
