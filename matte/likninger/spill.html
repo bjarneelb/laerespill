@@ -215,7 +215,7 @@
     .sidebar { order: -1; }
   }
 </style>
-<script src="./js/spill-utils.js"></script>
+<script src="../js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -453,7 +453,7 @@
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, set, update, onValue } from "./js/firebase-config.js";
+  import { database, ref, set, update, onValue } from "../js/firebase-config.js";
   window._fbReady=true; window._db=database; window._ref=ref;
   window._set=set; window._update=update; window._onValue=onValue;
   window._fbInit=function(room){
@@ -494,7 +494,7 @@
 
 <!-- MAIN SCRIPT -->
 <script>
-const VERSION='2.3';
+const VERSION='2.4';
 document.querySelectorAll('.vn').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -1494,6 +1494,6 @@ document.addEventListener('keydown',e=>{
   if(e.key==='z'&&(e.ctrlKey||e.metaKey)) doUndo();
 });
 </script>
-<script src="./js/touch-dnd.js"></script>
+<script src="../js/touch-dnd.js"></script>
 </body>
 </html>

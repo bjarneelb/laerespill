@@ -29,3 +29,35 @@
   to = "https://fellesting.netlify.app/laerer.html"
   status = 301
   force = true
+
+# Likningsspillene ligger nå i likninger/. Gamle lenker og bokmerker sendes videre.
+[[redirects]]
+  from = "/spill.html"
+  to = "/likninger/spill.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/balansevekt.html"
+  to = "/likninger/balansevekt.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/likningssett.html"
+  to = "/likninger/likningssett.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/likningsspill_tekst.html"
+  to = "/likninger/likningsspill_tekst.html"
+  status = 301
+  force = true
+
+# Koordinatslag ligger under funksjoner/. Gamle lenker sendes videre.
+[[redirects]]
+  from = "/koordinatslag.html"
+  to = "/funksjoner/koordinatslag.html"
+  status = 301
+  force = true

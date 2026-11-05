@@ -161,7 +161,7 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
 .ctx-item:hover,.ctx-item:focus-visible{background:#f0f4ff;outline:none;}
 .ctx-preview{font-size:0.76rem;font-weight:700;color:var(--muted);}
 </style>
-<script src="./js/spill-utils.js"></script>
+<script src="../js/spill-utils.js"></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -172,7 +172,7 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
     <div style="font-size:3rem">⚖️</div>
     <h1>Balansevekten</h1>
     <p>Gjør det samme på begge sider, så holder vekten seg i balanse.</p>
-    <div class="version">v1.3</div>
+    <div class="version">v1.4</div>
     <div class="lbl">Start på nivå</div>
     <div class="level-select" id="levelSelect"></div>
     <div class="level-desc" id="levelDesc"></div>
@@ -996,7 +996,7 @@ window.addEventListener('resize',()=>{if(original) updateTilt();});
 buildLevels();
 </script>
 <script type="module">
-  import { database, ref, set, update, onValue, get } from "./js/firebase-config.js";
+  import { database, ref, set, update, onValue, get } from "../js/firebase-config.js";
   window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._fbReady=true;
 </script>
 </body>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Likningsspill – Hovedmeny</title>
+<title>Matematikk – Hovedmeny</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -241,7 +241,9 @@
   .session-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
   .session-badge .dot.inactive { background: var(--muted); }
 
+  .theme-grid { grid-template-columns: repeat(2, 1fr); }
   @media (max-width: 540px) {
+    .theme-grid { grid-template-columns: 1fr; }
     .hero h1 { font-size: 1.6rem; }
     .card-grid { grid-template-columns: 1fr; }
   }
@@ -251,166 +253,47 @@
 <body>
 
 <div class="hero">
-  <div class="hero-icon">🏎️</div>
-  <h1>Likningsspill</h1>
-  <p>Velg et spill eller en bane — løs likninger, bygg forståelse, konkurrer mot klassen!</p>
+  <div class="hero-icon">🧮</div>
+  <h1>Matematikk</h1>
+  <p>Velg et tema — løs oppgaver, bygg forståelse og konkurrer mot klassen!</p>
 </div>
 
 <div class="main">
 
-  <!-- SPILL -->
   <div>
-    <div class="section-title">📐 Likninger</div>
-    <div class="card-grid">
+    <div class="section-title">Temaer</div>
+    <div class="card-grid theme-grid">
 
-      <!-- Balansevekten -->
-      <a class="card c-teal" href="balansevekt.html">
+      <a class="card c-teal" href="likninger/">
         <div class="card-icon">⚖️</div>
-        <div class="card-title">Balansevekten</div>
-        <div class="card-desc">Gjør det samme på begge sider! Legg til motsatte blokker, gang og del, og få x alene. 14 nivåer fra enkle likninger til brøker.</div>
-        <div class="card-tag">🚧 Ny</div>
-        <div class="card-btn">Spill →</div>
+        <div class="card-title">Likninger</div>
+        <div class="card-desc">Balansevekten, Ligningsvekten, Likningsbyggeren og Likningssett: fra å balansere vekter til likninger med tekst og to ukjente.</div>
+        <div class="card-tag">4 spill</div>
+        <div class="card-btn">Åpne →</div>
       </a>
 
-      <!-- Ligningsvekten -->
-      <a class="card c-teal" href="spill.html">
-        <div class="card-icon">⚖️</div>
-        <div class="card-title">Ligningsvekten</div>
-        <div class="card-desc">Løs likninger ved å flytte blokker på en visuell vektskål. 13 nivåer fra enkle likninger til brøk og negative tall.</div>
-        <div class="card-tag">⚖️ Vektspill</div>
-        <div class="card-btn">Spill →</div>
+      <a class="card c-green" href="funksjoner/">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Funksjoner</div>
+        <div class="card-desc">Uttrykk, verditabeller, funksjonsuttrykk, grafer og koordinater.</div>
+        <div class="card-tag">6 spill</div>
+        <div class="card-btn">Åpne →</div>
       </a>
 
-      <!-- Likningsbyggeren -->
-      <a class="card c-purple" href="likningsspill_tekst.html">
-        <div class="card-icon">🤖</div>
-        <div class="card-title">Likningsbyggeren</div>
-        <div class="card-desc">Løs tekstoppgaver laget av KI. Dra blokker, bygg likninger og løs dem steg for steg. 7 nivåer med automatisk progresjon.</div>
-        <div class="card-tag">📝 Tekstoppgaver</div>
-        <div class="card-btn">Spill nå →</div>
-      </a>
-
-      <!-- Likningssett -->
-      <a class="card c-pink" href="likningssett.html">
-        <div class="card-icon">🔢</div>
-        <div class="card-title">Likningssett</div>
-        <div class="card-desc">Løs likninger med to ukjente ved hjelp av innsettingsmetoden. Tre modi: øving, enkeltspiller og flerspiller.</div>
-        <div class="card-tag">🔢 2 ukjente</div>
-        <div class="card-btn">Spill nå →</div>
-      </a>
-
-    </div>
-  </div>
-
-  <!-- FUNKSJONER -->
-  <div>
-    <div class="section-title">📈 Funksjoner</div>
-    <div class="card-grid">
-
-      <!-- Er det en funksjon? -->
-      <a class="card c-green" href="funksjoner/funksjoner-quiz.html">
-        <div class="card-icon">🔗</div>
-        <div class="card-title">Er det en funksjon?</div>
-        <div class="card-desc">Lær å kjenne igjen funksjoner. Øv på å avgjøre om en sammenheng er en funksjon og hva x og f(x) betyr.</div>
-        <div class="card-tag">🚧 Under utvikling</div>
-        <div class="card-btn">Prøv →</div>
-      </a>
-
-      <!-- Fra tekst til uttrykk -->
-      <a class="card c-orange" href="funksjoner/tekst-til-uttrykk.html">
-        <div class="card-icon">📖</div>
-        <div class="card-title">Fra tekst til uttrykk</div>
-        <div class="card-desc">Les en situasjon og finn funksjonsuttrykket steg for steg. Introduksjon til lineære funksjoner.</div>
-        <div class="card-tag">🚧 Under utvikling</div>
-        <div class="card-btn">Prøv →</div>
-      </a>
-
-      <!-- Bygge uttrykk -->
-      <a class="card c-orange" href="funksjoner/bygge-uttrykk.html">
-        <div class="card-icon">🔨</div>
-        <div class="card-title">Bygge uttrykk</div>
-        <div class="card-desc">Bygg funksjonsuttrykket steg for steg fra en tekstbeskrivelse. Fra flervalg til helt manuell innskriving.</div>
-        <div class="card-tag">🚧 Under utvikling</div>
-        <div class="card-btn">Prøv →</div>
-      </a>
-
-      <!-- Funksjonsfabrikken -->
-      <a class="card c-purple" href="funksjoner/funksjonsfabrikk.html">
-        <div class="card-icon">🏭</div>
-        <div class="card-title">Funksjonsfabrikken</div>
-        <div class="card-desc">Bygg funksjoner av blokker og se hva som skjer når du setter inn en verdi for x. Lineære funksjoner med steg-for-steg animasjon.</div>
-        <div class="card-tag">🚧 Under utvikling</div>
-        <div class="card-btn">Prøv →</div>
-      </a>
-
-      <!-- Fra uttrykk til tabell -->
-      <a class="card c-teal" href="funksjoner/uttrykk_til_tabell.html">
-        <div class="card-icon">📋</div>
-        <div class="card-title">Fra uttrykk til tabell</div>
-        <div class="card-desc">Bruk funksjonsfabrikken til å fylle ut verditabeller. Skriv regnestykket selv og bruk kalkulator på høyere nivåer.</div>
-        <div class="card-tag">🚧 Under utvikling</div>
-        <div class="card-btn">Prøv →</div>
-      </a>
-
-      <!-- Koordinatslag -->
-      <a class="card c-blue" href="funksjoner/koordinatslag.html">
-        <div class="card-icon">⚓</div>
-        <div class="card-title">Koordinatslag</div>
-        <div class="card-desc">Senk motstanderens flåte! Plasser skip og skyt på koordinater i et koordinatsystem fra -5 til 5. Mot PC eller en venn.</div>
-        <div class="card-tag">🚧 Under utvikling</div>
-        <div class="card-btn">Prøv →</div>
-      </a>
-
-    </div>
-  </div>
-
-  <!-- FIGURTALL -->
-  <div>
-    <div class="section-title">🔷 Figurtall</div>
-    <div class="card-grid">
-
-      <!-- Lineære figurtall -->
-      <a class="card c-blue" href="figurtall/lineaere-figurtall.html">
+      <a class="card c-blue" href="figurtall/">
         <div class="card-icon">🔷</div>
-        <div class="card-title">Lineære figurtall</div>
-        <div class="card-desc">Fortsett mønsteret, fyll ut tabeller, regn ut store figurer og lag formelen for fₙ. Seks nivåer.</div>
-        <div class="card-tag">🚧 Ny</div>
-        <div class="card-btn">Spill →</div>
+        <div class="card-title">Figurtall</div>
+        <div class="card-desc">Lineære og kvadratiske figurtall: tabell, første- og andredifferanse, f₀ og formelen for fₙ.</div>
+        <div class="card-tag">3 spill</div>
+        <div class="card-btn">Åpne →</div>
       </a>
 
-      <!-- Figurtall med tabell -->
-      <a class="card c-purple" href="figurtall/figurtall-tabell.html">
-        <div class="card-icon">📊</div>
-        <div class="card-title">Figurtall med tabell</div>
-        <div class="card-desc">Fyll ut tabellen, finn førstedifferansen og f₀, og bygg formelen for fₙ steg for steg. Sju nivåer.</div>
-        <div class="card-tag">🚧 Ny</div>
-        <div class="card-btn">Spill →</div>
-      </a>
-
-    </div>
-  </div>
-
-  <!-- PLANGEOMETRI -->
-  <div>
-    <div class="section-title">📐 Plangeometri</div>
-    <div class="card-grid">
-
-      <!-- Arealruter -->
-      <a class="card c-teal" href="plangeometri/arealruter.html">
-        <div class="card-icon">🟦</div>
-        <div class="card-title">Arealruter</div>
-        <div class="card-desc">Tell ruter, merk av rektangler og kvadrater, bruk lengde · bredde og finn arealet av skrå og sammensatte figurer på rutenett. Seks nivåer.</div>
-        <div class="card-tag">🚧 Ny</div>
-        <div class="card-btn">Spill →</div>
-      </a>
-
-      <!-- Regn ut arealet -->
-      <a class="card c-orange" href="plangeometri/regn-ut-areal.html">
+      <a class="card c-orange" href="plangeometri/">
         <div class="card-icon">📐</div>
-        <div class="card-title">Regn ut arealet</div>
-        <div class="card-desc">Rektangel, kvadrat, trekant, parallellogram, rombe, trapes, sirkel, manglende mål, sammensatte figurer og blandede enheter. Tolv nivåer.</div>
-        <div class="card-tag">🚧 Ny</div>
-        <div class="card-btn">Spill →</div>
+        <div class="card-title">Plangeometri</div>
+        <div class="card-desc">Areal på rutenett og med formler: kvadrat, rektangel, trekant, parallellogram, rombe, trapes, sirkel og sammensatte figurer.</div>
+        <div class="card-tag">2 spill</div>
+        <div class="card-btn">Åpne →</div>
       </a>
 
     </div>
@@ -419,7 +302,7 @@
 </div>
 
 <footer>
-  Likningsspill — utviklet for visuell forståelse av algebra · v1.17
+  Matematikk — utviklet for visuell forståelse · v2.0
 </footer>
 
 <!-- SESSION OVERLAY -->
@@ -483,9 +366,14 @@ window.getActiveSession=function(){
   return s;
 };
 
+// Kom eleven fra en temaside uten å være logget inn, sendes hen tilbake dit etterpå
+const NESTE=(()=>{ const t=new URLSearchParams(location.search).get('neste'); return ['likninger','funksjoner','figurtall','plangeometri'].includes(t)?t:null; })();
+function goNext(){ if(NESTE) location.href=NESTE+'/'; }
+
 window.addEventListener('load',()=>{
   const s=getSession();
   if(s){
+    if(NESTE){ goNext(); return; }
     // Already have a session this tab
     window._session=s;
     showBadge(s);
@@ -555,11 +443,13 @@ window.skipSession=function(){
   window._session={skipped:true};
   document.getElementById('sessionOverlay').style.display='none';
   showBadge({skipped:true});
+  goNext();
 };
 
 function closeOverlay(session){
   document.getElementById('sessionOverlay').style.display='none';
   showBadge(session);
+  goNext();
 }
 
 function showBadge(s){

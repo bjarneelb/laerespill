@@ -247,7 +247,7 @@
   .timeup-sub { color: var(--muted); font-size: 1rem; margin-bottom: 24px; }
   .btn-again { padding: 13px 32px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 1rem; cursor: pointer; }
 </style>
-<script src="./js/spill-utils.js"></script>
+<script src="../js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -457,7 +457,7 @@
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, set, update, onValue, get } from "./js/firebase-config.js";
+  import { database, ref, set, update, onValue, get } from "../js/firebase-config.js";
   window._fbReady = true;
   window._db = database; window._ref = ref;
   window._set = set; window._update = update; window._onValue = onValue; window._get = get;
@@ -492,7 +492,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '3.3';
+const VERSION = '3.4';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
@@ -1289,6 +1289,6 @@ window._startSession();
 };
 });
 </script>
-<script src="./js/touch-dnd.js"></script>
+<script src="../js/touch-dnd.js"></script>
 </body>
 </html>
