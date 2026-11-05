@@ -390,7 +390,7 @@
     <div class="story-icon" id="storyIcon">🤔</div>
     <div class="story-text" style="flex:1">
       <h2>Tekstoppgave <span id="levelBadge" class="level-badge">Nivå 1</span></h2>
-      <p id="storyText"><span class="loading-text">Henter oppgave fra KI...</span></p>
+      <p id="storyText"></p>
       <div class="timer-bar-wrap"><div class="timer-bar" id="timerBar" style="width:100%"></div></div>
       <p class="story-hint" id="storyHint"></p>
     </div>
@@ -492,7 +492,7 @@
 
 <!-- MAIN GAME -->
 <script>
-const VERSION = '3.4';
+const VERSION = '4.0';
 document.querySelectorAll('.version-num').forEach(el => el.textContent = VERSION);
 
 // ── PLAYER NAME ──
@@ -738,16 +738,11 @@ function triggerIncident(type) {
   }, 3000);
 }
 
-async function loadIncidentTaskIntoSolver() {
+function loadIncidentTaskIntoSolver() {
   updateIncidentBadge();
-  const gen=++taskGen;
+  ++taskGen;
   clearTimer();
-  try {
-    incidentTask = await fetchAITask(Math.min(currentLevel, 3));
-  } catch(e) {
-    incidentTask = generateFallback(Math.min(currentLevel, 2));
-  }
-  if(gen!==taskGen) return;
+  incidentTask = makeTextTask(Math.min(currentLevel, 3));
   applyTask(incidentTask);
   startTimer();
   showToast('🔧 Løs denne oppgaven for å kjøre videre!','error');
@@ -787,165 +782,188 @@ function maybeIncident(scoreRate) {
   }
 }
 
-// ── TEMPLATES ──
-const NAMES = ['Ali','Emma','Noah','Sofia','Lucas','Leah','Mia','Jonas','Ida','Tobias','Nora','Elias'];
+// ── OPPGAVEGENERATOR ──
+// Lager tekstoppgaver i spillet (ingen KI). Hvert tall i teksten svarer til én blokk i likningen,
+// og x er alltid et positivt heltall. Nivå 1–3: x bare på venstre side. Nivå 4+: x på begge sider.
+const NAMES = ['Ali','Emma','Noah','Sofia','Lucas','Leah','Mia','Jonas','Ida','Tobias','Nora','Elias','Sara','Adam','Ella','Filip','Maja','Oskar','Amina','Henrik'];
+const CITIES = ['Oslo','Bergen','Tromsø','Trondheim','Bodø','Kristiansand','Hamar','Alta','Lillehammer','Ålesund'];
+const R=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
+const P=a=>a[Math.floor(Math.random()*a.length)];
+function names(k){ const pool=NAMES.slice(); const out=[]; while(out.length<k){ out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]); } return out; }
+function cities(){ const a=P(CITIES); let b; do b=P(CITIES); while(b===a); return [a,b]; }
+const X=n=>({type:'x',num:n}), N=n=>({type:'num',num:n});
+const GANGER={2:'dobbelt',3:'tre ganger',4:'fire ganger',5:'fem ganger'};
+const T=(story,hint,left,right,x)=>({story,hint,equation:{left,right,xValue:x}});
 
-const templates = {
-  1: [
-    'x + b = c. Eks: Emma er 5 år eldre enn Noah. Til sammen er de 19 år. Hvor gammel er Noah?',
-    'x + b = c. Eks: Leah har 8 bøker mer enn Lucas. Til sammen har de 24 bøker. Hvor mange bøker har Lucas?',
-    'x + b = c. Eks: I en klasse er det 7 flere jenter enn gutter. Det er 27 elever totalt. Hvor mange gutter er det?',
-    'x - b = c. Eks: Etter å ha brukt 45 kr har Mia 30 kr igjen. Hvor mye hadde hun fra starten?',
+const TASKS={
+  1:[
+    ()=>{ const [a]=names(1), x=R(4,20), b=R(3,15);
+      return T(`${a} hadde noen klinkekuler. ${a} fikk ${b} til av en venn, og nå har ${a} ${x+b} klinkekuler. Hvor mange klinkekuler hadde ${a} først?`,
+        `La x = antall klinkekuler ${a} hadde først`,[X(1),N(b)],[N(x+b)],x); },
+    ()=>{ const [a,b]=names(2), x=R(5,15), d=R(2,9);
+      return T(`${a} er ${d} år eldre enn ${b}. ${a} er ${x+d} år. Hvor gammel er ${b}?`,
+        `La x = alderen til ${b}`,[X(1),N(d)],[N(x+d)],x); },
+    ()=>{ const [a]=names(1), x=R(6,20)*10, b=R(2,Math.floor(x/10)-1)*10;
+      return T(`Etter å ha brukt ${b} kr i kiosken har ${a} ${x-b} kr igjen. Hvor mye penger hadde ${a} før kioskturen?`,
+        `La x = pengene ${a} hadde før`,[X(1),N(-b)],[N(x-b)],x); },
+    ()=>{ const x=R(12,40), b=R(3,x-4);
+      return T(`En buss hadde noen passasjerer. På neste holdeplass gikk ${b} passasjerer av, og da var det ${x-b} igjen. Hvor mange passasjerer var det i bussen før holdeplassen?`,
+        'La x = antall passasjerer før holdeplassen',[X(1),N(-b)],[N(x-b)],x); },
+    ()=>{ const x=R(2,12), b=R(3,10);
+      return T(`I løpet av dagen steg temperaturen ${b} grader. Om ettermiddagen var det ${x+b} grader. Hvor varmt var det om morgenen?`,
+        'La x = temperaturen om morgenen',[X(1),N(b)],[N(x+b)],x); },
+    ()=>{ const [a]=names(1), x=R(20,60), b=R(5,25);
+      return T(`${a} har lest noen sider i en bok. I dag leser ${a} ${b} sider til, og da har ${a} lest ${x+b} sider til sammen. Hvor mange sider hadde ${a} lest før i dag?`,
+        'La x = antall sider lest før i dag',[X(1),N(b)],[N(x+b)],x); },
   ],
-  2: [
-    'a·x = c. Eks: Tre like esker veier til sammen 21 kg. Hva veier én eske?',
-    'a·x = c. Eks: Jonas er dobbelt så gammel som Ida. Jonas er 16 år. Hvor gammel er Ida?',
-    'a·x = c. Eks: Fire like billetter koster til sammen 240 kr. Hva koster én billett?',
-    'a·x = c. Eks: Et tog kjører 4 ganger så fort som en sykkel. Toget kjører 120 km/t. Hvor fort sykler syklisten?',
-    'a·x = c. Eks: Nora baker 3 ganger så mange kaker som Elias. Nora baker 18 kaker. Hvor mange baker Elias?',
+  2:[
+    ()=>{ const a=R(2,6), x=R(2,15);
+      return T(`${a} like esker veier til sammen ${a*x} kg. Hvor mye veier én eske?`,'La x = vekten til én eske',[X(a)],[N(a*x)],x); },
+    ()=>{ const [p,q]=names(2), a=P([2,3,4]), x=R(3,12);
+      return T(`${p} er ${GANGER[a]} så gammel som ${q}. ${p} er ${a*x} år. Hvor gammel er ${q}?`,`La x = alderen til ${q}`,[X(a)],[N(a*x)],x); },
+    ()=>{ const a=R(2,6), x=R(8,20)*10;
+      return T(`${a} like kinobilletter koster til sammen ${a*x} kr. Hva koster én billett?`,'La x = prisen på én billett',[X(a)],[N(a*x)],x); },
+    ()=>{ const [p]=names(1), a=R(3,7), x=R(4,20);
+      return T(`${p} sykler like langt hver dag. På ${a} dager sykler ${p} ${a*x} km. Hvor langt sykler ${p} hver dag?`,'La x = antall km per dag',[X(a)],[N(a*x)],x); },
+    ()=>{ const a=R(3,8), x=R(5,20);
+      return T(`I en bokhylle står det like mange bøker på hver av de ${a} hyllene. Til sammen er det ${a*x} bøker. Hvor mange bøker står det på hver hylle?`,'La x = antall bøker per hylle',[X(a)],[N(a*x)],x); },
+    ()=>{ const [p]=names(1), a=R(3,6), x=R(4,12);
+      return T(`${p} fordeler ${a*x} epler likt i ${a} poser. Hvor mange epler blir det i hver pose?`,'La x = antall epler i hver pose',[X(a)],[N(a*x)],x); },
   ],
-  3: [
-    'a·x + b = c. Eks: En voksenbillett koster 3 ganger barnebilletten pluss 30 kr. Voksenbilletten koster 150 kr. Hva koster barnebilletten?',
-    'a·x + b = c. Eks: En taxi koster 40 kr i startavgift pluss 15 kr per kilometer. Turen koster 190 kr. Hvor mange kilometer kjørte de?',
-    'a·x + b = c. Eks: Tobias er 3 år eldre enn dobbelt så gammel som Elias. Tobias er 25 år. Hvor gammel er Elias?',
-    'a·x + b = c. Eks: Sofia sparer 50 kr i uka og har allerede 150 kr. Etter x uker har hun 500 kr. Finn x.',
-    'a·x + b = c. Eks: En snekker tar 400 kr i timebetaling pluss 250 kr for materialer. Totalt koster jobben 1650 kr. Hvor mange timer jobbet snekker?',
+  3:[
+    ()=>{ const a=P([10,12,15,20]), b=P([30,40,50,60]), x=R(3,20);
+      return T(`En taxi koster ${b} kr i startavgift og ${a} kr per kilometer. Turen kostet ${a*x+b} kr. Hvor mange kilometer kjørte taxien?`,
+        'La x = antall kilometer',[X(a),N(b)],[N(a*x+b)],x); },
+    ()=>{ const [p]=names(1), a=P([50,100,150,200]), b=R(1,6)*50, x=R(2,12);
+      return T(`${p} har ${b} kr og sparer ${a} kr hver uke. Etter noen uker har ${p} ${a*x+b} kr. Hvor mange uker har ${p} spart?`,
+        'La x = antall uker',[X(a),N(b)],[N(a*x+b)],x); },
+    ()=>{ const [p,q]=names(2), a=P([2,3]), d=R(2,8), x=R(3,12);
+      return T(`${p} er ${d} år eldre enn ${GANGER[a]} så gammel som ${q}. ${p} er ${a*x+d} år. Hvor gammel er ${q}?`,
+        `La x = alderen til ${q}`,[X(a),N(d)],[N(a*x+d)],x); },
+    ()=>{ const b=P([99,149,199]), a=P([10,20,25]), x=R(2,15);
+      return T(`Et mobilabonnement koster ${b} kr i måneden og ${a} kr for hver ekstra GB. En måned ble regningen ${a*x+b} kr. Hvor mange ekstra GB ble brukt?`,
+        'La x = antall ekstra GB',[X(a),N(b)],[N(a*x+b)],x); },
+    ()=>{ const [p]=names(1), a=R(3,6), x=R(10,30)*10, b=P([50,100,150]);
+      return T(`${p} kjøper ${a} like t-skjorter og får ${b} kr i rabatt. ${p} betaler ${a*x-b} kr. Hva koster én t-skjorte?`,
+        'La x = prisen på én t-skjorte',[X(a),N(-b)],[N(a*x-b)],x); },
+    ()=>{ const a=R(3,8), b=R(2,6), x=R(2,9);
+      return T(`I en bøtte som veier ${b} kg legger noen ${a} like steiner. Til sammen veier det ${a*x+b} kg. Hvor mye veier én stein?`,
+        'La x = vekten til én stein',[X(a),N(b)],[N(a*x+b)],x); },
   ],
-  4: [
-    'a·x + b = c·x + d. Bruk realistiske sparemål: minst 50 kr per uke. Eks: Emma sparer 100 kr i uka og har 300 kr fra før. Noah sparer 50 kr i uka og har 800 kr. Etter hvor mange uker har de like mye?',
-    'a·x + b = c·x + d. Eks: Ali er 6 år eldre enn Mia, og mamma er 25 år eldre enn Ali. Mamma er dobbelt så gammel som Mia. Finn Mias alder.',
-    'a·x + b = c·x + d. Eks: To taxiselskaper: det ene tar 30 kr startavgift og 12 kr/km, det andre tar 10 kr startavgift og 18 kr/km. Etter x km er de like dyre. Finn x.',
-    'a·x + b = c·x + d. Eks: Lucas tjener 150 kr i timen og har jobbet x timer. Jonas tjener 200 kr i timen og har jobbet 2 timer mindre. De har tjent like mye. Finn x.',
-    'a·x + b = c·x + d. Eks: Leah og Ida dyrker tomater. Leah har 40 tomater og plukker 8 per dag. Ida har 10 tomater og plukker 14 per dag. Etter x dager har de like mange. Finn x.',
+  4:[
+    ()=>{ const [p,q]=names(2), c=P([50,100]), a=c+P([50,100]), x=R(2,12), b=R(1,6)*50, d=(a-c)*x+b;
+      return T(`${p} har ${b} kr og sparer ${a} kr i uka. ${q} har ${d} kr og sparer ${c} kr i uka. Etter hvor mange uker har de like mye?`,
+        'La x = antall uker',[X(a),N(b)],[X(c),N(d)],x); },
+    ()=>{ const a=R(15,22), c=R(8,a-3), x=R(3,15), b=P([20,30,40]), d=(a-c)*x+b;
+      return T(`Taxiselskap A tar ${b} kr i startavgift og ${a} kr per kilometer. Taxiselskap B tar ${d} kr i startavgift og ${c} kr per kilometer. Hvor mange kilometer må du kjøre for at turen skal koste like mye?`,
+        'La x = antall kilometer',[X(a),N(b)],[X(c),N(d)],x); },
+    ()=>{ const a=R(3,6), c=R(1,a-1), x=R(2,10), b=R(5,20), d=(a-c)*x+b;
+      return T(`En solsikke er ${b} cm høy og vokser ${a} cm i uka. En tomatplante er ${d} cm høy og vokser ${c} cm i uka. Etter hvor mange uker er de like høye?`,
+        'La x = antall uker',[X(a),N(b)],[X(c),N(d)],x); },
+    ()=>{ const a=R(8,15), c=R(3,a-2), x=R(3,15), b=R(10,50), d=(a-c)*x+b;
+      return T(`Tank A har ${b} liter vann, og det renner inn ${a} liter i minuttet. Tank B har ${d} liter, og det renner inn ${c} liter i minuttet. Etter hvor mange minutter er det like mye vann i tankene?`,
+        'La x = antall minutter',[X(a),N(b)],[X(c),N(d)],x); },
+    ()=>{ const [p,q]=names(2), a=R(10,16), c=R(4,a-3), x=R(2,10), b=R(5,20), d=(a-c)*x+b;
+      return T(`${p} har ${b} tomater og plukker ${a} nye hver dag. ${q} har ${d} tomater og plukker ${c} nye hver dag. Etter hvor mange dager har de like mange tomater?`,
+        'La x = antall dager',[X(a),N(b)],[X(c),N(d)],x); },
   ],
-  5: [
-    'a·x + b = c·x + d der b eller d er negativt – beskriv gjeld som "skylder X kr", ALDRI som negativt tall i teksten. Eks: Jonas sparer 80 kr per uke, men skylder 160 kr. Nora sparer 50 kr per uke og har 80 kr. Etter x uker har de like mye.',
-    'a·x - b = c·x + d. Temperaturoppgave: Eks: Temperaturen i Oslo er 6 grader og synker 3 grader per time. I Bergen er det 2 grader under null (minus 2) og synker 1 grad per time. Etter x timer er det like kaldt. Finn x.',
-    'Relasjon med minst ett negativt ledd – beskriv underskudd som gjeld. Eks: Leah har dobbelt så mye penger som Tobias, men skylder 40 kr til sin søster. Nora har tre ganger så mye som Tobias. Til sammen har Leah og Nora 100 kr. Finn Tobias sine penger.',
-    'a·x + b = c·x + d med høydeforskjell. Eks: Et fjell er 200 meter høyt og en drone stiger 15 meter per minutt fra bunnen. Et annet startpunkt er 50 meter under havnivå og stiger 20 meter per minutt. Etter x minutter er de like høye. Finn x.',
+  5:[
+    ()=>{ const [p,q]=names(2), c=P([50,100]), a=c+P([50,100]), x=R(3,12), d=R(1,4)*50, b=(a-c)*x-d;
+      if(b<=0) return null;
+      return T(`${p} skylder ${b} kr, men sparer ${a} kr i uka. ${q} har ${d} kr og sparer ${c} kr i uka. Etter hvor mange uker har de like mye penger?`,
+        'La x = antall uker',[X(a),N(-b)],[X(c),N(d)],x); },
+    ()=>{ const [A,B]=cities(), x=R(2,8), c=R(1,3), a=c+R(1,3), t2=R(1,6), t1=(a-c)*x-t2;
+      if(t1<=0) return null;
+      return T(`I ${A} er det ${t1} grader, og temperaturen synker ${a} grader i timen. I ${B} er det ${t2} grader under null, og temperaturen synker ${c} grad${c===1?'':'er'} i timen. Etter hvor mange timer er det like kaldt begge steder?`,
+        'La x = antall timer',[N(t1),X(-a)],[N(-t2),X(-c)],x); },
+    ()=>{ const x=R(2,10), a=R(5,15), c=R(5,15), d=R(10,60), b=(a+c)*x-d;
+      if(b<=0) return null;
+      return T(`En drone flyr ${b} meter over havet og synker ${a} meter i minuttet. En ubåt er ${d} meter under havnivå og stiger ${c} meter i minuttet. Etter hvor mange minutter er de i samme høyde?`,
+        'La x = antall minutter',[N(b),X(-a)],[N(-d),X(c)],x); },
+    ()=>{ const a=P([100,150,200,250]), x=R(3,10), b=R(1,6)*100, c=a*x-b;
+      if(c<=0) return null;
+      return T(`Klassekassen har et underskudd på ${b} kr. Klassen tjener ${a} kr hver gang de har kakesalg. Etter noen kakesalg har klassen ${c} kr. Hvor mange kakesalg har de hatt?`,
+        'La x = antall kakesalg',[X(a),N(-b)],[N(c)],x); },
   ],
-  6: [
-    'Kombiner maler fra nivå 2–5 fritt. Kan ha 3+ ledd. Eks: 2x + 3x - 20 = x + 60. Lag en engasjerende historieoppgave med realistiske tall (beløp 50–500 kr).',
-    'Kompleks relasjon med 3 personer. Eks: Sofia er dobbelt så gammel som Elias, Lucas er 4 år yngre enn Sofia, og summen av alle tre er 56 år. Finn Elias sin alder.',
-    'Økonomioppgave med 3+ ledd og realistiske beløp. Eks: En butikk øker prisen på to varer med henholdsvis 2x og x - 20 kr. Den totale prisøkningen er 130 kr. Finn x.',
-    'Fartoppgave med møtepunkt. Eks: To tog starter fra Oslo og Bergen (500 km mellom dem) og kjører mot hverandre. Det ene kjører 120 km/t og det andre 80 km/t. Etter x timer møtes de. Finn x.',
+  6:[
+    ()=>{ const [p,q,r]=names(3), x=R(5,15), b=R(1,2*x-2), s=5*x-b;
+      return T(`${q} er dobbelt så gammel som ${p}, og ${r} er ${b} år yngre enn ${q}. Til sammen er de tre ${s} år. Hvor gammel er ${p}?`,
+        `La x = alderen til ${p}`,[X(1),X(2),X(2),N(-b)],[N(s)],x); },
+    ()=>{ const [p,q,r]=names(3), x=R(5,20)*10, b=R(2,8)*10, s=4*x+b;
+      return T(`${p}, ${q} og ${r} deler ${s} kr. ${q} får dobbelt så mye som ${p}, og ${r} får ${b} kr mer enn ${p}. Hvor mye får ${p}?`,
+        `La x = beløpet ${p} får`,[X(1),X(2),X(1),N(b)],[N(s)],x); },
+    ()=>{ const [A,B]=cities(), v1=P([60,70,80,90]), v2=P([50,60,70,80,100]), x=R(2,5), D=(v1+v2)*x;
+      return T(`To tog starter samtidig fra ${A} og ${B}, som ligger ${D} km fra hverandre, og kjører mot hverandre. Det ene toget kjører ${v1} km/t og det andre ${v2} km/t. Etter hvor mange timer møtes togene?`,
+        'La x = antall timer',[X(v1),X(v2)],[N(D)],x); },
+    ()=>{ const [p,q]=names(2), a1=P([50,100]), a2=P([50,100]), c=P([50,100,150]), x=R(2,10), b=R(1,4)*50;
+      const d=(a1+a2-c)*x+b; if(a1+a2<=c) return null;
+      return T(`${p} har ${b} kr og sparer ${a1} kr i uka. I tillegg får ${p} ${a2} kr i lommepenger hver uke, som også spares. ${q} har ${d} kr og sparer ${c} kr i uka. Etter hvor mange uker har de like mye?`,
+        'La x = antall uker',[X(a1),X(a2),N(b)],[X(c),N(d)],x); },
+    ()=>{ const x=R(3,20), b=R(2,10), s=4*x+2*b;
+      return T(`Et rektangel er ${b} cm lengre enn det er bredt. Omkretsen er ${s} cm. Hvor bredt er rektangelet?`,
+        'La x = bredden. Lengden er da x + '+b+', og omkretsen er bredde + lengde + bredde + lengde',[X(1),X(1),N(b),X(1),X(1),N(b)],[N(s)],x); },
   ],
-  7: [
-    'Likning der divisjon underveis gir et naturlig mellomsteg. xValue MÅ være et positivt heltall. Koeffisienten foran x skal være minst 3. Eks: 4x + 12 = 36. Bruk kontekst med realistiske beløp over 50 kr.',
-    'Likning der eleven må flytte ledd og deretter dele. xValue MÅ være et positivt heltall. Eks: 5x - 15 = 2x + 9 → 3x = 24 → x = 8. Bruk realistisk kontekst – sparepenger, alder eller fart.',
+  7:[
+    ()=>{ const [p]=names(1), a=R(3,6), x=R(8,30)*10, b=P([29,39,49,59]), c=a*x+b;
+      return T(`${p} kjøper ${a} like konsertbilletter og betaler ${b} kr i gebyr. Til sammen koster det ${c} kr. Hva koster én billett?`,
+        'La x = prisen på én billett',[X(a),N(b)],[N(c)],x); },
+    ()=>{ const [p,q]=names(2), a=P([150,200,250]), c=P([50,100]), x=R(3,10), d=R(1,6)*50, b=(a-c)*x-d;
+      if(b<=0||(a-c)<100) return null;
+      return T(`${p} har lånt ${b} kr av foreldrene sine og tjener ${a} kr i uka på avisruta. ${q} har ${d} kr og tjener ${c} kr i uka. Etter hvor mange uker har de like mye penger når ${p} har betalt tilbake lånet?`,
+        'La x = antall uker',[X(a),N(-b)],[X(c),N(d)],x); },
+    ()=>{ const [p,q]=names(2), a=R(4,8), c=R(1,a-3), x=R(3,12), d=R(10,60), b=(a-c)*x-d;
+      if(b<=0) return null;
+      return T(`${p} har ${a} like esker med fotballkort og har gitt bort ${b} kort. ${q} har ${c} slike esker og ${d} løse kort. Nå har de like mange kort. Hvor mange kort er det i én eske?`,
+        'La x = antall kort i én eske',[X(a),N(-b)],[X(c),N(d)],x); },
   ],
 };
-
-function pickTemplate(level) {
-  const pool = [];
-  if (level===1) return templates[1][Math.floor(Math.random()*templates[1].length)];
-  if (level>=2) pool.push(...templates[2]);
-  if (level>=3) pool.push(...templates[3]);
-  if (level>=4) pool.push(...templates[4]);
-  if (level>=5) pool.push(...templates[5]);
-  if (level>=6) pool.push(...templates[6]);
-  if (level===7) return templates[7][Math.floor(Math.random()*templates[7].length)];
-  return pool[Math.floor(Math.random()*pool.length)];
+// Velger oppgavetyper: mest fra nivået eleven er på, litt repetisjon fra nivåene under
+function pickTask(level){
+  const L=Math.min(Math.max(level,1),7);
+  if(L===1) return TASKS[1];
+  if(L===7) return Math.random()<0.7?TASKS[7]:[...TASKS[4],...TASKS[5],...TASKS[6]];
+  if(L===2||Math.random()<0.75) return TASKS[L];
+  let pool=[]; for(let i=2;i<L;i++) pool=pool.concat(TASKS[i]);
+  return pool;
+}
+let lastTaskFn=null;
+function makeTextTask(level){
+  for(let tries=0;tries<50;tries++){
+    const pool=pickTask(level);
+    const fn=pool[Math.floor(Math.random()*pool.length)];
+    if(fn===lastTaskFn&&pool.length>1) continue;
+    const t=fn();
+    if(t&&taskIsValid(t)){ lastTaskFn=fn; return t; }
+  }
+  // Nødløsning (skal ikke skje)
+  const x=R(2,10); return T(`3 like esker veier ${3*x} kg. Hvor mye veier én eske?`,'La x = vekten til én eske',[X(3)],[N(3*x)],x);
+}
+// Kontroll: likningen stemmer, x er et positivt heltall, ingen null-blokker
+function taskIsValid(t){
+  const e=t.equation, x=e.xValue;
+  if(!Number.isInteger(x)||x<=0) return false;
+  if(!e.left.length||!e.right.length) return false;
+  if([...e.left,...e.right].some(b=>!Number.isInteger(b.num)||b.num===0)) return false;
+  const val=s=>s.reduce((a,b)=>a+(b.type==='x'?b.num*x:b.num),0);
+  if(val(e.left)!==val(e.right)) return false;
+  const xs=s=>s.filter(b=>b.type==='x').reduce((a,b)=>a+b.num,0);
+  if(xs(e.left)===xs(e.right)) return false;   // ellers forsvinner x
+  return true;
 }
 
 // ── INIT GAME ──
-let taskGen=0, taskLoading=false;
-async function initGame() {
-  if(taskLoading) return; // en oppgave hentes allerede
-  taskLoading=true;
-  const gen=++taskGen;
+let taskGen=0;
+function initGame() {
+  ++taskGen;
   clearTimer();
   sides = {left:[],right:[],bank:[]};
   lastChangedId = null;
-  renderAll();
-  document.getElementById('storyText').innerHTML = '<span class="loading-text">Henter oppgave fra KI... 🤖</span>';
-  document.getElementById('storyHint').textContent = '';
   document.getElementById('storyIcon').textContent = icons[Math.floor(Math.random()*icons.length)];
   updateLevelUI();
-
-  let task;
-  try {
-    task = await fetchAITask(currentLevel);
-  } catch(e) {
-    console.warn('AI feilet:', e);
-    task = generateFallback(currentLevel);
-  } finally {
-    taskLoading=false;
-  }
-  if(gen!==taskGen) return; // en nyere oppgave har tatt over
-  applyTask(task);
+  applyTask(makeTextTask(currentLevel));
   startTimer();
 }
 window.initGame = initGame;
-
-// ── FETCH AI TASK ──
-async function fetchAITask(level) {
-  const template = pickTemplate(level);
-  const xSideRule = level>=4
-    ? 'BRUK x-blokker på BEGGE sider av likningen.'
-    : 'Bruk x-blokker KUN på VENSTRE side.';
-
-  const prompt = `Du er en matematikklærer som lager norske tekstoppgaver til ungdomsskoleelever.
-Lag ÉN engasjerende tekstoppgave basert på denne malen:
-${template}
-
-KRITISKE REGLER:
-1. x er alltid en UKJENT størrelse – nevnes IKKE som et konkret tall i teksten.
-2. Koeffisienten i a·x beskriver antall LIKE enheter – ikke noe som allerede er kjent.
-3. Sjekk logikk: sett inn xValue og verifiser at historien stemmer.
-4. UNNGÅ: "2 barn og 6 voksne er 20 personer" – antall barn er allerede kjent.
-5. xValue MÅ være et positivt heltall mellom 2 og 20.
-6. ${xSideRule}
-7. Ingen blokker med num = 0.
-8. Bruk varierte navn fra denne listen: ${NAMES.join(', ')} – IKKE alltid Per, Kari og Ola.
-9. Sparepenger og beløp MÅ være realistiske: bruk 50, 100, 150, 200 kr per uke – ALDRI under 20 kr per uke.
-10. Negative tall beskrives ALLTID naturlig: "skylder X kr" (gjeld), "X grader under null" (temperatur), "X meter under havnivå" (høyde), "underskudd på X kr" – ALDRI bare et negativt tall i teksten.
-11. Sørg for variasjon: unngå å alltid bruke penger og alder – bruk også fart, vekt, temperatur, antall gjenstander.
-12. KRITISK for malen "${template.split('.')[0]}": Likningen MÅ stemme nøyaktig med JSON-strukturen. Hvis malen er x + b = c, skal left ha KUN én x-blokk og én num-blokk. Lag IKKE en historie som egentlig krever 2x (f.eks. "to personer der begge er ukjente") – da trengs koeffisient 2, ikke 1.
-13. FEIL EKSEMPEL (x + b = c): "Mia har 12 kr mer enn Jonas. Til sammen har de 48 kr." — dette er 2x + 12 = 48, ikke x + 12 = 48. RIKTIG: "Jonas har 12 kr. Han får litt mer og har nå 48 kr." — dette er x + 12 = 48.
-14. KRITISK: Hvert ledd i likningen skal svare til ÉTT tall i oppgaveteksten. Ikke lag oppgaver der eleven må legge sammen to kjente tall for å finne konstantleddet. Eks: "hun har 150 kr fra før og får 100 kr i gave" gir b = 250 som eleven må regne ut selv — det er FEIL. Bruk heller "hun har 250 kr fra før" direkte.
-
-Svar KUN med gyldig JSON (ingen markdown):
-{
-  "story": "Oppgavetekst (maks 3 setninger)",
-  "hint": "La x = [hva x betyr i oppgaven]",
-  "equation": {
-    "left":  [{"type":"x","num":1},{"type":"num","num":5}],
-    "right": [{"type":"num","num":25}],
-    "xValue": 10
-  }
-}`;
-
-  const ctrl = new AbortController();
-  const timeout = setTimeout(()=>ctrl.abort(), 15000);
-  let res;
-  try {
-    res = await fetch('/.netlify/functions/ai-proxy', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({messages:[{role:'user',content:prompt}]}),
-      signal: ctrl.signal
-    });
-  } finally { clearTimeout(timeout); }
-  if (!res.ok) throw new Error('HTTP '+res.status);
-  const data = await res.json();
-  const clean = data.content[0].text.trim().replace(/```json|```/g,'').trim();
-  return JSON.parse(clean);
-}
-
-// ── FALLBACK ──
-function generateFallback(level) {
-  xValue = Math.floor(Math.random()*7)+3;
-  const lv = Math.min(level,4);
-  const n = () => NAMES[Math.floor(Math.random()*NAMES.length)];
-  const n1=n(), n2=n();
-  const fbs = {
-    1:()=>{ const b=Math.floor(Math.random()*8)+2; return {story:`${n1} er ${b} år eldre enn ${n2}. Til sammen er de ${xValue*2+b} år. Hvor gammel er ${n2}?`,hint:`La x = ${n2}s alder`,equation:{left:[{type:'x',num:1},{type:'num',num:b},{type:'x',num:1}],right:[{type:'num',num:xValue*2+b}],xValue}}; },
-    2:()=>{ const a=Math.floor(Math.random()*3)+2; return {story:`${a} like esker veier ${a*xValue} kg. Hva veier én eske?`,hint:'La x = vekten til én eske',equation:{left:[{type:'x',num:a}],right:[{type:'num',num:a*xValue}],xValue}}; },
-    3:()=>{ const a=Math.floor(Math.random()*3)+2,b=Math.floor(Math.random()*8)+2; return {story:`${n1} betaler ${a} ganger så mye som ${n2} pluss ${b} kr. ${n1} betaler ${a*xValue+b} kr.`,hint:`La x = ${n2}s pris`,equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'num',num:a*xValue+b}],xValue}}; },
-    4:()=>{ const c=1,a=c+2,d=Math.floor(Math.random()*5+1)*50,b=(c*xValue+d)-(a*xValue); return {story:`${n1} sparer ${a*50} kr i uka og har ${b} kr fra før. ${n2} sparer ${c*50} kr i uka og har ${d} kr. Etter x uker har de like mye.`,hint:'La x = antall uker',equation:{left:[{type:'x',num:a},{type:'num',num:b}],right:[{type:'x',num:c},{type:'num',num:d}],xValue}}; },
-  };
-  return fbs[lv]();
-}
 
 // ── APPLY TASK ──
 function applyTask(task) {

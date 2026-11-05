@@ -2,10 +2,6 @@
 [build]
   publish = "."
 
-# ai-proxy brukes fortsatt av Likningsbyggeren
-[functions]
-  directory = "netlify/functions"
-
 [build.environment]
   SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
 
