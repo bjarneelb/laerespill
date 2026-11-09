@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naturfag – interaktive verktøy</title>
+<meta name="description" content="Interaktive verktøy til naturfagundervisning.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #e6eaee; --panel: #f8fafb; --card: #ffffff; --ink: #1b2733; --ink-soft: #5a6773; --rule: #cad3db;
+  --accent: #1e66d8; --focus: #1e66d8;
+  --c-kjemi: #f6dcae; --c-fysikk: #bfe3dd; --c-biologi: #d7c9ef;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11181f; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
+    --accent: #6ea4ff; --focus: #6ea4ff;
+    --c-kjemi: #5a4520; --c-fysikk: #1f4a44; --c-biologi: #3f3560;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11181f; --panel: #18212a; --card: #1f2a35; --ink: #e4eaf0; --ink-soft: #9aa7b3; --rule: #33414e;
+  --accent: #6ea4ff; --focus: #6ea4ff;
+  --c-kjemi: #5a4520; --c-fysikk: #1f4a44; --c-biologi: #3f3560;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: var(--font);
+  display: flex; flex-direction: column; line-height: 1.5;
+}
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+.wrap { width: min(1100px, 100% - 2.5rem); margin-inline: auto; }
+header { padding: 2.6rem 0 1.4rem; }
+h1 { margin: 0; font-size: clamp(1.9rem, 1.2rem + 2.4vw, 3rem); letter-spacing: -.02em; }
+.lead { margin: .6rem 0 0; max-width: 60ch; color: var(--ink-soft); font-size: 1.05rem; }
+
+main { flex: 1; padding-bottom: 3rem; }
+h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); margin: 2rem 0 .8rem; }
+.grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); margin: 0; padding: 0; list-style: none; }
+
+.card {
+  position: relative; display: flex; flex-direction: column; gap: .55rem; height: 100%;
+  background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 1.1rem 1.2rem 1.2rem;
+  text-decoration: none; color: inherit; overflow: hidden;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--tone, var(--accent)); }
+.card:hover, .card:focus-visible { transform: translateY(-3px); border-color: var(--ink-soft); box-shadow: 0 10px 26px rgba(15, 25, 35, .12); }
+.card .emoji {
+  font-size: 1.9rem; line-height: 1; flex: none; width: 3.2rem; height: 3.2rem; border-radius: 12px;
+  display: grid; place-items: center; background: var(--tone, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.card .body { display: flex; flex-direction: column; gap: .5rem; flex: 1; min-width: 0; }
+@media (min-width: 720px) {
+  .card.feature { flex-direction: row; align-items: flex-start; gap: 1.3rem; padding: 1.4rem 1.5rem 1.5rem; }
+  .card.feature .emoji { width: 4rem; height: 4rem; font-size: 2.4rem; margin-top: .2rem; }
+  .card.feature h3 { font-size: 1.55rem; }
+}
+.grid.few { grid-template-columns: minmax(0, 740px); }
+.card h3 { margin: 0; font-size: 1.3rem; }
+.card .tags, .card .go, .card p { display: block; }
+.card p { margin: 0; color: var(--ink-soft); }
+.card .tags { display: flex !important; flex-wrap: wrap; gap: .35rem; margin-top: auto; padding-top: .7rem; }
+.tag { font-size: .82rem; border-radius: 99px; padding: .15rem .6rem; background: var(--tone, var(--accent)); color: var(--ink); border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent); }
+.card .go { color: var(--accent); font-weight: 700; }
+.card.kjemi { --tone: var(--c-kjemi); }
+.card.fysikk { --tone: var(--c-fysikk); }
+.card.biologi { --tone: var(--c-biologi); }
+
+.card.soon { border-style: dashed; cursor: default; }
+.card.soon:hover { transform: none; box-shadow: none; border-color: var(--rule); }
+.card.soon h3, .card.soon .emoji { opacity: .75; }
+
+footer { border-top: 1px solid var(--rule); padding: 1.2rem 0 2rem; color: var(--ink-soft); font-size: .92rem; }
+footer p { margin: .2rem 0; }
+footer a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+
+.who { margin-top: .9rem; border: 1px solid var(--rule); background: var(--card); color: var(--ink-soft); border-radius: 99px; padding: .3rem .8rem; font-size: .88rem; cursor: pointer; }
+.who:hover { border-color: var(--ink-soft); color: var(--ink); }
+.session { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 1.2rem; background: rgba(10, 16, 23, .72); }
+.session[hidden] { display: none; }
+.session .sheet { width: min(460px, 100%); background: var(--panel); border: 1px solid var(--rule); border-radius: 18px; padding: 1.4rem 1.5rem 1.5rem; }
+.session h2 { margin: 0 0 .3rem; font-size: 1.5rem; text-transform: none; letter-spacing: -.01em; color: var(--ink); }
+.session p { color: var(--ink-soft); margin: 0 0 1rem; }
+.session .field { display: block; margin: .8rem 0; }
+.session .field span { display: block; font-size: .9rem; color: var(--ink-soft); margin-bottom: .3rem; }
+.session input { width: 100%; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: .55rem .7rem; font: inherit; color: inherit; }
+.session .err { color: #c0262d; min-height: 1.3em; margin: .2rem 0 0; font-size: .9rem; }
+.session .row { display: flex; gap: .6rem; margin-top: 1rem; }
+.btn { border: 1px solid var(--rule); background: var(--card); border-radius: 10px; padding: .55rem 1.1rem; font: inherit; color: inherit; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.btn.ghost { color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <h1>Naturfag</h1>
+  <p class="lead">Interaktive verktøy til undervisning i naturfag. Alt kjører i nettleseren, uten pålogging, og fungerer på tavle, PC og mobil.</p>
+  <button class="who" id="sessionBadge" hidden title="Klikk for å bytte navn eller timekode"></button>
+</header>
+
+<main class="wrap">
+  <h2>Kjemi</h2>
+  <ul class="grid">
+    <li>
+      <!-- LENKEN: endre href hvis periodesystemet ligger et annet sted i repoet -->
+      <a class="card kjemi" href="periodesystem.html">
+        <span class="emoji" aria-hidden="true">⚛️</span>
+        <span class="body">
+          <h3>Periodesystemet</h3>
+          <p>Klikk på et grunnstoff og les om det, eller tegn skallmodellen. Bygg atomer og ioner selv, og dra atomer sammen til molekyler og salter.</p>
+          <span class="tags">
+            <span class="tag">Grunnstoffer</span>
+            <span class="tag">Atommodell</span>
+            <span class="tag">Kjemisk binding</span>
+          </span>
+          <span class="go">Åpne →</span>
+        </span>
+      </a>
+    </li>
+
+    <li>
+      <a class="card kjemi" href="bobler.html">
+        <span class="emoji" aria-hidden="true">🫧</span>
+        <span class="body">
+          <h3>Boblejakten</h3>
+          <p>Bobler med grunnstoffnavn vokser på skjermen. Skriv det kjemiske symbolet før skjermen fylles. Alene eller mot en annen elev.</p>
+          <span class="tags">
+            <span class="tag">Kjemiske symboler</span>
+            <span class="tag">Spill</span>
+          </span>
+          <span class="go">Spill →</span>
+        </span>
+      </a>
+    </li>
+
+    <li>
+      <a class="card kjemi" href="molekyler.html">
+        <span class="emoji" aria-hidden="true">🧪</span>
+        <span class="body">
+          <h3>Molekylbyggesett</h3>
+          <p>Et byggesett i 3D. Ta kuler med hull ut av esken, sett inn pinner mellom hullene, og snu molekylet alle veier.</p>
+          <span class="tags">
+            <span class="tag">Molekyler</span>
+            <span class="tag">3D</span>
+          </span>
+          <span class="go">Åpne →</span>
+        </span>
+      </a>
+    </li>
+
+    <li>
+      <a class="card kjemi" href="begreper.html">
+        <span class="emoji" aria-hidden="true">🧩</span>
+        <span class="body">
+          <h3>Begrepsjakten</h3>
+          <p>Øv på begrepene i kjemi. Finn begrepet som hører til forklaringen, eller ta en hurtigrunde med fire alternativer.</p>
+          <span class="tags">
+            <span class="tag">Begreper</span>
+            <span class="tag">Spill</span>
+          </span>
+          <span class="go">Spill →</span>
+        </span>
+      </a>
+    </li>
+
+    <li>
+      <a class="card kjemi" href="zoom.html">
+        <span class="emoji" aria-hidden="true">🔬</span>
+        <span class="body">
+          <h3>Zoom inn i stoffet</h3>
+          <p>Reis fra et glass vann eller en dyrecelle, gjennom molekyler og atomer, helt ned til protoner og nøytroner i kjernen.</p>
+          <span class="tags">
+            <span class="tag">Størrelser</span>
+            <span class="tag">Atomet</span>
+            <span class="tag">Celler</span>
+          </span>
+          <span class="go">Åpne →</span>
+        </span>
+      </a>
+    </li>
+
+    <!-- Mal for nye kort. Kopier og fyll ut, og fjern klassen "soon" når siden er ferdig.
+    <li>
+      <a class="card fysikk" href="ny-side.html">
+        <span class="emoji" aria-hidden="true">🔭</span>
+        <span class="body">
+          <h3>Tittel</h3>
+          <p>Kort beskrivelse av hva verktøyet gjør.</p>
+          <span class="tags"><span class="tag">Emne</span></span>
+          <span class="go">Åpne →</span>
+        </span>
+      </a>
+    </li>
+    Når det kommer flere kort: fjern klassen "few" fra <ul class="grid few">, så stiller de seg i rutenett.
+    -->
+  </ul>
+</main>
+
+<footer class="wrap">
+  <p>Lagd for undervisning. Innholdet kan brukes fritt i klasserommet.</p>
+</footer>
+
+
+<div class="session" id="sessionOverlay" hidden>
+  <div class="sheet">
+    <h2>Velkommen</h2>
+    <p>Skriv navnet ditt og timekoden du har fått av læreren. Navnet brukes bare til lærerens oversikt, og vises aldri i spillene. Alt slettes etter et døgn.</p>
+    <label class="field"><span>Ditt navn</span><input type="text" id="sessionName" autocomplete="off"></label>
+    <label class="field"><span>Timekode (fra læreren)</span><input type="text" id="sessionCode" autocomplete="off" maxlength="10" placeholder="Valgfri"></label>
+    <p class="err" id="sessionError" role="status"></p>
+    <div class="row">
+      <button class="btn primary" id="sessionGo">Start</button>
+      <button class="btn ghost" id="sessionSkip">Hopp over</button>
+    </div>
+  </div>
+</div>
+<script type="module">
+  import { database, ref, get } from "./js/firebase-config.js";
+  window._db = database; window._ref = ref; window._get = get; window._fbReady = true;
+</script>
+<script>
+// Samme nøkkel og samme stier som matematikksiden, slik at js/spill-utils.js kan brukes uendret
+const SESSION_KEY = 'matte_session';
+const $ = id => document.getElementById(id);
+function lesSession() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+    if (!s) return null;
+    if (s.expires && Date.now() > s.expires) return null;
+    return s;
+  } catch (e) { return null; }
+}
+function visMerke(s) {
+  const b = $('sessionBadge');
+  if (!s || s.skipped) { b.hidden = true; return; }
+  b.hidden = false;
+  b.textContent = s.code ? `👤 ${s.name} · timekode ${s.code}` : `👤 ${s.name}`;
+}
+window.addEventListener('load', () => {
+  const s = lesSession();
+  if (s) { visMerke(s); return; }
+  // navn og kode kan sendes med i lenken fra matematikksiden
+  const q = new URLSearchParams(location.search);
+  if (q.get('navn')) {
+    const d = { name: q.get('navn'), code: (q.get('kode') || '').toUpperCase() || undefined, ts: Date.now() };
+    if (!d.code) d.noCode = true;
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(d));
+    history.replaceState(null, '', location.pathname);
+    visMerke(d); return;
+  }
+  setTimeout(() => { $('sessionOverlay').hidden = false; $('sessionName').focus(); }, 250);
+});
+$('sessionGo').addEventListener('click', async () => {
+  const navn = $('sessionName').value.trim();
+  const kode = $('sessionCode').value.trim().toUpperCase();
+  const err = $('sessionError');
+  err.textContent = '';
+  if (!navn) { err.textContent = 'Skriv inn navnet ditt.'; $('sessionName').focus(); return; }
+  if (!kode) {
+    const d = { name: navn, noCode: true, ts: Date.now() };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(d));
+    $('sessionOverlay').hidden = true; visMerke(d); return;
+  }
+  err.textContent = 'Sjekker timekoden …';
+  try {
+    const snap = await window._get(window._ref(window._db, 'timecodes/' + kode));
+    const data = snap.val();
+    if (!data) { err.textContent = 'Ugyldig timekode.'; return; }
+    if (Date.now() > data.expires) { err.textContent = 'Timekoden er utløpt.'; return; }
+    const d = { name: navn, code: kode, expires: data.expires, teacher: data.teacher || '', ts: Date.now() };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(d));
+    $('sessionOverlay').hidden = true; visMerke(d);
+  } catch (e) { err.textContent = 'Fikk ikke kontakt. Prøv igjen, eller hopp over.'; }
+});
+$('sessionSkip').addEventListener('click', () => {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ skipped: true, ts: Date.now() }));
+  $('sessionOverlay').hidden = true;
+});
+$('sessionCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('sessionGo').click(); });
+$('sessionName').addEventListener('keydown', e => { if (e.key === 'Enter') $('sessionCode').focus(); });
+$('sessionBadge').addEventListener('click', () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  $('sessionBadge').hidden = true;
+  $('sessionOverlay').hidden = false;
+  $('sessionName').focus();
+});
+</script>
+
+</body>
+</html>

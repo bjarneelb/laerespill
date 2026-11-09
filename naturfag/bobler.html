@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Boblejakten – kjemiske symboler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./js/motorer/bobler.css">
+</head>
+<body>
+
+<script type="module">
+  import { database, ref, set, update, onValue, remove, get } from "./js/firebase-config.js";
+  window._fbReady = true; window._db = database; window._ref = ref; window._set = set;
+  window._update = update; window._onValue = onValue; window._remove = remove; window._get = get;
+</script>
+<script src="./js/spill-utils.js"></script>
+<script src="./js/motorer/bobler.js"></script>
+
+<script>
+// Innholdet i spillet. Motoren ligger i fellesrepoet og brukes av flere fag.
+const GRUNNSTOFFER = {"20":[["Hydrogen",["H"]],["Helium",["He"]],["Karbon",["C"]],["Nitrogen",["N"]],["Oksygen",["O"]],["Fluor",["F"]],["Neon",["Ne"]],["Natrium",["Na"]],["Magnesium",["Mg"]],["Aluminium",["Al"]],["Silisium",["Si"]],["Fosfor",["P"]],["Svovel",["S"]],["Klor",["Cl"]],["Kalium",["K"]],["Kalsium",["Ca"]],["Jern",["Fe"]],["Kobber",["Cu"]],["Sølv",["Ag"]],["Gull",["Au"]]],"50":[["Hydrogen",["H"]],["Helium",["He"]],["Karbon",["C"]],["Nitrogen",["N"]],["Oksygen",["O"]],["Fluor",["F"]],["Neon",["Ne"]],["Natrium",["Na"]],["Magnesium",["Mg"]],["Aluminium",["Al"]],["Silisium",["Si"]],["Fosfor",["P"]],["Svovel",["S"]],["Klor",["Cl"]],["Kalium",["K"]],["Kalsium",["Ca"]],["Jern",["Fe"]],["Kobber",["Cu"]],["Sølv",["Ag"]],["Gull",["Au"]],["Litium",["Li"]],["Beryllium",["Be"]],["Bor",["B"]],["Argon",["Ar"]],["Titan",["Ti"]],["Krom",["Cr"]],["Mangan",["Mn"]],["Kobolt",["Co"]],["Nikkel",["Ni"]],["Sink",["Zn"]],["Brom",["Br"]],["Krypton",["Kr"]],["Strontium",["Sr"]],["Jod",["I"]],["Xenon",["Xe"]],["Barium",["Ba"]],["Platina",["Pt"]],["Kvikksølv",["Hg"]],["Bly",["Pb"]],["Tinn",["Sn"]],["Uran",["U"]],["Radon",["Rn"]],["Radium",["Ra"]],["Cesium",["Cs"]],["Rubidium",["Rb"]],["Selen",["Se"]],["Arsen",["As"]],["Wolfram",["W"]],["Molybden",["Mo"]],["Zirkonium",["Zr"]]],"hoved":[["Hydrogen",["H"]],["Helium",["He"]],["Litium",["Li"]],["Beryllium",["Be"]],["Bor",["B"]],["Karbon",["C"]],["Nitrogen",["N"]],["Oksygen",["O"]],["Fluor",["F"]],["Neon",["Ne"]],["Natrium",["Na"]],["Magnesium",["Mg"]],["Aluminium",["Al"]],["Silisium",["Si"]],["Fosfor",["P"]],["Svovel",["S"]],["Klor",["Cl"]],["Argon",["Ar"]],["Kalium",["K"]],["Kalsium",["Ca"]],["Gallium",["Ga"]],["Germanium",["Ge"]],["Arsen",["As"]],["Selen",["Se"]],["Brom",["Br"]],["Krypton",["Kr"]],["Rubidium",["Rb"]],["Strontium",["Sr"]],["Indium",["In"]],["Tinn",["Sn"]],["Antimon",["Sb"]],["Tellur",["Te"]],["Jod",["I"]],["Xenon",["Xe"]],["Cesium",["Cs"]],["Barium",["Ba"]],["Thallium",["Tl"]],["Bly",["Pb"]],["Vismut",["Bi"]],["Polonium",["Po"]],["Astat",["At"]],["Radon",["Rn"]],["Francium",["Fr"]],["Radium",["Ra"]],["Nihonium",["Nh"]],["Flerovium",["Fl"]],["Moscovium",["Mc"]],["Livermorium",["Lv"]],["Tenness",["Ts"]],["Oganesson",["Og"]]],"alle":[["Hydrogen",["H"]],["Helium",["He"]],["Litium",["Li"]],["Beryllium",["Be"]],["Bor",["B"]],["Karbon",["C"]],["Nitrogen",["N"]],["Oksygen",["O"]],["Fluor",["F"]],["Neon",["Ne"]],["Natrium",["Na"]],["Magnesium",["Mg"]],["Aluminium",["Al"]],["Silisium",["Si"]],["Fosfor",["P"]],["Svovel",["S"]],["Klor",["Cl"]],["Argon",["Ar"]],["Kalium",["K"]],["Kalsium",["Ca"]],["Scandium",["Sc"]],["Titan",["Ti"]],["Vanadium",["V"]],["Krom",["Cr"]],["Mangan",["Mn"]],["Jern",["Fe"]],["Kobolt",["Co"]],["Nikkel",["Ni"]],["Kobber",["Cu"]],["Sink",["Zn"]],["Gallium",["Ga"]],["Germanium",["Ge"]],["Arsen",["As"]],["Selen",["Se"]],["Brom",["Br"]],["Krypton",["Kr"]],["Rubidium",["Rb"]],["Strontium",["Sr"]],["Yttrium",["Y"]],["Zirkonium",["Zr"]],["Niob",["Nb"]],["Molybden",["Mo"]],["Technetium",["Tc"]],["Ruthenium",["Ru"]],["Rhodium",["Rh"]],["Palladium",["Pd"]],["Sølv",["Ag"]],["Kadmium",["Cd"]],["Indium",["In"]],["Tinn",["Sn"]],["Antimon",["Sb"]],["Tellur",["Te"]],["Jod",["I"]],["Xenon",["Xe"]],["Cesium",["Cs"]],["Barium",["Ba"]],["Lantan",["La"]],["Cerium",["Ce"]],["Praseodym",["Pr"]],["Neodym",["Nd"]],["Promethium",["Pm"]],["Samarium",["Sm"]],["Europium",["Eu"]],["Gadolinium",["Gd"]],["Terbium",["Tb"]],["Dysprosium",["Dy"]],["Holmium",["Ho"]],["Erbium",["Er"]],["Thulium",["Tm"]],["Ytterbium",["Yb"]],["Lutetium",["Lu"]],["Hafnium",["Hf"]],["Tantal",["Ta"]],["Wolfram",["W"]],["Rhenium",["Re"]],["Osmium",["Os"]],["Iridium",["Ir"]],["Platina",["Pt"]],["Gull",["Au"]],["Kvikksølv",["Hg"]],["Thallium",["Tl"]],["Bly",["Pb"]],["Vismut",["Bi"]],["Polonium",["Po"]],["Astat",["At"]],["Radon",["Rn"]],["Francium",["Fr"]],["Radium",["Ra"]],["Actinium",["Ac"]],["Thorium",["Th"]],["Protactinium",["Pa"]],["Uran",["U"]],["Neptunium",["Np"]],["Plutonium",["Pu"]],["Americium",["Am"]],["Curium",["Cm"]],["Berkelium",["Bk"]],["Californium",["Cf"]],["Einsteinium",["Es"]],["Fermium",["Fm"]],["Mendelevium",["Md"]],["Nobelium",["No"]],["Lawrencium",["Lr"]],["Rutherfordium",["Rf"]],["Dubnium",["Db"]],["Seaborgium",["Sg"]],["Bohrium",["Bh"]],["Hassium",["Hs"]],["Meitnerium",["Mt"]],["Darmstadtium",["Ds"]],["Röntgenium",["Rg"]],["Copernicium",["Cn"]],["Nihonium",["Nh"]],["Flerovium",["Fl"]],["Moscovium",["Mc"]],["Livermorium",["Lv"]],["Tenness",["Ts"]],["Oganesson",["Og"]]]};
+
+
+function manglerMotor(navn, fil) {
+  document.body.innerHTML = `
+    <div style="font-family:system-ui,sans-serif;max-width:46ch;margin:12vh auto;padding:0 1.5rem;line-height:1.5;color:#1b2733">
+      <h1 style="font-size:1.4rem;margin:0 0 .5rem">Spillet kunne ikke starte</h1>
+      <p style="color:#5a6773">Fant ikke ${navn}. Filen <code>${fil}</code> hentes fra fellesrepoet.
+      Sjekk at den er publisert der, og at omskrivingen i <code>netlify.toml</code> peker riktig.</p>
+      <p><a href="./" style="color:#1e66d8">Tilbake til menyen</a></p>
+    </div>`;
+  document.body.style.background = '#e6eaee';
+}
+
+if (!window.Boblespill) manglerMotor('boblemotoren', 'js/motorer/bobler.js');
+else Boblespill.start({
+  spillnavn: 'bobler-kjemi',
+  tittel: '🫧 Boblejakten',
+  overskrift: 'Boblejakten',
+  intro: 'Bobler med navnet på et grunnstoff vokser på skjermen. Skriv det kjemiske symbolet før boblene fyller skjermen. Store og små bokstaver spiller ingen rolle, og du kan ta boblene i den rekkefølgen du vil.',
+  ledetekst: 'skriv symbolet …',
+  settTittel: 'Hvilke grunnstoffer?',
+  sett: [
+    { id: '20',    navn: '20 vanligste',  par: GRUNNSTOFFER['20'] },
+    { id: '50',    navn: '50 vanligste',  par: GRUNNSTOFFER['50'] },
+    { id: 'hoved', navn: 'Hovedgruppene', par: GRUNNSTOFFER['hoved'] },
+    { id: 'alle',  navn: 'Alle 118',      par: GRUNNSTOFFER['alle'] }
+  ]
+});
+</script>
+</body>
+</html>
