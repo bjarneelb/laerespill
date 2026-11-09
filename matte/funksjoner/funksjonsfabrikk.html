@@ -180,7 +180,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
   cursor:pointer;transition:background 0.2s;}
 .start-btn:hover{background:#4338ca;}
 </style>
-<script src="../js/spill-utils.js"></script>
+<script src="/js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -321,7 +321,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, update, onValue, set, get } from "../js/firebase-config.js";
+  import { database, ref, update, onValue, set, get } from "/js/firebase-config.js";
   window._db=database; window._ref=ref;
   window._update=update; window._onValue=onValue; window._set=set; window._get=get;
   window._fbReady=true;
@@ -1225,6 +1225,6 @@ function updateTimerDisplay(){
 // ── INIT ──
 buildLevelSelect();
 </script>
-<script src="../js/touch-dnd.js"></script>
+<script src="/js/touch-dnd.js"></script>
 </body>
 </html>

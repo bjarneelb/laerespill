@@ -105,7 +105,7 @@ table.vtable td{padding:8px 10px;text-align:center;border:1px solid var(--border
 .start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
 .start-btn:hover{background:#4338ca;}
 </style>
-<script src="../js/spill-utils.js"></script>
+<script src="/js/spill-utils.js"></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -677,9 +677,9 @@ window.startGame=function(){
 
 buildLevelSelect();
 </script>
-<script src="../js/touch-dnd.js"></script>
+<script src="/js/touch-dnd.js"></script>
 <script type="module">
-  import { database, ref, update } from "../js/firebase-config.js";
+  import { database, ref, update } from "/js/firebase-config.js";
   window._db=database; window._ref=ref; window._update=update; window._fbReady=true;
 </script>
 </body>

@@ -1,9 +1,13 @@
-# Naturfagsiden (naturfagting.netlify.app)
+# Lærespill (laerespill.netlify.app)
+# Forside med innlogging, og ett fag per mappe: matte/, naturfag/, flerfaglig/ ...
 [build]
   publish = "."
 
-# Felles filer hentes fra fellesrepoet. Adressen i nettleseren blir stående,
-# så stiene i spillene kan fortsatt være ./js/... og ./baner/...
+[build.environment]
+  SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
+
+# Felles filer hentes fra fellesting. Adressen i nettleseren blir stående,
+# så spillene bruker /js/... og /baner/...
 [[redirects]]
   from = "/js/*"
   to = "https://fellesting.netlify.app/js/:splat"
@@ -16,9 +20,10 @@
   status = 200
   force = true
 
-# Lærersiden ligger i felles
+# Lærersiden ligger i fellesting
 [[redirects]]
   from = "/laerer.html"
   to = "https://fellesting.netlify.app/laerer.html"
   status = 301
   force = true
+

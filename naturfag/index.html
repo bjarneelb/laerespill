@@ -83,6 +83,8 @@ footer p { margin: .2rem 0; }
 footer a { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
 
+.home { display: inline-block; margin-bottom: .8rem; color: var(--accent); font-weight: 700; text-decoration: none; }
+.home:hover { text-decoration: underline; }
 .who { margin-top: .9rem; border: 1px solid var(--rule); background: var(--card); color: var(--ink-soft); border-radius: 99px; padding: .3rem .8rem; font-size: .88rem; cursor: pointer; }
 .who:hover { border-color: var(--ink-soft); color: var(--ink); }
 .session { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 1.2rem; background: rgba(10, 16, 23, .72); }
@@ -103,6 +105,7 @@ footer a { color: var(--accent); }
 <body>
 
 <header class="wrap">
+  <a class="home" href="/">← Alle fag</a>
   <h1>Naturfag</h1>
   <p class="lead">Interaktive verktøy til undervisning i naturfag. Alt kjører i nettleseren, uten pålogging, og fungerer på tavle, PC og mobil.</p>
   <button class="who" id="sessionBadge" hidden title="Klikk for å bytte navn eller timekode"></button>
@@ -225,7 +228,7 @@ footer a { color: var(--accent); }
   </div>
 </div>
 <script type="module">
-  import { database, ref, get } from "./js/firebase-config.js";
+  import { database, ref, get } from "/js/firebase-config.js";
   window._db = database; window._ref = ref; window._get = get; window._fbReady = true;
 </script>
 <script>

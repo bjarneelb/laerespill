@@ -242,17 +242,22 @@
   .session-badge .dot.inactive { background: var(--muted); }
 
   .theme-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero { position: relative; padding-top: 64px; }
+  .topbar { position: absolute; top: 0; left: 0; padding: 14px 20px 0; }
+  .btn-home { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.45); border-radius: 10px; color: white; font-weight: 800; font-size: 0.85rem; text-decoration: none; }
+  .btn-home:hover { background: rgba(255,255,255,0.3); }
   @media (max-width: 540px) {
     .theme-grid { grid-template-columns: 1fr; }
     .hero h1 { font-size: 1.6rem; }
     .card-grid { grid-template-columns: 1fr; }
   }
 </style>
-<script src="./js/spill-utils.js"></script>
+<script src="/js/spill-utils.js"></script>
 </head>
 <body>
 
 <div class="hero">
+  <div class="topbar"><a class="btn-home" href="/">← Alle fag</a></div>
   <div class="hero-icon">🧮</div>
   <h1>Matematikk</h1>
   <p>Velg et tema — løs oppgaver, bygg forståelse og konkurrer mot klassen!</p>
@@ -302,7 +307,7 @@
 </div>
 
 <footer>
-  Matematikk — utviklet for visuell forståelse · v2.0
+  Matematikk — utviklet for visuell forståelse · v2.1
 </footer>
 
 <!-- SESSION OVERLAY -->
@@ -334,7 +339,7 @@
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, get, onValue } from "./js/firebase-config.js";
+  import { database, ref, get, onValue } from "/js/firebase-config.js";
   window._db=database; window._ref=ref; window._get=get; window._onValue=onValue;
   window._fbReady=true;
 </script>
@@ -490,7 +495,7 @@ window.showSessionInfo=function(){
 
 async function registerInSession(session){
   if(!window._fbReady||!session.code||!session.name) return;
-  const {update, ref}=await import('./js/firebase-config.js');
+  const {update, ref}=await import('/js/firebase-config.js');
   update(ref(window._db,'timecodes/'+session.code+'/players/'+session.name),{
     joined:Date.now(),
     active:true,

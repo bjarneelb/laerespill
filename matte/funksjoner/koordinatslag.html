@@ -322,7 +322,7 @@ body {
   100% { r: 22; opacity: 0; }
 }
 </style>
-<script src="../js/spill-utils.js"></script>
+<script src="/js/spill-utils.js"></script>
 </head>
 <body>
 
@@ -460,7 +460,7 @@ body {
 
 <!-- FIREBASE -->
 <script type="module">
-  import { database, ref, set, update, onValue, remove, get } from "../js/firebase-config.js";
+  import { database, ref, set, update, onValue, remove, get } from "/js/firebase-config.js";
   window._db=database; window._ref=ref; window._set=set;
   window._update=update; window._onValue=onValue;
   window._remove=remove; window._get=get;
@@ -1447,6 +1447,6 @@ window.addEventListener('beforeunload',()=>{
   if(roomCode&&window._fbReady) window._remove(window._ref(window._db,'rooms/'+roomCode));
 });
 </script>
-<script src="../js/touch-dnd.js"></script>
+<script src="/js/touch-dnd.js"></script>
 </body>
 </html>
