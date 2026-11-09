@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matematikk – Hovedmeny</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff;
+    --accent: #5b4fcf;
+    --accent2: #e84393;
+    --text: #1e1b4b;
+    --muted: #6b7280;
+    --border: #d0d8f0;
+    --shadow: 0 4px 24px rgba(91,79,207,0.10);
+    --r: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── HEADER ── */
+  .hero {
+    width: 100%;
+    background: linear-gradient(135deg, #4338ca, #7c3aed 60%, #e84393);
+    color: white;
+    text-align: center;
+    padding: 52px 24px 44px;
+  }
+  .hero-icon { font-size: 3.5rem; margin-bottom: 10px; }
+  .hero h1 {
+    font-size: 2.2rem; font-weight: 900;
+    letter-spacing: -0.5px; margin-bottom: 8px;
+  }
+  .hero p {
+    font-size: 1rem; opacity: 0.85;
+    max-width: 480px; margin: 0 auto; line-height: 1.6;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    width: 100%;
+    max-width: 860px;
+    padding: 36px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* ── SECTION ── */
+  .section-title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── CARD GRID ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── GAME CARD ── */
+  .card {
+    background: white;
+    border-radius: var(--r);
+    border: 2px solid var(--border);
+    padding: 24px 22px 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    text-decoration: none;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--card-color, var(--accent));
+    border-radius: var(--r) var(--r) 0 0;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(91,79,207,0.18);
+    border-color: var(--card-color, var(--accent));
+  }
+  .card:active { transform: translateY(-1px); }
+
+  .card-icon { font-size: 2.2rem; }
+  .card-title { font-size: 1.05rem; font-weight: 900; }
+  .card-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; flex: 1; }
+  .card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #f0f4ff;
+    color: var(--accent);
+    width: fit-content;
+  }
+  .card-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--card-color, var(--accent));
+    color: white;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 0.88rem;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: filter 0.15s;
+  }
+  .card-btn:hover { filter: brightness(0.9); }
+
+  /* Fargevarianter */
+  .c-purple { --card-color: #5b4fcf; }
+  .c-pink    { --card-color: #e84393; }
+  .c-green   { --card-color: #16a34a; }
+  .c-orange  { --card-color: #ea580c; }
+  .c-blue    { --card-color: #2563eb; }
+  .c-teal    { --card-color: #0891b2; }
+  .c-gold    { --card-color: #d97706; }
+
+  .c-purple .card-tag { background:#f5f3ff; color:#5b4fcf; }
+  .c-pink   .card-tag { background:#fdf2f8; color:#e84393; }
+  .c-green  .card-tag { background:#f0fdf4; color:#16a34a; }
+  .c-orange .card-tag { background:#fff7ed; color:#ea580c; }
+  .c-blue   .card-tag { background:#eff6ff; color:#2563eb; }
+  .c-teal   .card-tag { background:#f0f9ff; color:#0891b2; }
+  .c-gold   .card-tag { background:#fffbeb; color:#d97706; }
+
+  /* Kommer snart */
+  .card.soon {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .soon-badge {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: #f1f5f9;
+    color: var(--muted);
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    margin-top: auto;
+  }
+
+  /* ── SESSION OVERLAY ── */
+  .session-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: linear-gradient(135deg, #4338ca, #7c3aed 60%, #e84393);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .session-card {
+    background: white; border-radius: 20px;
+    padding: 36px 32px; width: 100%; max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  .session-card h1 { font-size: 1.6rem; font-weight: 900; color: #1e1b4b; margin-bottom: 6px; }
+  .session-card p  { color: var(--muted); font-size: 0.88rem; margin-bottom: 24px; line-height:1.5; }
+  .session-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; text-align: left; }
+  .session-label { font-size: 0.72rem; font-weight: 800; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .session-input {
+    padding: 11px 14px; border: 2px solid var(--border); border-radius: 10px;
+    font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 700;
+    outline: none; transition: border-color 0.2s; color: var(--text);
+  }
+  .session-input:focus { border-color: var(--accent); }
+  .session-input.error { border-color: #dc2626; background: #fef2f2; }
+  .session-btn {
+    width: 100%; padding: 13px; border: none; border-radius: 12px;
+    font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 800;
+    cursor: pointer; transition: all 0.2s; margin-top: 4px;
+  }
+  .session-btn-primary { background: var(--accent); color: white; }
+  .session-btn-primary:hover { background: #4338ca; }
+  .session-btn-skip {
+    background: transparent; color: var(--muted);
+    border: 2px solid var(--border); margin-top: 8px;
+    font-size: 0.88rem;
+  }
+  .session-btn-skip:hover { background: #f3f4f6; }
+  .session-error { color: #dc2626; font-size: 0.82rem; font-weight: 700; margin-top: 8px; min-height: 20px; }
+  .session-badge {
+    position: fixed; bottom: 16px; right: 16px; z-index: 100;
+    background: white; border: 2px solid var(--border);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 0.78rem; font-weight: 800; color: var(--text);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+  }
+  .session-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
+  .session-badge .dot.inactive { background: var(--muted); }
+
+  .theme-grid { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 540px) {
+    .theme-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 1.6rem; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+</style>
+<script src="./js/spill-utils.js"></script>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-icon">🧮</div>
+  <h1>Matematikk</h1>
+  <p>Velg et tema — løs oppgaver, bygg forståelse og konkurrer mot klassen!</p>
+</div>
+
+<div class="main">
+
+  <div>
+    <div class="section-title">Temaer</div>
+    <div class="card-grid theme-grid">
+
+      <a class="card c-teal" href="likninger/">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Likninger</div>
+        <div class="card-desc">Balansevekten, Ligningsvekten, Likningsbyggeren og Likningssett: fra å balansere vekter til likninger med tekst og to ukjente.</div>
+        <div class="card-tag">4 spill</div>
+        <div class="card-btn">Åpne →</div>
+      </a>
+
+      <a class="card c-green" href="funksjoner/">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Funksjoner</div>
+        <div class="card-desc">Uttrykk, verditabeller, funksjonsuttrykk, grafer og koordinater.</div>
+        <div class="card-tag">6 spill</div>
+        <div class="card-btn">Åpne →</div>
+      </a>
+
+      <a class="card c-blue" href="figurtall/">
+        <div class="card-icon">🔷</div>
+        <div class="card-title">Figurtall</div>
+        <div class="card-desc">Lineære og kvadratiske figurtall: tabell, første- og andredifferanse, f₀ og formelen for fₙ.</div>
+        <div class="card-tag">3 spill</div>
+        <div class="card-btn">Åpne →</div>
+      </a>
+
+      <a class="card c-orange" href="plangeometri/">
+        <div class="card-icon">📐</div>
+        <div class="card-title">Plangeometri</div>
+        <div class="card-desc">Areal på rutenett og med formler: kvadrat, rektangel, trekant, parallellogram, rombe, trapes, sirkel og sammensatte figurer.</div>
+        <div class="card-tag">2 spill</div>
+        <div class="card-btn">Åpne →</div>
+      </a>
+
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Matematikk — utviklet for visuell forståelse · v2.0
+</footer>
+
+<!-- SESSION OVERLAY -->
+<div class="session-overlay" id="sessionOverlay" style="display:none">
+  <div class="session-card">
+    <div style="font-size:2.5rem;margin-bottom:8px">🎓</div>
+    <h1>Velkommen!</h1>
+    <p>Skriv inn navnet ditt og timekoden du har fått av læreren din. Dette brukes kun til oversikt — ikke til å vise navn i spill.</p>
+    <div class="session-field">
+      <div class="session-label">Ditt navn</div>
+      <input class="session-input" id="sessionName" placeholder="Fornavn Etternavn" maxlength="40" autocomplete="name">
+    </div>
+    <div class="session-field">
+      <div class="session-label">Timekode (fra læreren)</div>
+      <input class="session-input" id="sessionCode" placeholder="f.eks. MATTE3" maxlength="12"
+        style="text-transform:uppercase;letter-spacing:2px;" autocomplete="off">
+    </div>
+    <div class="session-error" id="sessionError"></div>
+    <button class="session-btn session-btn-primary" onclick="submitSession()">✅ Start</button>
+    <button class="session-btn session-btn-skip" onclick="skipSession()">Hopp over — spill uten logging</button>
+  </div>
+</div>
+
+<!-- SESSION BADGE (bottom right) -->
+<div class="session-badge" id="sessionBadge" style="display:none" onclick="showSessionInfo()">
+  <div class="dot" id="sessionDot"></div>
+  <span id="sessionBadgeText">–</span>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, get, onValue } from "./js/firebase-config.js";
+  window._db=database; window._ref=ref; window._get=get; window._onValue=onValue;
+  window._fbReady=true;
+</script>
+
+<script>
+// ── SESSION MANAGEMENT ──
+const SESSION_KEY='matte_session';
+
+function getSession(){
+  try {
+    const s=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');
+    if(!s) return null;
+    // Check expiry
+    if(s.expires&&Date.now()>s.expires) return {...s, expired:true};
+    return s;
+  } catch(e){ return null; }
+}
+
+function saveSession(data){
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  // Also expose globally for other pages
+  window._session=data;
+}
+
+// Expose session to other scripts/spill
+window.getActiveSession=function(){
+  const s=getSession();
+  if(!s||s.expired||s.skipped) return null;
+  return s;
+};
+
+// Kom eleven fra en temaside uten å være logget inn, sendes hen tilbake dit etterpå
+const NESTE=(()=>{ const t=new URLSearchParams(location.search).get('neste'); return ['likninger','funksjoner','figurtall','plangeometri'].includes(t)?t:null; })();
+function goNext(){ if(NESTE) location.href=NESTE+'/'; }
+
+window.addEventListener('load',()=>{
+  const s=getSession();
+  if(s){
+    if(NESTE){ goNext(); return; }
+    // Already have a session this tab
+    window._session=s;
+    showBadge(s);
+    return;
+  }
+  // Show overlay after short delay so page loads first
+  setTimeout(()=>{
+    document.getElementById('sessionOverlay').style.display='flex';
+    document.getElementById('sessionName').focus();
+  },300);
+});
+
+// generateNickname() kommer fra js/spill-utils.js
+
+window.submitSession=async function(){
+  const name=document.getElementById('sessionName').value.trim();
+  const code=document.getElementById('sessionCode').value.trim().toUpperCase();
+  const err=document.getElementById('sessionError');
+  const nameInp=document.getElementById('sessionName');
+  const codeInp=document.getElementById('sessionCode');
+
+  err.textContent='';
+  nameInp.classList.remove('error');
+  codeInp.classList.remove('error');
+
+  if(!name){ nameInp.classList.add('error'); err.textContent='Skriv inn navnet ditt.'; return; }
+
+  if(!code){
+    const nickname=generateNickname();
+    saveSession({name, nickname, skipped:false, noCode:true, ts:Date.now()});
+    closeOverlay({name, nickname, noCode:true});
+    return;
+  }
+
+  err.textContent='Sjekker timekode...';
+  const waitFb=()=>new Promise(r=>{ if(window._fbReady) r(); else setTimeout(()=>waitFb().then(r),200); });
+  await waitFb();
+
+  try {
+    const snap=await window._get(window._ref(window._db,'timecodes/'+code));
+    const data=snap.val();
+    if(!data){ codeInp.classList.add('error'); err.textContent='Ugyldig timekode.'; return; }
+    if(Date.now()>data.expires){ codeInp.classList.add('error'); err.textContent='Timekoden er utløpt.'; return; }
+    // Sikre unikt nickname innenfor denne timekoden
+    const existingNames=Object.values(data.players||{}).map(p=>p&&p.nickname).filter(Boolean);
+    let nickname=generateNickname();
+    let attempts=0;
+    while(existingNames.includes(nickname)&&attempts<20){
+      nickname=generateNickname();
+      attempts++;
+    }
+    if(existingNames.includes(nickname)){
+      // Svært uflaks — legg til ekstra siffer for å garantere unikhet
+      nickname=nickname+Math.floor(Math.random()*10);
+    }
+    const session={name, nickname, code, expires:data.expires, teacher:data.teacher||'', ts:Date.now()};
+    saveSession(session);
+    window._get && registerInSession(session);
+    closeOverlay(session);
+  } catch(e){
+    err.textContent='Kunne ikke koble til — prøv igjen.';
+  }
+};
+
+window.skipSession=function(){
+  saveSession({skipped:true, ts:Date.now()});
+  window._session={skipped:true};
+  document.getElementById('sessionOverlay').style.display='none';
+  showBadge({skipped:true});
+  goNext();
+};
+
+function closeOverlay(session){
+  document.getElementById('sessionOverlay').style.display='none';
+  showBadge(session);
+  goNext();
+}
+
+function showBadge(s){
+  const badge=document.getElementById('sessionBadge');
+  const dot=document.getElementById('sessionDot');
+  const txt=document.getElementById('sessionBadgeText');
+  badge.style.display='flex';
+  if(s.skipped||s.noCode){
+    dot.className='dot inactive';
+    txt.textContent='Ingen logging';
+  } else if(s.expired){
+    dot.className='dot inactive';
+    txt.textContent='Utløpt økt';
+  } else {
+    dot.className='dot';
+    txt.textContent=(s.nickname||s.name)+(s.code?' · '+s.code:'');
+  }
+}
+
+window.showSessionInfo=function(){
+  const s=getSession();
+  if(!s||s.skipped) {
+    if(confirm('Vil du logge inn med navn og timekode?')){
+      sessionStorage.removeItem(SESSION_KEY);
+      document.getElementById('sessionOverlay').style.display='flex';
+    }
+    return;
+  }
+  if(s.expired){
+    alert('Timekoden er utløpt. Spør læreren om en ny kode.');
+    return;
+  }
+  if(confirm('Logget inn som '+s.name+(s.code?' ('+s.code+')':'')+'\n\nVil du bytte bruker?')){
+    sessionStorage.removeItem(SESSION_KEY);
+    document.getElementById('sessionOverlay').style.display='flex';
+  }
+};
+
+async function registerInSession(session){
+  if(!window._fbReady||!session.code||!session.name) return;
+  const {update, ref}=await import('./js/firebase-config.js');
+  update(ref(window._db,'timecodes/'+session.code+'/players/'+session.name),{
+    joined:Date.now(),
+    active:true,
+    nickname:session.nickname||'',
+  });
+}
+
+// Enter key support
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('sessionOverlay').style.display!=='none')
+    submitSession();
+});
+</script>
+
+</body>
+</html>

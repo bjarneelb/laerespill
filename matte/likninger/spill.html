@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ligningsvekten</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff; --border: #d0d8f0; --accent: #5b4fcf; --accent2: #e84393;
+    --green: #22c55e; --red: #ef4444; --yellow: #eab308;
+    --text: #1e1b4b; --muted: #6b7280;
+    --x-color: #7c3aed; --x-neg: #be185d;
+    --num-pos: #1d4ed8; --num-neg: #b45309;
+    --shadow: 0 4px 24px rgba(91,79,207,0.10); --r: 14px; --r-sm: 8px;
+    --scale-wood: #8B5E3C; --scale-metal: #9ca3af;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+  /* ── HEADER ── */
+  .header { width: 100%; background: var(--accent); color: white; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(91,79,207,0.25); flex-shrink: 0; }
+  .header-title { font-size: 1.2rem; font-weight: 900; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .player-badge { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 4px 12px; font-weight: 700; font-size: 0.8rem; }
+  .mode-badge { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 3px 10px; font-weight: 700; font-size: 0.75rem; }
+  .version-tag { font-size: 0.68rem; opacity: 0.55; font-weight: 600; }
+  .level-badge-header { background: var(--yellow); color: #713f12; border-radius: 20px; padding: 4px 12px; font-weight: 800; font-size: 0.8rem; }
+  .streak-badge { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 12px; font-weight: 800; font-size: 0.8rem; }
+
+  /* ── START SCREEN ── */
+  #startScreen { position: fixed; inset: 0; background: linear-gradient(135deg,#4338ca,#7c3aed 60%,#e84393); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .start-card { background: white; border-radius: 24px; padding: 32px 36px; width: 460px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+  .start-icon { font-size: 2.8rem; margin-bottom: 6px; }
+  .start-card h1 { font-size: 1.6rem; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
+  .start-card > p { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
+  .start-name { font-weight: 800; font-size: 0.9rem; color: var(--accent2); background: #fdf2f8; border-radius: 10px; padding: 5px 12px; display: inline-block; margin-bottom: 14px; }
+
+  .mode-selector { display: flex; gap: 6px; margin-bottom: 14px; }
+  .mode-btn { flex: 1; padding: 10px 4px; border-radius: 10px; border: 2px solid var(--border); background: #f9fafb; cursor: pointer; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.75rem; color: var(--muted); transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .mode-btn .mi { font-size: 1.3rem; }
+  .mode-btn.active { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 4px 14px rgba(91,79,207,0.4); transform: translateY(-2px); }
+
+  .mode-options { background: #f5f3ff; border-radius: 10px; padding: 12px; margin-bottom: 12px; display: none; flex-direction: column; gap: 8px; }
+  .mode-options.visible { display: flex; }
+  .opt-row { display: flex; align-items: center; gap: 8px; }
+  .opt-label { font-size: 0.75rem; font-weight: 800; color: var(--muted); white-space: nowrap; }
+  .start-input { flex: 1; padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px; font-family: 'Nunito',sans-serif; font-size: 0.9rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 2px; outline: none; background: white; }
+  .start-input:focus { border-color: var(--accent); }
+  .start-num { width: 65px; padding: 8px 8px; border: 2px solid var(--border); border-radius: 8px; font-family: 'Nunito',sans-serif; font-size: 0.9rem; font-weight: 700; text-align: center; outline: none; background: white; }
+  .start-num:focus { border-color: var(--accent); }
+
+  .level-selector-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-align: left; margin-bottom: 5px; }
+  .level-selector { display: flex; gap: 3px; margin-bottom: 12px; flex-wrap: wrap; }
+  .level-selector label { flex: 1; min-width: 36px; cursor: pointer; }
+  .level-selector input[type="radio"] { display: none; }
+  .level-radio-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px 2px; border-radius: 8px; border: 2px solid var(--border); background: #f9fafb; font-size: 0.58rem; font-weight: 800; color: var(--muted); transition: all 0.15s; }
+  .level-radio-btn .li { font-size: 0.85rem; }
+  .level-selector input[type="radio"]:checked + .level-radio-btn { background: var(--accent); border-color: var(--accent); color: white; transform: translateY(-2px); }
+
+  .btn-start { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 1rem; font-weight: 800; cursor: pointer; transition: transform 0.1s; }
+  .btn-start:hover { background: #4338ca; transform: translateY(-1px); }
+  .start-version { margin-top: 8px; font-size: 0.68rem; color: #9ca3af; font-weight: 600; }
+
+  /* ── COUNTDOWN BANNER ── */
+  #countdownBanner { display: none; background: var(--accent); color: white; border-radius: var(--r); padding: 8px 18px; align-items: center; justify-content: space-between; box-shadow: var(--shadow); }
+  #countdownBanner.visible { display: flex; }
+  .countdown-time { font-size: 1.4rem; font-weight: 900; font-family: monospace; }
+  .countdown-time.urgent { color: var(--yellow); animation: urgPulse 0.5s infinite; }
+  @keyframes urgPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* ── EQUATION DISPLAY ── */
+  .eq-display { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 10px 18px; box-shadow: var(--shadow); text-align: center; font-size: 1.3rem; font-weight: 900; font-family: monospace; color: var(--accent); min-height: 44px; }
+
+  /* ── MAIN AREA ── */
+  .main { width: 100%; max-width: 920px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── SCALE + SIDEBAR LAYOUT ── */
+  .scale-area { display: grid; grid-template-columns: 200px 1fr; gap: 12px; align-items: start; }
+  .scale-area.no-sidebar { grid-template-columns: 1fr; }
+
+  /* ── SCOREBOARD SIDEBAR ── */
+  .sidebar { display: flex; flex-direction: column; gap: 10px; }
+  .score-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 14px; box-shadow: var(--shadow); }
+  .score-card-title { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .score-entry { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; font-weight: 700; }
+  .score-entry:last-child { border-bottom: none; }
+  .score-entry.is-me { color: var(--accent); }
+  .score-entry .pts { background: #f0f4ff; color: var(--accent); border-radius: 20px; padding: 1px 8px; font-size: 0.75rem; }
+  .score-entry.is-me .pts { background: var(--accent); color: white; }
+  .my-score-big { text-align: center; font-size: 2.2rem; font-weight: 900; color: var(--accent); }
+  .my-score-sub { text-align: center; font-size: 0.75rem; color: var(--muted); font-weight: 700; margin-top: 2px; }
+
+  .level-info-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 14px; box-shadow: var(--shadow); }
+  .level-info-title { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .level-info-name { font-size: 0.88rem; font-weight: 800; color: var(--accent); }
+  .level-info-desc { font-size: 0.75rem; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .wins-display { margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+  .wins-bar { flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+  .wins-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.4s; }
+
+  /* ── SVG SCALE ── */
+  .scale-wrap { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 10px; box-shadow: var(--shadow); position: relative; overflow: visible; }
+  #scaleSvg { width: 100%; display: block; }
+
+  /* ── BLOCKS ── */
+  .block { padding: 5px 9px; border-radius: var(--r-sm); font-weight: 800; font-size: 0.82rem; cursor: grab; user-select: none; color: white; display: flex; align-items: center; justify-content: center; min-width: 36px; text-align: center; transition: transform 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+  .block:active { cursor: grabbing; transform: scale(1.08); }
+  .block.type-x      { background: var(--x-color); }
+  .block.type-x-neg  { background: var(--x-neg); }
+  .block.type-num    { background: var(--num-pos); }
+  .block.type-num-neg{ background: var(--num-neg); }
+  .block.type-frac   { background: var(--num-pos); }      /* brøk uten x — blå */
+  .block.type-frac-neg { background: var(--num-neg); }    /* negativ brøk uten x */
+  .block.type-fracx  { background: var(--x-color); }      /* brøk med x i teller — lilla */
+  .block.type-fracx-neg { background: var(--x-neg); }
+  .block.type-fracxi { background: var(--x-color); }      /* brøk med x i nevner — lilla */
+  .block.dragging    { opacity: 0.35; }
+  .block.just-changed { animation: pop 2s ease-out; }
+  @keyframes pop { 0%{transform:scale(1.2);box-shadow:0 0 0 4px rgba(91,79,207,0.4)} 80%{box-shadow:0 0 0 2px rgba(91,79,207,0.2)} 100%{transform:scale(1);box-shadow:0 2px 6px rgba(0,0,0,0.2)} }
+
+  /* Brøkvisning inne i blokk */
+  .frac-block { display:inline-flex; flex-direction:column; align-items:center; line-height:1.1; }
+  .frac-top   { border-bottom: 1.5px solid rgba(255,255,255,0.8); padding-bottom: 1px; min-width: 18px; text-align: center; }
+  .frac-bot   { padding-top: 1px; min-width: 18px; text-align: center; }
+
+  /* ── TASK CARD ── */
+  .task-card { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 18px; box-shadow: var(--shadow); display: flex; gap: 12px; align-items: flex-start; }
+  .task-icon { font-size: 1.8rem; flex-shrink: 0; margin-top: 2px; }
+  .task-body { flex: 1; }
+  .task-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 4px; }
+  .task-eq { font-size: 1.15rem; font-weight: 900; font-family: monospace; color: var(--text); }
+  .task-instr { font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+
+  /* Plus signs between blocks */
+  .block-plus { color: var(--muted); font-weight: 900; font-size: 1rem; display:flex; align-items:center; user-select: none; pointer-events: none; }
+
+  /* ── BUILD14 PANELS ── */
+  .build14-panel {
+    width: 160px; flex-shrink: 0; display: none;
+    flex-direction: column; gap: 6px;
+    background: white; border-radius: var(--r);
+    border: 2px solid var(--border);
+    padding: 10px 10px; box-shadow: var(--shadow);
+    align-self: stretch;
+  }
+  .build14-panel.visible { display: flex; }
+  .build14-title { font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--accent); border-bottom: 1px solid var(--border);
+    padding-bottom: 4px; margin-bottom: 2px; }
+  .build14-row { display: flex; gap: 4px; align-items: center; }
+  .build14-input { width: 48px; padding: 5px 6px; border: 1.5px solid var(--border);
+    border-radius: 5px; font-family: 'Nunito',sans-serif; font-size: 0.82rem;
+    font-weight: 700; text-align: center; outline: none; }
+  .build14-input:focus { border-color: var(--accent); }
+  .build14-input:disabled { background: #f3f4f6; color: var(--muted); }
+  .build14-add { width: 100%; padding: 6px; background: var(--accent); color: white;
+    border: none; border-radius: 5px; font-family: 'Nunito',sans-serif;
+    font-size: 0.78rem; font-weight: 800; cursor: pointer; margin-top: 2px; }
+  .build14-add:hover { background: #4338ca; }
+  .block-bank { background: white; border-radius: var(--r); border: 2px dashed var(--border); padding: 12px; box-shadow: var(--shadow); }
+  .bank-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+  .bank-blocks { display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; align-items: center; }
+
+  /* ── CONTROLS ── */
+  .controls { background: white; border-radius: var(--r); border: 2px solid var(--border); padding: 12px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ctrl-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); flex-shrink: 0; }
+  .ctrl-num { width: 56px; padding: 6px 8px; border: 2px solid var(--border); border-radius: 7px; font-family: 'Nunito',sans-serif; font-size: 0.95rem; font-weight: 700; text-align: center; outline: none; }
+  .ctrl-num:focus { border-color: var(--accent); }
+  .ctrl-btn { padding: 7px 14px; border-radius: 7px; border: none; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.88rem; cursor: pointer; transition: filter 0.1s, transform 0.1s; }
+  .ctrl-btn:hover { filter: brightness(0.92); transform: translateY(-1px); }
+  .ctrl-btn:active { transform: translateY(0); }
+  .ctrl-btn.times  { background: #ede9fe; color: var(--x-color); }
+  .ctrl-btn.divide { background: #dbeafe; color: var(--num-pos); }
+  .ctrl-btn.undo   { background: #f3f4f6; color: var(--muted); }
+  .ctrl-sep { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+  .ctrl-btn.check  { background: var(--green); color: white; }
+  .ctrl-btn.new    { background: #f0f4ff; color: var(--accent); border: 2px solid var(--border); }
+  .ctrl-btn.reset  { background: #fef3c7; color: #92400e; }
+  .ctrl-btn.neg    { background: #fdf2f8; color: var(--x-neg); }
+  .ctrl-btn.split  { background: #f5f3ff; color: var(--x-color); }
+
+  /* ── BUILD MODE (nivå 9) ── */
+  .build-panel { background: #f5f3ff; border-radius: var(--r); border: 2px solid #c7d2fe; padding: 12px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .build-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); flex-shrink: 0; }
+  .build-num { width: 65px; padding: 7px 8px; border: 2px solid var(--border); border-radius: 7px; font-family: 'Nunito',sans-serif; font-size: 0.95rem; font-weight: 700; text-align: center; outline: none; }
+  .build-btn { padding: 7px 14px; border-radius: 7px; border: none; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.88rem; cursor: pointer; }
+  .build-btn.add-x   { background: #ede9fe; color: var(--x-color); }
+  .build-btn.add-num { background: #dbeafe; color: var(--num-pos); }
+
+  /* ── FEEDBACK TOAST ── */
+  .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-80px); padding: 11px 22px; border-radius: 50px; font-weight: 800; font-size: 0.95rem; color: white; z-index: 500; transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--green); }
+  .toast.error   { background: var(--red); }
+
+  /* ── CONTEXT MENU ── */
+  .ctx-menu { display: none; position: fixed; background: white; border: 2px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 2000; overflow: hidden; }
+  .ctx-menu button { display: block; width: 100%; border: none; background: none; font-family: 'Nunito',sans-serif; font-size: 0.88rem; font-weight: 700; padding: 8px 16px; cursor: pointer; text-align: left; color: var(--text); }
+  .ctx-menu button:hover { background: #f5f3ff; color: var(--accent); }
+
+  /* ── TIME UP ── */
+  #timeUpOverlay { position: fixed; inset: 0; z-index: 950; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; }
+  #timeUpOverlay.show { display: flex; }
+  .timeup-card { background: white; border-radius: 24px; padding: 40px; text-align: center; animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  .timeup-card .ti { font-size: 3rem; margin-bottom: 8px; }
+  .timeup-card h2 { font-size: 1.6rem; font-weight: 900; color: var(--accent); margin-bottom: 6px; }
+  .timeup-card .ts { font-size: 2.2rem; font-weight: 900; color: var(--green); margin-bottom: 4px; }
+  .timeup-card p { color: var(--muted); margin-bottom: 20px; }
+  .btn-again { padding: 11px 28px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Nunito',sans-serif; font-weight: 800; font-size: 0.95rem; cursor: pointer; }
+
+  @media (max-width: 640px) {
+    .scale-area { grid-template-columns: 1fr; }
+    .sidebar { order: -1; }
+  }
+</style>
+<script src="../js/spill-utils.js"></script>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="ctx-menu" id="ctxMenu">
+  <button onclick="ctxNeg()">± Bytt fortegn</button>
+  <button onclick="ctxSplit()">⚏ Splitt blokk</button>
+  <button id="ctxDeleteBtn" onclick="ctxDeleteBlock()" style="display:none;color:var(--red)">🗑️ Slett blokk</button>
+</div>
+
+<div id="timeUpOverlay">
+  <div class="timeup-card">
+    <div class="ti">⏱️</div>
+    <h2>Tiden er ute!</h2>
+    <div class="ts" id="timeupScore">0</div>
+    <p>poeng på <span id="timeupMin">5</span> minutter</p>
+    <button class="btn-again" onclick="location.reload()">🔄 Spill igjen</button>
+  </div>
+</div>
+
+<!-- START SCREEN -->
+<div id="startScreen">
+  <div class="start-card">
+    <div class="start-icon">⚖️</div>
+    <h1>Ligningsvekten</h1>
+    <p>Balanser vekten – løs likninger!</p>
+    <div class="start-name" id="displayName">...</div>
+
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')"><span class="mi">🧘</span>Øvemodus</button>
+      <button class="mode-btn" data-mode="solo" onclick="selectMode('solo')"><span class="mi">⏱️</span>Enkeltspiller</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')"><span class="mi">🏎️</span>Flerspiller</button>
+    </div>
+
+    <div class="mode-options" id="opts-solo">
+      <div class="opt-row"><span class="opt-label">Tid (min):</span><input class="start-num" id="timedMin" type="number" value="5" min="1" max="30"></div>
+    </div>
+    <div class="mode-options" id="opts-multi">
+      <div class="opt-row"><span class="opt-label">Romkode:</span><input class="start-input" id="roomInput" placeholder="ROMKODE" maxlength="8"></div>
+    </div>
+
+    <div class="level-selector-label">Velg startnivå</div>
+    <div class="level-selector">
+      <label><input type="radio" name="sl" value="1" checked><div class="level-radio-btn"><span class="li">1</span></div></label>
+      <label><input type="radio" name="sl" value="2"><div class="level-radio-btn"><span class="li">2</span></div></label>
+      <label><input type="radio" name="sl" value="3"><div class="level-radio-btn"><span class="li">3</span></div></label>
+      <label><input type="radio" name="sl" value="4"><div class="level-radio-btn"><span class="li">4</span></div></label>
+      <label><input type="radio" name="sl" value="5"><div class="level-radio-btn"><span class="li">5</span></div></label>
+      <label><input type="radio" name="sl" value="6"><div class="level-radio-btn"><span class="li">6</span></div></label>
+      <label><input type="radio" name="sl" value="7"><div class="level-radio-btn"><span class="li">7</span></div></label>
+      <label><input type="radio" name="sl" value="8"><div class="level-radio-btn"><span class="li">8</span></div></label>
+      <label><input type="radio" name="sl" value="9"><div class="level-radio-btn"><span class="li">9</span></div></label>
+      <label><input type="radio" name="sl" value="10"><div class="level-radio-btn"><span class="li">10</span></div></label>
+      <label><input type="radio" name="sl" value="11"><div class="level-radio-btn"><span class="li">11</span></div></label>
+      <label><input type="radio" name="sl" value="12"><div class="level-radio-btn"><span class="li">12</span></div></label>
+      <label><input type="radio" name="sl" value="13"><div class="level-radio-btn"><span class="li">13</span></div></label>
+      <label><input type="radio" name="sl" value="14"><div class="level-radio-btn"><span class="li">14</span></div></label>
+    </div>
+
+    <button class="btn-start" onclick="startGame()">Start! ⚖️</button>
+    <div class="start-version">v<span class="vn"></span></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">⚖️ Ligningsvekten</div>
+  <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
+    <span class="version-tag">v<span class="vn"></span></span>
+    <span class="mode-badge" id="modeBadge">–</span>
+    <span class="level-badge-header" id="levelBadgeH">Nivå 1</span>
+    <span class="player-badge" id="headerName">–</span>
+    <span class="streak-badge">✅ <span id="winCount">0</span></span>
+    <a href="./" style="padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.78rem;font-weight:700;text-decoration:none;white-space:nowrap">← Meny</a>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- COUNTDOWN -->
+  <div id="countdownBanner">
+    <span style="font-weight:800">⏱️ Tid igjen:</span>
+    <span class="countdown-time" id="cdTime">5:00</span>
+    <span style="font-weight:700;font-size:0.82rem">Flest poeng vinner!</span>
+  </div>
+
+  <!-- TASK CARD -->
+  <div class="task-card" id="taskCard">
+    <div class="task-icon" id="taskIcon">⚖️</div>
+    <div class="task-body">
+      <div class="task-title">📋 Oppgave – Nivå <span id="taskLevelNum">1</span></div>
+      <div class="task-eq" id="taskEq">–</div>
+      <div class="task-instr" id="taskInstr">Flytt blokkene slik at x står alene på én side</div>
+    </div>
+  </div>
+
+  <!-- SCALE + SIDEBAR -->
+  <div class="scale-area no-sidebar" id="scaleArea">
+
+    <!-- SIDEBAR (vises kun i solo/multi) -->
+    <div class="sidebar" id="sidebar" style="display:none">
+      <div class="score-card" id="scoreCard">
+        <div class="score-card-title" id="scoreTitle">🏆 Poeng</div>
+        <div id="scoreContent"><div class="my-score-big" id="myScoreBig">0</div><div class="my-score-sub" id="myScoreSub">poeng</div></div>
+      </div>
+      <div class="level-info-card">
+        <div class="level-info-title">📊 Nivå</div>
+        <div class="level-info-name" id="levelInfoName">Nivå 1</div>
+        <div class="level-info-desc" id="levelInfoDesc">–</div>
+        <div class="wins-display">
+          <span id="winsText">0/3</span>
+          <div class="wins-bar"><div class="wins-fill" id="winsFill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCALE + BANK side by side -->
+    <div style="display:flex;gap:10px;align-items:flex-start;flex:1">
+
+      <!-- BYGG VENSTRE (nivå 14) -->
+      <div class="build14-panel" id="build14Left">
+        <div class="build14-title">+ Venstre skål</div>
+        <input class="build14-input" id="b14LNum" type="text" placeholder="teller" style="width:100%;margin-bottom:4px">
+        <input class="build14-input" id="b14LDen" type="text" placeholder="nevner (valgfritt)" style="width:100%;margin-bottom:4px">
+        <button class="build14-add" onclick="build14Add('left')">+ Legg til</button>
+      </div>
+
+      <!-- BLOCK BANK — til venstre for vekten (nivå 3-13) -->
+      <div class="block-bank" id="bankPanel" style="display:none;width:160px;flex-shrink:0;align-self:stretch">
+        <div class="bank-label">📦 Bank</div>
+        <div class="bank-blocks" id="bankBlocks" style="display:flex;flex-direction:column;gap:5px;align-items:flex-start"></div>
+      </div>
+
+      <!-- SCALE + LIVE DISPLAY -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:0">
+        <!-- Live likning — direkte over vekten, ingen gap -->
+        <div style="text-align:center;font-family:'Nunito',monospace;font-weight:800;font-size:0.95rem;color:#5b4fcf;padding:4px 0;background:white;border-radius:8px 8px 0 0;border:2px solid var(--border);border-bottom:none;">
+          <span id="liveLeft">–</span>
+          <span style="color:#6b7280;margin:0 6px">=</span>
+          <span id="liveRight">–</span>
+        </div>
+        <!-- SCALE WRAP -->
+        <div class="scale-wrap" id="scaleWrap" style="border-radius:0 0 var(--r) var(--r)">
+          <svg id="scaleSvg" viewBox="0 0 600 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+
+            <!-- Stand / base -->
+            <rect x="288" y="230" width="24" height="32" rx="4" fill="#7c5c3a"/>
+            <rect x="258" y="256" width="84" height="11" rx="6" fill="#5c3d1e"/>
+            <!-- Vertical pole -->
+            <rect x="296" y="88" width="8" height="144" rx="4" fill="#a0aec0"/>
+            <!-- Pivot knob -->
+            <circle cx="300" cy="88" r="10" fill="#718096"/>
+            <circle cx="300" cy="88" r="5"  fill="#4a5568"/>
+
+            <!-- Snorer -->
+            <line id="strLL" stroke="#718096" stroke-width="2"/>
+            <line id="strLR" stroke="#718096" stroke-width="2"/>
+            <line id="strRL" stroke="#718096" stroke-width="2"/>
+            <line id="strRR" stroke="#718096" stroke-width="2"/>
+
+            <!-- BEAM -->
+            <g id="scaleBeam" style="transform-origin:300px 88px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+
+              <rect x="60" y="84" width="480" height="8" rx="4" fill="#7c5c3a"/>
+              <circle cx="60"  cy="88" r="6" fill="#5c3d1e"/>
+              <circle cx="540" cy="88" r="6" fill="#5c3d1e"/>
+
+              <!-- VENSTRE SKÅL -->
+              <g id="panLeft" style="transform-origin:105px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+                <ellipse cx="105" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+                <path d="M25,182 L25,189 Q25,197 105,197 Q185,197 185,189 L185,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+                <ellipse cx="105" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
+                <foreignObject x="25" y="136" width="160" height="50">
+                  <div xmlns="http://www.w3.org/1999/xhtml"
+                       id="dropLeft"
+                       style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:center;justify-content:center;padding:2px 4px;overflow:hidden;"
+                       ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
+                       ondragleave="this.style.outline=''"
+                       ondrop="handleDrop(event,'left');this.style.outline=''">
+                  </div>
+                </foreignObject>
+              </g>
+
+              <!-- HØYRE SKÅL -->
+              <g id="panRight" style="transform-origin:495px 185px; transition:transform 0.7s cubic-bezier(.4,0,.2,1)">
+                <ellipse cx="495" cy="182" rx="80" ry="10" fill="#cbd5e0" stroke="#a0aec0" stroke-width="2"/>
+                <path d="M415,182 L415,189 Q415,197 495,197 Q575,197 575,189 L575,182" fill="#b8c4d0" stroke="#a0aec0" stroke-width="1.5"/>
+                <ellipse cx="495" cy="189" rx="80" ry="8" fill="#b8c4d0" stroke="none"/>
+                <foreignObject x="415" y="136" width="160" height="50">
+                  <div xmlns="http://www.w3.org/1999/xhtml"
+                       id="dropRight"
+                       style="width:160px;height:50px;display:flex;flex-wrap:nowrap;flex-direction:row;gap:3px;align-items:center;justify-content:center;padding:2px 4px;overflow:hidden;"
+                       ondragover="event.preventDefault();this.style.outline='2px dashed #5b4fcf'"
+                       ondragleave="this.style.outline=''"
+                       ondrop="handleDrop(event,'right');this.style.outline=''">
+                  </div>
+                </foreignObject>
+              </g>
+
+            </g><!-- /scaleBeam -->
+          </svg>
+        </div>
+      </div>
+
+      <!-- BYGG HØYRE (nivå 14) -->
+      <div class="build14-panel" id="build14Right">
+        <div class="build14-title">+ Høyre skål</div>
+        <input class="build14-input" id="b14RNum" type="text" placeholder="teller" style="width:100%;margin-bottom:4px">
+        <input class="build14-input" id="b14RDen" type="text" placeholder="nevner (valgfritt)" style="width:100%;margin-bottom:4px">
+        <button class="build14-add" onclick="build14Add('right')">+ Legg til</button>
+      </div>
+
+    </div><!-- /flex row -->
+  </div><!-- /scale-area -->
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <span class="ctrl-label">Begge sider:</span>
+    <input class="ctrl-num" id="opVal" type="number" value="2">
+    <button class="ctrl-btn times"  onclick="operate('mul')">× Ganger</button>
+    <button class="ctrl-btn divide" onclick="operate('div')">÷ Del</button>
+    <button class="ctrl-btn undo"   onclick="doUndo()">⟲ Angre</button>
+    <div class="ctrl-sep"></div>
+    <button class="ctrl-btn times"  id="mulXBtn" onclick="operateX()" style="display:none">× x</button>
+    <div class="ctrl-sep"></div>
+    <button class="ctrl-btn check" onclick="checkSolution()">✅ Sjekk svar</button>
+    <button class="ctrl-btn reset" onclick="resetTask()">↺ Nullstill</button>
+    <button class="ctrl-btn new"   onclick="newTask()">⏭️ Ny oppgave</button>
+  </div>
+
+</div><!-- /main -->
+
+<!-- FIREBASE -->
+<script type="module">
+  import { database, ref, set, update, onValue } from "../js/firebase-config.js";
+  window._fbReady=true; window._db=database; window._ref=ref;
+  window._set=set; window._update=update; window._onValue=onValue;
+  window._fbInit=function(room){
+    initRoom(room, updateScoreboard);
+  };
+  window.syncScore=function(score){
+    if(!window.roomCode) return;
+    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),{score,lastUpdated:Date.now()});
+  };
+  window.syncIncident=function(type){
+    if(!window.roomCode) return;
+    _update(_ref(_db,'rooms/'+window.roomCode+'/players/'+window.playerName),
+      {incident:type, incidentAt:Date.now()});
+  };
+  window.addEventListener('beforeunload',()=>{
+    if(window.roomCode&&window._fbReady) window._set(window._ref(window._db,'rooms/'+window.roomCode+'/players/'+window.playerName),null);
+  });
+  function updateScoreboard(players){
+    const me=players[window.playerName];
+    const myScore=me?me.score||0:currentScore||0;
+    const sorted=Object.entries(players).sort((a,b)=>b[1].score-a[1].score);
+    let html='';
+    sorted.forEach(([name,data],i)=>{
+      if(i>=3&&name!==window.playerName) return;
+      const isMe=name===window.playerName;
+      const medals=['🥇','🥈','🥉'];
+      html+=`<div class="score-entry ${isMe?'is-me':''}">
+        <span style="color:var(--muted);width:18px">${medals[i]||'–'}</span>
+        <span style="flex:1;padding:0 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+        <span class="pts">${data.score||0}p</span>
+      </div>`;
+    });
+    document.getElementById('scoreContent').innerHTML=
+      `<div class="my-score-big" id="myScoreBig">${myScore}</div>`+
+      (html||'');
+  }
+</script>
+
+<!-- MAIN SCRIPT -->
+<script>
+const VERSION='2.4';
+document.querySelectorAll('.vn').forEach(el=>el.textContent=VERSION);
+
+// ── PLAYER NAME ──
+const adj=['Raske','Lynraske','Smarte','Ville','Smidige','Modige','Gylne','Flinke','Dristige','Skarpe'];
+const ani=['Gaupe','Rev','Bjørn','Ulv','Hauk','Ugle','Løve','Tiger','Ørn','Gepard','Panter','Falken'];
+const _usedN=new Set();
+function genName(){ const pool=[]; adj.forEach(a=>ani.forEach(b=>pool.push(a+' '+b))); const av=pool.filter(n=>!_usedN.has(n)); const name=av.length?av[Math.floor(Math.random()*av.length)]:pool[Math.floor(Math.random()*pool.length)]; _usedN.add(name); return name; }
+document.getElementById('displayName').textContent='⚖️ '+window.playerName;
+
+// ── LEVEL DEFINITIONS ──
+const LEVELS = {
+  1:  { name:'Enkel flytt-bytt',       desc:'x + b = c · Blokker i skålene',                bank:false, neg:false },
+  2:  { name:'X på begge sider',        desc:'ax + b = cx + d · Blokker i skålene',          bank:false, neg:false },
+  3:  { name:'Blanding fra banken',     desc:'Nivå 1 og 2 · Dra blokker fra banken',         bank:true,  neg:false },
+  4:  { name:'Flere ledd',              desc:'Større koeffisienter · Fra banken',             bank:true,  neg:false },
+  5:  { name:'Krever divisjon',         desc:'Løsning krever å dele begge sider',            bank:true,  neg:false },
+  6:  { name:'Komplekse ledd',          desc:'Større koeffisienter, x på begge sider',       bank:true,  neg:false },
+  7:  { name:'Én brøk',                 desc:'Én brøkkoeffisient foran x, ellers heltall',   bank:true,  neg:false },
+  8:  { name:'Brøker, samme nevner',    desc:'Flere brøker med samme nevner',                bank:true,  neg:false },
+  9:  { name:'Brøker, ulike nevnere',   desc:'Flere brøker med ulike nevnere',               bank:true,  neg:false },
+  10: { name:'X i nevner (enkel)',      desc:'Én brøk med x i nevner · Ganger med x',       bank:true,  neg:false, mulX:true },
+  11: { name:'X i nevner (avansert)',   desc:'Flere brøker med x i nevner, koeff. i nevner', bank:true,  neg:false, mulX:true },
+  12: { name:'Negative løsninger',      desc:'Blanding av alle typer, negative svar',        bank:true,  neg:true  },
+  13: { name:'Repetisjon/blanding',     desc:'Blanding av alle nivåer',                      bank:true,  neg:true  },
+  14: { name:'Bygg og løs',             desc:'Bygg likningen selv, deretter løs den',        bank:false, neg:true, build14:true },
+};
+const MAX_LEVEL=14, WIN_PER_LEVEL=3;
+
+// ── STATE ──
+let gameMode='practice', timedMinutes=5, timedSecondsLeft=0, timedInterval=null;
+let currentLevel=1, startLevel=1, winsOnLevel=0;
+let currentScore=0, totalWins=0;
+let sides={left:[],right:[]}, bankItems=[];
+let idCounter=0, activeMenuTarget=null, lastChangedId=null;
+let history=[], originalTask=null;
+let xValue=0;
+// ── ADAPTIVE LEVEL ──
+let lvStreak=0, lvErrorStreak=0, lvTaskStart=Date.now();
+const LV_UP=3, LV_DOWN=2, LV_TIME=50;
+
+function recordLevelResult(correct){
+  const elapsed=(Date.now()-lvTaskStart)/1000;
+  lvTaskStart=Date.now();
+  if(correct){
+    lvErrorStreak=0; lvStreak++;
+    if(elapsed>LV_TIME*2){lvStreak=Math.max(0,lvStreak-1);lvErrorStreak=1;}
+    if(lvStreak>=LV_UP&&currentLevel<MAX_LEVEL){currentLevel++;lvStreak=0;lvErrorStreak=0;showLevelChange('up');}
+  } else {
+    lvStreak=0; lvErrorStreak++;
+    if(lvErrorStreak>=LV_DOWN&&currentLevel>1){currentLevel--;lvStreak=0;lvErrorStreak=0;showLevelChange('down');}
+  }
+  updateLevelBadge();
+}
+function showLevelChange(dir){
+  const msg=dir==='up'?'⬆️ Nivå '+currentLevel+'!':'⬇️ Nivå '+currentLevel;
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);'+
+    'background:'+(dir==='up'?'#16a34a':'#d97706')+';color:white;padding:8px 20px;'+
+    'border-radius:20px;font-weight:800;font-size:1rem;z-index:999;';
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2000);
+}
+function updateLevelBadge(){
+  const b=document.getElementById('levelBadge');
+  if(b) b.textContent='Nivå '+currentLevel;
+  document.querySelectorAll('.level-radio-btn').forEach(btn=>{
+    const inp=btn.previousElementSibling;
+    btn.style.background=parseInt(inp?.value)===currentLevel?'var(--accent)':'';
+  });
+}
+let taskStartTime=Date.now();
+
+// ── MODE SELECTION ──
+;
+
+// ── LEVEL INFO ──
+function updateLevelUI(){
+  const lv=LEVELS[currentLevel];
+  document.getElementById('levelBadgeH').textContent='Nivå '+currentLevel;
+  document.getElementById('levelInfoName').textContent='Nivå '+currentLevel+': '+lv.name;
+  document.getElementById('levelInfoDesc').textContent=lv.desc;
+  // Bank / build panel
+  document.getElementById('bankPanel').style.display   = (lv.bank && !lv.build14) ? 'block' : 'none';
+  document.getElementById('mulXBtn').style.display     = lv.mulX ? 'inline-flex' : 'none';
+  const b14 = lv.build14 ? 'flex' : 'none';
+  document.getElementById('build14Left').style.display  = b14;
+  document.getElementById('build14Right').style.display = b14;
+  if(lv.build14) initBuild14Panels();
+  // Wins progress
+  const pct=(winsOnLevel/WIN_PER_LEVEL)*100;
+  document.getElementById('winsFill').style.width=pct+'%';
+  document.getElementById('winsText').textContent=winsOnLevel+'/'+WIN_PER_LEVEL;
+}
+
+// ── GENERATE TASK ──
+function generateTask(level){
+  history=[];
+  switch(level){
+    case 1:  return gen_L1();
+    case 2:  return gen_L2();
+    case 3:  return Math.random()<0.5?gen_L1():gen_L2();
+    case 4:  return gen_L4();
+    case 5:  return gen_L5();
+    case 6:  return gen_L6();
+    case 7:  return gen_L7();
+    case 8:  return gen_L8();
+    case 9:  return gen_L9();
+    case 10: return gen_L10();
+    case 11: return gen_L11();
+    case 12: return gen_L12();
+    case 13: return gen_L13();
+    case 14: return gen_L14();
+    default: return gen_L4();
+  }
+}
+
+function ri(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function frac(num,den){ return {type:'frac', num,den}; }
+function fracx(num,den){ return {type:'fracx',num,den}; }
+function fracxi(num,den=1){ return {type:'fracxi',num,den}; }
+
+function gen_L1(){ return retry(()=>{
+  const x=ri(1,8), b=ri(1,9);
+  return { xVal:x, left:[{type:'x',num:1},{type:'num',num:b}], right:[{type:'num',num:x+b}] };
+});}
+function gen_L2(){ return retry(()=>{
+  const x=ri(1,6), a=ri(2,4), c=ri(1,a-1), b=ri(1,8);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
+});}
+function gen_L4(){ return retry(()=>{
+  const x=ri(1,6), a=ri(2,5), c=ri(1,a-1), b=ri(1,9);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
+});}
+function gen_L5(){ return retry(()=>{
+  const a=ri(2,4), x=a*ri(1,3), b=ri(1,8);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'num',num:a*x+b}] };
+});}
+function gen_L6(){ return retry(()=>{
+  const a=ri(3,6), x=a*ri(1,2), c=ri(1,a-1), b=ri(1,12);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
+});}
+function gen_L7(){ return retry(()=>{
+  const den=ri(2,4), num=ri(1,den-1)||1;
+  const g=gcd(num,den), step=den/g, x=step*ri(1,4), b=ri(1,8);
+  return { xVal:x, left:[fracx(num,den),{type:'num',num:b}], right:[{type:'num',num:num*x/den+b}] };
+});}
+function gen_L10(){ return retry(()=>{
+  const x=ri(2,6), k=ri(1,4)*x, b=ri(1,5);
+  return { xVal:x, left:[fracxi(k),{type:'num',num:b}], right:[{type:'num',num:k/x+b}] };
+});}
+function gen_L11(){ return retry(()=>{
+  const choice=ri(1,3);
+  if(choice===1){
+    const x=ri(2,5), k1=ri(1,3)*x, k2=ri(1,2)*x, b=ri(1,5);
+    return { xVal:x, left:[fracxi(k1),fracxi(k2),{type:'num',num:b}], right:[{type:'num',num:k1/x+k2/x+b}] };
+  } else if(choice===2){
+    const a=ri(2,3), x=a*ri(1,3), k=a*x*ri(1,2), b=ri(1,5);
+    return { xVal:x, left:[fracxi(k,a),{type:'num',num:b}], right:[{type:'num',num:k/(a*x)+b}] };
+  } else {
+    const x=ri(2,4)*2, k1=ri(1,3)*x, k2=ri(1,2)*2*x, b=ri(1,5);
+    return { xVal:x, left:[fracxi(k1),fracxi(k2,2),{type:'num',num:b}], right:[{type:'num',num:k1/x+k2/(2*x)+b}] };
+  }
+});}
+function gen_L12(){ return retry(()=>{
+  const x=[-4,-3,-2,-1,1,2,3,4][ri(0,7)];
+  const a=ri(2,5), c=ri(1,a-1), b=ri(-6,6);
+  return { xVal:x, left:[{type:'x',num:a},{type:'num',num:b}], right:[{type:'x',num:c},{type:'num',num:(a-c)*x+b}] };
+});}
+function gen_L13(){
+  const choice=ri(1,12);
+  if(choice<=2) return gen_L4();
+  if(choice<=4) return gen_L7();
+  if(choice<=6) return gen_L8();
+  if(choice<=8) return gen_L12();
+  if(choice<=10) return gen_L9();
+  return gen_L10();
+}
+function isTrivial(task){
+  // Sjekk 1: sidene gir samme verdi (løsningen finnes ikke)
+  const evalSide=(s,xv)=>s.reduce((t,i)=>{
+    if(i.type==='x') return t+i.num*xv;
+    if(i.type==='num') return t+i.num;
+    if(i.type==='frac') return t+i.num/i.den;
+    if(i.type==='fracx') return t+(i.num/i.den)*xv;
+    if(i.type==='fracxi') return t+(xv?i.num/(i.den*xv):0);
+    return t;
+  },0);
+  // Test med to ulike x-verdier — om begge gir like sider er likningen alltid sann
+  const v1=task.xVal, v2=task.xVal+1;
+  const same1=Math.abs(evalSide(task.left,v1)-evalSide(task.right,v1))<0.001;
+  const same2=Math.abs(evalSide(task.left,v2)-evalSide(task.right,v2))<0.001;
+  if(same1&&same2) return true; // alltid sann → triviell
+
+  // Sjekk 2: x-koeffisienten er lik på begge sider (gir 0=tall, ingen løsning)
+  const xCoeff=s=>s.reduce((t,i)=>{
+    if(i.type==='x') return t+i.num;
+    if(i.type==='fracx') return t+i.num/i.den;
+    return t;
+  },0);
+  if(Math.abs(xCoeff(task.left)-xCoeff(task.right))<0.001) return true;
+
+  return false;
+}
+function retry(gen){ let t,n=0; do{t=gen();n++;}while(isTrivial(t)&&n<20); return t; }
+
+function gen_L8(){ return retry(()=>{
+  const den=ri(2,4), x=den*ri(1,3);
+  const a=ri(1,den-1)||1, c=ri(1,den-1)||1, b=ri(1,6);
+  const rhs=a*x/den+b-c*x/den;
+  return { xVal:x, left:[fracx(a,den),{type:'num',num:b}], right:[fracx(c,den),{type:'num',num:rhs}] };
+});}
+
+// N9: flere brøker, ulike nevnere
+function gen_L9(){ return retry(()=>{
+  const den1=ri(2,3), den2=den1===2?3:2, lcm=den1*den2;
+  const x=lcm*ri(1,2), a=ri(1,den1-1)||1, b=ri(1,6), c=ri(1,den2-1)||1;
+  const rhs=a*x/den1+b-c*x/den2;
+  return { xVal:x, left:[fracx(a,den1),{type:'num',num:b}], right:[fracx(c,den2),{type:'num',num:rhs}] };
+});}
+
+// ── BUILD14 — bygg blokker via teller/nevner-felt ──
+
+// Parser: tolker en streng som "3", "-2", "x", "2x", "-3x"
+// Returnerer {coeff, hasX} eller null ved ugyldig input
+function parseExpr(str){
+  if(!str||!str.trim()) return null;
+  str=str.trim().toLowerCase().replace(/\s+/g,'');
+  // Kun x
+  if(str==='x')  return {coeff:1,  hasX:true};
+  if(str==='-x') return {coeff:-1, hasX:true};
+  // ax
+  const mx=str.match(/^(-?\d+)x$/);
+  if(mx) return {coeff:parseInt(mx[1]), hasX:true};
+  // Rent tall
+  const mn=str.match(/^-?\d+$/);
+  if(mn) return {coeff:parseInt(str), hasX:false};
+  return null;
+}
+
+function initBuild14Panels(){
+  // Ingenting å initialisere — bare tekstfelter
+}
+
+window.build14Add=function(side){
+  const cap=side==='left'?'L':'R';
+  const numStr=document.getElementById('b14'+cap+'Num').value.trim();
+  const denStr=document.getElementById('b14'+cap+'Den').value.trim();
+
+  const top=parseExpr(numStr);
+  if(!top){ showToast('Ugyldig teller — eks: 3, -2, x, 2x','error'); return; }
+  if(top.coeff===0){ showToast('Koeffisient kan ikke være 0','error'); return; }
+
+  let newBlock;
+
+  if(!denStr){
+    // Ingen nevner
+    if(top.hasX) newBlock={id:idCounter++,type:'x',  num:top.coeff};
+    else         newBlock={id:idCounter++,type:'num', num:top.coeff};
+  } else {
+    const bot=parseExpr(denStr);
+    if(!bot){ showToast('Ugyldig nevner — eks: 2, x, 3x','error'); return; }
+    if(bot.coeff===0){ showToast('Nevner kan ikke være 0','error'); return; }
+
+    if(!bot.hasX){
+      const den=Math.abs(bot.coeff);
+      const sign=bot.coeff<0?-1:1;
+      // Nevner=1: behandle som vanlig blokk
+      if(den===1){
+        if(top.hasX) newBlock={id:idCounter++,type:'x',  num:top.coeff*sign};
+        else         newBlock={id:idCounter++,type:'num', num:top.coeff*sign};
+      } else {
+        if(top.hasX) newBlock={id:idCounter++,type:'fracx', num:top.coeff*sign, den};
+        else         newBlock={id:idCounter++,type:'frac',  num:top.coeff*sign, den};
+      }
+    } else {
+      // Nevner inneholder x
+      const den=Math.abs(bot.coeff);
+      if(top.hasX){ showToast('Kan ikke ha x i både teller og nevner','error'); return; }
+      newBlock={id:idCounter++,type:'fracxi', num:top.coeff, den};
+    }
+  }
+
+  saveHistory();
+  sides[side].push(newBlock);
+  lastChangedId=newBlock.id;
+  document.getElementById('b14'+cap+'Num').value='';
+  document.getElementById('b14'+cap+'Den').value='';
+  renderAll();
+  if(buildingPhase) checkBuildComplete();
+};
+
+// Høyreklikk → Slett blokk (kun nivå 14)
+function ctxDeleteBlock(){
+  if(!activeMenuTarget) return;
+  saveHistory();
+  const arr=activeMenuTarget.side==='bank'?bankItems:sides[activeMenuTarget.side];
+  const idx=arr.findIndex(i=>i.id===activeMenuTarget.item.id);
+  if(idx!==-1){ arr.splice(idx,1); lastChangedId=null; renderAll(); }
+}
+
+function gcd(a,b){ return b===0?Math.abs(a):gcd(b,a%b); }
+
+// ── GEN LEVEL 14 ──
+function gen_L14(){ return gen_L13(); }
+
+// ── GANGE MED X ──
+window.operateX=function(){
+  if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
+  const hasFracXi=[...sides.left,...sides.right].some(i=>i.type==='fracxi');
+  if(!hasFracXi){ showToast('Ingen brøker med x i nevner','error'); return; }
+  saveHistory(); lastChangedId=null;
+  ['left','right'].forEach(s=>{
+    sides[s]=sides[s].map(i=>{
+      if(i.type==='fracxi'){
+        if(i.den===1) return {id:i.id,type:'num',num:i.num};
+        const g=gcd(i.num,i.den);
+        if(i.den/g===1) return {id:i.id,type:'num',num:i.num/g};
+        return {id:i.id,type:'frac',num:i.num/g,den:i.den/g};
+      }
+      if(i.type==='num')  return {id:i.id,type:'x',  num:i.num};
+      if(i.type==='frac') return {id:i.id,type:'fracx',num:i.num,den:i.den};
+      return i;
+    }).filter(i=>i.num!==0);
+  });
+  renderAll();
+};
+
+// ── APPLY TASK ──
+function applyTask(task){
+  xValue=task.xVal;
+  const lv=LEVELS[currentLevel];
+  history=[];
+
+  // Lagre originallikning FØR blokker lages — bruk dedikert formatter
+  originalEqStr = fmtTaskSideHTML(task.left.filter(b=>b.num!==0)) + ' = ' + fmtTaskSideHTML(task.right.filter(b=>b.num!==0));
+
+  if(lv.build14){
+    // Nivå 14: ingen bank, ingen blokker — eleven bygger selv
+    bankItems=[];
+    sides={left:[],right:[]};
+    buildingPhase=true;
+    originalLeft  = task.left.filter(b=>b.num!==0).map(b=>({...b}));
+    originalRight = task.right.filter(b=>b.num!==0).map(b=>({...b}));
+  } else if(lv.bank){
+    bankItems=[...task.left,...task.right].filter(b=>b.num!==0).map(b=>({id:idCounter++,...b}));
+    sides={left:[],right:[]};
+    // Start byggefasen — lagre original for sammenligning
+    buildingPhase=true;
+    originalLeft  = task.left.filter(b=>b.num!==0).map(b=>({...b}));
+    originalRight = task.right.filter(b=>b.num!==0).map(b=>({...b}));
+  } else {
+    sides={
+      left:task.left.filter(b=>b.num!==0).map(b=>({id:idCounter++,...b})),
+      right:task.right.filter(b=>b.num!==0).map(b=>({id:idCounter++,...b})),
+    };
+    bankItems=[];
+  }
+
+  originalTask={
+    left:JSON.parse(JSON.stringify(sides.left)),
+    right:JSON.parse(JSON.stringify(sides.right)),
+    bank:JSON.parse(JSON.stringify(bankItems)),
+    xVal:xValue,
+  };
+
+  taskStartTime=Date.now();
+  renderAll();
+}
+
+// ── RENDER ──
+function renderAll(){
+  renderDropZone('left',  document.getElementById('dropLeft'));
+  renderDropZone('right', document.getElementById('dropRight'));
+  renderBank();
+  updateEqDisplay();
+  updateScaleTilt();
+  updateLevelUI();
+}
+
+function renderDropZone(side, container){
+  container.innerHTML='';
+  sides[side].forEach((item,idx)=>{
+    if(idx>0){
+      const plus=document.createElement('span');
+      plus.className='block-plus'; plus.textContent='+';
+      container.appendChild(plus);
+    }
+    container.appendChild(makeBlockEl(item,side));
+  });
+}
+
+function renderBank(){
+  const c=document.getElementById('bankBlocks'); c.innerHTML='';
+  bankItems.forEach((item,idx)=>{
+    c.appendChild(makeBlockEl(item,'bank'));
+  });
+}
+
+function makeBlockEl(item,side){
+  const div=document.createElement('div');
+  div.className=`block ${bClass(item)}${item.id===lastChangedId?' just-changed':''}`;
+  div.draggable=true; div.setAttribute('data-id',item.id); div.setAttribute('data-side',side);
+  // Brøkblokker bruker HTML-innhold, vanlige bruker textContent
+  const isFrac=['frac','fracx','fracxi'].includes(item.type);
+  if(isFrac){
+    div.innerHTML=fracHTML(item);
+  } else {
+    div.textContent=blockLabel(item);
+  }
+  div.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text',JSON.stringify({side,id:item.id})); setTimeout(()=>div.classList.add('dragging'),0); });
+  div.addEventListener('dragend',()=>div.classList.remove('dragging'));
+  div.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    activeMenuTarget={side,item};
+    const del=document.getElementById('ctxDeleteBtn');
+    if(del) del.style.display=LEVELS[currentLevel]&&LEVELS[currentLevel].build14?'block':'none';
+    showCtxMenu(e.clientX,e.clientY);
+  });
+  return div;
+}
+
+function bClass(item){
+  switch(item.type){
+    case 'x':     return item.num<0?'type-x-neg':'type-x';
+    case 'num':   return item.num<0?'type-num-neg':'type-num';
+    case 'frac':  return item.num<0?'type-frac-neg':'type-frac';
+    case 'fracx': return item.num<0?'type-fracx-neg':'type-fracx';
+    case 'fracxi':return 'type-fracxi';
+    default:      return 'type-num';
+  }
+}
+
+function blockLabel(i){
+  if(i.type==='x')  return i.num===1?'x':i.num===-1?'-x':i.num+'x';
+  if(['frac','fracx','fracxi'].includes(i.type)) return fracText(i);
+  return String(i.num);
+}
+
+// Tekst-representasjon av brøkblokk for live-display (med unicode-strek)
+function fracText(i){
+  if(i.type==='fracxi') {
+    const denStr = i.den>1 ? i.den+'x' : 'x';
+    return i.num+'\u2044'+denStr;
+  }
+  const top = i.type==='fracx' ? (Math.abs(i.num)===1?'x':Math.abs(i.num)+'x') : String(Math.abs(i.num));
+  const sign = i.num<0?'−':'';
+  return sign+top+'\u2044'+i.den;
+}
+
+// HTML-brøkvisning inne i blokk
+function fracHTML(i){
+  let top, bot;
+  if(i.type==='fracxi'){
+    top=String(i.num); bot='x';
+  } else {
+    top = i.type==='fracx' ? (Math.abs(i.num)===1?'x':Math.abs(i.num)+'x') : String(Math.abs(i.num));
+    bot = String(i.den);
+  }
+  const sign = i.num<0?'<span style="margin-right:2px">−</span>':'';
+  return `${sign}<span class="frac-block"><span class="frac-top">${top}</span><span class="frac-bot">${bot}</span></span>`;
+}
+
+// HTML-streng for brøk i tekst (for task-kort via innerHTML)
+function fracHTML_inline(i){
+  let top, bot;
+  if(i.type==='fracxi'){
+    top=String(i.num);
+    bot=i.den>1?i.den+'x':'x';
+  } else {
+    top=i.type==='fracx'?(Math.abs(i.num)===1?'x':Math.abs(i.num)+'x'):String(Math.abs(i.num));
+    bot=String(i.den);
+  }
+  const sign=i.num<0?'−':'';
+  return `${sign}<span style="display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;vertical-align:middle;margin:0 1px"><span style="border-bottom:1.5px solid currentColor;padding:0 2px;font-size:0.8em">${top}</span><span style="padding:0 2px;font-size:0.8em">${bot}</span></span>`;
+}
+
+function fmtTaskSideHTML(items){
+  if(!items.length) return '0';
+  return items.map((item,idx)=>{
+    let term;
+    if(['frac','fracx','fracxi'].includes(item.type)) term=fracHTML_inline(item);
+    else if(item.type==='x') term=item.num===1?'x':item.num===-1?'−x':item.num+'x';
+    else term=String(item.num);
+    return (idx>0&&item.num>=0)?'+ '+term:term;
+  }).join(' ');
+}
+
+// ── ORIGINAL EQUATION STRING ──
+let originalEqStr = '';
+
+function updateEqDisplay(){
+  const lv=LEVELS[currentLevel];
+  // Live display i SVG
+  document.getElementById('liveLeft').innerHTML  = fmtSideHTML(sides.left)  || '0';
+  document.getElementById('liveRight').innerHTML = fmtSideHTML(sides.right) || '0';
+  // Task-kort: vis originallikning
+  document.getElementById('taskEq').innerHTML = originalEqStr || '–';
+  document.getElementById('taskLevelNum').textContent = currentLevel;
+  const icons=['','🔢','🔢','📦','📦','🔢','🔢','🔢','🔢','🔧'];
+  document.getElementById('taskIcon').textContent = icons[currentLevel]||'⚖️';
+  let instr;
+  if(lv.build14 && buildingPhase)  instr='🏗️ Bygg likningen i oppgaven — skriv inn blokkene og legg dem i riktig skål';
+  else if(lv.build14 && !buildingPhase) instr='Løs likningen — flytt blokkene slik at x står alene på én side';
+  else if(!lv.bank) instr='Flytt blokkene i vektskålene slik at x står alene på én side';
+  else if(buildingPhase) instr='🏗️ Bygg likningen i oppgaven: dra blokkene fra banken inn i riktige skåler';
+  else instr='Flytt blokkene slik at x står alene på én side';
+  document.getElementById('taskInstr').textContent=instr;
+}
+
+function fmtSideHTML(items){
+  if(!items.length) return '0';
+  return items.map((i,idx)=>{
+    let term;
+    if(['frac','fracx','fracxi'].includes(i.type)) term=fracHTML_inline(i);
+    else term=blockLabel(i);
+    return (idx>0&&i.num>=0)?'+ '+term:term;
+  }).join(' ');
+}
+
+function fmtSide(items){
+  if(!items.length) return '0';
+  return items.map((i,idx)=>{
+    const t=blockLabel(i);
+    return (idx>0&&i.num>=0)?'+ '+t:t;
+  }).join(' ');
+}
+
+// ── SCALE TILT ──
+const PIVOT   = {x:300, y:88};
+const BEAM_L  = {x:105, y:88};
+const BEAM_R  = {x:495, y:88};
+const PAN_L   = {x:105, y:182};
+const PAN_R   = {x:495, y:182};
+const PAN_OFF = 70;
+const TILT_DURATION = 700; // ms — må matche CSS transition
+
+let currentDeg = 0;
+let targetDeg  = 0;
+let animStart  = null;
+let animFrame  = null;
+
+function rotPt(pt, pivot, rad) {
+  const dx=pt.x-pivot.x, dy=pt.y-pivot.y;
+  return {
+    x: pivot.x + dx*Math.cos(rad) - dy*Math.sin(rad),
+    y: pivot.y + dx*Math.sin(rad) + dy*Math.cos(rad),
+  };
+}
+
+function setLine(id, x1,y1, x2,y2) {
+  const el=document.getElementById(id);
+  el.setAttribute('x1',x1.toFixed(1)); el.setAttribute('y1',y1.toFixed(1));
+  el.setAttribute('x2',x2.toFixed(1)); el.setAttribute('y2',y2.toFixed(1));
+}
+
+function evalItem(i){
+  if(i.type==='x')     return i.num*xValue;
+  if(i.type==='num')   return i.num;
+  if(i.type==='frac')  return i.num/i.den;
+  if(i.type==='fracx') return (i.num/i.den)*xValue;
+  if(i.type==='fracxi')return xValue!==0?i.num/xValue:0;
+  return 0;
+}
+
+function drawStrings(deg) {
+  const rad=deg*Math.PI/180;
+  const bL=rotPt(BEAM_L, PIVOT, rad);
+  const bR=rotPt(BEAM_R, PIVOT, rad);
+  const pLC=rotPt(PAN_L, PIVOT, rad);
+  const pRC=rotPt(PAN_R, PIVOT, rad);
+  setLine('strLL', bL.x, bL.y, pLC.x-PAN_OFF, pLC.y);
+  setLine('strLR', bL.x, bL.y, pLC.x+PAN_OFF, pLC.y);
+  setLine('strRL', bR.x, bR.y, pRC.x-PAN_OFF, pRC.y);
+  setLine('strRR', bR.x, bR.y, pRC.x+PAN_OFF, pRC.y);
+}
+
+// Tilnærm CSS cubic-bezier(.4,0,.2,1) via de Casteljau
+function easeInOut(t) {
+  // cubic-bezier(0.4, 0, 0.2, 1) — Material Design standard easing
+  // Løs t via Newton-Raphson: finn t slik at Bx(t_css) = t
+  const p1x=0.4, p1y=0, p2x=0.2, p2y=1;
+  let ts=t; // startgjett
+  for(let i=0;i<8;i++){
+    const c=3*p1x, b=3*(p2x-p1x)-c, a=1-c-b;
+    const bx=((a*ts+b)*ts+c)*ts;
+    const dx=(3*a*ts+2*b)*ts+c;
+    if(Math.abs(dx)<1e-6) break;
+    ts-=(bx-t)/dx;
+  }
+  const c=3*p1y, b=3*(p2y-p1y)-c, a=1-c-b;
+  return ((a*ts+b)*ts+c)*ts;
+}
+
+function animateStrings(ts) {
+  if (!animStart) animStart=ts;
+  const elapsed=ts-animStart;
+  const t=Math.min(elapsed/TILT_DURATION, 1);
+  const deg=currentDeg + (targetDeg-currentDeg)*easeInOut(t);
+  drawStrings(deg);
+  if (t<1) {
+    animFrame=requestAnimationFrame(animateStrings);
+  } else {
+    currentDeg=targetDeg;
+    animFrame=null; animStart=null;
+  }
+}
+
+function updateScaleTilt(){
+  const val=s=>sides[s].reduce((t,i)=>t+evalItem(i),0);
+  const diff=val('left')-val('right');
+  targetDeg=Math.min(Math.max(-diff*1.8,-22),22);
+
+  // CSS-animasjon på bjelke og skåler
+  document.getElementById('scaleBeam').style.transform=`rotate(${targetDeg}deg)`;
+  document.getElementById('scaleBeam').style.transformOrigin='300px 88px';
+  document.getElementById('panLeft').style.transform=`rotate(${-targetDeg}deg)`;
+  document.getElementById('panRight').style.transform=`rotate(${-targetDeg}deg)`;
+
+  // Snore-animasjon via rAF
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame=null; }
+  animStart=null;
+  animFrame=requestAnimationFrame(animateStrings);
+}
+
+// ── BYGGEFASE ──
+let buildingPhase = false;   // true når vi er i byggefasen
+let originalLeft  = [];      // originallikning venstre side (for sjekk)
+let originalRight = [];      // originallikning høyre side (for sjekk)
+
+const BUILD_MSG = '🏗️ Bygg likningen i oppgaven først!';
+
+// Sjekk om en side matcher originalen (uansett rekkefølge, men type+num må stemme)
+function sideMatchesOriginal(current, original) {
+  if(current.length !== original.length) return false;
+  const used = new Array(original.length).fill(false);
+  for(const c of current) {
+    const idx = original.findIndex((o,i)=>!used[i]&&o.type===c.type&&o.num===c.num&&(o.den===undefined||o.den===c.den));
+    if(idx===-1) return false;
+    used[idx]=true;
+  }
+  return true;
+}
+
+// Sjekk om vekten er i balanse
+function isBalanced() {
+  const val=s=>sides[s].reduce((t,i)=>t+evalItem(i),0);
+  return Math.abs(val('left')-val('right'))<0.001;
+}
+
+// Sjekk om byggefasen er fullført
+function checkBuildComplete() {
+  if(!buildingPhase) return;
+  if(bankItems.length>0) return;
+  if(!sideMatchesOriginal(sides.left, originalLeft)) return;
+  if(!sideMatchesOriginal(sides.right, originalRight)) return;
+  if(!isBalanced()) return;
+  // Alt stemmer — gå videre til løsningsfasen
+  buildingPhase=false;
+  showToast('✅ Likningen er bygget! Nå kan du løse den.','success');
+  renderAll();
+}
+['dropLeft','dropRight'].forEach((id,idx)=>{
+  const sideMap=['left','right'], el=document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
+  el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+  el.addEventListener('drop',e=>{ e.preventDefault(); el.classList.remove('drag-over'); handleDrop(e,sideMap[idx]); });
+});
+document.getElementById('bankBlocks').addEventListener('dragover',e=>e.preventDefault());
+document.getElementById('bankBlocks').addEventListener('drop',e=>{ e.preventDefault(); handleDrop(e,'bank'); });
+
+window.handleDrop=function(ev,targetSide){
+  let data; try{data=JSON.parse(ev.dataTransfer.getData('text'));}catch{return;}
+  const srcArr=data.side==='bank'?bankItems:sides[data.side];
+  const itemIdx=srcArr.findIndex(i=>i.id===data.id);
+  if(itemIdx===-1)return;
+  const item=srcArr[itemIdx];
+
+  // Merge like types on same side
+  if(targetSide!=='bank'&&data.side===targetSide){
+    const tEl=ev.target.closest ? ev.target.closest('.block') : null;
+    // Også sjekk om vi er i byggefasen — da skal ingen merge tillates på skålene
+    if(buildingPhase && tEl){
+      showToast(BUILD_MSG,'error'); return;
+    }
+    if(tEl){
+      const tid=parseInt(tEl.getAttribute('data-id'));
+      const tArr=sides[targetSide];
+      const tItem=tArr.find(i=>i.id===tid);
+      if(tItem&&tItem.id!==item.id){
+        const bothFrac=(tItem.type===item.type)&&['frac','fracx'].includes(item.type);
+        if(bothFrac&&tItem.den!==item.den){
+          showToast('⚠️ Brøkene må ha samme nevner for å slå sammen!','error');
+          return;
+        }
+        if(tItem.type===item.type){
+          saveHistory();
+          tItem.num+=item.num; lastChangedId=tItem.id; srcArr.splice(itemIdx,1);
+          if(tItem.num===0){tArr.splice(tArr.indexOf(tItem),1);lastChangedId=null;}
+          renderAll();return;
+        }
+      }
+    }
+  }
+
+  saveHistory();
+  lastChangedId=item.id;
+  const destArr=targetSide==='bank'?bankItems:sides[targetSide];
+  destArr.push(srcArr.splice(itemIdx,1)[0]);
+  renderAll();
+  // Sjekk om byggefasen er fullført
+  if(buildingPhase) checkBuildComplete();
+};
+
+// ── INCIDENT SYSTEM ──
+const INCIDENT_TYPES = {
+  slide: { title:'💨 Du sklir!', sub:'Ingen straff – bare vent litt.' },
+  flat:  { title:'🔧 Punktering!', sub:'Løs én oppgave for å kjøre videre.' },
+  crash: { title:'💥 Krasj!', sub:'Løs to oppgaver for å kjøre videre.' },
+};
+let incidentActive=false, incidentType=null, incidentTasksLeft=0;
+let speedRate=0, lastScoreTime=Date.now(), lastScoreValue=0;
+
+function maybeIncident(rate){
+  // Kun incidents i flerspiller når romkode er satt
+  if(incidentActive) return;
+  if(gameMode!=='multi'||!window.roomCode) return;
+  const risk=Math.min(0.4, rate/500);
+  if(Math.random()<risk){
+    const r=Math.random();
+    if(r<0.4)      triggerIncident('slide');
+    else if(r<0.75) triggerIncident('flat');
+    else            triggerIncident('crash');
+  }
+}
+
+function triggerIncident(type){
+  if(incidentActive) return;
+  incidentActive=true; incidentType=type;
+  const def=INCIDENT_TYPES[type];
+  incidentTasksLeft=type==='crash'?2:type==='flat'?1:0;
+  if(typeof window.syncIncident==='function') window.syncIncident(type);
+  // Vis toast — for slide er det ingen straff, for flat/crash må de løse ekstra
+  showToast(def.title+' '+def.sub,'error');
+  if(type==='slide'){
+    setTimeout(()=>{ incidentActive=false; incidentType=null; },3000);
+  }
+  // Oppdater instruksjon i oppgavekortet
+  if(type!=='slide'){
+    const n=incidentTasksLeft;
+    const instr=currentLevel<=2
+      ? '🔧 Balanser '+n+' likning'+(n>1?'er':'')+' for å kjøre videre!'
+      : '🔧 Løs '+n+' oppgave'+(n>1?'r':'')+' for å kjøre videre!';
+    document.getElementById('taskInstr').textContent=instr;
+  }
+}
+window.operate=function(t){
+  if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
+  const v=parseInt(document.getElementById('opVal').value); if(!v||v===0) return;
+  if(t==='div'){
+    const all=[...sides.left,...sides.right];
+    const nonFrac=all.filter(i=>!['frac','fracx','fracxi'].includes(i.type));
+    if(!nonFrac.every(i=>i.num%v===0)){ showToast('⚠️ Går ikke opp – prøv en annen fremgangsmåte!','error'); return; }
+  }
+  saveHistory();
+  lastChangedId=null;
+  ['left','right'].forEach(s=>{
+    sides[s]=sides[s].map(i=>{
+      // Brøkblokk: prøv å eliminere nevner
+      if(i.type==='frac'||i.type==='fracx'||i.type==='fracxi'){
+        if(t==='mul'){
+          const newNum=i.num*v;
+          const newDen=i.den;
+          const g=gcd(Math.abs(newNum),newDen);
+          if(newDen/g===1){
+            // Nevner eliminert → konverter til vanlig blokk
+            if(i.type==='fracx') return {id:i.id,type:'x',num:newNum/g};
+            if(i.type==='frac')  return {id:i.id,type:'num',num:newNum/g};
+            if(i.type==='fracxi')return {id:i.id,type:'fracxi',num:newNum,den:1}; // x i nevner, bare skaler
+          }
+          return {...i, num:newNum/g, den:newDen/g};
+        } else {
+          // Del: skaler teller
+          return {...i, num:i.num/v};
+        }
+      }
+      // Vanlig blokk
+      return {...i, num:t==='mul'?i.num*v:i.num/v};
+    }).filter(i=>i.num!==0);
+  });
+  renderAll();
+};
+
+// ── RESET ──
+window.resetTask=function(){
+  if(!originalTask)return;
+  sides={left:JSON.parse(JSON.stringify(originalTask.left)),right:JSON.parse(JSON.stringify(originalTask.right))};
+  bankItems=JSON.parse(JSON.stringify(originalTask.bank));
+  xValue=originalTask.xVal; lastChangedId=null; history=[];
+  // Tilbakestill byggefasen om nivået har bank
+  if(LEVELS[currentLevel].bank){
+    buildingPhase=true;
+  }
+  renderAll();
+};
+
+// ── UNDO ──
+function saveHistory(){
+  history.push({
+    left:JSON.parse(JSON.stringify(sides.left)),
+    right:JSON.parse(JSON.stringify(sides.right)),
+    bank:JSON.parse(JSON.stringify(bankItems)),
+  });
+  if(history.length>20) history.shift();
+}
+window.doUndo=function(){
+  if(!history.length){showToast('Ingenting å angre','error');return;}
+  const prev=history.pop();
+  sides={left:prev.left,right:prev.right}; bankItems=prev.bank;
+  lastChangedId=null; renderAll();
+};
+
+// ── BUILD MODE ──
+window.buildBlock=function(type){
+  const v=parseInt(document.getElementById('buildVal').value);
+  if(!v||v===0||isNaN(v)){showToast('Skriv inn et tall som ikke er 0!','error');return;}
+  saveHistory();
+  const nb={id:idCounter++,type,num:v};
+  bankItems.push(nb); lastChangedId=nb.id;
+  document.getElementById('buildVal').value=''; renderAll();
+};
+
+// ── CONTEXT MENU ──
+function showCtxMenu(x,y){
+  const m=document.getElementById('ctxMenu');
+  m.style.display='block'; m.style.left=x+'px'; m.style.top=y+'px';
+}
+document.addEventListener('click',()=>document.getElementById('ctxMenu').style.display='none');
+
+window.ctxNeg=function(){
+  if(!activeMenuTarget)return;
+  saveHistory(); activeMenuTarget.item.num*=-1; lastChangedId=activeMenuTarget.item.id; renderAll();
+};
+window.ctxSplit=function(){
+  if(buildingPhase){ showToast(BUILD_MSG,'error'); return; }
+  if(!activeMenuTarget) return;
+  if(Math.abs(activeMenuTarget.item.num)<2){ showToast('Kan ikke splitte 1 eller -1','error'); return; }
+  saveHistory();
+  const i=activeMenuTarget.item, n1=Math.floor(i.num/2), n2=i.num-n1;
+  const arr=activeMenuTarget.side==='bank'?bankItems:sides[activeMenuTarget.side];
+  arr.splice(arr.indexOf(i),1);
+  const nid=idCounter++;
+  arr.push({id:nid,type:i.type,num:n1},{id:idCounter++,type:i.type,num:n2});
+  lastChangedId=nid; renderAll();
+};
+
+// ── CHECK SOLUTION ──
+window.checkSolution=function(){
+  const L=sides.left, R=sides.right;
+  const xLeft  = L.length===1&&L[0].type==='x'&&L[0].num===1&&R.length===1&&R[0].type==='num'&&R[0].num===xValue;
+  const xRight = R.length===1&&R[0].type==='x'&&R[0].num===1&&L.length===1&&L[0].type==='num'&&L[0].num===xValue;
+  const ok=xLeft||xRight;
+
+  if(ok){
+    // ── STRAFFEMODUS ──
+    if(incidentActive && incidentTasksLeft>0){
+      incidentTasksLeft--;
+      if(incidentTasksLeft<=0){
+        incidentActive=false; incidentType=null;
+        showToast('✅ Bra! Du er tilbake i løpet!','success');
+        setTimeout(()=>newTask(),1400);
+      } else {
+        showToast('✅ Riktig! Én oppgave til…','success');
+        document.getElementById('taskInstr').textContent=
+          '🔧 Løs '+incidentTasksLeft+' oppgave'+(incidentTasksLeft>1?'r':'')+' til for å kjøre videre!';
+        setTimeout(()=>newTask(),1400);
+      }
+      return;
+    }
+
+    totalWins++; winsOnLevel++;
+    document.getElementById('winCount').textContent=totalWins;
+    recordLevelResult(true);
+    tcCorrect++; tcMaxLevel=Math.max(tcMaxLevel,currentLevel); syncTC();
+
+    let bonus=0;
+    if(gameMode!=='practice'){
+      bonus=Math.max(10,Math.round(200-(Date.now()-lvTaskStart)/1000*1.5));
+      currentScore+=bonus;
+      const now=Date.now();
+      const dt=(now-lastScoreTime)/1000;
+      if(dt>0&&dt<120) speedRate=Math.max(0,Math.round((bonus/dt)*10));
+      lastScoreTime=now;
+      const scorEl=document.getElementById('myScoreBig');
+      if(scorEl) scorEl.textContent=currentScore;
+      try {
+        if(typeof window.syncScore==='function') window.syncScore(currentScore);
+      } catch(e) { console.warn('syncScore feil:', e); }
+    }
+
+    showToast('🎉 Riktig!'+(bonus>0?' +'+bonus+' p':''),'success');
+    setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) newTask(); },1400);
+  } else {
+    recordLevelResult(false);
+    tcWrong++; syncTC();
+    showToast('❌ Ikke i balanse ennå – prøv igjen!','error');
+  }
+};
+
+// ── NEW TASK ──
+window.newTask=function(){
+  const task=generateTask(currentLevel);
+  applyTask(task);
+};
+
+function clearBuildMode(){
+  sides={left:[],right:[]}; bankItems=[]; xValue=0;
+  renderAll(); showToast('🔧 Bygg din egen likning!','success');
+}
+
+// ── INIT GAME ──
+function initGame(){
+  currentLevel=startLevel>0?startLevel:1;
+  winsOnLevel=0; currentScore=0; totalWins=0;
+  lvStreak=0; lvErrorStreak=0; lvTaskStart=Date.now();
+  speedRate=0; lastScoreTime=Date.now(); lastScoreValue=0;
+  updateLevelUI();
+  updateScaleTilt(); // initialiser snorer
+  newTask();
+}
+
+// ── TIMED MODE ──
+function startTimed(){
+  timedSecondsLeft=timedMinutes*60;
+  document.getElementById('countdownBanner').classList.add('visible');
+  document.getElementById('timeupMin').textContent=timedMinutes;
+  updCD();
+  timedInterval=setInterval(()=>{ timedSecondsLeft--; updCD(); if(timedSecondsLeft<=0){clearInterval(timedInterval);document.getElementById('timeupScore').textContent=currentScore;document.getElementById('timeUpOverlay').classList.add('show');} },1000);
+}
+function updCD(){ const m=Math.floor(timedSecondsLeft/60),s=timedSecondsLeft%60; const el=document.getElementById('cdTime'); el.textContent=m+':'+(s<10?'0':'')+s; el.className='countdown-time'+(timedSecondsLeft<=30?' urgent':''); }
+
+// ── TOAST ──
+
+// ── START GAME ──
+// ── TIMECODE SYNC ──
+
+let tcSyncSessionStart=Date.now(), tcCorrect=0, tcWrong=0, tcMaxLevel=1, tcStartLevel=1;
+const tcLv=levelTracker();
+function syncTC(extra={}){
+  tcLv.note(currentLevel);
+  syncToTimecode('ligningsvekt',Object.assign({level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSyncSessionStart},extra));
+}
+
+window.startGame=function(){
+  let room='';
+  if(gameMode==='multi') room=document.getElementById('roomInput').value.trim().toUpperCase();
+  if(gameMode==='solo')  timedMinutes=parseInt(document.getElementById('timedMin').value)||5;
+  window.roomCode=room||null;
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('headerName').textContent=window.playerName;
+
+  const modeLabels={practice:'🧘 Øvemodus',solo:'⏱️ Enkeltspiller',multi:'🏎️ Flerspiller'};
+  document.getElementById('modeBadge').textContent=modeLabels[gameMode];
+
+  // Show sidebar
+  if(gameMode!=='practice'){
+    document.getElementById('sidebar').style.display='flex';
+    document.getElementById('scaleArea').classList.remove('no-sidebar');
+    document.getElementById('scoreTitle').textContent=gameMode==='multi'?'🏆 Toppliste':'🏆 Poeng';
+  }
+
+  if(room){
+    // Vent på at Firebase-modulen er lastet
+    const waitFb=()=>{
+      if(window._fbReady){ window._fbInit(room); }
+      else { setTimeout(waitFb,50); }
+    };
+    waitFb();
+  } else {
+    window.syncScore=()=>{};
+  }
+
+  if(gameMode==='solo') startTimed();
+
+  // Read start level
+  const slVal=parseInt(document.querySelector('input[name="sl"]:checked').value)||0;
+  startLevel=slVal;
+
+  initGame();
+  syncTC();
+};
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter') checkSolution();
+  if(e.key==='z'&&(e.ctrlKey||e.metaKey)) doUndo();
+});
+</script>
+<script src="../js/touch-dnd.js"></script>
+</body>
+</html>
