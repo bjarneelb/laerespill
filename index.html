@@ -85,18 +85,18 @@
         <div class="card-desc">Periodesystemet, molekyler, begreper og andre aktiviteter i naturfag.</div>
         <div class="card-btn">Til naturfag →</div>
       </a>
-      <div class="card c-fler soon" aria-disabled="true">
+      <a class="card c-fler" href="flerfaglig/">
         <div class="card-icon">🧩</div>
         <div class="card-title">Flerfaglig</div>
-        <div class="card-desc">Begrepsbibliotek og begrepsspill for alle fag.</div>
-        <div class="card-btn">Kommer snart</div>
-      </div>
+        <div class="card-desc">Begrepsspill for alle fag, med begrepssettene læreren har laget.</div>
+        <div class="card-btn">Til flerfaglig →</div>
+      </a>
     </div>
   </section>
 
 </div>
 
-<footer>Lærespill · v1.0</footer>
+<footer>Lærespill · v1.1</footer>
 
 <!-- INNLOGGING -->
 <div class="session-overlay" id="sessionOverlay" style="display:none">
@@ -144,11 +144,13 @@ function getSession(){
 }
 function saveSession(d){ sessionStorage.setItem(SESSION_KEY,JSON.stringify(d)); }
 function openOverlay(){ $('sessionOverlay').style.display='flex'; $('sessionName').focus(); }
-function closeOverlay(s){ $('sessionOverlay').style.display='none'; showBadge(s); }
+// Kom eleven fra en fagside uten å være logget inn, sendes hen tilbake dit etterpå
+const NESTE=(()=>{ const t=new URLSearchParams(location.search).get('neste'); return ['matte','naturfag','flerfaglig'].includes(t)?t:null; })();
+function closeOverlay(s){ $('sessionOverlay').style.display='none'; showBadge(s); if(NESTE) location.href=NESTE+'/'; }
 
 window.addEventListener('load',()=>{
   const s=getSession();
-  if(s){ showBadge(s); return; }
+  if(s){ if(NESTE){ location.href=NESTE+'/'; return; } showBadge(s); return; }
   setTimeout(openOverlay,300);
 });
 

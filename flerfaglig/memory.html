@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory-duell</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<style>
+:root{
+  --bg:#fff7ed; --ink:#1f1630; --muted:#6b6478; --line:#ead9c6; --card:#ffffff;
+  --b:#4f46e5; --b-soft:#e0e7ff; --f:#d97706; --f-soft:#fef3c7;
+  --green:#16a34a; --red:#dc2626; --r:16px; --shadow:0 6px 22px rgba(80,50,20,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;}
+button{font-family:inherit;}
+.hidden{display:none !important;}
+
+.top{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#3b0764;color:white;flex-wrap:wrap;}
+.top h1{font-size:1.15rem;font-weight:900;flex:1;white-space:nowrap;}
+.chip{padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.16);font-weight:800;font-size:.82rem;white-space:nowrap;}
+.tlink{padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.35);color:white;text-decoration:none;font-weight:800;font-size:.82rem;background:none;cursor:pointer;}
+
+.wrap{width:100%;max-width:880px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:18px;}
+.box{background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);}
+.box h2{font-size:1.15rem;font-weight:900;margin-bottom:6px;}
+.lead{color:var(--muted);font-weight:700;line-height:1.5;}
+.btn{padding:12px 20px;border-radius:12px;border:none;font-weight:900;font-size:1rem;cursor:pointer;background:#6d28d9;color:white;}
+.btn:hover{filter:brightness(.92);}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+.btn.ghost{background:#f3eefc;color:#4c1d95;}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.inp{padding:11px 14px;border:2px solid var(--line);border-radius:12px;font-family:inherit;font-weight:900;font-size:1.1rem;outline:none;}
+.inp:focus{border-color:#6d28d9;}
+.code-inp{text-transform:uppercase;letter-spacing:4px;width:150px;text-align:center;}
+.err{color:var(--red);font-weight:800;min-height:1.2em;}
+.rules{color:var(--muted);font-weight:700;font-size:.9rem;line-height:1.6;padding-left:18px;}
+
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+.fchip{padding:5px 12px;border-radius:20px;border:2px solid var(--line);background:white;font-weight:800;font-size:.82rem;cursor:pointer;}
+.fchip.on{background:#6d28d9;border-color:#6d28d9;color:white;}
+.grp{font-size:.78rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;}
+.sets{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;}
+.set{padding:12px;border-radius:12px;border:2px solid var(--line);background:white;text-align:left;font-weight:900;cursor:pointer;display:flex;justify-content:space-between;gap:8px;}
+.set:hover{border-color:#a78bfa;}
+.set.on{border-color:#6d28d9;background:#f5f3ff;}
+.set small{color:var(--muted);font-weight:800;}
+.seg{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;width:fit-content;}
+.seg button{padding:9px 16px;border:none;background:white;font-weight:900;cursor:pointer;}
+.seg button.on{background:#6d28d9;color:white;}
+.seg button:disabled{opacity:.3;cursor:not-allowed;}
+
+.bigcode{font-size:3rem;font-weight:900;letter-spacing:10px;color:#6d28d9;text-align:center;}
+.plist{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.pl{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#faf5ff;font-weight:900;}
+.pl .me{font-size:.72rem;color:#6d28d9;}
+
+/* SPILL */
+.game{flex:1;display:flex;flex-direction:column;gap:12px;width:100%;max-width:1100px;margin:0 auto;padding:12px 12px 24px;}
+.scorebar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.ps{min-width:120px;padding:8px 12px;border-radius:14px;background:white;border:3px solid var(--line);text-align:center;}
+.ps.turn{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.18);}
+.ps .n{font-weight:900;font-size:.95rem;}
+.ps .s{font-weight:900;font-size:1.3rem;color:#6d28d9;}
+.ps .k{font-size:.75rem;color:var(--muted);font-weight:800;}
+.status{text-align:center;font-weight:900;font-size:1.1rem;min-height:1.5em;}
+.status.mine{color:#6d28d9;}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;}
+.c{position:relative;aspect-ratio:3/4;border-radius:12px;border:none;cursor:pointer;font-weight:900;color:white;font-size:1.6rem;box-shadow:0 3px 0 rgba(0,0,0,.15);transition:transform .12s;overflow:hidden;padding:6px;}
+.c.kb{background:linear-gradient(145deg,#6366f1,#4338ca);}
+.c.kf{background:linear-gradient(145deg,#f59e0b,#c2410c);}
+.c .lbl{position:absolute;bottom:6px;left:0;right:0;font-size:.62rem;letter-spacing:1px;text-transform:uppercase;opacity:.85;}
+.c:not(:disabled):hover{transform:translateY(-3px);}
+.c:disabled{cursor:default;}
+.c.dim{opacity:.35;}
+.c.open{background:white;color:var(--ink);border:3px solid #6d28d9;font-size:.72rem;line-height:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
+.c.open img{max-width:100%;max-height:60%;border-radius:6px;}
+.c.open .t{overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;}
+.c.taken{background:#f1ece4;color:#b9ab99;box-shadow:none;font-size:.7rem;cursor:default;}
+
+.judge{position:fixed;inset:0;z-index:40;background:rgba(31,22,48,.55);display:flex;align-items:center;justify-content:center;padding:14px;}
+.jcard{background:white;border-radius:20px;max-width:900px;width:100%;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:96vh;overflow:auto;}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.face{border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;min-height:150px;font-weight:800;font-size:1.05rem;line-height:1.35;}
+.face.kb{background:var(--b-soft);border:3px solid var(--b);}
+.face.kf{background:var(--f-soft);border:3px solid var(--f);}
+.face .tag{font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;opacity:.7;}
+.face .bt{font-size:1.4rem;font-weight:900;}
+.face img{max-width:100%;max-height:34vh;border-radius:10px;}
+.jq{text-align:center;font-weight:900;font-size:1.15rem;}
+.jbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.jb{padding:14px 26px;border-radius:14px;border:none;font-weight:900;font-size:1.1rem;color:white;cursor:pointer;}
+.jb.yes{background:var(--green);} .jb.no{background:var(--red);}
+.verdict{text-align:center;font-weight:900;font-size:1.2rem;padding:10px;border-radius:12px;}
+.verdict.ok{background:#dcfce7;color:#166534;} .verdict.bad{background:#fee2e2;color:#991b1b;}
+
+.end{text-align:center;}
+.end h2{font-size:2rem;color:#6d28d9;margin-bottom:12px;}
+.rank{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;background:#faf5ff;font-weight:900;font-size:1.1rem;margin-bottom:8px;}
+.rank .p{margin-left:auto;color:#6d28d9;}
+
+@media (max-width:560px){
+  .board{grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px;}
+  .c{font-size:1.2rem;} .c.open{font-size:.6rem;} .c .lbl{font-size:.45rem;letter-spacing:.3px;}
+  .pair{grid-template-columns:1fr;} .face{min-height:100px;}
+  .top h1{font-size:1rem;}
+}
+</style>
+</head>
+<body data-su-chrome="off">
+
+<div class="top">
+  <h1>🃏 Memory-duell</h1>
+  <span class="chip" id="meChip"></span>
+  <span class="chip hidden" id="codeChip"></span>
+  <a class="tlink" href="./" id="menuLink">← Meny</a>
+</div>
+
+<!-- START -->
+<div class="wrap" id="scrStart">
+  <div class="box">
+    <h2>Finn parene – og vurder dem selv</h2>
+    <ul class="rules">
+      <li>Snu ett blått kort (begrep) og ett oransje kort (forklaring).</li>
+      <li>Du avgjør selv: <b>Stemmer</b> eller <b>Stemmer ikke</b>?</li>
+      <li>Riktig par og «Stemmer»: 10 poeng, du tar stikket og får en tur til.</li>
+      <li>Ikke par og «Stemmer ikke»: 5 poeng, men ingen stikk.</li>
+      <li>Vurderer du feil, får du 0 poeng, og turen går videre.</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h2>Bli med i et spill</h2>
+    <div class="row">
+      <input class="inp code-inp" id="joinCode" maxlength="4" placeholder="KODE" autocomplete="off">
+      <button class="btn" onclick="joinGame()">Bli med</button>
+    </div>
+    <div class="err" id="joinErr"></div>
+  </div>
+  <div class="box">
+    <h2>Lag et nytt spill</h2>
+    <p class="lead">Velg et begrepssett. De andre blir med med koden du får.</p>
+    <div class="fchips" id="fagChips"></div>
+    <div id="setList"><p class="lead">Henter begrepssett …</p></div>
+    <div style="margin-top:14px" class="row">
+      <span class="lead">Antall par:</span>
+      <div class="seg" id="pairSeg"><button data-v="6">6</button><button data-v="8" class="on">8</button><button data-v="10">10</button><button data-v="12">12</button></div>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <div class="err" id="createErr"></div>
+      <button class="btn" id="createBtn" onclick="createGame()" disabled>Lag spill →</button>
+    </div>
+  </div>
+</div>
+
+<!-- VENTEROM -->
+<div class="wrap hidden" id="scrLobby">
+  <div class="box" style="text-align:center">
+    <p class="lead">Koden til spillet</p>
+    <div class="bigcode" id="lobbyCode"></div>
+    <p class="lead" id="lobbySet"></p>
+    <div class="plist" id="lobbyPlayers"></div>
+    <p class="lead" style="margin-top:12px" id="lobbyHint"></p>
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="btn hidden" id="startBtn" onclick="startGame()">Start spillet</button>
+      <button class="btn ghost" onclick="leaveGame()">Forlat</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPILL -->
+<div class="game hidden" id="scrGame">
+  <div class="scorebar" id="scorebar"></div>
+  <div class="status" id="status"></div>
+  <div class="board" id="board"></div>
+  <div class="row" style="justify-content:center">
+    <button class="btn ghost hidden" id="skipBtn" onclick="skipTurn()"></button>
+    <button class="btn ghost" onclick="leaveGame()">Forlat spillet</button>
+  </div>
+</div>
+
+<div class="judge hidden" id="judge">
+  <div class="jcard">
+    <div class="pair" id="jPair"></div>
+    <div class="jq" id="jQ"></div>
+    <div class="jbtns" id="jBtns"></div>
+    <div class="verdict hidden" id="jVerdict"></div>
+  </div>
+</div>
+
+<!-- SLUTT -->
+<div class="wrap hidden" id="scrEnd">
+  <div class="box end">
+    <h2 id="endTitle"></h2>
+    <div id="endRank"></div>
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="btn" onclick="toStart()">Nytt spill</button>
+      <a class="btn ghost" href="./" style="text-decoration:none">Til menyen</a>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { database, ref, get, set, update, onValue, remove } from "/js/firebase-config.js";
+  Object.assign(window,{_db:database,_ref:ref,_get:get,_set:set,_update:update,_onValue:onValue,_remove:remove,_fbReady:true});
+  window.dispatchEvent(new Event('fbready'));
+</script>
+
+<script>
+const ME=window.playerName;
+const $=id=>document.getElementById(id);
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const listOf=v=>Array.isArray(v)?v.filter(Boolean):Object.values(v||{}).filter(Boolean);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const cmp=(a,b)=>String(a).localeCompare(String(b),'nb');
+const MAX_PLAYERS=4, RESULT_MS=2800, STUCK_MS=45000, OLD_MS=6*36e5;
+const params=new URLSearchParams(location.search);
+
+$('meChip').textContent='🐾 '+ME;
+
+let sets={}, chosenSet=params.get('sett')||null, pairs=8, fagFilter='';
+let code=null, G=null, unsub=null, resultTimer=null, stuckTimer=null;
+const stats={correct:0,wrong:0,score:0,start:Date.now()};
+
+function whenReady(cb){ if(window._fbReady) cb(); else window.addEventListener('fbready',cb,{once:true}); }
+const gref=p=>window._ref(window._db,'memory/'+code+(p?'/'+p:''));
+
+// ── VELG SETT ──
+whenReady(()=>{
+  window._get(window._ref(window._db,'begrepssett')).then(s=>{ sets=s.val()||{}; renderSets(); })
+    .catch(e=>{ $('setList').innerHTML='<p class="err">Fikk ikke hentet begrepssett: '+esc(e.message)+'</p>'; });
+  const k=(params.get('kode')||'').toUpperCase();
+  if(k){ $('joinCode').value=k; joinGame(); }
+});
+function renderSets(){
+  const ids=Object.keys(sets).filter(id=>listOf(sets[id].begreper).length>=3);
+  if(!ids.length){ $('setList').innerHTML='<p class="lead">Ingen begrepssett ennå. Læreren lager dem.</p>'; return; }
+  if(chosenSet&&!sets[chosenSet]) chosenSet=null;
+  const fags=[...new Set(ids.map(id=>sets[id].fag||'Uten fag'))].sort(cmp);
+  $('fagChips').innerHTML=fags.length>1?['',...fags].map(f=>'<button class="fchip'+(f===fagFilter?' on':'')+'" data-f="'+esc(f)+'">'+(f?esc(f):'Alle fag')+'</button>').join(''):'';
+  $('fagChips').querySelectorAll('.fchip').forEach(b=>b.onclick=()=>{ fagFilter=b.dataset.f; renderSets(); });
+  const groups={};
+  ids.filter(id=>!fagFilter||(sets[id].fag||'Uten fag')===fagFilter)
+     .forEach(id=>{ const k=(sets[id].fag||'Uten fag')+' · '+(sets[id].tema||'Uten tema'); (groups[k]=groups[k]||[]).push(id); });
+  $('setList').innerHTML=Object.keys(groups).sort(cmp).map(k=>'<div class="grp">'+esc(k)+'</div><div class="sets">'+
+    groups[k].sort((a,b)=>cmp(sets[a].navn,sets[b].navn)).map(id=>'<button class="set'+(id===chosenSet?' on':'')+'" data-id="'+esc(id)+'">'+
+      esc(sets[id].navn)+'<small>'+listOf(sets[id].begreper).length+'</small></button>').join('')+'</div>').join('');
+  $('setList').querySelectorAll('.set').forEach(b=>b.onclick=()=>{ chosenSet=b.dataset.id; renderSets(); });
+  updatePairSeg();
+}
+function updatePairSeg(){
+  const n=chosenSet?listOf(sets[chosenSet].begreper).length:99;
+  $('pairSeg').querySelectorAll('button').forEach(b=>{
+    b.disabled=+b.dataset.v>Math.max(n,6);
+    b.classList.toggle('on',+b.dataset.v===pairs);
+  });
+  $('createBtn').disabled=!chosenSet;
+  $('createErr').textContent=chosenSet&&n<6?'Settet har bare '+n+' begreper, så brettet får '+n+' par.':'';
+}
+$('pairSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ pairs=+b.dataset.v; updatePairSeg(); });
+
+// ── LAG / BLI MED ──
+function newCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
+window.createGame=async function(){
+  if(!chosenSet) return;
+  $('createBtn').disabled=true;
+  try{
+    // Rydd bort gamle spill
+    const all=(await window._get(window._ref(window._db,'memory'))).val()||{};
+    Object.keys(all).forEach(k=>{ if(!all[k]||!all[k].created||Date.now()-all[k].created>OLD_MS) window._remove(window._ref(window._db,'memory/'+k)); });
+    let c=newCode(); for(let i=0;i<10&&all[c];i++) c=newCode();
+    const s=sets[chosenSet];
+    const items=shuffle(listOf(s.begreper)).slice(0,pairs).map(i=>{
+      const o={begrep:i.begrep||'',forklaring:i.forklaring||''};
+      if(i.begrepBilde) o.begrepBilde=i.begrepBilde; if(i.forklaringBilde) o.forklaringBilde=i.forklaringBilde;
+      return o;
+    });
+    const cards=shuffle(items.flatMap((_,p)=>[{p,k:'b'},{p,k:'f'}]));
+    code=c;
+    await window._set(gref(),{
+      host:ME, created:Date.now(), status:'lobby', settNavn:s.navn, settId:chosenSet,
+      items, cards, players:{[ME]:{order:Date.now(),score:0,stikk:0}}, phase:'pick', ts:Date.now()
+    });
+    listen();
+  }catch(e){ $('createErr').textContent='Kunne ikke lage spillet: '+e.message; $('createBtn').disabled=false; }
+};
+window.joinGame=async function(){
+  const c=$('joinCode').value.trim().toUpperCase();
+  $('joinErr').textContent='';
+  if(c.length!==4){ $('joinErr').textContent='Koden har fire bokstaver.'; return; }
+  try{
+    const g=(await window._get(window._ref(window._db,'memory/'+c))).val();
+    if(!g){ $('joinErr').textContent='Fant ikke spillet. Sjekk koden.'; return; }
+    const pl=g.players||{};
+    if(!pl[ME]){
+      if(g.status!=='lobby'){ $('joinErr').textContent='Spillet har allerede startet.'; return; }
+      if(Object.keys(pl).length>=MAX_PLAYERS){ $('joinErr').textContent='Spillet er fullt (maks '+MAX_PLAYERS+').'; return; }
+      await window._update(window._ref(window._db,'memory/'+c+'/players/'+ME),{order:Date.now(),score:0,stikk:0});
+    }
+    code=c; listen();
+  }catch(e){ $('joinErr').textContent='Fikk ikke kontakt: '+e.message; }
+};
+function listen(){
+  $('codeChip').textContent='Kode '+code; $('codeChip').classList.remove('hidden');
+  if(unsub) unsub();
+  unsub=window._onValue(gref(),snap=>{ G=snap.val(); render(); });
+}
+window.leaveGame=function(){
+  if(G&&G.status==='play'&&!confirm('Forlate spillet?')) return;
+  if(code&&G&&G.players&&G.players[ME]){
+    const order=orderedPlayers().filter(n=>n!==ME);
+    if(!order.length) window._remove(gref());
+    else{
+      const up={['players/'+ME]:null};
+      if(G.host===ME) up.host=order[0];
+      if(G.turn===ME){ Object.assign(up,{turn:order[0],sel:null,phase:'pick',result:null,ts:Date.now()}); }
+      window._update(gref(),up);
+    }
+  }
+  toStart();
+};
+window.toStart=function(){
+  if(unsub) unsub(); unsub=null; code=null; G=null;
+  clearTimeout(resultTimer); clearTimeout(stuckTimer);
+  $('codeChip').classList.add('hidden');
+  show('scrStart'); $('judge').classList.add('hidden'); $('createBtn').disabled=!chosenSet;
+};
+function show(id){ ['scrStart','scrLobby','scrGame','scrEnd'].forEach(s=>$(s).classList.toggle('hidden',s!==id)); }
+
+// ── SPILLET ──
+const orderedPlayers=()=>Object.keys((G&&G.players)||{}).sort((a,b)=>G.players[a].order-G.players[b].order);
+const taken=()=>G.taken||{};
+const selOf=()=>(Array.isArray(G.sel)?G.sel:Object.values(G.sel||{})).filter(x=>x!==null&&x!==undefined).map(Number);
+function nextPlayer(after){
+  const o=orderedPlayers(); if(!o.length) return null;
+  return o[(o.indexOf(after)+1)%o.length];
+}
+window.startGame=function(){
+  const o=orderedPlayers();
+  window._update(gref(),{status:'play',turn:o[Math.floor(Math.random()*o.length)],phase:'pick',sel:null,ts:Date.now()});
+};
+
+function render(){
+  if(!G){ if(code){ alert('Spillet er avsluttet.'); toStart(); } return; }
+  if(!G.players||!G.players[ME]){ toStart(); $('joinErr').textContent='Du er ikke lenger med i spillet.'; return; }
+  if(G.status==='lobby') return renderLobby();
+  if(G.status==='done') return renderEnd();
+  show('scrGame'); renderScores(); renderBoard(); renderJudge(); scheduleStuck();
+}
+function renderLobby(){
+  show('scrLobby');
+  $('lobbyCode').textContent=code;
+  $('lobbySet').textContent=G.settNavn+' · '+listOf(G.items).length+' par';
+  const o=orderedPlayers();
+  $('lobbyPlayers').innerHTML=o.map(n=>'<div class="pl">🐾 '+esc(n)+(n===ME?' <span class="me">(deg)</span>':'')+(n===G.host?' <span class="me">· startet spillet</span>':'')+'</div>').join('');
+  const host=G.host===ME;
+  $('startBtn').classList.toggle('hidden',!host);
+  $('startBtn').textContent=o.length<2?'Start alene (øving)':'Start spillet';
+  $('lobbyHint').textContent=host?'Når alle er med, trykker du Start. Maks '+MAX_PLAYERS+' spillere.':'Venter på at '+G.host+' starter spillet …';
+}
+function renderScores(){
+  $('scorebar').innerHTML=orderedPlayers().map(n=>{ const p=G.players[n];
+    return '<div class="ps'+(n===G.turn?' turn':'')+'"><div class="n">'+(n===ME?'⭐ ':'')+esc(n)+'</div><div class="s">'+(p.score||0)+'</div><div class="k">'+(p.stikk||0)+' stikk</div></div>'; }).join('');
+  const mine=G.turn===ME;
+  const st=$('status');
+  st.classList.toggle('mine',mine);
+  const sel=selOf();
+  if(G.phase==='pick') st.textContent=mine?(sel.length?'Snu et '+(G.cards[sel[0]].k==='b'?'oransje kort (forklaring)':'blått kort (begrep)'):'Din tur! Snu et kort.'):G.turn+' snur kort …';
+  else if(G.phase==='judge') st.textContent=mine?'Stemmer paret?':G.turn+' vurderer …';
+  else st.textContent='';
+}
+function faceHtml(i,big){
+  const c=G.cards[i], it=G.items[c.p], b=c.k==='b';
+  const txt=b?it.begrep:it.forklaring, img=b?it.begrepBilde:it.forklaringBilde;
+  if(big) return '<div class="face k'+c.k+'"><span class="tag">'+(b?'Begrep':'Forklaring')+'</span>'+(img?'<img src="'+esc(img)+'" alt="">':'')+(txt?'<span class="'+(b?'bt':'')+'">'+esc(txt)+'</span>':'')+'</div>';
+  return (img?'<img src="'+esc(img)+'" alt="">':'')+(txt?'<span class="t">'+esc(txt)+'</span>':'');
+}
+function renderBoard(){
+  const sel=selOf(), tk=taken(), mine=G.turn===ME&&G.phase==='pick';
+  const need=sel.length===1?(G.cards[sel[0]].k==='b'?'f':'b'):null;
+  $('board').innerHTML=G.cards.map((c,i)=>{
+    if(tk[i]) return '<button class="c taken" disabled>✓<br>'+esc(tk[i])+'</button>';
+    if(sel.includes(i)) return '<button class="c open" disabled>'+faceHtml(i,false)+'</button>';
+    const can=mine&&(!need||c.k===need);
+    return '<button class="c k'+c.k+(mine&&need&&c.k!==need?' dim':'')+'" data-i="'+i+'"'+(can?'':' disabled')+'>'+(c.k==='b'?'B':'F')+'<span class="lbl">'+(c.k==='b'?'Begrep':'Forklaring')+'</span></button>';
+  }).join('');
+  $('board').querySelectorAll('.c[data-i]:not(:disabled)').forEach(el=>el.onclick=()=>pick(+el.dataset.i));
+}
+function pick(i){
+  if(G.turn!==ME||G.phase!=='pick') return;
+  const sel=selOf(); if(sel.includes(i)||taken()[i]) return;
+  if(sel.length===1&&G.cards[sel[0]].k===G.cards[i].k) return;
+  const ns=sel.concat(i);
+  window._update(gref(),{sel:ns,phase:ns.length===2?'judge':'pick',ts:Date.now()});
+}
+function renderJudge(){
+  const sel=selOf();
+  if(sel.length<2||G.phase==='pick'){ $('judge').classList.add('hidden'); return; }
+  $('judge').classList.remove('hidden');
+  const ordered=sel.slice().sort((a,b)=>G.cards[a].k==='b'?-1:1);
+  $('jPair').innerHTML=ordered.map(i=>faceHtml(i,true)).join('');
+  const mine=G.turn===ME;
+  if(G.phase==='judge'){
+    $('jVerdict').classList.add('hidden');
+    $('jQ').textContent=mine?'Hører disse to sammen?':G.turn+' vurderer om disse hører sammen …';
+    $('jBtns').innerHTML=mine?'<button class="jb yes" id="yesBtn">✓ Stemmer</button><button class="jb no" id="noBtn">✗ Stemmer ikke</button>':'';
+    if(mine){ $('yesBtn').onclick=()=>judge(true); $('noBtn').onclick=()=>judge(false); }
+  } else if(G.phase==='result'&&G.result){
+    const r=G.result, who=r.who===ME?'Du':r.who;
+    $('jQ').textContent=who+' sa «'+(r.say?'Stemmer':'Stemmer ikke')+'».';
+    $('jBtns').innerHTML='';
+    const v=$('jVerdict'); v.classList.remove('hidden'); v.className='verdict '+(r.ok?'ok':'bad');
+    v.textContent=r.ok?(r.match?'Riktig! Det er et par. +10 poeng og stikk.':'Riktig! De hører ikke sammen. +5 poeng.')
+                      :(r.match?'Feil – de hørte faktisk sammen. 0 poeng.':'Feil – de hører ikke sammen. 0 poeng.');
+    if(r.who===ME){ clearTimeout(resultTimer); resultTimer=setTimeout(advance,RESULT_MS); }
+  }
+}
+function judge(say){
+  if(G.turn!==ME||G.phase!=='judge') return;
+  const [a,b]=selOf(); const match=G.cards[a].p===G.cards[b].p; const ok=say===match;
+  const pts=ok?(match?10:5):0;
+  const me=G.players[ME];
+  const up={phase:'result',result:{who:ME,say,match,ok},ts:Date.now(),
+    ['players/'+ME+'/score']:(me.score||0)+pts, ['players/'+ME+'/stikk']:(me.stikk||0)+(ok&&match?1:0)};
+  if(ok&&match){ up['taken/'+a]=ME; up['taken/'+b]=ME; }
+  window._update(gref(),up);
+  ok?stats.correct++:stats.wrong++; stats.score+=pts; report();
+}
+function advance(){
+  if(!G||G.turn!==ME||G.phase!=='result') return;
+  const r=G.result||{};
+  const done=G.cards.every((_,i)=>taken()[i]);
+  if(done){ window._update(gref(),{status:'done',phase:'pick',sel:null,result:null,ts:Date.now()}); return; }
+  window._update(gref(),{turn:r.ok&&r.match?ME:nextPlayer(ME),phase:'pick',sel:null,result:null,ts:Date.now()});
+}
+// Hvis den som har turen har forsvunnet, kan de andre hoppe over
+function scheduleStuck(){
+  clearTimeout(stuckTimer);
+  $('skipBtn').classList.add('hidden');
+  if(G.turn===ME||G.status!=='play') return;
+  const wait=Math.max(0,STUCK_MS-(Date.now()-(G.ts||0)));
+  stuckTimer=setTimeout(()=>{ $('skipBtn').textContent='Hopp over '+G.turn+' (svarer ikke)'; $('skipBtn').classList.remove('hidden'); },wait);
+}
+window.skipTurn=function(){
+  if(!G||G.turn===ME) return;
+  window._update(gref(),{turn:nextPlayer(G.turn),phase:'pick',sel:null,result:null,ts:Date.now()});
+};
+function renderEnd(){
+  show('scrEnd'); $('judge').classList.add('hidden');
+  const ranked=orderedPlayers().map(n=>({n,...G.players[n]})).sort((a,b)=>(b.score-a.score)||(b.stikk-a.stikk));
+  const top=ranked.filter(p=>p.score===ranked[0].score&&p.stikk===ranked[0].stikk);
+  $('endTitle').textContent=ranked.length<2?'Ferdig! '+ranked[0].score+' poeng':top.length>1?'Uavgjort!':(top[0].n===ME?'Du vant! 🏆':top[0].n+' vant! 🏆');
+  const medal=['🥇','🥈','🥉'];
+  $('endRank').innerHTML=ranked.map((p,i)=>'<div class="rank">'+(medal[i]||'')+' '+esc(p.n)+(p.n===ME?' (deg)':'')+'<span class="p">'+(p.score||0)+' p · '+(p.stikk||0)+' stikk</span></div>').join('');
+}
+
+// ── RAPPORT TIL LÆREREN ──
+function report(){
+  if(typeof syncToTimecode!=='function') return;
+  syncToTimecode('memory-duell',{score:stats.score,correct:stats.correct,wrong:stats.wrong,sett:G?G.settNavn:'',sessionStart:stats.start});
+}
+</script>
+</body>
+</html>
