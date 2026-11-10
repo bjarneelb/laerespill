@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sant eller usant – lynrunde</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<style>
+:root{
+  --bg:#f0fdf4; --ink:#14231a; --muted:#5f6f66; --line:#cfe8d8; --card:#fff;
+  --acc:#0f766e; --green:#16a34a; --red:#dc2626; --r:16px; --shadow:0 6px 22px rgba(20,60,40,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;}
+button{font-family:inherit;}
+.hidden{display:none !important;}
+
+.top{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#064e3b;color:white;flex-wrap:wrap;}
+.top h1{font-size:1.15rem;font-weight:900;flex:1;white-space:nowrap;}
+.chip{padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.16);font-weight:800;font-size:.82rem;white-space:nowrap;}
+.tlink{padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.35);color:white;text-decoration:none;font-weight:800;font-size:.82rem;}
+
+.wrap{width:100%;max-width:820px;margin:0 auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:16px;}
+.box{background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);}
+.box h2{font-size:1.15rem;font-weight:900;margin-bottom:6px;}
+.lead{color:var(--muted);font-weight:700;line-height:1.5;}
+.rules{color:var(--muted);font-weight:700;font-size:.92rem;line-height:1.6;padding-left:18px;}
+.btn{padding:13px 22px;border-radius:12px;border:none;font-weight:900;font-size:1.05rem;cursor:pointer;background:var(--acc);color:white;}
+.btn:hover{filter:brightness(.92);}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+.btn.ghost{background:#e6f4ec;color:#065f46;}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.err{color:var(--red);font-weight:800;min-height:1.2em;}
+
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+.fchip{padding:5px 12px;border-radius:20px;border:2px solid var(--line);background:white;font-weight:800;font-size:.82rem;cursor:pointer;}
+.fchip.on{background:var(--acc);border-color:var(--acc);color:white;}
+.grp{font-size:.78rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;}
+.sets{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;}
+.set{padding:12px;border-radius:12px;border:2px solid var(--line);background:white;text-align:left;font-weight:900;cursor:pointer;display:flex;justify-content:space-between;gap:8px;}
+.set:hover{border-color:#5eead4;}
+.set.on{border-color:var(--acc);background:#f0fdfa;}
+.set small{color:var(--muted);font-weight:800;}
+.modes{display:flex;gap:8px;}
+.mode{flex:1;padding:10px;border-radius:12px;border:2px solid var(--line);background:white;font-weight:900;cursor:pointer;}
+.mode.on{border-color:var(--acc);background:var(--acc);color:white;}
+.inp{padding:11px 14px;border:2px solid var(--line);border-radius:12px;font-family:inherit;font-weight:900;font-size:1.05rem;outline:none;text-transform:uppercase;letter-spacing:3px;width:170px;}
+.inp:focus{border-color:var(--acc);}
+
+/* SPILL */
+.game{flex:1;width:100%;max-width:820px;margin:0 auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px;}
+.hud{display:flex;gap:10px;align-items:center;justify-content:space-between;font-weight:900;}
+.hud .score{font-size:1.6rem;color:var(--acc);}
+.hud .streak{font-size:1rem;padding:4px 12px;border-radius:20px;background:#fef3c7;color:#92400e;}
+.hud .streak.zero{background:#eef2ef;color:var(--muted);}
+.hud .clock{font-size:1.6rem;min-width:3ch;text-align:right;}
+.hud .clock.low{color:var(--red);}
+.bar{height:10px;border-radius:6px;background:#dcefe3;overflow:hidden;}
+.bar>div{height:100%;background:linear-gradient(90deg,#14b8a6,#16a34a);width:100%;transition:width .2s linear;}
+.bar>div.low{background:linear-gradient(90deg,#f97316,#dc2626);}
+.stmt{background:white;border:3px solid var(--line);border-radius:20px;padding:22px 18px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;box-shadow:var(--shadow);min-height:250px;justify-content:center;transition:border-color .15s,background .15s;}
+.stmt.ok{border-color:var(--green);background:#f0fdf4;}
+.stmt.bad{border-color:var(--red);background:#fef2f2;}
+.stmt .b{font-size:clamp(1.5rem,5vw,2.4rem);font-weight:900;}
+.stmt .mid{font-size:.8rem;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:var(--muted);}
+.stmt .f{font-size:clamp(1.05rem,3vw,1.35rem);font-weight:800;line-height:1.4;max-width:620px;}
+.stmt img{max-width:100%;max-height:26vh;border-radius:12px;}
+.fb{font-weight:900;font-size:1.05rem;text-align:center;line-height:1.45;min-height:1.4em;}
+.fb .fix{display:block;margin-top:6px;font-weight:800;color:var(--ink);}
+.fb .wait{display:block;height:5px;border-radius:3px;background:#fecaca;margin:10px auto 0;max-width:260px;overflow:hidden;}
+.fb .wait>i{display:block;height:100%;background:var(--red);width:100%;animation:drain 4s linear forwards;}
+@keyframes drain{to{width:0}}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ans{padding:20px 10px;border-radius:16px;border:none;font-weight:900;font-size:1.4rem;color:white;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.18);}
+.ans:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.18);}
+.ans.yes{background:var(--green);} .ans.no{background:var(--red);}
+.ans:disabled{opacity:.45;cursor:default;}
+.keys{text-align:center;color:var(--muted);font-weight:700;font-size:.8rem;}
+
+/* SLUTT */
+.big{font-size:3rem;font-weight:900;color:var(--acc);text-align:center;}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:8px;}
+.st{background:#f0fdf4;border-radius:12px;padding:10px;text-align:center;font-weight:800;color:var(--muted);font-size:.8rem;}
+.st b{display:block;font-size:1.4rem;color:var(--ink);}
+.record{text-align:center;font-weight:900;color:#b45309;margin-top:6px;}
+.miss{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.mi{background:#fef2f2;border-radius:12px;padding:10px 14px;font-weight:700;line-height:1.45;}
+.mi b{font-weight:900;}
+.mi .you{font-size:.8rem;color:var(--red);font-weight:800;}
+
+@media (max-width:520px){ .keys{display:none;} .stmt{min-height:210px;padding:16px 12px;} .ans{padding:18px 6px;font-size:1.2rem;} }
+</style>
+</head>
+<body data-su-chrome="off">
+
+<div class="top">
+  <h1>⚡ Sant eller usant</h1>
+  <span class="chip" id="meChip"></span>
+  <span class="chip" id="roomBadge" style="display:none">🏁 Rom <span id="roomBadgeCode"></span></span>
+  <a class="tlink" href="./">← Meny</a>
+</div>
+
+<!-- START -->
+<div class="wrap" id="scrStart">
+  <div class="box">
+    <h2>Lynrunde: 60 sekunder</h2>
+    <ul class="rules">
+      <li>Du ser et begrep og en forklaring. Stemmer forklaringen?</li>
+      <li>Trykk <b>Sant</b> eller <b>Usant</b> så raskt du kan. På PC kan du bruke piltastene ← og →.</li>
+      <li>Riktig svar gir 10 poeng, og flere riktige på rad gir bonus.</li>
+      <li>Svarer du feil, vises riktig forklaring i 4 sekunder. Klokka står stille så lenge.</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h2>Velg begrepssett</h2>
+    <div class="fchips" id="fagChips"></div>
+    <div id="setList"><p class="lead">Henter begrepssett …</p></div>
+  </div>
+  <div class="box">
+    <h2>Hvordan vil du spille?</h2>
+    <div class="modes">
+      <button class="mode on" data-m="practice">🧘 Øving</button>
+      <button class="mode" data-m="multi">🏎️ Bane (romkode)</button>
+    </div>
+    <div class="row hidden" id="roomRow" style="margin-top:12px">
+      <input class="inp" id="roomInput" maxlength="8" placeholder="ROMKODE" autocomplete="off">
+      <span class="lead">Poengene dine driver bilen eller laget ditt på storskjermen.</span>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <div class="err" id="startErr"></div>
+      <button class="btn" id="startBtn" onclick="startRound()" disabled>⚡ Start runden</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPILL -->
+<div class="game hidden" id="scrGame">
+  <div class="hud">
+    <span class="score" id="hudScore">0</span>
+    <span class="streak zero" id="hudStreak">Rekke 0</span>
+    <span class="clock" id="hudClock">60</span>
+  </div>
+  <div class="bar"><div id="bar"></div></div>
+  <div class="stmt" id="stmt"></div>
+  <div class="fb" id="fb"></div>
+  <div class="answers">
+    <button class="ans yes" id="yesBtn" onclick="answer(true)">✓ Sant</button>
+    <button class="ans no" id="noBtn" onclick="answer(false)">✗ Usant</button>
+  </div>
+  <div class="keys">← Sant · Usant →</div>
+</div>
+
+<!-- SLUTT -->
+<div class="wrap hidden" id="scrEnd">
+  <div class="box">
+    <p class="lead" style="text-align:center" id="endSet"></p>
+    <div class="big" id="endScore"></div>
+    <div class="record" id="endRecord"></div>
+    <div class="stats" id="endStats"></div>
+  </div>
+  <div class="box hidden" id="missBox">
+    <h2>Disse bommet du på</h2>
+    <div class="miss" id="missList"></div>
+  </div>
+  <div class="row" style="justify-content:center">
+    <button class="btn" onclick="startRound()">⚡ Ny runde</button>
+    <button class="btn ghost" onclick="toStart()">Bytt sett</button>
+  </div>
+</div>
+
+<script type="module">
+  import { database, ref, get, set, update, onValue, remove } from "/js/firebase-config.js";
+  Object.assign(window,{_db:database,_ref:ref,_get:get,_set:set,_update:update,_onValue:onValue,_remove:remove,_fbReady:true});
+  window.dispatchEvent(new Event('fbready'));
+</script>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const listOf=v=>Array.isArray(v)?v.filter(Boolean):Object.values(v||{}).filter(Boolean);
+const cmp=(a,b)=>String(a).localeCompare(String(b),'nb');
+const ROUND_MS=60000, FEEDBACK_MS=4000, OK_MS=350;
+const params=new URLSearchParams(location.search);
+$('meChip').textContent='🐾 '+window.playerName;
+
+let sets={}, chosenSet=params.get('sett')||null, fagFilter='', mode='practice', roomJoined=null;
+let items=[], cur=null, lastIdx=-1;
+let R=null;               // denne runden
+let tick=null, locked=false;
+// Summer for hele økta (rapport og bane)
+const S={total:0,correct:0,wrong:0,rounds:0,best:0,start:Date.now()};
+
+// ── VELG SETT ──
+function whenReady(cb){ if(window._fbReady) cb(); else window.addEventListener('fbready',cb,{once:true}); }
+whenReady(()=>{
+  window._get(window._ref(window._db,'begrepssett')).then(s=>{ sets=s.val()||{}; renderSets(); })
+    .catch(e=>{ $('setList').innerHTML='<p class="err">Fikk ikke hentet begrepssett: '+esc(e.message)+'</p>'; });
+});
+function renderSets(){
+  const ids=Object.keys(sets).filter(id=>listOf(sets[id].begreper).length>=3);
+  if(!ids.length){ $('setList').innerHTML='<p class="lead">Ingen begrepssett ennå. Læreren lager dem.</p>'; return; }
+  if(chosenSet&&!sets[chosenSet]) chosenSet=null;
+  const fags=[...new Set(ids.map(id=>sets[id].fag||'Uten fag'))].sort(cmp);
+  $('fagChips').innerHTML=fags.length>1?['',...fags].map(f=>'<button class="fchip'+(f===fagFilter?' on':'')+'" data-f="'+esc(f)+'">'+(f?esc(f):'Alle fag')+'</button>').join(''):'';
+  $('fagChips').querySelectorAll('.fchip').forEach(b=>b.onclick=()=>{ fagFilter=b.dataset.f; renderSets(); });
+  const groups={};
+  ids.filter(id=>!fagFilter||(sets[id].fag||'Uten fag')===fagFilter)
+     .forEach(id=>{ const k=(sets[id].fag||'Uten fag')+' · '+(sets[id].tema||'Uten tema'); (groups[k]=groups[k]||[]).push(id); });
+  $('setList').innerHTML=Object.keys(groups).sort(cmp).map(k=>'<div class="grp">'+esc(k)+'</div><div class="sets">'+
+    groups[k].sort((a,b)=>cmp(sets[a].navn,sets[b].navn)).map(id=>'<button class="set'+(id===chosenSet?' on':'')+'" data-id="'+esc(id)+'">'+
+      esc(sets[id].navn)+'<small>'+listOf(sets[id].begreper).length+'</small></button>').join('')+'</div>').join('');
+  $('setList').querySelectorAll('.set').forEach(b=>b.onclick=()=>{ chosenSet=b.dataset.id; renderSets(); });
+  $('startBtn').disabled=!chosenSet;
+}
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{
+  mode=b.dataset.m;
+  document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('on',x===b));
+  $('roomRow').classList.toggle('hidden',mode!=='multi');
+  if(mode==='multi') $('roomInput').focus();
+});
+
+// ── RUNDE ──
+function show(id){ ['scrStart','scrGame','scrEnd'].forEach(s=>$(s).classList.toggle('hidden',s!==id)); }
+window.toStart=function(){ show('scrStart'); renderSets(); };
+window.startRound=function(){
+  if(!chosenSet){ show('scrStart'); return; }
+  if(mode==='multi'){
+    const rc=$('roomInput').value.trim().toUpperCase();
+    if(!rc){ $('startErr').textContent='Skriv inn romkoden fra storskjermen.'; return; }
+    if(roomJoined!==rc){ initRoom(rc); roomJoined=rc; }
+  }
+  $('startErr').textContent='';
+  items=listOf(sets[chosenSet].begreper);
+  R={score:0,correct:0,wrong:0,streak:0,best:0,left:ROUND_MS,last:performance.now(),miss:[]};
+  locked=false; lastIdx=-1;
+  show('scrGame'); hud(); next();
+  clearInterval(tick); tick=setInterval(clock,100);
+};
+function clock(){
+  const now=performance.now();
+  if(!locked) R.left-=now-R.last;
+  R.last=now;
+  if(R.left<=0){ R.left=0; hud(); endRound(); return; }
+  hud();
+}
+function hud(){
+  const sec=Math.ceil(R.left/1000);
+  $('hudClock').textContent=sec; $('hudClock').classList.toggle('low',sec<=10);
+  $('bar').style.width=(R.left/ROUND_MS*100)+'%'; $('bar').classList.toggle('low',sec<=10);
+  $('hudScore').textContent=R.score;
+  $('hudStreak').textContent=R.streak>1?'🔥 Rekke '+R.streak:'Rekke '+R.streak;
+  $('hudStreak').classList.toggle('zero',R.streak<2);
+}
+function sideHtml(text,img,cls){
+  return (img?'<img src="'+esc(img)+'" alt="">':'')+(text?'<div class="'+cls+'">'+esc(text)+'</div>':'');
+}
+function next(){
+  // Nytt begrep (ikke samme som sist), og 50 % sjanse for riktig forklaring
+  let i; do{ i=Math.floor(Math.random()*items.length); }while(items.length>1&&i===lastIdx);
+  lastIdx=i;
+  const truth=Math.random()<0.5;
+  let j=i; if(!truth){ do{ j=Math.floor(Math.random()*items.length); }while(j===i); }
+  cur={i,j,truth};
+  const a=items[i], b=items[j];
+  $('stmt').className='stmt';
+  $('stmt').innerHTML=sideHtml(a.begrep,a.begrepBilde,'b')+'<div class="mid">betyr</div>'+sideHtml(b.forklaring,b.forklaringBilde,'f');
+  $('fb').innerHTML='';
+  $('yesBtn').disabled=$('noBtn').disabled=false;
+}
+window.answer=function(say){
+  if(!R||locked||R.left<=0) return;
+  const ok=say===cur.truth;
+  $('yesBtn').disabled=$('noBtn').disabled=true;
+  if(ok){
+    R.streak++; R.best=Math.max(R.best,R.streak); R.correct++; S.correct++;
+    const pts=10+2*Math.min(R.streak-1,10);
+    R.score+=pts; S.total+=pts;
+    $('stmt').className='stmt ok';
+    $('fb').innerHTML='<span style="color:var(--green)">Riktig! +'+pts+'</span>';
+    if(mode==='multi') syncRoomScore(S.total);
+    hud();
+    setTimeout(()=>{ if(R.left>0) next(); },OK_MS);
+  } else {
+    R.streak=0; R.wrong++; S.wrong++;
+    const a=items[cur.i];
+    R.miss.push({i:cur.i,j:cur.j,truth:cur.truth,say});
+    $('stmt').className='stmt bad';
+    const fix=a.forklaring?esc(a.forklaring):'(se bildet)';
+    $('fb').innerHTML='<span style="color:var(--red)">'+(cur.truth?'Feil – dette stemte faktisk.':'Feil – dette stemte ikke.')+'</span>'+
+      '<span class="fix"><b>'+esc(a.begrep||'Begrepet')+'</b> betyr: '+fix+'</span><span class="wait"><i></i></span>';
+    if(!cur.truth&&a.forklaringBilde) $('fb').insertAdjacentHTML('beforeend','<img src="'+esc(a.forklaringBilde)+'" alt="" style="max-height:18vh;border-radius:10px;margin-top:8px">');
+    locked=true; hud();
+    setTimeout(()=>{ locked=false; R.last=performance.now(); if(R.left>0) next(); },FEEDBACK_MS);
+  }
+  report();
+};
+document.addEventListener('keydown',e=>{
+  if($('scrGame').classList.contains('hidden')) return;
+  if(e.key==='ArrowLeft'){ e.preventDefault(); answer(true); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); answer(false); }
+});
+
+function endRound(){
+  clearInterval(tick); tick=null; locked=true;
+  S.rounds++; S.best=Math.max(S.best,R.score);
+  const key='lynrunde_rekord_'+chosenSet;
+  let rec=0; try{ rec=+localStorage.getItem(key)||0; }catch(e){}
+  const newRec=R.score>rec&&R.score>0;
+  if(newRec){ try{ localStorage.setItem(key,R.score); }catch(e){} }
+  $('endSet').textContent=sets[chosenSet].navn+' · runde '+S.rounds;
+  $('endScore').textContent=R.score+' poeng';
+  $('endRecord').textContent=newRec?'🎉 Ny personlig rekord!':(rec?'Rekorden din: '+rec+' poeng':'');
+  const tot=R.correct+R.wrong;
+  $('endStats').innerHTML=
+    '<div class="st"><b>'+R.correct+'</b>riktige</div>'+
+    '<div class="st"><b>'+R.wrong+'</b>feil</div>'+
+    '<div class="st"><b>'+(tot?Math.round(R.correct/tot*100):0)+' %</b>treff</div>'+
+    '<div class="st"><b>'+R.best+'</b>lengste rekke</div>'+
+    (mode==='multi'?'<div class="st"><b>'+S.total+'</b>totalt på banen</div>':'');
+  // Hvert begrep én gang i gjennomgangen
+  const seen=new Set(), miss=R.miss.filter(m=>!seen.has(m.i)&&seen.add(m.i));
+  $('missBox').classList.toggle('hidden',!miss.length);
+  $('missList').innerHTML=miss.map(m=>{ const a=items[m.i], b=items[m.j];
+    return '<div class="mi"><b>'+esc(a.begrep||'(bilde)')+'</b> betyr: '+esc(a.forklaring||'(bilde)')+
+      (m.truth?'':'<div class="you">Du godtok: «'+esc(b.forklaring||'(bilde)')+'»</div>')+
+      (m.truth?'<div class="you">Du trodde denne var feil.</div>':'')+'</div>'; }).join('');
+  show('scrEnd');
+  report();
+}
+
+// ── RAPPORT TIL LÆREREN ──
+function report(){
+  syncToTimecode('sant-usant',{score:S.total,correct:S.correct,wrong:S.wrong,rounds:S.rounds,bestRound:S.best,
+    sett:chosenSet&&sets[chosenSet]?sets[chosenSet].navn:'',sessionStart:S.start});
+}
+</script>
+</body>
+</html>
