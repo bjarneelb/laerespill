@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Begrepsbingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<style>
+:root{ --bg:#faf5ff; --ink:#24113a; --muted:#6f6382; --line:#e4d6f5; --acc:#7e22ce; --gold:#facc15; --green:#16a34a; --red:#dc2626; --r:16px; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;}
+button{font-family:inherit;}
+.hidden{display:none !important;}
+.top{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#3b0764;color:white;flex-wrap:wrap;}
+.top h1{font-size:1.15rem;font-weight:900;flex:1;white-space:nowrap;}
+.chip{padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.16);font-weight:800;font-size:.82rem;white-space:nowrap;}
+.tlink{padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.35);color:white;text-decoration:none;font-weight:800;font-size:.82rem;}
+.wrap{width:100%;max-width:640px;margin:0 auto;padding:16px 14px 32px;display:flex;flex-direction:column;gap:14px;}
+.box{background:white;border:2px solid var(--line);border-radius:var(--r);padding:18px;}
+.box h2{font-size:1.15rem;font-weight:900;margin-bottom:6px;}
+.lead{color:var(--muted);font-weight:700;line-height:1.5;}
+.rules{color:var(--muted);font-weight:700;font-size:.92rem;line-height:1.6;padding-left:18px;}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.inp{padding:11px 14px;border:2px solid var(--line);border-radius:12px;font-family:inherit;font-weight:900;font-size:1.2rem;outline:none;text-transform:uppercase;letter-spacing:4px;width:150px;text-align:center;}
+.inp:focus{border-color:var(--acc);}
+.btn{padding:12px 20px;border-radius:12px;border:none;font-weight:900;font-size:1rem;cursor:pointer;background:var(--acc);color:white;}
+.btn.ghost{background:#f3e8ff;color:#581c87;}
+.err{color:var(--red);font-weight:800;min-height:1.2em;}
+
+.info{display:flex;justify-content:space-between;gap:10px;font-weight:900;flex-wrap:wrap;}
+.info .lvl{color:var(--acc);}
+.info .n{color:var(--muted);}
+.board{display:grid;gap:6px;}
+.cell{aspect-ratio:1;border-radius:12px;border:3px solid var(--line);background:white;font-weight:900;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;text-align:center;line-height:1.15;word-break:break-word;transition:transform .1s,background .15s;position:relative;overflow:hidden;}
+.cell img{max-width:100%;max-height:60%;border-radius:6px;}
+.cell:active{transform:scale(.96);}
+.cell.on{background:#ede9fe;border-color:var(--acc);}
+.cell.on::after{content:'';position:absolute;inset:14%;border-radius:50%;border:5px solid rgba(126,34,206,.55);}
+.cell.line{background:#dcfce7;border-color:var(--green);}
+.cell.line::after{border-color:rgba(22,163,74,.6);}
+.cell.bad{animation:shake .5s;background:#fee2e2;border-color:var(--red);}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.s3 .cell{font-size:1.05rem;} .s4 .cell{font-size:.85rem;} .s5 .cell{font-size:.7rem;border-radius:9px;border-width:2px;}
+.bingo{padding:18px;border-radius:16px;border:none;background:var(--gold);color:#3b0764;font-weight:900;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 0 #ca8a04;letter-spacing:2px;}
+.bingo:active{transform:translateY(2px);box-shadow:0 2px 0 #ca8a04;}
+.msg{text-align:center;font-weight:900;min-height:1.4em;line-height:1.4;}
+.msg.ok{color:var(--green);} .msg.bad{color:var(--red);}
+.party{position:fixed;inset:0;z-index:50;background:rgba(59,7,100,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center;gap:10px;padding:20px;}
+.party .b{font-size:4rem;font-weight:900;color:var(--gold);}
+.party .s{font-size:1.2rem;font-weight:800;}
+@media (min-width:700px){ .s3 .cell{font-size:1.3rem;} .s4 .cell{font-size:1.05rem;} .s5 .cell{font-size:.85rem;} }
+</style>
+</head>
+<body data-su-chrome="off">
+
+<div class="top">
+  <h1>🎱 Begrepsbingo</h1>
+  <span class="chip" id="meChip"></span>
+  <span class="chip hidden" id="codeChip"></span>
+  <a class="tlink" href="./">← Meny</a>
+</div>
+
+<div class="wrap" id="scrJoin">
+  <div class="box">
+    <h2>Bli med i bingo</h2>
+    <p class="lead">Læreren viser koden på storskjermen.</p>
+    <div class="row" style="margin-top:10px">
+      <input class="inp" id="codeInput" maxlength="4" placeholder="KODE" autocomplete="off">
+      <button class="btn" onclick="join()">Bli med</button>
+    </div>
+    <div class="err" id="joinErr"></div>
+  </div>
+  <div class="box">
+    <ul class="rules">
+      <li>Storskjermen viser én forklaring om gangen.</li>
+      <li>Finn begrepet på brettet ditt og trykk på det. Trykk igjen for å fjerne krysset.</li>
+      <li>Har du en hel rad (vannrett, loddrett eller diagonalt), trykker du <b>BINGO!</b></li>
+      <li>Etter første bingo går læreren videre til to rader, så tre, og så videre.</li>
+      <li>Kryss på begreper som ikke er vist ennå, fjernes når du roper bingo.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="wrap hidden" id="scrPlay">
+  <div class="info"><span class="lvl" id="pLvl"></span><span class="n" id="pNum"></span></div>
+  <div class="board" id="board"></div>
+  <button class="bingo" onclick="callBingo()">BINGO!</button>
+  <div class="msg" id="msg"></div>
+</div>
+
+<div class="wrap hidden" id="scrEnd">
+  <div class="box" style="text-align:center">
+    <h2>Bingoen er ferdig</h2>
+    <p class="lead" id="endInfo"></p>
+    <div class="row" style="justify-content:center;margin-top:12px"><a class="btn ghost" href="./" style="text-decoration:none">Til menyen</a></div>
+  </div>
+</div>
+
+<div class="party hidden" id="party"><div class="b">BINGO!</div><div class="s" id="partyS"></div></div>
+
+<script type="module">
+  import { database, ref, get, set, update, onValue, remove } from "/js/firebase-config.js";
+  Object.assign(window,{_db:database,_ref:ref,_get:get,_set:set,_update:update,_onValue:onValue,_remove:remove,_fbReady:true});
+  window.dispatchEvent(new Event('fbready'));
+</script>
+
+<script>
+const ME=window.playerName;
+const $=id=>document.getElementById(id);
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const numList=v=>(Array.isArray(v)?v:Object.values(v||{})).filter(x=>x!==null&&x!==undefined).map(Number);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+$('meChip').textContent='🐾 '+ME;
+
+let code=null, G=null, B=null, unsub=null;
+const stats={wrong:0,start:Date.now()};
+const nBingo=()=>B&&B.won?Object.keys(B.won).length:0;
+const key=()=>'bingo_brett_'+code;
+function saveB(){ try{ sessionStorage.setItem(key(),JSON.stringify(B)); }catch(e){} }
+
+function whenReady(cb){ if(window._fbReady) cb(); else window.addEventListener('fbready',cb,{once:true}); }
+whenReady(()=>{ const k=(new URLSearchParams(location.search).get('kode')||'').toUpperCase(); if(k){ $('codeInput').value=k; join(); } });
+
+window.join=async function(){
+  const c=$('codeInput').value.trim().toUpperCase();
+  $('joinErr').textContent='';
+  if(c.length!==4){ $('joinErr').textContent='Koden har fire bokstaver.'; return; }
+  try{
+    const g=(await window._get(window._ref(window._db,'bingo/'+c))).val();
+    if(!g){ $('joinErr').textContent='Fant ikke bingoen. Sjekk koden.'; return; }
+    if(g.status==='done'){ $('joinErr').textContent='Denne bingoen er ferdig.'; return; }
+    code=c;
+    try{ B=JSON.parse(sessionStorage.getItem(key())||'null'); }catch(e){ B=null; }
+    const n=(g.items||[]).length, s=g.size;
+    if(!B||!Array.isArray(B.cells)||B.cells.length!==s*s){
+      B={cells:shuffle([...Array(n).keys()]).slice(0,s*s), marks:Array(s*s).fill(false), won:{}};
+      saveB();
+    }
+    window._update(window._ref(window._db,'bingo/'+c+'/players/'+ME),{joined:Date.now()});
+    $('codeChip').textContent='Kode '+c; $('codeChip').classList.remove('hidden');
+    if(unsub) unsub();
+    unsub=window._onValue(window._ref(window._db,'bingo/'+c),snap=>{ G=snap.val(); render(); });
+  }catch(e){ $('joinErr').textContent='Fikk ikke kontakt: '+e.message; }
+};
+function show(id){ ['scrJoin','scrPlay','scrEnd'].forEach(s=>$(s).classList.toggle('hidden',s!==id)); }
+
+function lines(s){
+  const L=[];
+  for(let r=0;r<s;r++) L.push([...Array(s).keys()].map(c=>r*s+c));
+  for(let c=0;c<s;c++) L.push([...Array(s).keys()].map(r=>r*s+c));
+  L.push([...Array(s).keys()].map(i=>i*s+i));
+  L.push([...Array(s).keys()].map(i=>i*s+(s-1-i)));
+  return L;
+}
+let lineCells=new Set(), badCells=new Set();
+function render(){
+  if(!G){ show('scrJoin'); $('joinErr').textContent='Bingoen er avsluttet.'; return; }
+  if(G.status==='done'){
+    show('scrEnd');
+    $('endInfo').textContent=nBingo()?'Du fikk bingo '+nBingo()+' gang'+(nBingo()>1?'er':'')+'. Bra jobba!':'Takk for at du var med!';
+    return;
+  }
+  show('scrPlay');
+  const s=G.size, drawn=numList(G.drawn);
+  $('pLvl').textContent='Bingo nå: '+G.level+' rad'+(G.level>1?'er':'');
+  $('pNum').textContent=drawn.length?'Forklaring nr. '+drawn.length+' vises':'Venter på første forklaring …';
+  const b=$('board'); b.className='board s'+s; b.style.gridTemplateColumns='repeat('+s+',1fr)';
+  b.innerHTML=B.cells.map((idx,k)=>{ const it=G.items[idx]||{};
+    return '<button class="cell'+(B.marks[k]?' on':'')+(lineCells.has(k)?' line':'')+(badCells.has(k)?' bad':'')+'" data-k="'+k+'">'+
+      (it.begrepBilde?'<img src="'+esc(it.begrepBilde)+'" alt="">':'')+(it.begrep?'<span>'+esc(it.begrep)+'</span>':'')+'</button>'; }).join('');
+  b.querySelectorAll('.cell').forEach(el=>el.onclick=()=>{ const k=+el.dataset.k; B.marks[k]=!B.marks[k]; lineCells.delete(k); saveB(); render(); });
+  badCells=new Set();
+}
+window.callBingo=function(){
+  if(!G||G.status!=='play') return;
+  const drawn=new Set(numList(G.drawn)), s=G.size;
+  // Fjern kryss på begreper som ikke er vist
+  const bad=[]; B.marks.forEach((m,k)=>{ if(m&&!drawn.has(B.cells[k])){ B.marks[k]=false; bad.push(k); } });
+  stats.wrong+=bad.length;
+  const full=lines(s).filter(L=>L.every(k=>B.marks[k]));
+  lineCells=new Set(full.flat()); badCells=new Set(bad);
+  saveB();
+  const msg=$('msg');
+  if(full.length>=G.level&&!B.won[G.level]){
+    B.won[G.level]=Date.now(); saveB();
+    window._update(window._ref(window._db,'bingo/'+code+'/winners/'+G.level),{[ME]:Date.now()});
+    msg.className='msg ok'; msg.textContent='BINGO med '+full.length+' rad'+(full.length>1?'er':'')+'! 🎉';
+    $('partyS').textContent=full.length+' rad'+(full.length>1?'er':'')+' – se storskjermen!';
+    $('party').classList.remove('hidden'); setTimeout(()=>$('party').classList.add('hidden'),2500);
+  } else if(B.won[G.level]){
+    msg.className='msg'; msg.textContent='Du har allerede bingo på '+G.level+' rad'+(G.level>1?'er':'')+'. Vent til læreren går videre.';
+  } else {
+    msg.className='msg bad';
+    msg.textContent=(bad.length?bad.length+' kryss var på begreper som ikke er vist ennå, og er fjernet. ':'')+
+      'Ikke bingo ennå: du har '+full.length+' av '+G.level+' rad'+(G.level>1?'er':'')+'.';
+  }
+  render(); report();
+};
+function report(){
+  const drawn=new Set(numList(G&&G.drawn));
+  const correct=B?B.marks.filter((m,k)=>m&&drawn.has(B.cells[k])).length:0;
+  syncToTimecode('begrepsbingo',{score:nBingo()*10+correct,correct,wrong:stats.wrong,bingos:nBingo(),sett:G?G.settNavn:'',sessionStart:stats.start});
+}
+</script>
+</body>
+</html>
