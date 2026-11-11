@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinkelsum-laben</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<script src="geo-motor.js"></script>
+</head>
+<body>
+<script>
+const {rint,pick,shuffle,fmt,svg,text,line,angleMark,pt}=GEO;
+const COL={given:'#c2410c',ask:'#dc2626',other:'#64748b'};
+const deg=r=>r*180/Math.PI;
+const dirTo=(a,b)=>{ let d=deg(Math.atan2(a[1]-b[1],b[0]-a[0])); return (d+360)%360; }; // retning fra a til b (matte-vinkel, y ned)
+
+// Indre vinkler i en mangekant (punkter mot klokka på skjermen = med klokka i matte → vi beregner robust)
+function interior(P){
+  const n=P.length, out=[];
+  for(let i=0;i<n;i++){
+    const A=P[(i-1+n)%n], V=P[i], B=P[(i+1)%n];
+    const a1=dirTo(V,A), a2=dirTo(V,B);
+    let d=((a1-a2)%360+360)%360; // fra retning mot B til retning mot A
+    out.push({v:d,from:a2,to:a1});
+  }
+  // Konveks: alle indre < 180. Hvis summen ikke stemmer, er orienteringen motsatt
+  const sum=out.reduce((s,o)=>s+o.v,0);
+  if(Math.abs(sum-(n-2)*180)>1) return out.map(o=>({v:360-o.v,from:o.to,to:o.from}));
+  return out;
+}
+// Tilfeldig konveks mangekant med punkter på en ellipse
+function convex(n,W,H,minGap){
+  let ang;
+  do{ ang=Array.from({length:n},()=>Math.random()*360).sort((a,b)=>a-b); }
+  while(ang.some((a,i)=>((ang[(i+1)%n]-a+360)%360)<minGap));
+  const cx=W/2, cy=H/2, rx=W/2-60, ry=H/2-40, r0=rint(0,360);
+  return ang.map(a=>[cx+rx*Math.cos(GEO.rad(a+r0)),cy-ry*Math.sin(GEO.rad(a+r0))]);
+}
+// Avrundede vinkler som summerer riktig
+function rounded(I,total){
+  const r=I.map(o=>Math.round(o.v));
+  const diff=total-r.reduce((a,b)=>a+b,0); r[r.length-1]+=diff;
+  return r;
+}
+function polyFig(P,I,labels,extra=''){
+  const W=GEO.W(), H=280;
+  let s=`<path d="M${P.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}Z" fill="#fed7aa" stroke="#c2410c" stroke-width="3" stroke-linejoin="round"/>`;
+  s+=extra;
+  I.forEach((o,i)=>{ const L=labels[i]; if(L) s+=angleMark(P[i][0],P[i][1],o.from,o.to,L.t,{col:L.c,fill:L.c,r:P.length>6?20:26,lr:P.length>6?40:46,size:P.length>7?13:15}); });
+  return svg(W,H,s);
+}
+const ticks=(a,b,k=1)=>{ // like lange sider
+  const mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2, dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy), nx=-dy/L*7, ny=dx/L*7, tx=dx/L*4, ty=dy/L*4;
+  let s=''; for(let i=0;i<k;i++){ const o=(i-(k-1)/2); s+=`<line x1="${mx+o*tx-nx}" y1="${my+o*ty-ny}" x2="${mx+o*tx+nx}" y2="${my+o*ty+ny}" stroke="#334155" stroke-width="2.5"/>`; }
+  return s;
+};
+function triFromAngles(A,B,W,H){ // trekant med vinkler A (venstre) og B (høyre) på grunnlinje
+  const base=Math.min(W-120,360), x0=(W-base)/2, y0=H-40;
+  const ta=Math.tan(GEO.rad(A)), tb=Math.tan(GEO.rad(B));
+  const x=base*tb/(ta+tb), h=x*ta;
+  let P=[[x0,y0],[x0+base,y0],[x0+x,y0-h]];
+  const top=Math.min(...P.map(p=>p[1])); if(top<20){ const k=(y0-20)/(y0-top); P=P.map(p=>[W/2+(p[0]-W/2)*k,y0-(y0-p[1])*k]); }
+  return P;
+}
+
+// ── NIVÅ 1: trekant ──
+function L1(){
+  const W=GEO.W(), H=280, P=convex(3,W,H,70), I=interior(P), V=rounded(I,180);
+  if(V.some(v=>v<20)) return L1();
+  const ai=rint(0,2), lab=V.map((v,i)=>i===ai?{t:'?',c:COL.ask}:{t:v+'°',c:COL.given});
+  const o=V.filter((_,i)=>i!==ai);
+  if(V[ai]===o[0]+o[1]) return L1();
+  return {key:'tre',type:'Vinkelsum i trekant',q:'Hvor stor er vinkelen med spørsmålstegn?',
+    draw:el=>{ el.innerHTML=polyFig(P,I,lab); },
+    ask:[{kind:'num',lab:'? =',unit:'°',val:V[ai]}],
+    hint:'Vinklene i en trekant er alltid 180° til sammen.',
+    sol:[`Vinkelsummen i en trekant er 180°.`,`? = 180° − ${o[0]}° − ${o[1]}° = <b>${V[ai]}°</b>`],
+    mistakes:([x])=>x===360-o[0]-o[1]?'Det er en trekant: vinkelsummen er 180°, ikke 360°.':x===o[0]+o[1]?'Du har lagt sammen vinklene. Trekk dem fra 180° i stedet.':null};
+}
+// ── NIVÅ 2: spesielle trekanter ──
+function L2(){
+  const W=GEO.W(), H=280, kind=pick(['likebeint-topp','likebeint-basis','likesidet','rett']);
+  if(kind==='likesidet'){
+    const P=triFromAngles(60,60,W,H), I=interior(P);
+    return {key:kind,type:'Likesidet trekant',q:'Trekanten er likesidet: alle sidene er like lange. Hvor stor er hver vinkel?',
+      draw:el=>{ el.innerHTML=polyFig(P,I,[{t:'?',c:COL.ask},{t:'?',c:COL.ask},{t:'?',c:COL.ask}],ticks(P[0],P[1])+ticks(P[1],P[2])+ticks(P[2],P[0])); },
+      ask:[{kind:'num',lab:'Hver vinkel =',unit:'°',val:60}],
+      hint:'Når alle sidene er like lange, er alle vinklene like store. Del 180° på 3.',
+      sol:['Alle vinklene er like store.','180° : 3 = <b>60°</b>']};
+  }
+  if(kind==='rett'){
+    const a=rint(20,70), P=triFromAngles(90,a,W,H), I=interior(P), b=90-a;
+    const askA=Math.random()<0.5;
+    return {key:kind,type:'Rettvinklet trekant',q:'Trekanten er rettvinklet. Hvor stor er vinkelen med spørsmålstegn?',
+      draw:el=>{ el.innerHTML=polyFig(P,I,[{t:'',c:COL.given},askA?{t:'?',c:COL.ask}:{t:a+'°',c:COL.given},askA?{t:b+'°',c:COL.given}:{t:'?',c:COL.ask}]); },
+      ask:[{kind:'num',lab:'? =',unit:'°',val:askA?a:b}],
+      hint:'Den rette vinkelen er 90°. De to andre vinklene er til sammen 180° − 90° = 90°.',
+      sol:[`180° − 90° − ${askA?b:a}° = <b>${askA?a:b}°</b>`],
+      mistakes:([x])=>x===180-(askA?b:a)?'Husk den rette vinkelen (90°), markert med en firkant.':null};
+  }
+  // Likebeint: to like sider og to like basisvinkler
+  let top=rint(6,30)*4, basis=(180-top)/2; if(basis<25){ top=100; basis=40; }
+  const P=triFromAngles(basis,basis,W,H), I=interior(P);
+  const askTop=kind==='likebeint-basis';
+  return {key:kind,type:'Likebeint trekant',q:`Trekanten er likebeint: de to sidene med strek er like lange. ${askTop?'Hvor stor er toppvinkelen?':'Hvor stor er hver av basisvinklene?'}`,
+    draw:el=>{ el.innerHTML=polyFig(P,I,askTop?[{t:basis+'°',c:COL.given},{t:'',c:COL.other},{t:'?',c:COL.ask}]:[{t:'?',c:COL.ask},{t:'?',c:COL.ask},{t:top+'°',c:COL.given}],ticks(P[0],P[2])+ticks(P[1],P[2])); },
+    ask:[{kind:'num',lab:askTop?'Toppvinkel =':'Hver basisvinkel =',unit:'°',val:askTop?top:basis}],
+    hint:'I en likebeint trekant er de to basisvinklene (nede ved grunnlinjen) like store.',
+    sol:askTop?[`Begge basisvinklene er ${basis}°.`,`Toppvinkel = 180° − ${basis}° − ${basis}° = <b>${top}°</b>`]:[`De to basisvinklene er like store og er til sammen 180° − ${top}° = ${180-top}°.`,`Hver: ${180-top}° : 2 = <b>${basis}°</b>`],
+    mistakes:([x])=>!askTop&&x===180-top?'Det er to like basisvinkler. Del på 2.':askTop&&x===180-basis?'Det er to basisvinkler som begge er '+basis+'°.':null};
+}
+// ── NIVÅ 3: firkant ──
+function L3(){
+  const W=GEO.W(), H=280, P=convex(4,W,H,45), I=interior(P), V=rounded(I,360);
+  if(V.some(v=>v<35||v>160)) return L3();
+  const ai=rint(0,3), lab=V.map((v,i)=>i===ai?{t:'?',c:COL.ask}:{t:v+'°',c:COL.given}), o=V.filter((_,i)=>i!==ai);
+  const so=o.reduce((a,b)=>a+b,0); if(V[ai]===180-so||V[ai]===so-180) return L3();
+  return {key:'fire',type:'Vinkelsum i firkant',q:'Hvor stor er vinkelen med spørsmålstegn i firkanten?',
+    draw:el=>{ el.innerHTML=polyFig(P,I,lab); },
+    ask:[{kind:'num',lab:'? =',unit:'°',val:V[ai]}],
+    hint:'Vinkelsummen i en firkant er 360°. En firkant kan deles i to trekanter: 2 · 180° = 360°.',
+    sol:[`Vinkelsummen i en firkant er 360°.`,`? = 360° − ${o.join('° − ')}° = <b>${V[ai]}°</b>`],
+    mistakes:([x])=>x===180-o.reduce((a,b)=>a+b,0)||x===o.reduce((a,b)=>a+b,0)-180?'En firkant har vinkelsum 360°, ikke 180°.':null,
+    after:el=>{ el.innerHTML=polyFig(P,I,lab,GEO.line(P[0],P[2],{col:'#2563eb',w:2,dash:'6 4'})); }};
+}
+// ── NIVÅ 4: vinkelsum i mangekanter ──
+const NAMES={3:'trekant',4:'firkant',5:'femkant',6:'sekskant',7:'sjukant',8:'åttekant',9:'nikant',10:'tikant',12:'tolvkant'};
+function L4(){
+  const n=rint(5,10), W=GEO.W(), H=280, P=convex(n,W,H,360/n*0.55), I=interior(P);
+  const diag=()=>{ let s=''; for(let k=2;k<n-1;k++) s+=GEO.line(P[0],P[k],{col:'#2563eb',w:2,dash:'6 4'}); return s; };
+  return {key:'sum'+n,type:'Vinkelsum i mangekant',q:`Figuren er en ${NAMES[n]} med ${n} hjørner.<br>a) Hvor mange trekanter kan du dele den i med linjer fra ett hjørne?<br>b) Hva er vinkelsummen?`,
+    draw:el=>{ el.innerHTML=polyFig(P,I,[]); },
+    ask:[{kind:'num',lab:'a) Trekanter =',unit:'',val:n-2},{kind:'num',lab:'b) Vinkelsum =',unit:'°',val:(n-2)*180}],
+    hint:'Tegn linjer fra ett hjørne til alle de andre. Antall trekanter blir antall hjørner minus 2. Hver trekant har vinkelsum 180°.',
+    sol:[`a) ${n} − 2 = <b>${n-2} trekanter</b>`,`b) ${n-2} · 180° = <b>${(n-2)*180}°</b>`],
+    mistakes:([t,s])=>t===n?'Fra ett hjørne kan du ikke tegne linje til seg selv eller til de to nabohjørnene. Det blir n − 2 trekanter.':s===n*180?'Det blir n − 2 trekanter, ikke n.':null,
+    after:el=>{ el.innerHTML=polyFig(P,I,[],diag()); }};
+}
+// ── NIVÅ 5: regulære mangekanter og vinkel som mangler ──
+function regPts(n,W,H){ const cx=W/2, cy=H/2+(n===3?20:0), r=Math.min(W/2-40,H/2-30)*(n===3?1.15:1); return Array.from({length:n},(_,i)=>pt(cx,cy,r,90+360*i/n)); }
+function L5(){
+  const W=GEO.W(), H=280;
+  if(Math.random()<0.55){
+    const n=pick([5,6,8,9,10,12,15,18,20]), v=(n-2)*180/n, P=regPts(n,W,H), I=interior(P);
+    return {key:'reg'+n,type:'Regulær mangekant',q:`En regulær ${NAMES[n]||n+'-kant'} har ${n} like lange sider og ${n} like store vinkler. Hvor stor er hver vinkel?`,
+      draw:el=>{ el.innerHTML=polyFig(P,I,[{t:'?',c:COL.ask}]); },
+      ask:[{kind:'num',lab:'Hver vinkel =',unit:'°',val:v}],
+      hint:`Finn vinkelsummen først: (n − 2) · 180°. Del så på antall vinkler.`,
+      sol:[`Vinkelsum: (${n} − 2) · 180° = ${(n-2)*180}°`,`Hver vinkel: ${(n-2)*180}° : ${n} = <b>${fmt(v)}°</b>`],
+      mistakes:([x])=>Math.abs(x-(n-2)*180)<0.01?'Det der er vinkelsummen. Del på antall vinkler.':Math.abs(x-360/n)<0.01?'Det der er vinkelen i sentrum (eller den ytre vinkelen). Hjørnevinkelen er (n − 2) · 180° : n.':null};
+  }
+  const n=pick([5,6]), P=convex(n,W,H,360/n*0.6), I=interior(P), V=rounded(I,(n-2)*180);
+  if(V.some(v=>v<60||v>175)) return L5();
+  const ai=rint(0,n-1), lab=V.map((v,i)=>i===ai?{t:'?',c:COL.ask}:{t:v+'°',c:COL.given}), o=V.filter((_,i)=>i!==ai);
+  return {key:'mangler'+n,type:'Vinkelen som mangler',q:`Hvor stor er vinkelen med spørsmålstegn i ${NAMES[n]}en?`,
+    draw:el=>{ el.innerHTML=polyFig(P,I,lab); },
+    ask:[{kind:'num',lab:'? =',unit:'°',val:V[ai]}],
+    hint:`Vinkelsummen i en ${NAMES[n]} er (${n} − 2) · 180° = ${(n-2)*180}°. Trekk fra de andre vinklene.`,
+    sol:[`Vinkelsum: (${n} − 2) · 180° = ${(n-2)*180}°`,`? = ${(n-2)*180}° − ${o.join('° − ')}° = <b>${V[ai]}°</b>`],
+    mistakes:([x])=>x===360-o.reduce((a,b)=>a+b,0)?'Vinkelsummen i en '+NAMES[n]+' er større enn 360°.':null};
+}
+// ── NIVÅ 6: baklengs og ytre vinkler ──
+function L6(){
+  const W=GEO.W(), H=280, kind=pick(['baklengs','ytre','ytre-n']);
+  const n=pick([5,6,8,9,10,12,15,18,20,24,30,36]), inner=(n-2)*180/n, outer=360/n;
+  if(kind==='baklengs') return {key:kind,type:'Baklengs',q:`Hver vinkel i en regulær mangekant er ${fmt(inner)}°. Hvor mange sider har mangekanten?`,
+    ask:[{kind:'num',lab:'Antall sider =',unit:'',val:n}],
+    hint:'Den ytre vinkelen er 180° minus den indre. De ytre vinklene er til sammen 360°, så antall sider = 360° : ytre vinkel.',
+    sol:[`Ytre vinkel: 180° − ${fmt(inner)}° = ${fmt(outer)}°`,`Antall sider: 360° : ${fmt(outer)}° = <b>${n}</b>`]};
+  // Tegn regulær mangekant med en forlenget side og ytre vinkel
+  const m=Math.min(n,8), P=regPts(m,W,H), I=interior(P);
+  const draw=label=>el=>{ const a=P[0], b=P[1], d=dirTo(a,b), ext=[a[0]-(b[0]-a[0])*0.7,a[1]-(b[1]-a[1])*0.7];
+    const dPrev=dirTo(a,P[m-1]);
+    const e1=(d+180)%360, diff=((dPrev-e1)%360+360)%360;
+    const [f,t]=Math.abs(diff-360/m)<1?[e1,dPrev]:[dPrev,e1];
+    const extra=GEO.line(a,ext,{col:'#334155',w:2.5,dash:'6 4'})+angleMark(a[0],a[1],f,t,label,{col:COL.ask,fill:COL.ask,r:30,noSquare:true});
+    el.innerHTML=polyFig(P,I,[],extra); };
+  if(kind==='ytre') return {key:kind,type:'Ytre vinkel',q:`En regulær mangekant har ${n} sider. Hvor stor er hver ytre vinkel? (Figuren viser en ytre vinkel, men har ikke riktig antall sider.)`,
+    draw:draw('?'),
+    ask:[{kind:'num',lab:'Ytre vinkel =',unit:'°',val:outer}],
+    hint:'De ytre vinklene i en mangekant er alltid 360° til sammen, uansett hvor mange sider den har.',
+    sol:[`360° : ${n} = <b>${fmt(outer)}°</b>`]};
+  return {key:kind,type:'Ytre vinkel',q:`Hver ytre vinkel i en regulær mangekant er ${fmt(outer)}°.<br>a) Hvor mange sider har mangekanten?<br>b) Hvor stor er hver indre vinkel?`,
+    draw:draw(fmt(outer)+'°'),
+    ask:[{kind:'num',lab:'a) Antall sider =',unit:'',val:n},{kind:'num',lab:'b) Indre vinkel =',unit:'°',val:inner}],
+    hint:'De ytre vinklene er til sammen 360°. Indre og ytre vinkel i samme hjørne er nabovinkler: til sammen 180°.',
+    sol:[`a) 360° : ${fmt(outer)}° = <b>${n} sider</b>`,`b) 180° − ${fmt(outer)}° = <b>${fmt(inner)}°</b>`]};
+}
+const MAKE={1:L1,2:L2,3:L3,4:L4,5:L5,6:L6};
+
+// ── UTFORSK ──
+function explore(el){
+  const W=GEO.W(), H=320;
+  let mode='tre', P=[[W*0.18,H-60],[W*0.82,H-70],[W*0.45,70]], n=6, anim=null;
+  el.innerHTML=`<div class="ex-row"><button class="chip on" data-m="tre">🔺 Trekant</button><button class="chip" data-m="mange">⬡ Mangekant</button></div>
+    <div id="exFig"></div><div class="ex-info" id="exInfo"></div><div class="ex-row" id="exCtl"></div><div class="ex-tip" id="exTip"></div>`;
+  const $=id=>document.getElementById(id);
+  el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ mode=b.dataset.m; el.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b)); draw(); });
+  const COLS=['#f97316','#2563eb','#16a34a'];
+  function wedgesAt(I,i,r){ return GEO.wedge(P[i][0],P[i][1],r,I[i].from,I[i].to); }
+  function draw(){
+    if(anim){ cancelAnimationFrame(anim); anim=null; }
+    if(mode==='tre'){
+      const I=interior(P), V=I.map(o=>Math.round(o.v)); V[2]=180-V[0]-V[1];
+      let s=`<path d="M${P.map(p=>p.join(',')).join('L')}Z" fill="#fff7ed" stroke="#c2410c" stroke-width="3"/>`;
+      I.forEach((o,i)=>{ s+=`<path class="wd" data-i="${i}" d="${wedgesAt(I,i,34)}" fill="${COLS[i]}" opacity="0.75"/>`; const [lx,ly]=pt(P[i][0],P[i][1],56,o.from+o.v/2); s+=text(lx,ly,V[i]+'°',{col:COLS[i]}); });
+      P.forEach((p,i)=>{ s+=`<circle class="hd" data-i="${i}" cx="${p[0]}" cy="${p[1]}" r="12" fill="#2563eb" stroke="white" stroke-width="3" style="cursor:grab"/>`; });
+      s+=`<line x1="${W/2-120}" y1="${H-18}" x2="${W/2+120}" y2="${H-18}" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4"/>`;
+      $('exFig').innerHTML=svg(W,H,s);
+      $('exInfo').innerHTML=`<span style="color:${COLS[0]}">${V[0]}°</span> + <span style="color:${COLS[1]}">${V[1]}°</span> + <span style="color:${COLS[2]}">${V[2]}°</span> = <b>180°</b>`;
+      $('exCtl').innerHTML='<button class="chip" id="riv">✂️ Riv av hjørnene</button>';
+      $('exTip').textContent='Dra i hjørnene. Summen blir alltid 180°. Trykk «Riv av hjørnene» for å se hvorfor.';
+      const sv=$('exFig').querySelector('svg');
+      sv.querySelectorAll('.hd').forEach(h=>GEO.drag(sv,h,(x,y)=>{ const i=+h.dataset.i; const Q=P.slice(); Q[i]=[Math.max(20,Math.min(W-20,x)),Math.max(20,Math.min(H-40,y))];
+        const I2=interior(Q); if(I2.every(o=>o.v>8&&o.v<172)){ P=Q; draw(); } }));
+      $('riv').onclick=()=>tear(I);
+    } else {
+      const Q=regPts(n,W,H-20), I=interior(Q);
+      let s=`<path d="M${Q.map(p=>p.join(',')).join('L')}Z" fill="#fed7aa" stroke="#c2410c" stroke-width="3"/>`;
+      for(let k=2;k<n-1;k++) s+=GEO.line(Q[0],Q[k],{col:'#2563eb',w:2,dash:'6 4'});
+      $('exFig').innerHTML=svg(W,H,s);
+      $('exInfo').innerHTML=`${n} hjørner → ${n-2} trekanter fra ett hjørne<br>Vinkelsum: ${n-2} · 180° = <b>${(n-2)*180}°</b>`;
+      $('exCtl').innerHTML=`<span>Hjørner:</span><input type="range" min="3" max="12" value="${n}" id="nr" style="width:200px"><b>${n}</b>`;
+      $('exTip').textContent='Fra ett hjørne kan du tegne linjer til alle hjørner unntatt seg selv og de to naboene.';
+      $('nr').oninput=e=>{ n=+e.target.value; draw(); };
+    }
+  }
+  // «Riv av» de tre vinklene og legg dem inntil hverandre på en rett linje
+  function tear(I){
+    const sv=$('exFig').querySelector('svg'), base=[W/2,H-18];
+    const starts=[]; let acc=0; I.forEach(o=>{ starts.push(acc); acc+=o.v; });
+    const t0=performance.now(), T=1400;
+    const step=now=>{
+      const k=Math.min(1,(now-t0)/T), e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      sv.querySelectorAll('.wd').forEach(w=>{ const i=+w.dataset.i, o=I[i];
+        const tx=(base[0]-P[i][0])*e, ty=(base[1]-P[i][1])*e, rot=-(starts[i]-o.from)*e;
+        w.setAttribute('transform',`translate(${tx},${ty}) rotate(${rot},${P[i][0]},${P[i][1]})`); });
+      if(k<1) anim=requestAnimationFrame(step);
+      else $('exInfo').innerHTML+='<br>De tre vinklene danner til sammen en rett linje: 180°.';
+    };
+    anim=requestAnimationFrame(step);
+  }
+  draw();
+}
+
+GEO.init({
+  id:'vinkelsum', title:'Vinkelsum-laben', icon:'🔺', version:'1.0', color:'#be123c',
+  subtitle:'Vinkler i trekanter og mangekanter',
+  intro:'Vinkelsummen i trekanter, firkanter og mangekanter. Likebeinte og likesidede trekanter, regulære mangekanter og ytre vinkler.',
+  levels:{
+    1:{name:'Nivå 1',desc:'Trekant: finn den tredje vinkelen'},
+    2:{name:'Nivå 2',desc:'Likebeinte, likesidede og rettvinklede trekanter'},
+    3:{name:'Nivå 3',desc:'Firkanter: vinkelsummen er 360°'},
+    4:{name:'Nivå 4',desc:'Mangekanter: del i trekanter og finn vinkelsummen'},
+    5:{name:'Nivå 5',desc:'Regulære mangekanter og vinkelen som mangler'},
+    6:{name:'Nivå 6',desc:'Baklengs: finn antall sider. Ytre vinkler'},
+  },
+  make:l=>MAKE[l](),
+  explore:{title:'Utforsk vinkelsummen',render:explore},
+});
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>

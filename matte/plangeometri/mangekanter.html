@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mangekant-verkstedet</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<script src="geo-motor.js"></script>
+</head>
+<body>
+<script>
+const {rint,pick,shuffle,fmt,svg,text,line,angleMark,pt}=GEO;
+const NAMES={3:'trekant',4:'firkant',5:'femkant',6:'sekskant',7:'sjukant',8:'åttekant',9:'nikant',10:'tikant',12:'tolvkant'};
+const NAMEOPTS=n=>shuffle(['Likesidet trekant','Kvadrat','Regulær femkant','Regulær sekskant','Regulær åttekant','Regulær tikant'].filter(o=>o!==REG[n]).slice(0,3).concat(REG[n]));
+const REG={3:'Likesidet trekant',4:'Kvadrat',5:'Regulær femkant',6:'Regulær sekskant',8:'Regulær åttekant',10:'Regulær tikant'};
+const inner=n=>(n-2)*180/n;
+
+function verts(n,cx,cy,r,rot=90){ return Array.from({length:n},(_,i)=>pt(cx,cy,r,rot+360*i/n)); }
+function polyPath(P,fill='#ddd6fe',stroke='#6d28d9',w=3){ return `<path d="M${P.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}Z" fill="${fill}" stroke="${stroke}" stroke-width="${w}" stroke-linejoin="round"/>`; }
+function regFig(n,opts={}){
+  const W=GEO.W(), H=280, cx=W/2, cy=H/2+(n===3?18:0), r=Math.min(W/2-40,H/2-24)*(n===3?1.12:1);
+  const P=verts(n,cx,cy,r,n===4?45:90);
+  let s=polyPath(P);
+  if(opts.sym){ // symmetrilinjer
+    for(let i=0;i<n;i++){ if(n%2===0&&i>=n/2) break; const a=(n===4?45:90)+180*i/n; s+=line(pt(cx,cy,r+18,a),pt(cx,cy,r+18,a+180),{col:'#16a34a',w:2,dash:'7 5'}); }
+  }
+  if(opts.center){ P.forEach(p=>{ s+=line([cx,cy],p,{col:'#2563eb',w:2}); }); s+=`<circle cx="${cx}" cy="${cy}" r="4" fill="#2563eb"/>`;
+    if(opts.cLabel!=null) s+=angleMark(cx,cy,(n===4?45:90),(n===4?45:90)+360/n,opts.cLabel,{col:'#dc2626',fill:'#dc2626',r:22,lr:40,noSquare:true}); }
+  if(opts.corner!=null){ const A=P[0], a1=GEO.rad?0:0; const d1=Math.atan2(A[1]-P[1][1],P[1][0]-A[0])*180/Math.PI, d2=Math.atan2(A[1]-P[n-1][1],P[n-1][0]-A[0])*180/Math.PI;
+    const f=(d1+360)%360, t=(d2+360)%360; s+=angleMark(A[0],A[1],Math.min(f,t),Math.max(f,t),opts.corner,{col:'#c2410c',fill:'#c2410c',r:24,lr:44,noSquare:true}); }
+  if(opts.circle) s=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4"/>`+s;
+  return svg(W,H,s);
+}
+// Fliser rundt et hjørne. list = antall sider for hver flis
+function tileFig(list,s0=70){
+  const s=Math.min(s0,...list.map(n=>125*Math.sin(Math.PI/n)));
+  const W=GEO.W(), H=300, C=[W/2,H/2];
+  let out='', acc=0;
+  const cols={3:'#fde68a',4:'#bfdbfe',5:'#fecaca',6:'#bbf7d0',8:'#ddd6fe',10:'#fbcfe8',12:'#fed7aa'};
+  list.forEach(n=>{
+    const P=[C]; let h=acc, p=C;
+    for(let k=1;k<n;k++){ p=[p[0]+s*Math.cos(GEO.rad(h)),p[1]-s*Math.sin(GEO.rad(h))]; P.push(p); h+=360/n; }
+    out+=polyPath(P,cols[n]||'#e5e7eb','#334155',2);
+    out+=angleMark(C[0],C[1],acc,acc+inner(n),fmt(Math.round(inner(n)*100)/100)+'°',{col:'#334155',r:20,lr:36,size:12,noSquare:true});
+    acc+=inner(n);
+  });
+  if(acc<359.9) out+=`<path d="${GEO.wedge(C[0],C[1],s*0.9,acc,360)}" fill="#ef4444" opacity="0.25"/>`+text(...pt(C[0],C[1],s*0.6,(acc+360)/2),'hull',{col:'#b91c1c',size:13});
+  out+=`<circle cx="${C[0]}" cy="${C[1]}" r="4" fill="#0f172a"/>`;
+  return svg(W,H,out);
+}
+
+// ── NIVÅER ──
+function L1(){
+  const n=pick([3,4,5,6,8,10]);
+  return {key:'navn'+n,type:'Regulære mangekanter',q:'Alle sidene er like lange, og alle vinklene er like store.<br>a) Hva heter figuren?<br>b) Hvor mange symmetrilinjer har den?',
+    draw:el=>{ el.innerHTML=regFig(n); },
+    ask:[{kind:'choice',lab:'a)',options:NAMEOPTS(n),val:REG[n]},{kind:'num',lab:'b) Symmetrilinjer =',unit:'',val:n}],
+    hint:'Tell hjørnene. En symmetrilinje deler figuren i to speilbilder. En regulær mangekant har like mange symmetrilinjer som sider.',
+    sol:[`a) Figuren har ${n} like sider: <b>${REG[n].toLowerCase()}</b>.`,`b) En regulær mangekant med ${n} sider har <b>${n} symmetrilinjer</b> (se de grønne linjene).`],
+    mistakes:([,x])=>x===n/2&&n%2===0?'Husk linjene som går gjennom midten av sidene også, ikke bare gjennom hjørnene.':null,
+    after:el=>{ el.innerHTML=regFig(n,{sym:true}); }};
+}
+function L2(){
+  const n=pick([3,4,5,6,8,9,10,12]);
+  return {key:'vink'+n,type:'Vinkler i regulære mangekanter',q:`En regulær ${NAMES[n]} har ${n} like store vinkler.<br>a) Hva er vinkelsummen?<br>b) Hvor stor er hver vinkel?`,
+    draw:el=>{ el.innerHTML=regFig(n,{corner:'?'}); },
+    ask:[{kind:'num',lab:'a) Vinkelsum =',unit:'°',val:(n-2)*180},{kind:'num',lab:'b) Hver vinkel =',unit:'°',val:inner(n)}],
+    hint:'Vinkelsummen er (n − 2) · 180°, fordi mangekanten kan deles i n − 2 trekanter. Del på antall vinkler.',
+    sol:[`a) (${n} − 2) · 180° = <b>${(n-2)*180}°</b>`,`b) ${(n-2)*180}° : ${n} = <b>${fmt(inner(n))}°</b>`],
+    mistakes:([a])=>a===n*180?'Det blir n − 2 trekanter, ikke n.':null};
+}
+function L3(){
+  const n=pick([3,4,5,6,8,9,10,12]), c=360/n, kind=pick(['sentrum','rotasjon']);
+  if(kind==='rotasjon') return {key:'rot'+n,type:'Rotasjonssymmetri',q:`En regulær ${NAMES[n]} roteres rundt sentrum. Hvor mange grader må den minst roteres for å se helt lik ut igjen?`,
+    draw:el=>{ el.innerHTML=regFig(n,{center:true}); },
+    ask:[{kind:'num',lab:'Rotasjon =',unit:'°',val:c}],
+    hint:'Når figuren roteres ett hjørne videre, ser den lik ut. En hel runde er 360°, og den har like mange hjørner som sider.',
+    sol:[`360° : ${n} = <b>${fmt(c)}°</b>. Det er det samme som sentrumsvinkelen.`]};
+  return {key:'sent'+n,type:'Sentrumsvinkel',q:`Linjene fra sentrum deler den regulære ${NAMES[n]}en i ${n} like trekanter.<br>a) Hvor stor er vinkelen i sentrum av én trekant?<br>b) Trekantene er likebeinte. Hvor stor er hver av de to andre vinklene?`,
+    draw:el=>{ el.innerHTML=regFig(n,{center:true,cLabel:'?'}); },
+    ask:[{kind:'num',lab:'a) Sentrumsvinkel =',unit:'°',val:c},{kind:'num',lab:'b) Hver basisvinkel =',unit:'°',val:(180-c)/2}],
+    hint:'Vinklene rundt sentrum er 360° til sammen, fordelt på '+n+' like trekanter. Hver trekant har vinkelsum 180°, og de to basisvinklene er like.',
+    sol:[`a) 360° : ${n} = <b>${fmt(c)}°</b>`,`b) (180° − ${fmt(c)}°) : 2 = <b>${fmt((180-c)/2)}°</b>`,`To basisvinkler ved siden av hverandre blir hjørnevinkelen: 2 · ${fmt((180-c)/2)}° = ${fmt(inner(n))}°.`]};
+}
+const COMBOS=[
+  {l:[8,8,4],t:'to regulære åttekanter og ett kvadrat'},{l:[6,4,4,3],t:'en sekskant, to kvadrater og en likesidet trekant'},
+  {l:[12,12,3],t:'to regulære tolvkanter og en likesidet trekant'},{l:[6,6,3,3],t:'to sekskanter og to likesidede trekanter'},
+  {l:[5,5,4],t:'to regulære femkanter og ett kvadrat'},{l:[8,8,5],t:'to regulære åttekanter og en regulær femkant'},
+  {l:[6,6,4],t:'to regulære sekskanter og ett kvadrat'},{l:[4,4,3,3,3],t:'to kvadrater og tre likesidede trekanter'},
+  {l:[10,10,5],t:'to regulære tikanter og en regulær femkant'},{l:[5,5,5],t:'tre regulære femkanter'}];
+function L4(){
+  if(Math.random()<0.55){
+    const n=pick([3,4,5,6,8,10,12]), a=inner(n), q=360/a, ok=Math.abs(q-Math.round(q))<1e-9;
+    const k=Math.max(1,Math.floor(q+1e-9));
+    return {key:'flis'+n,type:'Fliselegging',q:`Du vil legge et gulv med bare like, regulære ${NAMES[n]}er, uten hull og uten overlapp. Hjørnene skal møtes i ett punkt.<br>a) Hver vinkel er ${fmt(Math.round(a*100)/100)}°. Regn ut 360° : ${fmt(Math.round(a*100)/100)}°. (Svar med to desimaler hvis det ikke går opp.)<br>b) Går det an?`,
+      draw:el=>{ el.innerHTML=regFig(n,{corner:fmt(Math.round(a*100)/100)+'°'}); },
+      ask:[{kind:'num',lab:'a) 360° : vinkel =',unit:'',val:Math.round(q*100)/100,tol:0.011},{kind:'choice',lab:'b)',options:['Ja, det går','Nei, det blir hull eller overlapp'],val:ok?'Ja, det går':'Nei, det blir hull eller overlapp'}],
+      hint:'Vinklene som møtes i ett punkt, må bli nøyaktig 360° til sammen. Da må 360° : vinkelen gå opp i et helt tall.',
+      sol:[`a) 360° : ${fmt(Math.round(a*100)/100)}° = <b>${fmt(Math.round(q*100)/100)}</b>`,ok?`b) Det går opp: <b>${Math.round(q)} ${NAMES[n]}er</b> møtes i hvert hjørne.`:`b) Det går ikke opp. ${k} fliser gir ${fmt(Math.round(k*a*100)/100)}°, så det blir et hull. <b>Det går ikke.</b>`],
+      after:el=>{ el.innerHTML=tileFig(Array(k).fill(n)); }};
+  }
+  const c=pick(COMBOS), sum=c.l.reduce((s,n)=>s+inner(n),0), ok=Math.abs(sum-360)<1e-9;
+  return {key:'combo'+c.l.join(''),type:'Fliser med ulike mangekanter',q:`Kan ${c.t} møtes rundt ett hjørne uten hull og uten overlapp?<br>a) Hva blir vinklene til sammen?<br>b) Går det an?`,
+    ask:[{kind:'num',lab:'a) Sum =',unit:'°',val:Math.round(sum*100)/100},{kind:'choice',lab:'b)',options:['Ja, det går','Nei, det går ikke'],val:ok?'Ja, det går':'Nei, det går ikke'}],
+    hint:'Finn vinkelen i hver mangekant: (n − 2) · 180° : n. Trekant 60°, kvadrat 90°, femkant 108°, sekskant 120°, åttekant 135°, tikant 144°, tolvkant 150°. Summen må bli 360°.',
+    sol:[`${c.l.map(n=>fmt(inner(n))+'°').join(' + ')} = <b>${fmt(Math.round(sum*100)/100)}°</b>`,ok?'<b>Ja</b>, det blir nøyaktig 360°.':`<b>Nei</b>, det blir ${sum<360?'mindre':'mer'} enn 360°.`],
+    after:el=>{ if(sum<=360) el.innerHTML=tileFig(c.l,60); }};
+}
+function L5(){
+  const n=pick([6,8,12,24,48,96]), d=10, O=n*d*Math.sin(Math.PI/n), Or=Math.round(O*100)/100, ratio=Math.round(Or/d*100)/100;
+  return {key:'pi'+n,type:'Fra mangekant til sirkel',q:`En regulær mangekant med ${n} sider er tegnet inni en sirkel med diameter ${d} cm. Omkretsen av mangekanten er ${fmt(Or)} cm.<br>a) Regn ut omkretsen delt på diameteren (to desimaler).<br>b) Hvilket tall nærmer svaret seg når mangekanten får flere og flere sider?`,
+    draw:el=>{ el.innerHTML=regFig(Math.min(n,48),{circle:true}); },
+    ask:[{kind:'num',lab:'a) O : d =',unit:'',val:ratio,tol:0.011},{kind:'choice',lab:'b)',options:['3','3,14 (π)','4','2'],val:'3,14 (π)'}],
+    hint:'Del omkretsen på 10. Jo flere sider, jo mer ligner mangekanten på sirkelen, og da blir svaret nesten det samme som for sirkelen.',
+    sol:[`a) ${fmt(Or)} : ${d} = <b>${fmt(ratio)}</b>`,`b) Når antall sider øker, blir mangekanten nesten en sirkel, og O : d nærmer seg <b>π ≈ 3,14</b>.`,`6 sider: 3,00 · 12 sider: 3,11 · 24 sider: 3,13 · 96 sider: 3,14`]};
+}
+const MAKE={1:L1,2:L2,3:L3,4:L4,5:L5};
+
+// ── UTFORSK ──
+function explore(el){
+  let mode='egenskaper', n=5, tile=5;
+  el.innerHTML=`<div class="ex-row"><button class="chip on" data-m="egenskaper">⬟ Egenskaper</button><button class="chip" data-m="fliser">🧱 Fliser</button></div><div id="exBody" style="display:flex;flex-direction:column;align-items:center;gap:10px"></div>`;
+  el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ mode=b.dataset.m; el.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b)); draw(); });
+  const B=()=>document.getElementById('exBody');
+  function draw(){
+    if(mode==='egenskaper'){
+      B().innerHTML=`<div id="exFig"></div><div class="ex-row"><span>Antall sider:</span><input type="range" min="3" max="20" value="${n}" id="nr" style="width:220px"><b>${n}</b>
+        <label><input type="checkbox" id="cs" checked> symmetrilinjer</label><label><input type="checkbox" id="cc"> trekanter fra sentrum</label></div>
+        <table class="ex"><tr><th>Sider</th><th>Symmetrilinjer</th><th>Vinkelsum</th><th>Hver vinkel</th><th>Sentrumsvinkel</th></tr>
+        <tr><td>${n}</td><td>${n}</td><td>${(n-2)*180}°</td><td>${fmt(Math.round(inner(n)*100)/100)}°</td><td>${fmt(Math.round(360/n*100)/100)}°</td></tr></table>
+        <div class="ex-tip">Hva skjer med figuren når antall sider blir stort?</div>`;
+      const fig=()=>{ document.getElementById('exFig').innerHTML=regFig(n,{sym:document.getElementById('cs').checked,center:document.getElementById('cc').checked,circle:n>10}); };
+      fig();
+      document.getElementById('nr').oninput=e=>{ n=+e.target.value; draw(); };
+      document.getElementById('cs').onchange=fig; document.getElementById('cc').onchange=fig;
+    } else {
+      const a=inner(tile), k=Math.floor(360/a+1e-9), ok=Math.abs(360/a-Math.round(360/a))<1e-9;
+      B().innerHTML=`<div class="ex-row">${[3,4,5,6,8,10,12].map(m=>`<button class="chip${m===tile?' on':''}" data-t="${m}">${NAMES[m]}</button>`).join('')}</div>
+        <div>${tileFig(Array(k).fill(tile),tile>8?45:65)}</div>
+        <div class="ex-info">${k} · ${fmt(Math.round(a*100)/100)}° = ${fmt(Math.round(k*a*100)/100)}° ${ok?'= 360° ✅ Det går!':'– det blir hull ❌'}</div>
+        <div class="ex-tip">Bare trekanter, kvadrater og sekskanter kan dekke et gulv alene.</div>`;
+      B().querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ tile=+b.dataset.t; draw(); });
+    }
+  }
+  draw();
+}
+
+GEO.init({
+  id:'mangekanter', title:'Mangekant-verkstedet', icon:'⬢', version:'1.0', color:'#6d28d9',
+  subtitle:'Regulære mangekanter',
+  intro:'Regulære mangekanter: navn, symmetri, vinkler, sentrumsvinkel, fliselegging og veien fra mangekant til sirkel.',
+  levels:{
+    1:{name:'Nivå 1',desc:'Navn og symmetrilinjer'},
+    2:{name:'Nivå 2',desc:'Vinkelsum og hver vinkel'},
+    3:{name:'Nivå 3',desc:'Sentrumsvinkel og rotasjonssymmetri'},
+    4:{name:'Nivå 4',desc:'Fliselegging: hvilke mangekanter dekker et gulv?'},
+    5:{name:'Nivå 5',desc:'Fra mangekant til sirkel: oppdag π'},
+  },
+  make:l=>MAKE[l](),
+  explore:{title:'Utforsk mangekanter',render:explore},
+});
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>

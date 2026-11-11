@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sirkellaben</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<script src="geo-motor.js"></script>
+</head>
+<body>
+<script>
+const {rint,pick,shuffle,fmt,svg,text,line,angleMark,pt,r2}=GEO;
+const PI=3.14, HL='#dc2626';
+
+// ── BEGREPER ──
+const TERMS={
+  sentrum:{name:'Sentrum',desc:'Midtpunktet i sirkelen. Alle punkter på sirkelen har samme avstand til sentrum.'},
+  radius:{name:'Radius',desc:'Linjestykket fra sentrum ut til sirkelen.'},
+  diameter:{name:'Diameter',desc:'Linjestykket tvers over sirkelen gjennom sentrum. Diameteren er to radier.'},
+  korde:{name:'Korde',desc:'Et linjestykke mellom to punkter på sirkelen. Den lengste korden er diameteren.'},
+  bue:{name:'Bue',desc:'En del av sirkellinja mellom to punkter.'},
+  sektor:{name:'Sektor',desc:'Et «kakestykke» avgrenset av to radier og en bue.'},
+  tangent:{name:'Tangent',desc:'En linje som berører sirkelen i nøyaktig ett punkt. Den står vinkelrett på radien i det punktet.'},
+  omkrets:{name:'Omkrets (sirkellinja)',desc:'Hele linja rundt sirkelen.'},
+  segment:{name:'Segment',desc:'Området mellom en korde og buen.'},
+};
+function termFig(key,rot){
+  const W=GEO.W(), H=270, cx=W/2, cy=H/2, r=105;
+  let s=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#ecfeff" stroke="#0e7490" stroke-width="3"/>`;
+  const a=rot, b=rot+rint(70,130);
+  const A=pt(cx,cy,r,a), Bp=pt(cx,cy,r,b);
+  const dot=(p,c='#0e7490')=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="${c}"/>`;
+  if(key==='sentrum') s+=`<circle cx="${cx}" cy="${cy}" r="8" fill="${HL}"/>`;
+  else s+=dot([cx,cy],'#64748b');
+  if(key==='radius') s+=line([cx,cy],A,{col:HL,w:5})+dot(A,HL);
+  if(key==='diameter') s+=line(pt(cx,cy,r,a),pt(cx,cy,r,a+180),{col:HL,w:5});
+  if(key==='korde') s+=line(A,Bp,{col:HL,w:5})+dot(A,HL)+dot(Bp,HL);
+  if(key==='bue') s+=`<path d="${GEO.arc(cx,cy,r,a,b)}" fill="none" stroke="${HL}" stroke-width="7" stroke-linecap="round"/>`;
+  if(key==='sektor') s+=`<path d="${GEO.wedge(cx,cy,r,a,b)}" fill="${HL}" opacity="0.45" stroke="${HL}" stroke-width="3"/>`;
+  if(key==='segment'){ const [x0,y0]=A, [x1,y1]=Bp; s+=`<path d="M${x0},${y0} ${GEO.arc(cx,cy,r,a,b).replace(/^M[^A]+/,'')} Z" fill="${HL}" opacity="0.45" stroke="${HL}" stroke-width="3"/>`; }
+  if(key==='tangent'){ const T=pt(cx,cy,r,a), d=a+90; s+=line(pt(T[0],T[1],150,d),pt(T[0],T[1],150,d+180),{col:HL,w:5})+dot(T,HL); }
+  if(key==='omkrets') s=s.replace('stroke="#0e7490" stroke-width="3"',`stroke="${HL}" stroke-width="7"`);
+  return svg(W,H,s);
+}
+function L1(){
+  const keys=Object.keys(TERMS), key=pick(keys), rot=rint(0,359);
+  const opts=shuffle([key,...shuffle(keys.filter(k=>k!==key)).slice(0,3)]).map(k=>TERMS[k].name);
+  return {key:'term'+key,type:'Begreper i sirkelen',q:'Hva heter den røde delen?',
+    draw:el=>{ el.innerHTML=termFig(key,rot); },
+    ask:[{kind:'choice',options:opts,val:TERMS[key].name}],
+    hint:'Radius går fra sentrum til sirkelen, diameter går tvers gjennom sentrum, en korde går mellom to punkter på sirkelen uten å gå gjennom sentrum.',
+    sol:[`<b>${TERMS[key].name}</b>: ${TERMS[key].desc}`]};
+}
+function L2(){
+  const kind=pick(['r2d','d2r','lengst','avstand']);
+  if(kind==='lengst') return {key:kind,type:'Korder',q:'Hva heter den lengste korden du kan tegne i en sirkel?',
+    ask:[{kind:'choice',options:['Diameteren','Radien','Tangenten','Buen'],val:'Diameteren'}],
+    hint:'En korde går mellom to punkter på sirkelen. Den blir lengst når den går gjennom sentrum.',sol:['Den lengste korden går gjennom sentrum: <b>diameteren</b>.']};
+  if(kind==='avstand') return {key:kind,type:'Radius',q:'Punktene A, B og C ligger alle på sirkelen. Hva er sant om avstanden fra sentrum til hvert av punktene?',
+    draw:el=>{ const W=GEO.W(),H=250,cx=W/2,cy=H/2,r=100; let s=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#ecfeff" stroke="#0e7490" stroke-width="3"/><circle cx="${cx}" cy="${cy}" r="5" fill="#334155"/>`;
+      [[30,'A'],[150,'B'],[260,'C']].forEach(([a,n])=>{ const P=pt(cx,cy,r,a); s+=line([cx,cy],P,{col:'#94a3b8',w:2,dash:'5 4'})+`<circle cx="${P[0]}" cy="${P[1]}" r="6" fill="#dc2626"/>`+text(...pt(cx,cy,r+20,a),n); }); el.innerHTML=svg(W,H,s); },
+    ask:[{kind:'choice',options:['Alle er like lange, de er radier','C er lengst','Det kommer an på hvor punktene er','A og B er like, C er kortere'],val:'Alle er like lange, de er radier'}],
+    hint:'Hva er definisjonen av en sirkel?',sol:['Alle punkter på sirkelen har samme avstand til sentrum. Avstanden er <b>radien</b>.']};
+  const u=pick(['cm','m','mm']), r=pick([rint(2,25),r2(rint(5,95)/10)]);
+  if(kind==='r2d') return {key:kind,type:'Radius og diameter',q:`En sirkel har radius ${fmt(r)} ${u}. Hvor lang er diameteren?`,
+    ask:[{kind:'num',lab:'d =',unit:u,val:r2(2*r)}],hint:'Diameteren er to radier: d = 2 · r.',sol:[`d = 2 · ${fmt(r)} = <b>${fmt(r2(2*r))} ${u}</b>`],
+    mistakes:([x])=>Math.abs(x-r/2)<0.01?'Diameteren er større enn radien, ikke mindre.':null};
+  return {key:kind,type:'Radius og diameter',q:`En sirkel har diameter ${fmt(r2(2*r))} ${u}. Hvor lang er radien?`,
+    ask:[{kind:'num',lab:'r =',unit:u,val:r}],hint:'Radien er halve diameteren: r = d : 2.',sol:[`r = ${fmt(r2(2*r))} : 2 = <b>${fmt(r)} ${u}</b>`],
+    mistakes:([x])=>Math.abs(x-4*r)<0.01?'Radien er mindre enn diameteren. Del på 2.':null};
+}
+// ── NIVÅ 3: oppdag π med et hjul som ruller ──
+function wheelDraw(dCm,label){
+  return el=>{
+    const W=GEO.W(), H=200, dpx=Math.min(64,(W-80)/(Math.PI+0.6)), r=dpx/2, x0=30, y0=H-50, len=Math.PI*dpx;
+    el.innerHTML=svg(W,H,`<line x1="10" y1="${y0}" x2="${W-10}" y2="${y0}" stroke="#94a3b8" stroke-width="3"/>
+      <line id="trace" x1="${x0}" y1="${y0}" x2="${x0}" y2="${y0}" stroke="#dc2626" stroke-width="6" stroke-linecap="round"/>
+      <g id="wheel"><circle cx="0" cy="0" r="${r}" fill="#ecfeff" stroke="#0e7490" stroke-width="4"/><line x1="0" y1="0" x2="0" y2="${r}" stroke="#0e7490" stroke-width="2"/><circle cx="0" cy="${r}" r="5" fill="#dc2626"/></g>
+      <text id="wl" x="${x0+len/2}" y="${y0+28}" text-anchor="middle" font-size="15" font-weight="800" fill="#b91c1c" opacity="0">${label}</text>
+      <text x="${x0}" y="${y0-dpx-14}" font-size="14" font-weight="800" fill="#0e7490">d = ${fmt(dCm)} cm</text>
+      <text x="${W-14}" y="22" text-anchor="end" font-size="12" font-weight="800" fill="#64748b" style="cursor:pointer" id="replay">↻ Rull igjen</text>`);
+    const g=el.querySelector('#wheel'), tr=el.querySelector('#trace'), wl=el.querySelector('#wl');
+    let t0=null, raf;
+    const step=now=>{ if(!t0) t0=now; const k=Math.min(1,(now-t0)/2200), x=x0+len*k, rot=360*k;
+      g.setAttribute('transform',`translate(${x},${y0-r}) rotate(${rot})`); tr.setAttribute('x2',x); if(k>=1) wl.setAttribute('opacity',1); if(k<1) raf=requestAnimationFrame(step); };
+    g.setAttribute('transform',`translate(${x0},${y0-r})`);
+    setTimeout(()=>raf=requestAnimationFrame(step),300);
+    el.querySelector('#replay').onclick=()=>{ cancelAnimationFrame(raf); t0=null; wl.setAttribute('opacity',0); raf=requestAnimationFrame(step); };
+  };
+}
+function L3(){
+  const kind=pick(['forhold','forhold','rull','runder']);
+  if(kind==='forhold'){
+    const d=pick([4,5,6,8,10,12,15,20,25]), O=Math.round(Math.PI*d*10)/10, q=Math.round(O/d*100)/100;
+    return {key:kind,type:'Oppdag π',q:`Et hjul med diameter ${d} cm ruller nøyaktig én runde. Den røde streken viser hvor langt det rullet: <b>${fmt(O)} cm</b>. Det er omkretsen.<br>a) Regn ut omkrets : diameter (to desimaler).<br>b) Hva tror du skjer med dette tallet for et større hjul?`,
+      draw:wheelDraw(d,fmt(O)+' cm'),
+      ask:[{kind:'num',lab:'a) O : d =',unit:'',val:q,tol:0.011},{kind:'choice',lab:'b)',options:['Det blir omtrent det samme, 3,14','Det blir dobbelt så stort','Det blir mindre','Det blir større'],val:'Det blir omtrent det samme, 3,14'}],
+      hint:'Del omkretsen på diameteren. For alle sirkler blir svaret det samme tallet, som kalles π (pi).',
+      sol:[`a) ${fmt(O)} : ${d} ≈ <b>${fmt(q)}</b>`,'b) For alle sirkler er omkretsen litt over 3 ganger diameteren: O : d = <b>π ≈ 3,14</b>. Derfor er O = π · d.']};
+  }
+  const d=pick([50,55,60,65,70,75]), O=r2(PI*d);
+  if(kind==='rull') return {key:kind,type:'Hjul og omkrets',q:`Et sykkelhjul har diameter ${d} cm. Hvor langt ruller sykkelen når hjulet går én runde? Bruk π ≈ 3,14.`,
+    draw:wheelDraw(d,'? cm'),
+    ask:[{kind:'num',lab:'Lengde =',unit:'cm',val:O,tol:0.011}],hint:'Én runde er omkretsen: O = π · d.',sol:[`O = 3,14 · ${d} = <b>${fmt(O)} cm</b>`],
+    mistakes:([x])=>Math.abs(x-r2(PI*d/2))<0.02?'Bruk diameteren, ikke radien, i O = π · d.':Math.abs(x-r2(PI*(d/2)**2))<0.05?'Det der er arealet. Omkretsen er π · d.':null};
+  const n=pick([10,20,50,100]), tot=r2(n*O), m=r2(tot/100);
+  return {key:kind,type:'Hjul og omkrets',q:`Et hjul har diameter ${d} cm. Bruk π ≈ 3,14.<br>a) Hvor langt ruller hjulet på én runde?<br>b) Hvor mange meter ruller det på ${n} runder?`,
+    draw:wheelDraw(d,'? cm'),
+    ask:[{kind:'num',lab:'a)',unit:'cm',val:O,tol:0.011},{kind:'num',lab:'b)',unit:'m',val:m,tol:0.011}],
+    hint:'Én runde er omkretsen π · d. Gang med antall runder, og gjør om fra cm til m (del på 100).',
+    sol:[`a) 3,14 · ${d} = <b>${fmt(O)} cm</b>`,`b) ${n} · ${fmt(O)} = ${fmt(tot)} cm = <b>${fmt(m)} m</b>`]};
+}
+// ── NIVÅ 4: sektorer ──
+function sectorFig(v,r,lab,rot){
+  const W=GEO.W(), H=270, cx=W/2, cy=H/2, R=105;
+  let s=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="#ecfeff" stroke="#0e7490" stroke-width="3"/>`;
+  s+=`<path d="${GEO.wedge(cx,cy,R,rot,rot+v)}" fill="#fb923c" opacity="0.6" stroke="#c2410c" stroke-width="3"/>`;
+  s+=angleMark(cx,cy,rot,rot+v,v+'°',{col:'#7c2d12',r:24,lr:42,noSquare:v!==90});
+  const P=pt(cx,cy,R,rot); s+=text((cx+P[0])/2+(Math.sin(GEO.rad(rot))>0?-14:14),(cy+P[1])/2+(Math.cos(GEO.rad(rot))>0?14:-14),lab,{col:'#0e7490'});
+  return svg(W,H,s);
+}
+function L4(){
+  const v=pick([30,45,60,72,90,120,180]), r=rint(2,12), u=pick(['cm','m']), k=360/v, rot=rint(0,359), part=pick(['bue','areal']);
+  const bue=r2(v/360*2*PI*r), A=r2(v/360*PI*r*r);
+  return {key:'sek'+part,type:'Sektorer',q:`Sektoren har vinkel ${v}° og radius ${r} ${u}. Bruk π ≈ 3,14.<br>a) Hvor mange slike sektorer går det på en hel sirkel?<br>b) ${part==='bue'?'Hvor lang er buen til sektoren?':'Hva er arealet av sektoren?'} (to desimaler)`,
+    draw:el=>{ el.innerHTML=sectorFig(v,r,'r = '+r+' '+u,rot); },
+    ask:[{kind:'num',lab:'a)',unit:'sektorer',val:k},{kind:'num',lab:'b)',unit:part==='bue'?u:u+'²',val:part==='bue'?bue:A,tol:0.011}],
+    hint:`En hel sirkel er 360°. Sektoren er ${v}/360 av sirkelen, altså 1/(360 : ${v}). Regn ut hele ${part==='bue'?'omkretsen (2 · π · r)':'arealet (π · r²)'}, og del på antall sektorer.`,
+    sol:[`a) 360° : ${v}° = <b>${k}</b>`,part==='bue'?`b) Hele omkretsen: 2 · 3,14 · ${r} = ${fmt(r2(2*PI*r))} ${u}. Buen: ${fmt(r2(2*PI*r))} : ${k} = <b>${fmt(bue)} ${u}</b>`
+      :`b) Hele arealet: 3,14 · ${r} · ${r} = ${fmt(r2(PI*r*r))} ${u}². Sektoren: ${fmt(r2(PI*r*r))} : ${k} = <b>${fmt(A)} ${u}²</b>`],
+    mistakes:([a,b])=>part==='bue'&&Math.abs(b-r2(v/360*PI*r))<0.02?'Omkretsen er 2 · π · r (eller π · d). Du har brukt π · r.':part==='areal'&&Math.abs(b-r2(v/360*2*PI*r))<0.02?'Det der er buelengden. Arealet bruker π · r².':null};
+}
+// ── NIVÅ 5: vinkler i sirkel ──
+function L5(){
+  const W=GEO.W(), H=290, cx=W/2, cy=H/2, R=115;
+  if(Math.random()<0.55){
+    // Sentrumsvinkel og periferivinkel over samme bue
+    const p=rint(15,75), c=2*p, base=rint(200,340), aA=base-p, aB=base+p, aC=base+180+rint(-40,40);
+    const A=pt(cx,cy,R,aA), Bp=pt(cx,cy,R,aB), C=pt(cx,cy,R,aC), askC=Math.random()<0.5;
+    const dir=(F,T)=>((Math.atan2(F[1]-T[1],T[0]-F[0])*180/Math.PI)+360)%360;
+    const fig=(lc,lp)=>{ let s=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="#ecfeff" stroke="#0e7490" stroke-width="3"/>`;
+      s+=`<path d="${GEO.arc(cx,cy,R,aA,aB)}" fill="none" stroke="#f97316" stroke-width="6"/>`;
+      s+=line([cx,cy],A,{col:'#2563eb',w:2.5})+line([cx,cy],Bp,{col:'#2563eb',w:2.5})+line(C,A,{col:'#7c3aed',w:2.5})+line(C,Bp,{col:'#7c3aed',w:2.5});
+      s+=angleMark(cx,cy,aA,aB,lc,{col:'#2563eb',fill:'#2563eb',r:24,lr:44,noSquare:true});
+      let d1=dir(C,A), d2=dir(C,Bp); let f=d1,t=d2; if(((t-f)%360+360)%360>180){ f=d2; t=d1; }
+      s+=angleMark(C[0],C[1],f,t,lp,{col:'#7c3aed',fill:'#7c3aed',r:26,lr:46,noSquare:true});
+      [[A,'A',aA],[Bp,'B',aB],[C,'C',aC]].forEach(([P,n,a])=>{ s+=`<circle cx="${P[0]}" cy="${P[1]}" r="5" fill="#0f172a"/>`+text(...pt(cx,cy,R+18,a),n); });
+      s+=`<circle cx="${cx}" cy="${cy}" r="4" fill="#2563eb"/>`+text(cx-12,cy-12,'S',{col:'#2563eb',size:13});
+      return svg(W,H,s); };
+    return {key:'periferi',type:'Sentrumsvinkel og periferivinkel',q:`Den blå vinkelen har toppunkt i sentrum S (sentrumsvinkel). Den lilla har toppunkt C på sirkelen (periferivinkel). Begge står på den samme oransje buen AB. Hvor stor er vinkelen med spørsmålstegn?`,
+      draw:el=>{ el.innerHTML=askC?fig(c+'°','?'):fig('?',p+'°'); },
+      ask:[{kind:'num',lab:'? =',unit:'°',val:askC?p:c}],
+      hint:'En sentrumsvinkel er dobbelt så stor som en periferivinkel som står på den samme buen.',
+      sol:[askC?`Periferivinkelen er halvparten av sentrumsvinkelen: ${c}° : 2 = <b>${p}°</b>`:`Sentrumsvinkelen er det dobbelte av periferivinkelen: 2 · ${p}° = <b>${c}°</b>`],
+      mistakes:([x])=>x===(askC?c:p)?'De to vinklene er ikke like store. Sentrumsvinkelen er dobbelt så stor.':x===(askC?2*c:p/2)?'Motsatt: sentrumsvinkelen er den største.':null};
+  }
+  // Thales: vinkelen i en halvsirkel er 90°
+  const a=rint(20,70), b=90-a, aC=180-2*a+180; // C på sirkelen slik at vinkel A = a
+  const A=pt(cx,cy,R,180), Bp=pt(cx,cy,R,0), C=pt(cx,cy,R,180-(180-2*a));
+  return {key:'thales',type:'Thales',q:`AB er en diameter, og C ligger på sirkelen. Vinkel A er ${a}°.<br>a) Hvor stor er vinkel C?<br>b) Hvor stor er vinkel B?`,
+    draw:el=>{ let s=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="#ecfeff" stroke="#0e7490" stroke-width="3"/>`;
+      s+=`<path d="M${A[0]},${A[1]}L${Bp[0]},${Bp[1]}L${C[0]},${C[1]}Z" fill="#fed7aa" stroke="#c2410c" stroke-width="3"/>`;
+      const dir=(F,T)=>((Math.atan2(F[1]-T[1],T[0]-F[0])*180/Math.PI)+360)%360;
+      s+=angleMark(A[0],A[1],0,dir(A,C),a+'°',{col:'#c2410c',fill:'#c2410c',r:30,lr:52});
+      s+=angleMark(Bp[0],Bp[1],dir(Bp,C),180,'?',{col:'#dc2626',fill:'#dc2626',r:30,lr:52});
+      s+=angleMark(C[0],C[1],dir(C,A),dir(C,Bp)<dir(C,A)?dir(C,Bp)+360:dir(C,Bp),'?',{col:'#7c3aed',fill:'#7c3aed',r:22,lr:40,noSquare:true});
+      [[A,'A',-16,0],[Bp,'B',16,0],[C,'C',0,-16]].forEach(([P,n,dx,dy])=>{ s+=text(P[0]+dx,P[1]+dy,n); });
+      s+=`<circle cx="${cx}" cy="${cy}" r="4" fill="#2563eb"/>`;
+      el.innerHTML=svg(W,H,s); },
+    ask:[{kind:'num',lab:'a) Vinkel C =',unit:'°',val:90},{kind:'num',lab:'b) Vinkel B =',unit:'°',val:b}],
+    hint:'Thales: når en trekant har en diameter som side og det tredje hjørnet ligger på sirkelen, er vinkelen der alltid 90°.',
+    sol:['a) Vinkelen i en halvsirkel er alltid <b>90°</b> (Thales).',`b) 180° − 90° − ${a}° = <b>${b}°</b>`]};
+}
+const MAKE={1:L1,2:L2,3:L3,4:L4,5:L5};
+
+// ── UTFORSK ──
+function explore(el){
+  let mode='begreper', key='radius', v=90, r=5;
+  el.innerHTML=`<div class="ex-row"><button class="chip on" data-m="begreper">📖 Begreper</button><button class="chip" data-m="sektor">🍕 Sektor</button><button class="chip" data-m="pi">🛞 Oppdag π</button></div><div id="exB" style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%"></div>`;
+  el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ mode=b.dataset.m; el.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b)); draw(); });
+  const B=()=>document.getElementById('exB');
+  function draw(){
+    if(mode==='begreper'){
+      B().innerHTML=`<div class="ex-row">${Object.keys(TERMS).map(k=>`<button class="chip${k===key?' on':''}" data-k="${k}">${TERMS[k].name}</button>`).join('')}</div><div>${termFig(key,35)}</div><div class="ex-info">${TERMS[key].name}: ${TERMS[key].desc}</div>`;
+      B().querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ key=b.dataset.k; draw(); });
+    } else if(mode==='sektor'){
+      const bue=r2(v/360*2*PI*r), A=r2(v/360*PI*r*r);
+      B().innerHTML=`<div>${sectorFig(v,r,'r = '+r,20)}</div><div class="ex-row"><span>Vinkel:</span><input type="range" min="10" max="350" step="5" value="${v}" id="vr" style="width:220px"><b>${v}°</b></div>
+        <div class="ex-info">Sektoren er ${v}/360 = ${fmt(r2(v/360))} av sirkelen<br>Bue: ${fmt(r2(v/360))} · 2 · 3,14 · ${r} = ${fmt(bue)} · Areal: ${fmt(r2(v/360))} · 3,14 · ${r}² = ${fmt(A)}</div>`;
+      document.getElementById('vr').oninput=e=>{ v=+e.target.value; draw(); };
+    } else {
+      const rows=[2,5,10,20,50].map(d=>{ const O=Math.round(Math.PI*d*10)/10; return `<tr><td>${d} cm</td><td>${fmt(O)} cm</td><td>${fmt(Math.round(O/d*1000)/1000)}</td></tr>`; }).join('');
+      B().innerHTML=`<div id="wh" class="stage" style="margin:0"></div><table class="ex"><tr><th>Diameter</th><th>Omkrets (målt)</th><th>O : d</th></tr>${rows}</table><div class="ex-info">For alle sirkler er O : d ≈ 3,14. Dette tallet heter π (pi).</div>`;
+      wheelDraw(10,'31,4 cm')(document.getElementById('wh'));
+    }
+  }
+  draw();
+}
+
+GEO.init({
+  id:'sirkellaben', title:'Sirkellaben', icon:'⭕', version:'1.0', color:'#0e7490',
+  subtitle:'Begreper, π, sektorer og vinkler i sirkel',
+  intro:'Sentrum, radius, diameter, korde, bue, sektor og tangent. Oppdag π med et rullende hjul, regn med sektorer, og finn vinkler i sirkelen.',
+  levels:{
+    1:{name:'Nivå 1',desc:'Begreper: sentrum, radius, diameter, korde, bue, sektor, tangent'},
+    2:{name:'Nivå 2',desc:'Radius og diameter'},
+    3:{name:'Nivå 3',desc:'Oppdag π: hjul som ruller, omkrets = π · d'},
+    4:{name:'Nivå 4',desc:'Sektorer: del av sirkelen, buelengde og areal'},
+    5:{name:'Nivå 5',desc:'Vinkler i sirkel: sentrumsvinkel, periferivinkel og Thales'},
+  },
+  make:l=>MAKE[l](),
+  explore:{title:'Utforsk sirkelen',render:explore},
+});
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>

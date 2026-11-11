@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hvem er jeg?</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<script src="geo-motor.js"></script>
+</head>
+<body>
+<script>
+const {rint,pick,shuffle,fmt,svg,text,line}=GEO;
+
+// ── FIGURENE ── (punkter i en enhetsboks, y opp; skaleres ved tegning)
+const F={
+  kvadrat:{name:'Kvadrat',pts:()=>[[0,0],[1,0],[1,1],[0,1]],sym:4,syml:p=>[[[.5,-.15],[.5,1.15]],[[-.15,.5],[1.15,.5]],[[-.1,-.1],[1.1,1.1]],[[-.1,1.1],[1.1,-.1]]]},
+  rektangel:{name:'Rektangel',pts:()=>{const h=.45+Math.random()*.15;return [[0,0],[1.5,0],[1.5,h],[0,h]];},sym:2},
+  rombe:{name:'Rombe',pts:()=>{const a=.55+Math.random()*.15,b=.32;return [[0,0],[a,-b],[2*a,0],[a,b]];},sym:2},
+  parallellogram:{name:'Parallellogram',pts:()=>{const s=.35+Math.random()*.2;return [[0,0],[1.2,0],[1.2+s,.6],[s,.6]];},sym:0},
+  trapes:{name:'Trapes',pts:()=>{const a=.15+Math.random()*.1,b=.65+Math.random()*.15;return [[0,0],[1.4,0],[b+.3,.6],[a,.6]];},sym:0},
+  liketrapes:{name:'Likebeint trapes',pts:()=>{const k=.3+Math.random()*.12;return [[0,0],[1.4,0],[1.4-k,.6],[k,.6]];},sym:1},
+  drage:{name:'Drage',pts:()=>{const t=.35+Math.random()*.1;return [[0,0],[.45,t],[1.4,0],[.45,-t]];},sym:1},
+  likesidet:{name:'Likesidet trekant',pts:()=>[[0,0],[1,0],[.5,.866]],sym:3,tri:true},
+  likebeint:{name:'Likebeint trekant',pts:()=>{const h=.9+Math.random()*.3;return [[0,0],[.8,0],[.4,h]];},sym:1,tri:true},
+  rettvinklet:{name:'Rettvinklet trekant',pts:()=>{const h=.55+Math.random()*.25;return [[0,0],[1.2,0],[0,h]];},sym:0,tri:true,right:0},
+  stumpvinklet:{name:'Stumpvinklet trekant',pts:()=>[[0,0],[1.3,0],[-.35,.45]],sym:0,tri:true},
+};
+const QUADS=['kvadrat','rektangel','rombe','parallellogram','trapes','liketrapes','drage'];
+const TRIS=['likesidet','likebeint','rettvinklet','stumpvinklet'];
+// Egenskaper for firkanter
+const PROPS={
+  'Alle sidene er like lange':['kvadrat','rombe'],
+  'Motstående sider er like lange':['kvadrat','rektangel','rombe','parallellogram'],
+  'Fire rette vinkler':['kvadrat','rektangel'],
+  'To par parallelle sider':['kvadrat','rektangel','rombe','parallellogram'],
+  'Nøyaktig ett par parallelle sider':['trapes','liketrapes'],
+  'Diagonalene står vinkelrett på hverandre':['kvadrat','rombe','drage'],
+  'Diagonalene er like lange':['kvadrat','rektangel','liketrapes'],
+  'To og to like lange nabosider':['kvadrat','rombe','drage'],
+};
+// Tegn en figur. opts: diag (diagonaler), sym (symmetrilinjer), ticks (like sider)
+function fig(key,opts={}){
+  const f=F[key], P0=opts.pts||f.pts(), rot=opts.rot??0;
+  const R=P0.map(([x,y])=>[x*Math.cos(rot)-y*Math.sin(rot),x*Math.sin(rot)+y*Math.cos(rot)]);
+  const xs=R.map(p=>p[0]), ys=R.map(p=>p[1]);
+  const W=opts.W||GEO.W(), H=opts.H||240, M=40;
+  const k=Math.min((W-2*M)/(Math.max(...xs)-Math.min(...xs)),(H-2*M)/(Math.max(...ys)-Math.min(...ys)));
+  const ox=(W-(Math.max(...xs)-Math.min(...xs))*k)/2, oy=(H-(Math.max(...ys)-Math.min(...ys))*k)/2;
+  const X=x=>ox+(x-Math.min(...xs))*k, Y=y=>H-oy-(y-Math.min(...ys))*k;
+  const P=R.map(([x,y])=>[X(x),Y(y)]);
+  let s=`<path d="M${P.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}Z" fill="${opts.fill||'#e0f2fe'}" stroke="#0369a1" stroke-width="3.5" stroke-linejoin="round"/>`;
+  if(opts.diag&&P.length===4){ s+=line(P[0],P[2],{col:'#7c3aed',w:2,dash:'6 4'})+line(P[1],P[3],{col:'#7c3aed',w:2,dash:'6 4'}); }
+  if(f.right!==undefined){ const V=P[f.right], A=P[1], C=P[2]; const u=(Q)=>{const dx=Q[0]-V[0],dy=Q[1]-V[1],L=Math.hypot(dx,dy);return [dx/L*14,dy/L*14];};
+    const [ax,ay]=u(A),[cx,cy]=u(C); s+=`<path d="M${V[0]+ax},${V[1]+ay} L${V[0]+ax+cx},${V[1]+ay+cy} L${V[0]+cx},${V[1]+cy}" fill="none" stroke="#0369a1" stroke-width="2"/>`; }
+  if(opts.sym) s+=symLines(key,P);
+  return svg(W,H,s);
+}
+// Symmetrilinjer beregnes ut fra punktene (speiling som gir samme figur)
+function symLines(key,P){
+  const n=P.length, cx=P.reduce((a,p)=>a+p[0],0)/n, cy=P.reduce((a,p)=>a+p[1],0)/n;
+  const cands=[];
+  for(let i=0;i<n;i++){ cands.push([P[i],[cx,cy]]); const m=[(P[i][0]+P[(i+1)%n][0])/2,(P[i][1]+P[(i+1)%n][1])/2]; cands.push([m,[cx,cy]]); }
+  const mirror=(Q,A,B)=>{ const dx=B[0]-A[0],dy=B[1]-A[1],L=dx*dx+dy*dy; if(L<1e-6) return null; const t=((Q[0]-A[0])*dx+(Q[1]-A[1])*dy)/L; const fx=A[0]+t*dx,fy=A[1]+t*dy; return [2*fx-Q[0],2*fy-Q[1]]; };
+  const found=[];
+  cands.forEach(([A,Bp])=>{
+    const M=P.map(Q=>mirror(Q,A,Bp)); if(M.some(m=>!m)) return;
+    const ok=M.every(m=>P.some(Q=>Math.hypot(Q[0]-m[0],Q[1]-m[1])<2));
+    if(!ok) return;
+    const ang=Math.atan2(Bp[1]-A[1],Bp[0]-A[0]);
+    if(found.some(a=>Math.abs(Math.sin(a-ang))<0.02)) return;
+    found.push(ang);
+  });
+  return found.map(a=>{ const L=160; return line([cx-L*Math.cos(a),cy-L*Math.sin(a)],[cx+L*Math.cos(a),cy+L*Math.sin(a)],{col:'#16a34a',w:2.2,dash:'7 5'}); }).join('');
+}
+const nameOpts=(key,pool)=>shuffle([key,...shuffle(pool.filter(k=>k!==key)).slice(0,3)]).map(k=>F[k].name);
+const rr=()=>(Math.random()-.5)*0.5;
+
+// ── NIVÅ 1: hva heter figuren ──
+function L1(){
+  const key=pick(QUADS.concat(TRIS)), pool=F[key].tri?TRIS:QUADS, rot=rr();
+  return {key:'navn'+key,type:'Hva heter figuren?',q:'Hva heter figuren?',
+    draw:el=>{ el.innerHTML=fig(key,{rot}); },
+    ask:[{kind:'choice',options:nameOpts(key,pool),val:F[key].name}],
+    hint:F[key].tri?'Se på sidene (like lange?) og vinklene (rett eller stump?).':'Se etter parallelle sider, rette vinkler og like lange sider.',
+    sol:[`Det er en <b>${F[key].name.toLowerCase()}</b>.`]};
+}
+// ── NIVÅ 2: gåter ──
+const RIDDLES=[
+  ['Jeg har fire rette vinkler, og alle sidene mine er like lange.','kvadrat'],
+  ['Jeg har fire rette vinkler, men to av sidene mine er lengre enn de to andre.','rektangel'],
+  ['Alle de fire sidene mine er like lange, men jeg har ingen rette vinkler.','rombe'],
+  ['Jeg har to par parallelle sider, men ingen rette vinkler, og ikke alle sidene er like lange.','parallellogram'],
+  ['Jeg er en firkant med nøyaktig ett par parallelle sider, og de to andre sidene er like lange.','liketrapes'],
+  ['Jeg er en firkant med to og to like lange nabosider. Diagonalene mine står vinkelrett på hverandre, men jeg har ingen parallelle sider.','drage'],
+  ['Jeg er en firkant med nøyaktig ett par parallelle sider, og jeg har ingen symmetrilinjer.','trapes'],
+  ['Jeg har tre like lange sider og tre vinkler på 60°.','likesidet'],
+  ['Jeg har to like lange sider, og vinklene ved grunnlinjen er like store. Den tredje siden er kortere eller lengre.','likebeint'],
+  ['En av vinklene mine er nøyaktig 90°.','rettvinklet'],
+  ['En av vinklene mine er større enn 90°.','stumpvinklet'],
+];
+function L2(){
+  const [txt,key]=pick(RIDDLES), pool=F[key].tri?TRIS:QUADS;
+  return {key:'gåte'+key,type:'Hvem er jeg?',q:`«${txt}» Hvem er jeg?`,
+    ask:[{kind:'choice',options:nameOpts(key,pool),val:F[key].name}],
+    hint:'Tegn figurene i kladdeboka og sjekk egenskapene én og én.',
+    sol:[`Det er en <b>${F[key].name.toLowerCase()}</b>.`],
+    after:el=>{ el.innerHTML=fig(key,{}); }};
+}
+// ── NIVÅ 3: hvilke egenskaper har figuren? ──
+function L3(){
+  const key=pick(QUADS), all=Object.keys(PROPS);
+  const yes=all.filter(p=>PROPS[p].includes(key)), no=all.filter(p=>!PROPS[p].includes(key));
+  const opts=shuffle(shuffle(yes).slice(0,Math.min(3,yes.length)).concat(shuffle(no).slice(0,6-Math.min(3,yes.length))));
+  const val=opts.filter(o=>PROPS[o].includes(key));
+  if(!val.length) return L3();
+  return {key:'egensk'+key,type:'Egenskaper',q:`Figuren er en <b>${F[key].name.toLowerCase()}</b>. Hvilke egenskaper har den? Velg <b>alle</b> som stemmer.`,
+    draw:el=>{ el.innerHTML=fig(key,{}); },
+    ask:[{kind:'multi',options:opts,val}],
+    hint:'Tenk på hva som gjelder for alle figurer av denne typen. Prøv å tegne diagonalene.',
+    sol:[`En ${F[key].name.toLowerCase()} har: ${val.map(v=>'<b>'+v.toLowerCase()+'</b>').join(', ')}.`],
+    after:el=>{ el.innerHTML=fig(key,{diag:true}); }};
+}
+// ── NIVÅ 4: familietreet ──
+const STATEMENTS=[
+  ['Et kvadrat er alltid et rektangel.',true,'Et kvadrat har fire rette vinkler, så det er et rektangel (der alle sidene tilfeldigvis er like).'],
+  ['Et rektangel er alltid et kvadrat.',false,'Et rektangel trenger ikke ha like lange sider.'],
+  ['Et kvadrat er også en rombe.',true,'Alle sidene i et kvadrat er like lange, så det er en rombe (med rette vinkler).'],
+  ['En rombe er alltid et kvadrat.',false,'En rombe trenger ikke ha rette vinkler.'],
+  ['En rombe er et parallellogram.',true,'En rombe har to par parallelle sider.'],
+  ['Et parallellogram er alltid en rombe.',false,'Sidene i et parallellogram trenger ikke være like lange.'],
+  ['Et rektangel er et parallellogram.',true,'Et rektangel har to par parallelle sider.'],
+  ['En trapes er et parallellogram.',false,'En trapes har bare ett par parallelle sider.'],
+  ['Et kvadrat er også en drage.',true,'Et kvadrat har to og to like lange nabosider.'],
+  ['Alle parallellogrammer har fire rette vinkler.',false,'Bare rektangler (og kvadrater) har fire rette vinkler.'],
+  ['En likesidet trekant er også likebeint.',true,'Den har (minst) to like lange sider.'],
+  ['En rettvinklet trekant kan også være likebeint.',true,'For eksempel en trekant med vinklene 90°, 45° og 45°.'],
+  ['En trekant kan ha to rette vinkler.',false,'To rette vinkler er 180° til sammen. Da blir det ingen plass til den tredje vinkelen.'],
+  ['En trekant kan ha to stumpe vinkler.',false,'To stumpe vinkler blir mer enn 180° til sammen.'],
+  ['Diagonalene i et rektangel står alltid vinkelrett på hverandre.',false,'Det gjelder bare når rektangelet er et kvadrat.'],
+  ['Diagonalene i en rombe står vinkelrett på hverandre.',true,'Det gjelder alle romber.'],
+];
+function L4(){
+  const [s,v,why]=pick(STATEMENTS);
+  return {key:'påst'+s.slice(0,12),type:'Sant eller usant?',q:`Er påstanden sann eller usann?<br><span style="font-size:1.15rem">«${s}»</span>`,
+    ask:[{kind:'choice',options:['Sant','Usant'],val:v?'Sant':'Usant'}],
+    hint:'En figur er en spesiell utgave av en annen hvis den har alle egenskapene til den andre. Tegn gjerne et eksempel, eller et moteksempel.',
+    sol:[`<b>${v?'Sant':'Usant'}</b>. ${why}`]};
+}
+// ── NIVÅ 5: symmetrilinjer ──
+function L5(){
+  const key=pick(QUADS.concat(['likesidet','likebeint','rettvinklet'])), f=F[key];
+  return {key:'sym'+key,type:'Symmetrilinjer',q:`Hvor mange symmetrilinjer har figuren (${f.name.toLowerCase()})?`,
+    draw:el=>{ el.innerHTML=fig(key,{}); },
+    ask:[{kind:'num',lab:'Symmetrilinjer =',unit:'',val:f.sym}],
+    hint:'En symmetrilinje deler figuren i to like halvdeler som er speilbilder av hverandre. Tenk deg at du bretter figuren langs linja.',
+    sol:[`En ${f.name.toLowerCase()} har <b>${f.sym}</b> symmetrilinje${f.sym===1?'':'r'}${f.sym?' (grønne linjer)':''}.`,
+      key==='parallellogram'?'Bretter du langs en diagonal, passer ikke halvdelene oppå hverandre.':key==='rektangel'?'Diagonalene er ikke symmetrilinjer i et rektangel.':''].filter(Boolean),
+    mistakes:([x])=>key==='rektangel'&&x===4?'Prøv å brette et rektangel langs en diagonal. Passer halvdelene?':key==='parallellogram'&&x===2?'Prøv å brette langs diagonalen. Passer halvdelene oppå hverandre?':null,
+    after:el=>{ el.innerHTML=fig(key,{sym:true}); }};
+}
+const MAKE={1:L1,2:L2,3:L3,4:L4,5:L5};
+
+// ── UTFORSK ──
+function explore(el){
+  let key='kvadrat', diag=false, sym=false;
+  function draw(){
+    const props=Object.keys(PROPS);
+    el.innerHTML=`<div class="ex-row">${QUADS.concat(TRIS).map(k=>`<button class="chip${k===key?' on':''}" data-k="${k}">${F[k].name}</button>`).join('')}</div>
+      <div>${fig(key,{diag,sym})}</div>
+      <div class="ex-row"><label><input type="checkbox" id="cd" ${diag?'checked':''}> diagonaler</label><label><input type="checkbox" id="cs" ${sym?'checked':''}> symmetrilinjer</label></div>
+      ${F[key].tri?`<div class="ex-info">${F[key].name}: ${F[key].sym} symmetrilinje${F[key].sym===1?'':'r'}</div>`:
+      `<table class="ex">${props.map(p=>`<tr><td style="text-align:left">${p}</td><td>${PROPS[p].includes(key)?'✅':'❌'}</td></tr>`).join('')}<tr><td style="text-align:left">Symmetrilinjer</td><td>${F[key].sym}</td></tr></table>`}
+      <div class="ex-tip">Sammenlign kvadrat, rektangel og rombe. Hvilke egenskaper har de felles?</div>`;
+    el.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ key=b.dataset.k; draw(); });
+    el.querySelector('#cd').onchange=e=>{ diag=e.target.checked; draw(); };
+    el.querySelector('#cs').onchange=e=>{ sym=e.target.checked; draw(); };
+  }
+  draw();
+}
+
+GEO.init({
+  id:'figurer', title:'Hvem er jeg?', icon:'🔷', version:'1.0', color:'#0369a1',
+  subtitle:'Egenskaper ved firkanter og trekanter',
+  intro:'Kvadrat, rektangel, rombe, parallellogram, trapes, drage og trekanter: navn, egenskaper, gåter, familietreet og symmetri.',
+  levels:{
+    1:{name:'Nivå 1',desc:'Hva heter figuren?'},
+    2:{name:'Nivå 2',desc:'Gåter: finn figuren ut fra egenskapene'},
+    3:{name:'Nivå 3',desc:'Velg alle egenskapene figuren har'},
+    4:{name:'Nivå 4',desc:'Familietreet: sant eller usant?'},
+    5:{name:'Nivå 5',desc:'Symmetrilinjer'},
+  },
+  make:l=>MAKE[l](),
+  explore:{title:'Utforsk figurene',render:explore},
+});
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>
