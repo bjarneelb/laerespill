@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oppgavesamling – plangeometri</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff7ed;--panel:#fff;--border:#f1dccb;
+  --accent:#c2410c;--accent-dark:#9a3412;--green:#16a34a;--red:#dc2626;
+  --yellow:#f59e0b;--muted:#6b7280;--text:#1e293b;
+  --fill:#fed7aa;--edge:#c2410c;
+  --r:14px;--shadow:0 2px 14px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+.header{background:var(--accent);color:white;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 2px 12px rgba(194,65,12,0.3);}
+.header-left h1{font-size:1rem;font-weight:900;}
+.header-left p{font-size:0.7rem;opacity:0.85;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.badge{padding:3px 12px;border-radius:20px;font-size:0.8rem;font-weight:800;}
+.level-badge{background:rgba(255,255,255,0.2);color:white;}
+.score-badge{background:var(--yellow);color:#78350f;}
+.btn-menu{padding:4px 12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:white;font-size:0.75rem;font-weight:700;text-decoration:none;}
+
+.overlay{position:fixed;inset:0;background:rgba(255,247,237,0.97);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;overflow:auto;}
+.start-card{background:white;border:2px solid var(--border);border-radius:16px;padding:28px 30px;width:500px;max-width:100%;text-align:center;box-shadow:var(--shadow);}
+.start-card h1{font-size:1.4rem;color:var(--accent);margin-bottom:4px;}
+.start-card p{font-size:0.88rem;color:var(--muted);font-weight:700;margin-bottom:14px;line-height:1.5;}
+.version{font-size:0.65rem;color:var(--muted);font-family:monospace;margin-bottom:12px;}
+.lbl{font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-weight:800;}
+.levels3{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.lv{display:flex;gap:10px;align-items:center;padding:9px 12px;border:2px solid var(--border);border-radius:10px;background:white;font-family:inherit;cursor:pointer;text-align:left;}
+.lv b{font-size:1.1rem;color:var(--accent);min-width:1.2em;}
+.lv span{font-size:0.82rem;font-weight:800;color:var(--muted);}
+.lv.active{border-color:var(--accent);background:#fff7ed;}
+.lv.active span{color:var(--text);}
+.mode-row{display:flex;gap:8px;margin-bottom:10px;}
+.mode-btn{flex:1;padding:8px;background:white;border:2px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:800;cursor:pointer;}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.name-input{width:100%;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;outline:none;margin-bottom:10px;text-align:center;text-transform:uppercase;letter-spacing:2px;}
+.start-btn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.start-btn:hover{background:var(--accent-dark);}
+.paper{display:flex;gap:10px;align-items:center;background:#fffbeb;border:2px dashed #fcd34d;border-radius:12px;padding:10px 12px;margin-bottom:14px;text-align:left;font-size:0.82rem;font-weight:800;color:#78350f;line-height:1.45;}
+.paper .ic{font-size:1.6rem;}
+
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px;gap:12px;max-width:820px;margin:0 auto;width:100%;}
+.card{width:100%;background:var(--panel);border:2px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);}
+.task-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+.task-nr{font-size:1.15rem;font-weight:900;color:var(--accent);}
+.task-type{font-size:0.75rem;font-weight:800;color:var(--muted);}
+.task-q{font-size:1.08rem;font-weight:800;line-height:1.6;margin-bottom:12px;}
+.figwrap{display:flex;justify-content:center;margin-bottom:12px;max-width:100%;overflow-x:auto;}
+.figwrap svg{display:block;background:#fffdfa;border:2px solid var(--border);border-radius:12px;}
+.figwrap text{font-family:'Nunito',sans-serif;font-weight:800;}
+.answer{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:800;font-size:1.08rem;}
+.row .sub{color:var(--accent);min-width:1.4em;text-align:right;}
+.num-in{padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;outline:none;text-align:center;width:130px;}
+.num-in:focus{border-color:var(--accent);}
+.u{color:var(--muted);min-width:2.5em;text-align:left;}
+.ok{border-color:var(--green)!important;background:#f0fdf4;}
+.bad{border-color:var(--red)!important;background:#fef2f2;}
+.note{font-size:0.78rem;color:var(--muted);font-weight:800;text-align:center;margin-top:8px;}
+.fb{margin-top:12px;border-radius:12px;padding:12px 14px;font-weight:800;line-height:1.65;display:none;}
+.fb.err{display:block;background:#fef2f2;border:2px solid #fecaca;color:#991b1b;}
+.fb.win{display:block;background:#f0fdf4;border:2px solid #86efac;color:#14532d;}
+.fb.info{display:block;background:#eef2ff;border:2px solid #c7d2fe;color:#312e81;}
+.fb .big{font-size:1.15rem;display:block;margin-bottom:4px;}
+.sol{margin-top:6px;padding-left:4px;}
+.sol div{margin:2px 0;}
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;}
+.btn-check{background:var(--accent);color:white;}
+.btn-next{background:var(--green);color:white;}
+.btn-soft{background:#f3f4f6;color:var(--muted);}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 22px;border-radius:10px;font-weight:800;font-size:0.9rem;opacity:0;transition:all .3s;z-index:1100;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--green);color:white;}
+.toast.error{background:var(--red);color:white;}
+.toast.info{background:var(--accent);color:white;}
+
+@media (max-width:600px){
+  .header{padding:8px 12px;} .header-left p{display:none;}
+  .task-q{font-size:1rem;} .card{padding:14px;}
+  .num-in{width:110px;}
+}
+</style>
+<script src="/js/spill-utils.js"></script>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="startScreen">
+  <div class="start-card">
+    <div style="font-size:2.6rem">📝</div>
+    <h1>Oppgavesamling: plangeometri</h1>
+    <p>Omkrets, areal, sirkel, enheter og sammensatte figurer. Nye tall hver gang.</p>
+    <div class="version">v1.0</div>
+    <div class="paper"><span class="ic">📓</span><span>Regn i kladdeboka, og skriv bare svaret her. Tegn gjerne figuren og skriv formelen først.</span></div>
+    <div class="lbl">Start på nivå</div>
+    <div class="levels3" id="levels3"></div>
+    <div class="mode-row">
+      <button class="mode-btn active" data-mode="practice" onclick="selectMode('practice')">🧘 Øving</button>
+      <button class="mode-btn" data-mode="multi" onclick="selectMode('multi')">🏎️ Bane (romkode)</button>
+    </div>
+    <div id="multiOpts" style="display:none">
+      <input class="name-input" id="roomInput" placeholder="ROMKODE" maxlength="8" autocomplete="off">
+    </div>
+    <button class="start-btn" onclick="startGame()">🚀 Start</button>
+  </div>
+</div>
+
+<div class="header">
+  <div class="header-left">
+    <h1>📝 Oppgavesamling: plangeometri</h1>
+    <p>Regn i kladdeboka – sjekk svaret her</p>
+  </div>
+  <div class="header-right">
+    <span class="badge" id="roomBadge" style="display:none;background:rgba(255,255,255,0.25);color:white;letter-spacing:1px">🏎️ <span id="roomBadgeCode"></span></span>
+    <span class="badge level-badge" id="levelBadge">Nivå 1</span>
+    <span class="badge score-badge" id="scoreBadge">0 p</span>
+    <a class="btn-menu" href="./">← Meny</a>
+  </div>
+</div>
+
+<div class="main" id="mainArea" style="display:none">
+  <div class="card">
+    <div class="task-head"><span class="task-nr" id="taskNr"></span><span class="task-type" id="taskType"></span></div>
+    <div class="task-q" id="taskQ"></div>
+    <div class="figwrap" id="fig"></div>
+    <div class="answer" id="answer"></div>
+    <div class="note" id="note"></div>
+    <div class="fb" id="fb"></div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-check" id="checkBtn" onclick="checkAnswer()">✅ Sjekk svar</button>
+    <button class="btn btn-soft" id="showBtn" onclick="showSolution()" style="display:none">💡 Vis løsningsforslag</button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextTask()" style="display:none">Neste oppgave ➡️</button>
+    <button class="btn btn-soft" id="skipBtn" onclick="skipTask()">⏭️ Hopp over</button>
+  </div>
+</div>
+
+<script>
+// ═════════════ HJELPEFUNKSJONER ═════════════
+const PI=3.14;
+const rint=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const r2=v=>Math.round(v*100)/100;
+const r6=v=>Math.round(v*1e6)/1e6;
+// Norsk tallformat: komma, mellomrom som tusenskille
+function fmt(v){
+  v=r6(v);
+  const neg=v<0; v=Math.abs(v);
+  let [i,d]=String(v).split('.');
+  i=i.replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  return (neg?'−':'')+i+(d?','+d:'');
+}
+function parseNum(s){
+  s=String(s||'').trim().replace(/\s/g,'').replace(/−/g,'-').replace(',','.');
+  if(!/^-?\d*\.?\d+$/.test(s)) return NaN;
+  return parseFloat(s);
+}
+const sq=u=>u+'²';
+const UNITS={mm:0.001,cm:0.01,dm:0.1,m:1};
+const conv=(v,from,to)=>r6(v*UNITS[from]/UNITS[to]);
+const dec=(lo,hi,step)=>r6(rint(Math.round(lo/step),Math.round(hi/step))*step); // desimaltall med gitt steg
+
+// ═════════════ FIGURER ═════════════
+// Koordinater i virkelige mål. dims: mållinjer langs en kant, heights: stiplet høyde, segs: stiplet hjelpelinje
+function arcPts(cx,cy,r,a0,a1,n=28){ const p=[]; for(let i=0;i<=n;i++){ const a=a0+(a1-a0)*i/n; p.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]); } return p; }
+function drawFig(F){
+  const all=[];
+  (F.polys||[]).forEach(p=>all.push(...p));
+  (F.holes||[]).forEach(p=>all.push(...p));
+  (F.circles||[]).forEach(c=>{ all.push([c.c[0]-c.r,c.c[1]-c.r],[c.c[0]+c.r,c.c[1]+c.r]); });
+  const xs=all.map(p=>p[0]), ys=all.map(p=>p[1]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const M=window.innerWidth<500?58:74;
+  const maxW=Math.min(window.innerWidth-56,560), maxH=Math.min(300,Math.max(200,window.innerHeight*0.36));
+  const k=Math.min((maxW-2*M)/Math.max(x1-x0,0.01),(maxH-2*M*0.7)/Math.max(y1-y0,0.01));
+  const W=Math.round((x1-x0)*k+2*M), H=Math.round((y1-y0)*k+1.4*M);
+  const X=x=>M+(x-x0)*k, Y=y=>H-0.7*M-(y-y0)*k;
+  const path=pts=>'M'+pts.map(([x,y])=>X(x).toFixed(1)+','+Y(y).toFixed(1)).join('L')+'Z';
+  let s='';
+  (F.polys||[]).forEach(p=>{ s+=`<path d="${path(p)}" fill="var(--fill)" stroke="var(--edge)" stroke-width="5" stroke-linejoin="round"/>`; });
+  (F.polys||[]).forEach(p=>{ s+=`<path d="${path(p)}" fill="var(--fill)"/>`; });
+  (F.circles||[]).forEach(c=>{ s+=`<circle cx="${X(c.c[0])}" cy="${Y(c.c[1])}" r="${c.r*k}" fill="var(--fill)" stroke="var(--edge)" stroke-width="3"/>`; });
+  (F.holes||[]).forEach(p=>{ s+=`<path d="${path(p)}" fill="#fffdfa" stroke="var(--edge)" stroke-width="2.5" stroke-linejoin="round"/>`; });
+  const txt=(x,y,str,anchor='middle',col='#0f172a')=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" font-size="15" fill="${col}" stroke="#fffdfa" stroke-width="4" paint-order="stroke">${str}</text>`;
+  (F.segs||[]).forEach(l=>{
+    const ax=X(l.a[0]),ay=Y(l.a[1]),bx=X(l.b[0]),by=Y(l.b[1]);
+    s+=`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="${l.col||'#2563eb'}" stroke-width="2.2" ${l.solid?'':'stroke-dasharray="6 4"'}/>`;
+    if(l.dot) s+=`<circle cx="${ax}" cy="${ay}" r="3.5" fill="#1d4ed8"/>`;
+    if(l.text){ const vert=Math.abs(bx-ax)<Math.abs(by-ay); const mx=(ax+bx)/2, my=(ay+by)/2;
+      s+=txt(mx+(vert?8:0),my+(vert?0:-12),l.text,vert?'start':'middle','#1d4ed8'); }
+  });
+  (F.heights||[]).forEach(l=>{
+    const ax=X(l.a[0]),ay=Y(l.a[1]),bx=X(l.b[0]),by=Y(l.b[1]);
+    s+=`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#2563eb" stroke-width="2.2" stroke-dasharray="6 4"/>`;
+    s+=`<path d="M${bx} ${by-10}h${l.left?-10:10}v10" fill="none" stroke="#2563eb" stroke-width="1.8"/>`;
+    s+=txt(ax+(l.left?-8:8),(ay+by)/2,l.text,l.left?'end':'start','#1d4ed8');
+  });
+  (F.dims||[]).forEach(l=>{
+    const [sx,sy]=[l.side[0],-l.side[1]], off=16, tk=5;
+    const ax=X(l.a[0])+sx*off, ay=Y(l.a[1])+sy*off, bx=X(l.b[0])+sx*off, by=Y(l.b[1])+sy*off;
+    s+=`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#64748b" stroke-width="1.5"/>`;
+    s+=`<line x1="${ax-sx*tk}" y1="${ay-sy*tk}" x2="${ax+sx*tk}" y2="${ay+sy*tk}" stroke="#64748b" stroke-width="1.5"/>`;
+    s+=`<line x1="${bx-sx*tk}" y1="${by-sy*tk}" x2="${bx+sx*tk}" y2="${by+sy*tk}" stroke="#64748b" stroke-width="1.5"/>`;
+    const anchor=Math.abs(sx)>0.7?(sx>0?'start':'end'):'middle';
+    s+=txt((ax+bx)/2+sx*10,(ay+by)/2+sy*12,l.text,anchor,l.col||'#0f172a');
+  });
+  (F.labels||[]).forEach(l=>{ s+=txt(X(l.p[0]),Y(l.p[1]),l.text,'middle',l.col||'#7c2d12'); });
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Figur med mål">${s}</svg>`;
+}
+const B=[0,-1],T=[0,1],L=[-1,0],R=[1,0];
+const rectPts=(w,h,x=0,y=0)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+
+// ═════════════ OPPGAVETYPER ═════════════
+// Hver oppgave: {type, q, fig?, ans:[{lab, unit, val, tol?, alt?}], hint, sol:[linjer], mistakes?:fn(svar)->tekst}
+const T1={}, T2={}, T3={};
+
+// ── NIVÅ 1 ──
+T1.rektangelOmkrets=()=>{
+  const u=pick(['cm','m']); let l,b; do{ l=rint(4,15); b=rint(2,l-1); }while(l*b===2*(l+b));
+  return {type:'Omkrets',q:`Et rektangel er ${l} ${u} langt og ${b} ${u} bredt. Hva er omkretsen?`,
+    fig:drawFig({polys:[rectPts(l,b)],dims:[{a:[0,0],b:[l,0],side:B,text:l+' '+u},{a:[l,0],b:[l,b],side:R,text:b+' '+u}]}),
+    ans:[{lab:'O',unit:u,val:2*(l+b)}],
+    hint:'Omkretsen er lengden rundt hele figuren. Et rektangel har to lange og to korte sider.',
+    sol:[`O = ${l} + ${b} + ${l} + ${b}`,`O = 2 · ${l} + 2 · ${b} = <b>${2*(l+b)} ${u}</b>`],
+    mistakes:a=>a===l*b?'Det der er arealet. Omkretsen er summen av alle sidene.':a===l+b?'Du har bare tatt med to av sidene. Rektangelet har fire sider.':null};
+};
+T1.rektangelAreal=()=>{
+  const u=pick(['cm','m']); let l,b; do{ l=rint(4,14); b=rint(2,l); }while(l*b===2*(l+b));
+  return {type:'Areal',q:`Regn ut arealet av rektangelet.`,
+    fig:drawFig({polys:[rectPts(l,b)],dims:[{a:[0,0],b:[l,0],side:B,text:l+' '+u},{a:[l,0],b:[l,b],side:R,text:b+' '+u}]}),
+    ans:[{lab:'A',unit:sq(u),val:l*b}],
+    hint:'Areal av rektangel: A = lengde · bredde.',
+    sol:[`A = l · b`,`A = ${l} · ${b} = <b>${l*b} ${sq(u)}</b>`],
+    mistakes:a=>a===2*(l+b)?'Det der er omkretsen. Arealet er lengde ganger bredde.':null};
+};
+T1.kvadrat=()=>{
+  const u=pick(['cm','m','dm']), s=rint(3,12);
+  return {type:'Kvadrat',q:`Et kvadrat har sider på ${s} ${u}. Finn omkretsen og arealet.`,
+    fig:drawFig({polys:[rectPts(s,s)],dims:[{a:[0,0],b:[s,0],side:B,text:s+' '+u}]}),
+    ans:[{lab:'O',sub:'a)',unit:u,val:4*s},{lab:'A',sub:'b)',unit:sq(u),val:s*s}],
+    hint:'Alle fire sidene i et kvadrat er like lange. O = 4 · s og A = s · s.',
+    sol:[`a) O = 4 · ${s} = <b>${4*s} ${u}</b>`,`b) A = ${s} · ${s} = <b>${s*s} ${sq(u)}</b>`]};
+};
+T1.trekant=()=>{
+  const u=pick(['cm','m']); let g=rint(4,14), h=rint(3,10); if((g*h)%2) g++;
+  const sk=rint(1,g-1);
+  return {type:'Areal av trekant',q:`Regn ut arealet av trekanten.`,
+    fig:drawFig({polys:[[[0,0],[g,0],[sk,h]]],heights:[{a:[sk,h],b:[sk,0],text:'h = '+h+' '+u}],dims:[{a:[0,0],b:[g,0],side:B,text:g+' '+u}]}),
+    ans:[{lab:'A',unit:sq(u),val:g*h/2}],
+    hint:'Areal av trekant: A = g · h / 2. Husk å dele på 2.',
+    sol:[`A = g · h / 2`,`A = ${g} · ${h} / 2 = ${g*h} / 2 = <b>${fmt(g*h/2)} ${sq(u)}</b>`],
+    mistakes:a=>a===g*h?'Du har glemt å dele på 2. En trekant er halvparten av et rektangel.':null};
+};
+T1.lengdeEnhet=()=>{
+  const pairs=[['m','cm'],['cm','mm'],['m','dm'],['cm','m'],['mm','cm'],['dm','cm'],['km','m']];
+  const [f,t]=pick(pairs);
+  let v, val;
+  if(f==='km'){ v=dec(0.5,9.5,0.5); val=v*1000; }
+  else { v=UNITS[f]>UNITS[t]?dec(0.5,12,0.5):rint(5,95)*(t==='m'&&f==='cm'?10:1); val=conv(v,f,t); }
+  return {type:'Enheter',q:`Gjør om ${fmt(v)} ${f} til ${t}.`,
+    ans:[{lab:fmt(v)+' '+f+' =',unit:t,val}],
+    hint:'1 m = 10 dm = 100 cm = 1000 mm, og 1 km = 1000 m. Til mindre enhet: gang. Til større enhet: del.',
+    sol:[f==='km'?`1 km = 1000 m, så ${fmt(v)} · 1000 = <b>${fmt(val)} m</b>`
+      :UNITS[f]>UNITS[t]?`1 ${f} = ${fmt(UNITS[f]/UNITS[t])} ${t}, så ${fmt(v)} · ${fmt(UNITS[f]/UNITS[t])} = <b>${fmt(val)} ${t}</b>`
+      :`1 ${t} = ${fmt(UNITS[t]/UNITS[f])} ${f}, så ${fmt(v)} : ${fmt(UNITS[t]/UNITS[f])} = <b>${fmt(val)} ${t}</b>`],
+    mistakes:a=>Math.abs(a*val)>0&&(r6(a/val)===10||r6(a/val)===0.1)?'Du har flyttet kommaet ett sted for mye eller for lite. Sjekk hvor mange ganger større enheten er.':
+      (r6(a*val)===r6(v*v)&&a!==val)?'Du har gått feil vei. Til en mindre enhet blir tallet større.':null};
+};
+T1.tekstOmkrets=()=>{
+  const l=rint(6,20), b=rint(4,l-1), pris=pick([45,60,75,90]);
+  return {type:'Tekstoppgave',q:`En hage er formet som et rektangel som er ${l} m lang og ${b} m bred. Det skal settes opp gjerde rundt hele hagen.<br>a) Hvor mange meter gjerde trengs?<br>b) Gjerdet koster ${pris} kr per meter. Hva koster gjerdet?`,
+    ans:[{lab:'a)',unit:'m',val:2*(l+b)},{lab:'b)',unit:'kr',val:2*(l+b)*pris}],
+    hint:'Gjerdet går rundt hele hagen: det er omkretsen. Gang så med prisen per meter.',
+    sol:[`a) O = 2 · ${l} + 2 · ${b} = <b>${2*(l+b)} m</b>`,`b) ${2*(l+b)} · ${pris} = <b>${fmt(2*(l+b)*pris)} kr</b>`]};
+};
+
+// ── NIVÅ 2 ──
+T2.parallellogram=()=>{
+  const u=pick(['cm','m']), g=rint(5,14), h=rint(3,9), sk=rint(1,4);
+  const side=r2(Math.hypot(sk,h));
+  return {type:'Areal av parallellogram',q:`Regn ut arealet av parallellogrammet.`,
+    fig:drawFig({polys:[[[0,0],[g,0],[g+sk,h],[sk,h]]],heights:[{a:[sk,h],b:[sk,0],text:'h = '+h+' '+u}],
+      dims:[{a:[0,0],b:[g,0],side:B,text:g+' '+u},{a:[g,0],b:[g+sk,h],side:[0.95,-0.3],text:fmt(side)+' '+u}]}),
+    ans:[{lab:'A',unit:sq(u),val:g*h}],
+    hint:'A = g · h. Bruk høyden (den stiplede, blå linja), ikke den skrå siden.',
+    sol:[`A = g · h`,`A = ${g} · ${h} = <b>${g*h} ${sq(u)}</b>`],
+    mistakes:a=>Math.abs(a-g*side)<0.05?'Du har brukt den skrå siden. Arealet bruker høyden, som står vinkelrett på grunnlinjen.':a===g*h/2?'Et parallellogram skal ikke deles på 2. Det er bare trekanter og trapeser.':null};
+};
+T2.trapes=()=>{
+  const u=pick(['cm','m']); let a=rint(6,14), b=rint(3,a-2), h=rint(3,8); if(((a+b)*h)%2) h++;
+  const off=r2((a-b)/2+rint(-1,1)*0.5);
+  return {type:'Areal av trapes',q:`Regn ut arealet av trapeset. De to vannrette sidene er parallelle.`,
+    fig:drawFig({polys:[[[0,0],[a,0],[off+b,h],[off,h]]],heights:[{a:[off,h],b:[off,0],text:'h = '+h+' '+u}],
+      dims:[{a:[0,0],b:[a,0],side:B,text:a+' '+u},{a:[off,h],b:[off+b,h],side:T,text:b+' '+u}]}),
+    ans:[{lab:'A',unit:sq(u),val:(a+b)*h/2}],
+    hint:'A = (a + b) · h / 2, der a og b er de to parallelle sidene.',
+    sol:[`A = (a + b) · h / 2`,`A = (${a} + ${b}) · ${h} / 2 = ${a+b} · ${h} / 2 = <b>${fmt((a+b)*h/2)} ${sq(u)}</b>`],
+    mistakes:x=>x===(a+b)*h?'Husk å dele på 2.':x===a*h||x===b*h?'Du har bare brukt én av de parallelle sidene. Legg sammen a og b først.':null};
+};
+T2.sirkelOmkrets=()=>{
+  const u=pick(['cm','m']), r=rint(3,15), givD=Math.random()<0.5;
+  const v=r2(2*PI*r);
+  return {type:'Omkrets av sirkel',q:`En sirkel har ${givD?'diameter':'radius'} ${givD?2*r:r} ${u}. Regn ut omkretsen. Bruk π ≈ 3,14.`,
+    fig:drawFig({circles:[{c:[0,0],r}],segs:givD?[{a:[-r,0],b:[r,0],text:'d = '+2*r+' '+u,solid:true}]:[{a:[0,0],b:[r,0],text:'r = '+r+' '+u,solid:true,dot:true}]}),
+    ans:[{lab:'O',unit:u,val:v,pi:2*Math.PI*r}],
+    hint:'Omkrets av sirkel: O = π · d = 2 · π · r.',
+    sol:[givD?`O = π · d = 3,14 · ${2*r} = <b>${fmt(v)} ${u}</b>`:`O = 2 · π · r = 2 · 3,14 · ${r} = <b>${fmt(v)} ${u}</b>`],
+    mistakes:a=>Math.abs(a-r2(PI*r*r))<0.02?'Det der er arealet (π · r²). Omkretsen er π · d.':Math.abs(a-r2(PI*r))<0.02?'Du har brukt radien i stedet for diameteren. O = π · d = 2 · π · r.':Math.abs(a-r2(4*PI*r))<0.02?'Du har brukt diameteren to ganger. O = π · d.':null};
+};
+T2.sirkelAreal=()=>{
+  const u=pick(['cm','m']), r=rint(3,12), givD=Math.random()<0.5;
+  const v=r2(PI*r*r);
+  return {type:'Areal av sirkel',q:`En sirkel har ${givD?'diameter':'radius'} ${givD?2*r:r} ${u}. Regn ut arealet. Bruk π ≈ 3,14.`,
+    fig:drawFig({circles:[{c:[0,0],r}],segs:givD?[{a:[-r,0],b:[r,0],text:'d = '+2*r+' '+u,solid:true}]:[{a:[0,0],b:[r,0],text:'r = '+r+' '+u,solid:true,dot:true}]}),
+    ans:[{lab:'A',unit:sq(u),val:v,pi:Math.PI*r*r}],
+    hint:'Areal av sirkel: A = π · r². Radien er halve diameteren.',
+    sol:[givD?`r = d / 2 = ${2*r} / 2 = ${r} ${u}`:'',`A = π · r² = 3,14 · ${r} · ${r} = 3,14 · ${r*r} = <b>${fmt(v)} ${sq(u)}</b>`].filter(Boolean),
+    mistakes:a=>Math.abs(a-r2(PI*4*r*r))<0.05?'Du har brukt diameteren. A = π · r², og r er halve diameteren.':Math.abs(a-r2(2*PI*r))<0.05?'Det der er omkretsen. Arealet er π · r².':Math.abs(a-r2(PI*2*r))<0.05&&givD?'Du har regnet π · d. Arealet er π · r · r.':null};
+};
+T2.mangler=()=>{
+  const u=pick(['cm','m']), kind=pick(['rektA','rektO','trekA']);
+  if(kind==='rektA'){ const l=rint(4,15), b=rint(2,12);
+    return {type:'Finn målet som mangler',q:`Et rektangel har areal ${l*b} ${sq(u)}. Lengden er ${l} ${u}. Hvor bred er rektangelet?`,
+      fig:drawFig({polys:[rectPts(l,b)],dims:[{a:[0,0],b:[l,0],side:B,text:l+' '+u},{a:[l,0],b:[l,b],side:R,text:'b = ?',col:'#dc2626'}],labels:[{p:[l/2,b/2],text:'A = '+l*b+' '+sq(u)}]}),
+      ans:[{lab:'b',unit:u,val:b}],hint:'A = l · b, så b = A : l.',
+      sol:[`A = l · b, så b = A : l`,`b = ${l*b} : ${l} = <b>${b} ${u}</b>`]}; }
+  if(kind==='rektO'){ const l=rint(5,16), b=rint(2,l-1);
+    return {type:'Finn målet som mangler',q:`Et rektangel har omkrets ${2*(l+b)} ${u}. Lengden er ${l} ${u}. Hvor bred er rektangelet?`,
+      fig:drawFig({polys:[rectPts(l,b)],dims:[{a:[0,0],b:[l,0],side:B,text:l+' '+u},{a:[l,0],b:[l,b],side:R,text:'b = ?',col:'#dc2626'}]}),
+      ans:[{lab:'b',unit:u,val:b}],hint:'Trekk de to lange sidene fra omkretsen. Det som er igjen, er de to korte sidene til sammen.',
+      sol:[`${2*(l+b)} − 2 · ${l} = ${2*b} ${u} (de to korte sidene)`,`b = ${2*b} : 2 = <b>${b} ${u}</b>`],
+      mistakes:a=>a===2*b?'Det der er begge de korte sidene til sammen. Del på 2.':a===2*(l+b)-l?'Husk at det er to lange sider som skal trekkes fra.':null}; }
+  let g=rint(4,14), h=rint(3,10); if((g*h)%2) g++;
+  const sk=rint(1,g-1);
+  return {type:'Finn målet som mangler',q:`En trekant har areal ${fmt(g*h/2)} ${sq(u)} og grunnlinje ${g} ${u}. Hvor stor er høyden?`,
+    fig:drawFig({polys:[[[0,0],[g,0],[sk,h]]],heights:[{a:[sk,h],b:[sk,0],text:'h = ?'}],dims:[{a:[0,0],b:[g,0],side:B,text:g+' '+u}]}),
+    ans:[{lab:'h',unit:u,val:h}],hint:'A = g · h / 2. Gang arealet med 2, og del på grunnlinjen.',
+    sol:[`h = 2 · A : g`,`h = 2 · ${fmt(g*h/2)} : ${g} = ${g*h} : ${g} = <b>${h} ${u}</b>`],
+    mistakes:a=>a===h/2?'Husk å gange arealet med 2 først.':null};
+};
+T2.tekstGulv=()=>{
+  const l=dec(3,7,0.5), b=dec(2.5,l,0.5), pris=pick([199,249,299,349]);
+  const A=r6(l*b);
+  return {type:'Tekstoppgave',q:`Et rom er ${fmt(l)} m langt og ${fmt(b)} m bredt. Det skal legges nytt gulv.<br>a) Hvor mange m² gulv trengs?<br>b) Gulvet koster ${pris} kr per m². Hva koster gulvet?`,
+    ans:[{lab:'a)',unit:'m²',val:A},{lab:'b)',unit:'kr',val:r2(A*pris)}],
+    hint:'Gulvet dekker arealet av rommet: lengde · bredde. Gang så arealet med prisen per m².',
+    sol:[`a) A = ${fmt(l)} · ${fmt(b)} = <b>${fmt(A)} m²</b>`,`b) ${fmt(A)} · ${pris} = <b>${fmt(r2(A*pris))} kr</b>`]};
+};
+T2.blandetEnhet=()=>{
+  const lm=dec(1,4,0.5), bcm=rint(3,9)*10, ansU=pick(['cm','m']);
+  const A=ansU==='cm'?lm*100*bcm:r6(lm*bcm/100);
+  return {type:'Ulike enheter',q:`Et rektangel er ${fmt(lm)} m langt og ${bcm} cm bredt. Regn ut arealet i <b>${sq(ansU)}</b>.`,
+    fig:drawFig({polys:[rectPts(lm*100,bcm)],dims:[{a:[0,0],b:[lm*100,0],side:B,text:fmt(lm)+' m'},{a:[lm*100,0],b:[lm*100,bcm],side:R,text:bcm+' cm'}]}),
+    ans:[{lab:'A',unit:sq(ansU),val:r6(A)}],
+    hint:`Gjør om begge målene til ${ansU} før du ganger. 1 m = 100 cm.`,
+    sol:ansU==='cm'?[`${fmt(lm)} m = ${fmt(lm*100)} cm`,`A = ${fmt(lm*100)} · ${bcm} = <b>${fmt(A)} cm²</b>`]:[`${bcm} cm = ${fmt(bcm/100)} m`,`A = ${fmt(lm)} · ${fmt(bcm/100)} = <b>${fmt(A)} m²</b>`],
+    mistakes:a=>Math.abs(a-lm*bcm)<1e-6?'Du har ganget meter med centimeter. Gjør om til samme enhet først.':null};
+};
+
+// ── NIVÅ 3 ──
+T3.lForm=()=>{
+  const u=pick(['cm','m']), W=rint(8,14), H=rint(6,11), w2=rint(3,W-3), h2=rint(2,H-3);
+  // L: hele rektangelet minus et hjørne øverst til høyre
+  const pts=[[0,0],[W,0],[W,H-h2],[w2,H-h2],[w2,H],[0,H]];
+  const A=W*H-(W-w2)*h2, O=2*(W+H), askO=Math.random()<0.5;
+  return {type:'Sammensatt figur',q:`Figuren er satt sammen av rektangler, og alle hjørnene er rette. ${askO?'Finn omkretsen og arealet.':'Finn arealet.'}`,
+    fig:drawFig({polys:[pts],dims:[{a:[0,0],b:[W,0],side:B,text:W+' '+u},{a:[0,0],b:[0,H],side:L,text:H+' '+u},{a:[w2,H],b:[0,H],side:T,text:w2+' '+u},{a:[W,0],b:[W,H-h2],side:R,text:(H-h2)+' '+u}],
+      segs:[{a:[w2,0],b:[w2,H-h2],col:'#c2410c'}]}),
+    ans:askO?[{lab:'O',sub:'a)',unit:u,val:O},{lab:'A',sub:'b)',unit:sq(u),val:A}]:[{lab:'A',unit:sq(u),val:A}],
+    hint:'Del figuren i to rektangler (den stiplede linja), og legg sammen arealene. Omkretsen: finn lengden av sidene som mangler mål først.',
+    sol:[...(askO?[`a) Sidene som mangler: ${W-w2} ${u} og ${h2} ${u}. O = ${W} + ${H-h2} + ${W-w2} + ${h2} + ${w2} + ${H} = <b>${O} ${u}</b>`]:[]),
+      `${askO?'b) ':''}Venstre del: ${w2} · ${H} = ${w2*H} ${sq(u)}. Høyre del: ${W-w2} · ${H-h2} = ${(W-w2)*(H-h2)} ${sq(u)}`,`A = ${w2*H} + ${(W-w2)*(H-h2)} = <b>${A} ${sq(u)}</b>`],
+    mistakes:a=>a===W*H?'Du har regnet hele rektangelet. Hjørnet øverst til høyre mangler.':null};
+};
+T3.halvsirkel=()=>{
+  const u=pick(['m','cm']), d=rint(2,8)*2, l=rint(6,16), r=d/2;
+  const A=r2(l*d+PI*r*r/2), O=r2(2*l+d+PI*d/2);
+  const pts=[[0,0],[l,0],...arcPts(l,r,r,-Math.PI/2,Math.PI/2).slice(1,-1),[l,d],[0,d]];
+  const askO=Math.random()<0.5;
+  return {type:'Sammensatt figur med sirkel',q:`Figuren består av et rektangel og en halvsirkel. Bruk π ≈ 3,14. ${askO?'Finn omkretsen og arealet.':'Finn arealet.'}`,
+    fig:drawFig({polys:[pts],dims:[{a:[0,0],b:[l,0],side:B,text:l+' '+u},{a:[0,0],b:[0,d],side:L,text:d+' '+u}],segs:[{a:[l,0],b:[l,d],col:'#c2410c'}]}),
+    ans:askO?[{lab:'O',sub:'a)',unit:u,val:O,pi:2*l+d+Math.PI*d/2},{lab:'A',sub:'b)',unit:sq(u),val:A,pi:l*d+Math.PI*r*r/2}]:[{lab:'A',unit:sq(u),val:A,pi:l*d+Math.PI*r*r/2}],
+    hint:`Rektangel: l · b. Halvsirkel: π · r² / 2, der r er halve bredden (${d} : 2 = ${r}).${askO?' Omkretsen: tre sider av rektangelet pluss halve sirkelbuen (π · d / 2).':''}`,
+    sol:[...(askO?[`a) Halv sirkelbue: 3,14 · ${d} / 2 = ${fmt(r2(PI*d/2))} ${u}`,`O = ${l} + ${d} + ${l} + ${fmt(r2(PI*d/2))} = <b>${fmt(O)} ${u}</b>`]:[]),
+      `${askO?'b) ':''}Rektangel: ${l} · ${d} = ${l*d} ${sq(u)}`,`Halvsirkel: 3,14 · ${r} · ${r} / 2 = ${fmt(r2(PI*r*r/2))} ${sq(u)}`,`A = ${l*d} + ${fmt(r2(PI*r*r/2))} = <b>${fmt(A)} ${sq(u)}</b>`],
+    mistakes:a=>Math.abs(a-r2(l*d+PI*r*r))<0.05?'Det er bare en halv sirkel. Del sirkelarealet på 2.':Math.abs(a-r2(l*d+PI*d*d/2))<0.05?'Bruk radien (halve bredden) i π · r².':null};
+};
+T3.hull=()=>{
+  const u=pick(['cm','m']), W=rint(8,14), H=rint(6,10);
+  if(Math.random()<0.5){
+    const w=rint(2,W-4), h=rint(2,H-3), x=rint(1,W-w-1), y=rint(1,H-h-1);
+    return {type:'Figur med hull',q:`En plate har et rektangulært hull. Finn arealet av den oransje delen.`,
+      fig:drawFig({polys:[rectPts(W,H)],holes:[rectPts(w,h,x,y)],dims:[{a:[0,0],b:[W,0],side:B,text:W+' '+u},{a:[W,0],b:[W,H],side:R,text:H+' '+u}],
+        segs:[{a:[x,y+h+0.0001],b:[x+w,y+h],text:w+' '+u,col:'#475569',solid:true},{a:[x,y],b:[x,y+h],text:h+' '+u,col:'#475569',solid:true}]}),
+      ans:[{lab:'A',unit:sq(u),val:W*H-w*h}],hint:'Regn ut arealet av hele platen, og trekk fra arealet av hullet.',
+      sol:[`Hele platen: ${W} · ${H} = ${W*H} ${sq(u)}`,`Hullet: ${w} · ${h} = ${w*h} ${sq(u)}`,`A = ${W*H} − ${w*h} = <b>${W*H-w*h} ${sq(u)}</b>`],
+      mistakes:a=>a===W*H+w*h?'Hullet skal trekkes fra, ikke legges til.':a===W*H?'Husk å trekke fra hullet.':null};
+  }
+  const r=rint(1,Math.floor(Math.min(W,H)/2)-1);
+  const A=r2(W*H-PI*r*r);
+  return {type:'Figur med hull',q:`En plate har et sirkelrundt hull med radius ${r} ${u}. Finn arealet av den oransje delen. Bruk π ≈ 3,14.`,
+    fig:drawFig({polys:[rectPts(W,H)],holes:[arcPts(W/2,H/2,r,0,2*Math.PI,40)],dims:[{a:[0,0],b:[W,0],side:B,text:W+' '+u},{a:[W,0],b:[W,H],side:R,text:H+' '+u}],
+      segs:[{a:[W/2,H/2],b:[W/2+r,H/2],text:'r = '+r+' '+u,solid:true,dot:true}]}),
+    ans:[{lab:'A',unit:sq(u),val:A,pi:W*H-Math.PI*r*r}],hint:'Hele platen minus sirkelen. Sirkel: π · r².',
+    sol:[`Hele platen: ${W} · ${H} = ${W*H} ${sq(u)}`,`Hullet: 3,14 · ${r} · ${r} = ${fmt(r2(PI*r*r))} ${sq(u)}`,`A = ${W*H} − ${fmt(r2(PI*r*r))} = <b>${fmt(A)} ${sq(u)}</b>`]};
+};
+T3.arealEnhet=()=>{
+  const opts=[['m','cm',10000],['m','dm',100],['dm','cm',100],['cm','mm',100]];
+  const [big,small,f]=pick(opts), down=Math.random()<0.5;
+  let v, val;
+  if(down){ v=dec(0.5,9.5,0.5); val=r6(v*f); }
+  else { v=rint(2,95)*(f===10000?500:10); val=r6(v/f); }
+  const from=down?big:small, to=down?small:big;
+  return {type:'Arealenheter',q:`Gjør om ${fmt(v)} ${sq(from)} til ${sq(to)}.`,
+    ans:[{lab:fmt(v)+' '+sq(from)+' =',unit:sq(to),val}],
+    hint:`1 ${big} = ${f===10000?100:10} ${small}, så 1 ${sq(big)} = ${f===10000?'100 · 100':'10 · 10'} = ${fmt(f)} ${sq(small)}.`,
+    sol:[`1 ${sq(big)} = ${fmt(f)} ${sq(small)}`,down?`${fmt(v)} · ${fmt(f)} = <b>${fmt(val)} ${sq(to)}</b>`:`${fmt(v)} : ${fmt(f)} = <b>${fmt(val)} ${sq(to)}</b>`],
+    mistakes:a=>{ const g=Math.sqrt(f); return Math.abs(a-(down?v*g:v/g))<1e-9?`Arealenheter: 1 ${sq(big)} er ${fmt(f)} ${sq(small)}, ikke ${fmt(g)}. Du må gange (eller dele) to ganger.`:null; }};
+};
+T3.fliser=()=>{
+  const l=dec(3,6,0.5), b=dec(2,l,0.5), pk=pick([1.2,1.5,2,2.5]), pris=pick([299,349,429,499]);
+  const A=r6(l*b), n=Math.ceil(r6(A/pk));
+  return {type:'Tekstoppgave i flere steg',q:`Et baderomsgulv er ${fmt(l)} m langt og ${fmt(b)} m bredt. En pakke fliser dekker ${fmt(pk)} m², og koster ${pris} kr. Man må kjøpe hele pakker.<br>a) Hvor mange m² er gulvet?<br>b) Hvor mange pakker trengs?<br>c) Hva koster flisene?`,
+    ans:[{lab:'a)',unit:'m²',val:A},{lab:'b)',unit:'pakker',val:n},{lab:'c)',unit:'kr',val:n*pris}],
+    hint:'Regn ut arealet først. Del arealet på det én pakke dekker, og rund opp til et helt tall.',
+    sol:[`a) ${fmt(l)} · ${fmt(b)} = <b>${fmt(A)} m²</b>`,`b) ${fmt(A)} : ${fmt(pk)} = ${fmt(r2(A/pk))}, rundet opp: <b>${n} pakker</b>`,`c) ${n} · ${pris} = <b>${fmt(n*pris)} kr</b>`],
+    mistakes:a=>a===Math.floor(A/pk)&&a!==n?'Du må runde opp, ellers får du ikke dekket hele gulvet.':null};
+};
+T3.maling=()=>{
+  const l=dec(3,6,0.5), h=dec(2.4,2.8,0.2), vb=dec(0.8,1.6,0.2), vh=dec(1,1.4,0.2), dekk=pick([6,8,10]);
+  const A=r6(l*h-vb*vh), lit=r2(A/dekk);
+  return {type:'Tekstoppgave i flere steg',q:`En vegg er ${fmt(l)} m bred og ${fmt(h)} m høy. I veggen er det et vindu som er ${fmt(vb)} m bredt og ${fmt(vh)} m høyt. Veggen skal males, men ikke vinduet.<br>a) Hvor mange m² skal males?<br>b) Én liter maling dekker ${dekk} m². Hvor mange liter trengs? Svar med to desimaler.`,
+    ans:[{lab:'a)',unit:'m²',val:A},{lab:'b)',unit:'liter',val:lit,tol:0.011}],
+    hint:'Arealet av veggen minus arealet av vinduet. Del så på hvor mye én liter dekker.',
+    sol:[`Vegg: ${fmt(l)} · ${fmt(h)} = ${fmt(r6(l*h))} m². Vindu: ${fmt(vb)} · ${fmt(vh)} = ${fmt(r6(vb*vh))} m²`,`a) ${fmt(r6(l*h))} − ${fmt(r6(vb*vh))} = <b>${fmt(A)} m²</b>`,`b) ${fmt(A)} : ${dekk} = <b>${fmt(lit)} liter</b>`],
+    mistakes:a=>Math.abs(a-r6(l*h))<1e-6?'Husk å trekke fra vinduet.':null};
+};
+T3.radiusFraOmkrets=()=>{
+  const u=pick(['cm','m']), r=rint(2,20), O=r2(2*PI*r), askA=Math.random()<0.5;
+  return {type:'Sirkel baklengs',q:`En sirkel har omkrets ${fmt(O)} ${u}. Bruk π ≈ 3,14.<br>a) Hva er radien?${askA?'<br>b) Hva er arealet?':''}`,
+    ans:askA?[{lab:'r',sub:'a)',unit:u,val:r},{lab:'A',sub:'b)',unit:sq(u),val:r2(PI*r*r)}]:[{lab:'r',sub:'a)',unit:u,val:r}],
+    hint:'O = 2 · π · r. Del omkretsen på 2 · 3,14 = 6,28 for å finne r.',
+    sol:[`r = O : (2 · π) = ${fmt(O)} : 6,28 = <b>${r} ${u}</b>`,...(askA?[`b) A = 3,14 · ${r} · ${r} = <b>${fmt(r2(PI*r*r))} ${sq(u)}</b>`]:[])],
+    mistakes:a=>a===2*r?'Det der er diameteren. Radien er halvparten.':null};
+};
+
+const BANK={1:T1,2:T2,3:T3};
+let lastType=null;
+function makeTask(level){
+  const keys=Object.keys(BANK[level]);
+  let k; do{ k=pick(keys); }while(keys.length>1&&k===lastType);
+  lastType=k;
+  return BANK[level][k]();
+}
+// Riktig svar? Desimaltall må stemme på to desimaler. Ved π godtas også svar regnet med kalkulatorens π.
+function matches(a,x){
+  const tol=a.tol!=null?a.tol:0.0051;
+  if(Math.abs(x-a.val)<=tol) return 'ok';
+  if(a.pi!=null&&Math.abs(x-a.pi)<=0.0051+Math.abs(a.pi)*0.0001) return 'pi';
+  return null;
+}
+
+// ═════════════ SPILLET ═════════════
+const LEVELS={
+  1:{name:'Nivå 1',desc:'Omkrets og areal av rektangel, kvadrat og trekant, lengdeenheter og enkle tekstoppgaver'},
+  2:{name:'Nivå 2',desc:'Parallellogram, trapes, sirkel, finn målet som mangler, ulike enheter og tekstoppgaver'},
+  3:{name:'Nivå 3',desc:'Sammensatte figurer, figurer med hull, arealenheter og tekstoppgaver i flere steg'},
+};
+const MIN_LEVEL=1, MAX_LEVEL=3;
+let currentLevel=1, currentScore=0, gameMode='practice';
+let streak=0, errorStreak=0;
+let task=null, tries=0, done=false, taskNo=0, firstWrongCounted=false;
+const POINTS={1:20,2:30,3:40};
+
+const tcLv=levelTracker(), tcSessionStart=Date.now();
+let tcCorrect=0, tcWrong=0;
+function syncTC(){
+  tcLv.note(currentLevel);
+  syncToTimecode('oppgaver-plangeometri',{level:currentLevel,startLevel:tcLv.start,maxLevel:tcLv.max,
+    score:currentScore,correct:tcCorrect,wrong:tcWrong,sessionStart:tcSessionStart});
+}
+const $=id=>document.getElementById(id);
+
+function renderTask(){
+  const t=task;
+  tries=0; done=false; firstWrongCounted=false; taskNo++;
+  $('taskNr').textContent='Oppgave '+taskNo;
+  $('taskType').textContent=t.type+' · '+LEVELS[currentLevel].name;
+  $('taskQ').innerHTML=t.q;
+  $('fig').innerHTML=t.fig||'';
+  $('fig').style.display=t.fig?'':'none';
+  $('answer').innerHTML=t.ans.map((a,i)=>`<div class="row">${a.sub?`<span class="sub">${a.sub}</span>`:''}<span>${a.lab.endsWith('=')||a.lab.endsWith(')')?a.lab:a.lab+' ='}</span><input class="num-in" data-i="${i}" type="text" inputmode="decimal" autocomplete="off"><span class="u">${a.unit}</span></div>`).join('');
+  $('note').textContent='📓 Regn i kladdeboka. Bruk komma for desimaler.';
+  $('fb').className='fb'; $('fb').innerHTML='';
+  $('checkBtn').style.display=''; $('showBtn').style.display='none'; $('nextBtn').style.display='none'; $('skipBtn').style.display='';
+  const first=document.querySelector('.num-in'); if(first&&window.innerWidth>600) first.focus();
+}
+window.checkAnswer=function(){
+  if(done||!task) return;
+  const ins=[...document.querySelectorAll('.num-in')];
+  const vals=ins.map(i=>parseNum(i.value));
+  const empty=vals.findIndex(v=>!Number.isFinite(v));
+  if(empty>=0){ $('fb').className='fb err'; $('fb').innerHTML='Skriv et tall i '+(ins.length>1?'alle feltene':'feltet')+'. Bruk komma for desimaler, for eksempel <b>12,5</b>.'; ins[empty].focus(); return; }
+  let allOk=true, usedPi=false, msg=null;
+  ins.forEach((inp,i)=>{
+    const m=matches(task.ans[i],vals[i]);
+    inp.classList.remove('ok','bad'); inp.classList.add(m?'ok':'bad');
+    if(!m){ allOk=false; if(!msg&&task.mistakes) msg=task.mistakes(vals[i]); }
+    if(m==='pi') usedPi=true;
+  });
+  if(allOk){ onRight(usedPi); return; }
+  onWrong(msg);
+};
+function onWrong(msg){
+  tries++; tcWrong++;
+  if(!firstWrongCounted){ firstWrongCounted=true; SU.recordResult(false); }
+  syncTC();
+  const wrongN=document.querySelectorAll('.num-in.bad').length, n=task.ans.length;
+  $('fb').className='fb err';
+  $('fb').innerHTML='✗ '+(n>1?(wrongN===n?'Ingen av svarene stemmer ennå.':wrongN+' av '+n+' svar stemmer ikke (rød ramme).'):'Ikke helt.')+' '+
+    (msg?msg:tries===1?'Sjekk utregningen i kladdeboka. 💡 '+task.hint:'💡 '+task.hint);
+  if(tries>=2) $('showBtn').style.display='';
+}
+function onRight(usedPi){
+  const pts=tries===0?POINTS[currentLevel]:tries===1?Math.round(POINTS[currentLevel]/2):5;
+  currentScore+=pts;
+  $('scoreBadge').textContent=currentScore+' p';
+  tcCorrect++;
+  if(tries===0) SU.recordResult(true);
+  syncTC();
+  if(gameMode==='multi') syncRoomScore(currentScore);
+  finish(true,'+'+pts+' poeng'+(usedPi?' <span style="font-weight:700;font-size:.85rem">(du brukte kalkulatorens π – også riktig)</span>':''));
+}
+function finish(won,extra){
+  done=true;
+  $('fb').className='fb '+(won?'win':'info');
+  $('fb').innerHTML=`<span class="big">${won?'⭐ Riktig! '+extra:'💡 Løsningsforslag'}</span><div class="sol">${task.sol.map(l=>'<div>'+l+'</div>').join('')}</div>`+
+    (won?'':'<div style="margin-top:8px;font-size:.88rem">Sammenlign med det du har i kladdeboka. Finner du feilen?</div>');
+  $('checkBtn').style.display='none'; $('showBtn').style.display='none'; $('skipBtn').style.display='none';
+  $('nextBtn').style.display=''; $('nextBtn').focus();
+}
+window.showSolution=function(){ if(!done) finish(false); };
+window.skipTask=function(){
+  // Å hoppe over teller ikke som feil, men nullstiller rekka mot neste nivå
+  streak=0;
+  nextTask();
+};
+window.nextTask=function(){ task=makeTask(currentLevel); renderTask(); };
+
+function buildLevels(){
+  $('levels3').innerHTML=Object.keys(LEVELS).map(l=>`<button class="lv${+l===currentLevel?' active':''}" data-l="${l}"><b>${l}</b><span>${LEVELS[l].desc}</span></button>`).join('');
+  $('levels3').querySelectorAll('.lv').forEach(b=>b.onclick=()=>{ currentLevel=+b.dataset.l; buildLevels(); });
+}
+window.startGame=function(){
+  if(gameMode==='multi'){
+    const rc=$('roomInput').value.trim().toUpperCase();
+    if(!rc){ showToast('Skriv inn romkoden','error'); return; }
+    initRoom(rc);
+  }
+  $('levelBadge').textContent=LEVELS[currentLevel].name;
+  $('startScreen').style.display='none';
+  $('mainArea').style.display='flex';
+  nextTask();
+  syncTC();
+};
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||$('mainArea').style.display==='none') return;
+  if(e.target&&e.target.tagName==='BUTTON') return;
+  if(done){ nextTask(); return; }
+  // Enter i et felt: gå til neste tomme felt, eller sjekk
+  const ins=[...document.querySelectorAll('.num-in')];
+  const nxt=ins.find(i=>i!==e.target&&!i.value.trim());
+  if(nxt&&e.target.classList&&e.target.classList.contains('num-in')) nxt.focus(); else checkAnswer();
+});
+buildLevels();
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>
