@@ -100,7 +100,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
     <div style="font-size:2.6rem">📝</div>
     <h1>Oppgavesamling: plangeometri</h1>
     <p>Omkrets, areal, sirkel, enheter og sammensatte figurer. Nye tall hver gang.</p>
-    <div class="version">v1.0</div>
+    <div class="version">v1.1</div>
     <div class="paper"><span class="ic">📓</span><span>Regn i kladdeboka, og skriv bare svaret her. Tegn gjerne figuren og skriv formelen først.</span></div>
     <div class="lbl">Start på nivå</div>
     <div class="levels3" id="levels3"></div>
@@ -452,6 +452,126 @@ T3.radiusFraOmkrets=()=>{
     hint:'O = 2 · π · r. Del omkretsen på 2 · 3,14 = 6,28 for å finne r.',
     sol:[`r = O : (2 · π) = ${fmt(O)} : 6,28 = <b>${r} ${u}</b>`,...(askA?[`b) A = 3,14 · ${r} · ${r} = <b>${fmt(r2(PI*r*r))} ${sq(u)}</b>`]:[])],
     mistakes:a=>a===2*r?'Det der er diameteren. Radien er halvparten.':null};
+};
+
+// ── PRAKTISKE OPPGAVER ──
+const stadium=(l,r,n=24)=>[[0,0],[l,0],...arcPts(l,r,r,-Math.PI/2,Math.PI/2,n).slice(1,-1),[l,2*r],[0,2*r],...arcPts(0,r,r,Math.PI/2,3*Math.PI/2,n).slice(1,-1)];
+T1.ramme=()=>{
+  const l=rint(3,8)*10, b=rint(2,l/10-1)*10, pris=pick([40,50,60,80]);
+  const O=2*(l+b), m=O/100;
+  return {type:'Praktisk: bilderamme',q:`Et bilde er ${l} cm bredt og ${b} cm høyt. Du skal lage en ramme av list rundt hele bildet.<br>a) Hvor mange centimeter list trengs?<br>b) Lista koster ${pris} kr per meter. Hva koster lista?`,
+    fig:drawFig({polys:[rectPts(l,b)],dims:[{a:[0,0],b:[l,0],side:B,text:l+' cm'},{a:[l,0],b:[l,b],side:R,text:b+' cm'}],labels:[{p:[l/2,b/2],text:'bilde'}]}),
+    ans:[{lab:'a)',unit:'cm',val:O},{lab:'b)',unit:'kr',val:r2(m*pris)}],
+    hint:'Lista går rundt hele bildet: det er omkretsen. Gjør om til meter (del på 100) før du ganger med prisen.',
+    sol:[`a) O = 2 · ${l} + 2 · ${b} = <b>${O} cm</b>`,`b) ${O} cm = ${fmt(m)} m. ${fmt(m)} · ${pris} = <b>${fmt(r2(m*pris))} kr</b>`],
+    mistakes:a=>a===O*pris?'Prisen er per meter, men omkretsen er i centimeter. Gjør om til meter først.':a===l*b?'Det der er arealet av bildet. Lista går rundt kanten.':null};
+};
+T1.fotballbane=()=>{
+  const l=rint(18,22)*5, b=rint(12,14)*5, k=pick([2,3,4,5]);
+  const O=2*(l+b);
+  return {type:'Praktisk: fotballbane',q:`En fotballbane er ${l} m lang og ${b} m bred.<br>a) Det skal settes opp gjerde rundt banen. Hvor mange meter gjerde trengs?<br>b) Emma jogger ${k} runder langs kanten av banen. Hvor mange meter jogger hun?`,
+    fig:drawFig({polys:[rectPts(l,b)],dims:[{a:[0,0],b:[l,0],side:B,text:l+' m'},{a:[l,0],b:[l,b],side:R,text:b+' m'}],segs:[{a:[l/2,0],b:[l/2,b],col:'#ffffff',solid:true}],circles:[]}),
+    ans:[{lab:'a)',unit:'m',val:O},{lab:'b)',unit:'m',val:O*k}],
+    hint:'Én runde rundt banen er omkretsen. Gang med antall runder.',
+    sol:[`a) O = 2 · ${l} + 2 · ${b} = <b>${O} m</b>`,`b) ${k} · ${O} = <b>${fmt(k*O)} m</b>`],
+    mistakes:a=>a===l*b?'Det der er arealet. Gjerdet går rundt kanten: omkretsen.':a===l+b?'Du har bare tatt med to sider.':null};
+};
+T1.ark=()=>{
+  const k1=rint(3,5), k2=rint(3,5), L=30*k1, Bb=20*k2;
+  return {type:'Praktisk: oppslagstavle',q:`En oppslagstavle er ${L} cm bred og ${Bb} cm høy. Den skal dekkes med plakater som er 30 cm brede og 20 cm høye, uten overlapp.<br>a) Hva er arealet av tavla?<br>b) Hva er arealet av én plakat?<br>c) Hvor mange plakater trengs?`,
+    fig:drawFig({polys:[rectPts(L,Bb)],dims:[{a:[0,0],b:[L,0],side:B,text:L+' cm'},{a:[L,0],b:[L,Bb],side:R,text:Bb+' cm'}],
+      segs:[...Array(k1-1).keys()].map(i=>({a:[30*(i+1),0],b:[30*(i+1),Bb],col:'#c2410c'})).concat([...Array(k2-1).keys()].map(i=>({a:[0,20*(i+1)],b:[L,20*(i+1)],col:'#c2410c'})))}),
+    ans:[{lab:'a)',unit:'cm²',val:L*Bb},{lab:'b)',unit:'cm²',val:600},{lab:'c)',unit:'plakater',val:k1*k2}],
+    hint:'Regn ut begge arealene, og del arealet av tavla på arealet av én plakat. Du kan også telle hvor mange plakater det er plass til bortover og oppover.',
+    sol:[`a) ${L} · ${Bb} = <b>${fmt(L*Bb)} cm²</b>`,`b) 30 · 20 = <b>600 cm²</b>`,`c) ${fmt(L*Bb)} : 600 = <b>${k1*k2} plakater</b> (${k1} bortover og ${k2} oppover)`]};
+};
+T2.bed=()=>{
+  const d=rint(2,6)*2, r=d/2, hva=pick(['Et rundt blomsterbed','En rund trampoline','Et rundt basseng']);
+  const O=r2(PI*d), A=r2(PI*r*r);
+  return {type:'Praktisk: sirkel',q:`${hva} har diameter ${d} m. Bruk π ≈ 3,14.<br>a) Hvor lang er kanten rundt?<br>b) Hvor stor er flaten?`,
+    fig:drawFig({circles:[{c:[0,0],r}],segs:[{a:[-r,0],b:[r,0],text:'d = '+d+' m',solid:true}]}),
+    ans:[{lab:'a)',unit:'m',val:O,pi:Math.PI*d},{lab:'b)',unit:'m²',val:A,pi:Math.PI*r*r}],
+    hint:'Kanten er omkretsen: O = π · d. Flaten er arealet: A = π · r², der r er halve diameteren.',
+    sol:[`a) O = 3,14 · ${d} = <b>${fmt(O)} m</b>`,`b) r = ${r} m. A = 3,14 · ${r} · ${r} = <b>${fmt(A)} m²</b>`],
+    mistakes:a=>Math.abs(a-r2(PI*d*d))<0.05?'Bruk radien i arealformelen: A = π · r², og r er halve diameteren.':null};
+};
+T2.pizza=()=>{
+  let d1,d2,p1,p2,A1,A2;
+  do{ d1=pick([24,26,28,30]); d2=d1+pick([6,8,10,12]); p1=rint(9,15)*10-1; p2=rint(15,25)*10-1;
+      A1=r2(PI*(d1/2)**2); A2=r2(PI*(d2/2)**2); }while(Math.abs(p1/A1-p2/A2)/Math.min(p1/A1,p2/A2)<0.08);
+  const best=p1/A1<p2/A2?1:2;
+  return {type:'Praktisk: pizza',q:`En liten pizza har diameter ${d1} cm og koster ${p1} kr. En stor pizza har diameter ${d2} cm og koster ${p2} kr. Bruk π ≈ 3,14.<br>a) Hva er arealet av den lille pizzaen?<br>b) Hva er arealet av den store pizzaen?<br>c) Hvilken pizza gir mest pizza for pengene? Skriv <b>1</b> for den lille og <b>2</b> for den store.`,
+    fig:drawFig({circles:[{c:[d1/2,d2/2],r:d1/2},{c:[d1+4+d2/2,d2/2],r:d2/2}],labels:[{p:[d1/2,d2/2],text:d1+' cm'},{p:[d1+4+d2/2,d2/2],text:d2+' cm'}]}),
+    ans:[{lab:'a)',unit:'cm²',val:A1,pi:Math.PI*(d1/2)**2},{lab:'b)',unit:'cm²',val:A2,pi:Math.PI*(d2/2)**2},{lab:'c)',unit:'',val:best}],
+    hint:'Regn ut arealet av begge med A = π · r². Del prisen på arealet for å finne pris per cm² (gang gjerne med 100 for å få pris per 100 cm²). Lavest pris gir mest for pengene.',
+    sol:[`a) r = ${d1/2} cm. A = 3,14 · ${d1/2} · ${d1/2} = <b>${fmt(A1)} cm²</b>`,`b) r = ${d2/2} cm. A = 3,14 · ${d2/2} · ${d2/2} = <b>${fmt(A2)} cm²</b>`,
+      `Pris per 100 cm²: liten ${p1} : ${fmt(A1)} · 100 ≈ ${fmt(r2(p1/A1*100))} kr, stor ${p2} : ${fmt(A2)} · 100 ≈ ${fmt(r2(p2/A2*100))} kr`,`c) <b>${best}</b>: ${best===1?'den lille':'den store'} gir mest pizza for pengene.`]};
+};
+T2.lopebane=()=>{
+  const l=rint(16,20)*5, d=rint(12,14)*5, r=d/2;
+  const O=r2(2*l+PI*d);
+  return {type:'Praktisk: løpebane',q:`En løpebane har to rette strekninger som er ${l} m lange. Svingene er to halvsirkler med diameter ${d} m. Bruk π ≈ 3,14. Hvor lang er én runde (langs den innerste kanten)?`,
+    fig:drawFig({polys:[stadium(l,r)],dims:[{a:[0,0],b:[l,0],side:B,text:l+' m'}],segs:[{a:[l,0],b:[l,d],text:'d = '+d+' m',solid:true}]}),
+    ans:[{lab:'O',unit:'m',val:O,pi:2*l+Math.PI*d}],
+    hint:'De to svingene er til sammen én hel sirkel: π · d. Legg til de to rette strekningene.',
+    sol:[`To halvsirkler = én sirkel: 3,14 · ${d} = ${fmt(r2(PI*d))} m`,`O = ${l} + ${l} + ${fmt(r2(PI*d))} = <b>${fmt(O)} m</b>`],
+    mistakes:a=>Math.abs(a-r2(l+PI*d))<0.05?'Det er to rette strekninger.':Math.abs(a-r2(2*l+PI*d/2))<0.05?'De to halvsirklene blir til sammen en hel sirkel.':Math.abs(a-r2(2*l+2*PI*d))<0.05?'De to halvsirklene er én sirkel, ikke to.':null};
+};
+T2.kart=()=>{
+  const [ms,f]=pick([['1 : 500',5],['1 : 1000',10],['1 : 2000',20]]);
+  const lc=dec(2,6,0.5), bc=dec(1.5,lc,0.5);
+  const L=r6(lc*f), Bm=r6(bc*f);
+  return {type:'Praktisk: kart og målestokk',q:`På et kart med målestokk ${ms} er en tomt et rektangel som er ${fmt(lc)} cm langt og ${fmt(bc)} cm bredt.<br>a) Hvor lang er tomta i virkeligheten?<br>b) Hvor bred er tomta i virkeligheten?<br>c) Hvor stort er arealet av tomta i virkeligheten?`,
+    fig:drawFig({polys:[rectPts(lc,bc)],dims:[{a:[0,0],b:[lc,0],side:B,text:fmt(lc)+' cm'},{a:[lc,0],b:[lc,bc],side:R,text:fmt(bc)+' cm'}],labels:[{p:[lc/2,bc/2],text:'Kart '+ms}]}),
+    ans:[{lab:'a)',unit:'m',val:L},{lab:'b)',unit:'m',val:Bm},{lab:'c)',unit:'m²',val:r6(L*Bm)}],
+    hint:`Målestokk ${ms} betyr at 1 cm på kartet er ${ms.split(' : ')[1]} cm = ${f} m i virkeligheten. Gjør om begge målene først, og regn arealet av de virkelige målene.`,
+    sol:[`1 cm på kartet = ${f} m`,`a) ${fmt(lc)} · ${f} = <b>${fmt(L)} m</b>`,`b) ${fmt(bc)} · ${f} = <b>${fmt(Bm)} m</b>`,`c) ${fmt(L)} · ${fmt(Bm)} = <b>${fmt(r6(L*Bm))} m²</b>`],
+    mistakes:a=>Math.abs(a-r6(lc*bc*f))<1e-6?'Regn ut arealet med de virkelige målene (i meter), ikke kartarealet ganger målestokken.':Math.abs(a-r6(lc*bc))<1e-6?'Det der er arealet på kartet. Gjør om til virkelige mål først.':null};
+};
+T3.hage=()=>{
+  const W=rint(12,18), H=rint(8,12), bw=rint(2,4), bh=rint(2,3), s=1;
+  const bx=rint(s+1,W-bw-1), by=rint(1,H-bh-2);
+  // Sti langs hele den øverste kanten, 1 m bred
+  const plen=W*H-W*s-bw*bh;
+  return {type:'Praktisk: hage',q:`En hage er ${W} m lang og ${H} m bred. Langs den ene langsiden går en hellelagt sti som er ${s} m bred. I hagen er det et rektangulært bed som er ${bw} m × ${bh} m. Resten er plen.<br>a) Hva er arealet av hele hagen?<br>b) Hva er arealet av plenen?`,
+    fig:drawFig({polys:[rectPts(W,H-s)],holes:[rectPts(bw,bh,bx,by)],dims:[{a:[0,0],b:[W,0],side:B,text:W+' m'},{a:[W,0],b:[W,H],side:R,text:H+' m'}],
+      segs:[{a:[0,H],b:[W,H],col:'#94a3b8',solid:true},{a:[0,H-s],b:[0,H],col:'#94a3b8',solid:true},{a:[W,H-s],b:[W,H],col:'#94a3b8',solid:true}],
+      labels:[{p:[W/2,H-s/2],text:'sti '+s+' m',col:'#475569'},{p:[bx+bw/2,by+bh/2],text:'bed',col:'#475569'},{p:[W/2+(bx>W/2?-W/4:W/4),(H-s)/2],text:'plen',col:'#166534'}]}),
+    ans:[{lab:'a)',unit:'m²',val:W*H},{lab:'b)',unit:'m²',val:plen}],
+    hint:'Regn ut hele hagen, og trekk fra stien (lengde · bredde) og bedet.',
+    sol:[`a) ${W} · ${H} = <b>${W*H} m²</b>`,`Sti: ${W} · ${s} = ${W*s} m². Bed: ${bw} · ${bh} = ${bw*bh} m²`,`b) ${W*H} − ${W*s} − ${bw*bh} = <b>${plen} m²</b>`],
+    mistakes:a=>a===W*H-bw*bh?'Husk å trekke fra stien også.':a===W*H-W*s?'Husk å trekke fra bedet også.':null};
+};
+T3.gressfro=()=>{
+  const W=rint(10,16), H=rint(6,10), tw=rint(3,5), th=rint(2,4), gpm=pick([25,30,35,40]), pose=1000;
+  const A=W*H-tw*th, g=A*gpm, n=Math.ceil(g/pose);
+  return {type:'Praktisk: gressfrø',q:`En plen er formet som et rektangel på ${W} m × ${H} m, men i det ene hjørnet ligger en terrasse på ${tw} m × ${th} m. På plenen skal det sås gressfrø: ${gpm} g per m². Gressfrø selges i poser på 1 kg.<br>a) Hvor mange m² skal sås?<br>b) Hvor mange gram gressfrø trengs?<br>c) Hvor mange poser må du kjøpe?`,
+    fig:drawFig({polys:[[[0,0],[W,0],[W,H-th],[W-tw,H-th],[W-tw,H],[0,H]]],dims:[{a:[0,0],b:[W,0],side:B,text:W+' m'},{a:[0,0],b:[0,H],side:L,text:H+' m'}],
+      segs:[{a:[W-tw,H-th],b:[W,H-th],text:tw+' m',col:'#475569',solid:true},{a:[W-tw,H-th],b:[W-tw,H],text:th+' m',col:'#475569',solid:true}],labels:[{p:[W-tw/2,H-th*0.22],text:'terrasse',col:'#475569'}]}),
+    ans:[{lab:'a)',unit:'m²',val:A},{lab:'b)',unit:'g',val:g},{lab:'c)',unit:'poser',val:n}],
+    hint:'Arealet av rektangelet minus terrassen. Gang med gram per m². 1 kg = 1000 g, og du må kjøpe hele poser.',
+    sol:[`a) ${W} · ${H} − ${tw} · ${th} = ${W*H} − ${tw*th} = <b>${A} m²</b>`,`b) ${A} · ${gpm} = <b>${fmt(g)} g</b>`,`c) ${fmt(g)} g = ${fmt(g/1000)} kg, rundet opp: <b>${n} poser</b>`],
+    mistakes:a=>a===Math.floor(g/pose)&&a!==n?'Du må runde opp, ellers får du ikke nok frø.':a===W*H?'Husk å trekke fra terrassen.':null};
+};
+T3.saltak=()=>{
+  const L=dec(8,14,0.5), sb=dec(4,6,0.5), plate=pick([1.5,2,2.4,3]), pris=pick([189,249,299]);
+  const A=r6(2*L*sb), n=Math.ceil(r6(A/plate));
+  return {type:'Praktisk: tak',q:`Et hus har saltak med to like takflater. Hver flate er et rektangel som er ${fmt(L)} m langt og ${fmt(sb)} m fra mønet ned til takfoten. Én takplate dekker ${fmt(plate)} m² og koster ${pris} kr.<br>a) Hvor stort er taket til sammen?<br>b) Hvor mange takplater trengs (hele plater)?<br>c) Hva koster platene?`,
+    fig:drawFig({polys:[[[0,0],[L,0],[L+1.2,sb*0.8],[1.2,sb*0.8]]],dims:[{a:[0,0],b:[L,0],side:B,text:fmt(L)+' m'},{a:[L,0],b:[L+1.2,sb*0.8],side:[0.9,-0.4],text:fmt(sb)+' m'}],labels:[{p:[L/2+0.6,sb*0.4],text:'én takflate'}]}),
+    ans:[{lab:'a)',unit:'m²',val:A},{lab:'b)',unit:'plater',val:n},{lab:'c)',unit:'kr',val:n*pris}],
+    hint:'Regn ut én takflate (lengde · bredde) og gang med 2. Del på det én plate dekker, og rund opp.',
+    sol:[`Én flate: ${fmt(L)} · ${fmt(sb)} = ${fmt(r6(L*sb))} m²`,`a) 2 · ${fmt(r6(L*sb))} = <b>${fmt(A)} m²</b>`,`b) ${fmt(A)} : ${fmt(plate)} = ${fmt(r2(A/plate))}, rundet opp: <b>${n} plater</b>`,`c) ${n} · ${pris} = <b>${fmt(n*pris)} kr</b>`],
+    mistakes:a=>Math.abs(a-r6(L*sb))<1e-6?'Taket har to like flater.':(a===Math.floor(r6(A/plate))&&a!==n)?'Rund opp til hele plater.':null};
+};
+T3.tremil=()=>{
+  const l=rint(16,20)*5, d=rint(12,14)*5, km=pick([2,3,4,5]);
+  const O=r2(2*l+PI*d), n=Math.ceil(km*1000/O);
+  return {type:'Praktisk: løpetur',q:`En løpebane har to rette strekninger på ${l} m og to svinger som er halvsirkler med diameter ${d} m. Bruk π ≈ 3,14.<br>a) Hvor lang er én runde?<br>b) Hvor mange hele runder må du løpe for å løpe minst ${km} km?`,
+    fig:drawFig({polys:[stadium(l,d/2)],dims:[{a:[0,0],b:[l,0],side:B,text:l+' m'}],segs:[{a:[l,0],b:[l,d],text:'d = '+d+' m',solid:true}]}),
+    ans:[{lab:'a)',unit:'m',val:O,pi:2*l+Math.PI*d},{lab:'b)',unit:'runder',val:n}],
+    hint:`Én runde: 2 rette strekninger + én hel sirkel (π · d). Gjør om ${km} km til meter, del på lengden av én runde, og rund opp.`,
+    sol:[`a) ${l} + ${l} + 3,14 · ${d} = <b>${fmt(O)} m</b>`,`b) ${km} km = ${km*1000} m. ${km*1000} : ${fmt(O)} ≈ ${fmt(r2(km*1000/O))}, rundet opp: <b>${n} runder</b>`],
+    mistakes:a=>a===Math.floor(km*1000/O)&&a!==n?`Da har du ikke løpt helt ${km} km. Rund opp.`:null};
 };
 
 const BANK={1:T1,2:T2,3:T3};
