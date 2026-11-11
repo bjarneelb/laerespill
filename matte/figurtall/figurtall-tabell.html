@@ -272,7 +272,7 @@ function fmt(a,b){
 // Tolker en formel eleven har skrevet, og returnerer en funksjon av n (eller null)
 function parseFormula(str){
   let s=String(str||'').toLowerCase().replace(/\s+/g,'')
-    .replace(/[·×⋅]/g,'*').replace(/[−–]/g,'-').replace(/,/g,'.').replace(/ₙ/g,'n');
+    .replace(/[·×⋅]/g,'*').replace(/[:÷]/g,'/').replace(/½/g,'(1/2)').replace(/[−–]/g,'-').replace(/,/g,'.').replace(/ₙ/g,'n');
   s=s.replace(/^f(_?n|\(n\))?=/,'');
   if(!s||!/^[0-9n+\-*/().]+$/.test(s)) return null;
   s=s.replace(/(\d|n|\))(?=[n(])/g,'$1*').replace(/\)(?=\d)/g,')*').replace(/n(?=\d)/g,'n*');

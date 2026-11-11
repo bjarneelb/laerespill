@@ -216,7 +216,7 @@ const SHAPES={
 // Formel med n som tekst → funksjon (godtar n², n^2, 2n, n(n + 1), 3(n+1) osv.)
 function parseFormula(str){
   let s=String(str||'').toLowerCase().replace(/\s+/g,'')
-    .replace(/[·×⋅]/g,'*').replace(/[−–]/g,'-').replace(/,/g,'.').replace(/ₙ/g,'n')
+    .replace(/[·×⋅]/g,'*').replace(/[:÷]/g,'/').replace(/½/g,'(1/2)').replace(/[−–]/g,'-').replace(/,/g,'.').replace(/ₙ/g,'n')
     .replace(/²/g,'^2').replace(/\^/g,'**');
   s=s.replace(/^f(_?n|\(n\))?=/,'');
   if(!s||!/^[0-9n+\-*/().]+$/.test(s)) return null;
@@ -554,7 +554,7 @@ const STEP={
     check(){
       const f=parseFormula($('fr').value), ok=!!f&&same(f,task.p.f); mark('fr',ok);
       let hint=task.p.kind==='known'?'Hvor lang og hvor høy er figur n? Husk å legge til f<sub>0</sub>.':'f<sub>n</sub> = an² + bn + c, der a = andredifferansen / 2, c = f<sub>0</sub> og b = (f<sub>1</sub> − f<sub>0</sub>) − a.';
-      if(!f) hint='Skriv formelen med n, for eksempel n^2 + 2n eller n(n + 1).';
+      if(!f) hint='Skriv formelen med n, for eksempel n^2 + 2n, n(n + 1) eller (n^2 − n)/2 + 3. Del med / eller :.';
       else if(task.f0!==0&&same(n=>f(n)+task.f0,task.p.f)) hint='Nesten! Du har glemt å legge til f<sub>0</sub>.';
       return {ok,hint};
     },
