@@ -8,50 +8,61 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
+/* Ett bilde som fyller skjermen, med tekst og styring lagt oppå. Siden er mørk med vilje, som et mikroskop. */
 :root {
-  --bg: #0c1118; --panel: #141c26; --card: #1c2733; --ink: #e8eef4; --ink-soft: #9db0c2; --rule: #2b3947;
-  --accent: #5aa0ff; --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+  --bg: #080c12; --panel: #121a24; --card: #1b2632; --ink: #e8eef4; --ink-soft: #a3b4c5; --rule: #2b3947;
+  --accent: #5aa0ff; --glass: rgba(10,15,22,.74);
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font);
        display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
-button, input, select { font: inherit; color: inherit; }
+button, input { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.btn { border: 1px solid var(--rule); background: var(--card); border-radius: 10px; padding: .45rem .85rem; cursor: pointer; white-space: nowrap; }
+.btn { border: 1px solid var(--rule); background: var(--card); border-radius: 10px; padding: .45rem .85rem; cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--ink); }
 .btn:hover:not(:disabled) { border-color: var(--ink-soft); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #08121f; font-weight: 700; }
 
-.top { display: flex; align-items: center; gap: .5rem .9rem; flex-wrap: wrap; padding: .55rem .9rem; border-bottom: 1px solid var(--rule); background: var(--panel); }
+.top { display: flex; align-items: center; gap: .5rem .9rem; flex-wrap: wrap; padding: .55rem max(.9rem, env(safe-area-inset-right, 0px)) .55rem max(.9rem, env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--rule); background: var(--panel); }
 .top h1 { margin: 0; font-size: 1.05rem; white-space: nowrap; }
 .velg { display: flex; gap: .35rem; }
 .velg button { border: 1px solid var(--rule); background: var(--card); border-radius: 999px; padding: .35rem .85rem; cursor: pointer; }
 .velg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #08121f; font-weight: 700; }
 .grow { flex: 1; }
 
-.scene { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; cursor: ns-resize; }
+.scene { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; cursor: ns-resize; background: var(--bg); }
 #lerret { width: 100%; height: 100%; display: block; }
-.merke::before { content: ""; position: absolute; left: 50%; top: -.8rem; transform: translateX(-50%);
-  width: 120vw; height: 200%; background: linear-gradient(180deg, rgba(8,12,18,.82), rgba(8,12,18,0)); z-index: -1; }
 .merke { position: absolute; z-index: 2; left: 50%; transform: translateX(-50%); top: .8rem; text-align: center; pointer-events: none;
-         text-shadow: 0 2px 10px rgba(0,0,0,.8); max-width: min(52ch, calc(100% - 2rem)); }
-.merke h2 { margin: 0; font-size: clamp(1.1rem, .8rem + 1.2vw, 1.7rem); }
-.merke p { margin: .25rem 0 0; color: var(--ink-soft); font-size: .95rem; line-height: 1.4; }
-.tall { position: absolute; left: .9rem; bottom: .9rem; background: rgba(12,17,24,.72); border: 1px solid var(--rule);
-        border-radius: 12px; padding: .5rem .8rem; line-height: 1.3; }
+         text-shadow: 0 2px 10px rgba(0,0,0,.85); width: min(56ch, calc(100% - 2rem)); }
+.merke::before { content: ""; position: absolute; left: 50%; top: -.8rem; transform: translateX(-50%);
+  width: 200vw; height: 190%; background: linear-gradient(180deg, rgba(6,9,14,.78), rgba(6,9,14,0)); z-index: -1; }
+.merke h2 { margin: 0; font-size: clamp(1.1rem, .8rem + 1.2vw, 1.7rem); text-wrap: balance; }
+.merke p { margin: .25rem 0 0; color: var(--ink-soft); font-size: .95rem; line-height: 1.4; text-wrap: pretty; }
+.nede { position: absolute; left: .9rem; right: .9rem; bottom: .9rem; display: flex; align-items: flex-end; gap: .6rem; pointer-events: none; }
+.tall { flex: none; }
+.tall, .forklaring, .modellnote { background: var(--glass); border: 1px solid var(--rule); border-radius: 12px; }
+.tall { padding: .5rem .8rem; line-height: 1.3; }
 .tall .stor { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .tall .liten { font-size: .85rem; color: var(--ink-soft); }
-.modellnote { position: absolute; right: .9rem; bottom: .9rem; max-width: 30ch; font-size: .82rem; color: var(--ink-soft);
-              background: rgba(12,17,24,.72); border: 1px solid var(--rule); border-radius: 12px; padding: .45rem .7rem; }
+.forklaring { display: flex; flex-wrap: wrap; gap: .25rem .8rem; padding: .45rem .7rem; font-size: .85rem; min-width: 0; }
+.forklaring span { display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; }
+.forklaring i { width: .8rem; height: .8rem; border-radius: 50%; display: inline-block; border: 1px solid rgba(255,255,255,.35); }
+.modellnote { margin: 0 0 0 auto; flex: 0 1 34ch; min-width: 18ch; font-size: .82rem; color: var(--ink-soft); padding: .45rem .7rem; line-height: 1.35; }
+.feil { position: absolute; inset: 0; display: grid; place-items: center; padding: 1.5rem; text-align: center; line-height: 1.5; }
+.feil div { max-width: 44ch; }
+.feil a { color: var(--accent); }
 
-.styring { display: flex; align-items: center; gap: .6rem; padding: .55rem .9rem; border-top: 1px solid var(--rule); background: var(--panel); }
+.styring { display: flex; align-items: center; gap: .6rem; padding: .55rem max(.9rem, env(safe-area-inset-right, 0px)) .55rem max(.9rem, env(safe-area-inset-left, 0px)); border-top: 1px solid var(--rule); background: var(--panel); }
 .styring input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
 .styring .sq { width: 2.2rem; padding: .35rem 0; text-align: center; font-size: 1.1rem; }
-@media (max-width: 560px) {
+@media (max-width: 620px) {
   .top h1 { font-size: .95rem; }
   .merke p { font-size: .85rem; }
   .modellnote { display: none; }
+  .tall .stor { font-size: 1.1rem; }
 }
 </style>
 </head>
@@ -69,8 +80,11 @@ button, input, select { font: inherit; color: inherit; }
 <div class="scene" id="scene">
   <canvas id="lerret"></canvas>
   <div class="merke"><h2 id="tittel"></h2><p id="tekst"></p></div>
-  <div class="tall"><div class="stor" id="forstorrelse">×1</div><div class="liten" id="bredde"></div></div>
-  <p class="modellnote" id="modellnote" hidden></p>
+  <div class="nede">
+    <div class="tall"><div class="stor" id="forstorrelse">×1</div><div class="liten" id="bredde"></div></div>
+    <div class="forklaring" id="forklaring" hidden></div>
+    <p class="modellnote" id="modellnote" hidden></p>
+  </div>
 </div>
 
 <div class="styring">
@@ -79,514 +93,985 @@ button, input, select { font: inherit; color: inherit; }
   <button class="btn sq" id="innZoom" aria-label="Zoom inn">+</button>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// ================= Zoom inn i stoffet =================
+// ================= Zoom inn i stoffet, versjon 2 =================
 // Hele reisen styres av ett tall: hvor bredt utsnittet er, målt i meter.
-// Hver scene tegner seg selv i meter, og toner inn og ut der den hører hjemme.
-
+// Hvert nivå er en egen 3D-scene i sin egen måleenhet (cm, ångstrøm, femtometer ...),
+// slik at tallene aldri blir for små for datamaskinen. Nivåene tones inn og ut over hverandre.
+'use strict';
 const $ = id => document.getElementById(id);
-const lerret = $('lerret'), ctx = lerret.getContext('2d');
 const TAU = Math.PI * 2;
-
-let bredde = 0.3;                    // utsnittets bredde i meter
-const START = 0.3;
-let W = 0, H = 0, tid = 0, reiser = false, sisteRamme = 0;
-
-function størrelse() {
-  const r = lerret.parentElement.getBoundingClientRect();
-  const dpr = Math.min(devicePixelRatio || 1, 2);
-  W = r.width; H = r.height;
-  lerret.width = Math.round(W * dpr); lerret.height = Math.round(H * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+const REF = 0.3;                         // bredden på bildet slik vi ser det på en skjerm, i meter
+const jevn = f => f <= 0 ? 0 : f >= 1 ? 1 : f * f * (3 - 2 * f);
+const mellom = (a, b, t) => a + (b - a) * t;
+function lagRnd(frø) {                   // tilfeldige tall som blir like hver gang
+  let s = frø >>> 0;
+  return () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
-new ResizeObserver(størrelse).observe(document.getElementById('scene'));
+
+let bredde = REF, valgt = 'vann', tid = 0, reiser = false, sisteRamme = 0;
+let W = 1, H = 1, aspekt = 1;
+const lerret = $('lerret');
+let renderer = null;
+try {
+  if (window.THREE) renderer = new THREE.WebGLRenderer({ canvas: lerret, antialias: true, powerPreference: 'high-performance' });
+} catch (e) { renderer = null; }
+
+// På stående skjermer vises et smalere utsnitt, så motivet ikke blir bitte lite
+const synligBredde = () => bredde * (aspekt >= 1.3 ? 1 : Math.max(0.6, aspekt / 1.3));
 
 // ---------- tall og tekst ----------
 const NORSK = [[1e12, 'billioner'], [1e9, 'milliarder'], [1e6, 'millioner'], [1e3, 'tusen']];
 function forstørrelse(b) {
-  const f = START / b;
-  if (f < 1000) return '×' + Math.round(f).toLocaleString('nb-NO');
-  for (const [grense, ord] of NORSK) {
-    if (f >= grense) {
-      const t = f / grense;
-      return '×' + (t >= 100 ? Math.round(t) : t.toFixed(t >= 10 ? 0 : 1)).toLocaleString('nb-NO') + ' ' + ord;
-    }
+  const f = REF / b;
+  if (f < 1000) return '×' + (f < 10 ? Math.round(f * 10) / 10 : Math.round(f)).toLocaleString('nb-NO');
+  for (const [grense, ord] of NORSK) if (f >= grense) {
+    const t = f / grense;
+    return '×' + (t >= 100 ? Math.round(t) : +t.toFixed(t >= 10 ? 0 : 1)).toLocaleString('nb-NO') + ' ' + ord;
   }
 }
 function lengde(m) {
   const enheter = [[1, 'm'], [1e-2, 'cm'], [1e-3, 'mm'], [1e-6, 'µm'], [1e-9, 'nm'], [1e-12, 'pm'], [1e-15, 'fm']];
-  for (const [f, navn] of enheter) {
-    if (m >= f * 0.999) {
-      const v = m / f;
-      return (v >= 100 ? Math.round(v) : v >= 10 ? v.toFixed(0) : v.toFixed(v >= 1 ? 1 : 2)).toString().replace('.', ',') + ' ' + navn;
-    }
+  for (const [f, navn] of enheter) if (m >= f * 0.999) {
+    const v = m / f;
+    return (v >= 100 ? Math.round(v) : +v.toFixed(v >= 10 ? 0 : 1)).toLocaleString('nb-NO') + ' ' + navn;
   }
   return (m / 1e-15).toFixed(1).replace('.', ',') + ' fm';
 }
 
-// ---------- tegnehjelp ----------
-const px = m => m * (W / bredde);                 // meter til piksler
-function sirkel(x, y, r, farge) {
-  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = farge; ctx.fill();
-}
-function kule(x, y, r, farge, lys) {
-  const g = ctx.createRadialGradient(x - r * .35, y - r * .4, r * .1, x, y, r);
-  g.addColorStop(0, lys || '#ffffff');
-  g.addColorStop(.35, farge);
-  g.addColorStop(1, mørkere(farge, .45));
-  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = g; ctx.fill();
-}
-function mørkere(hex, f) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = Math.round((n >> 16) * (1 - f)), g = Math.round(((n >> 8) & 255) * (1 - f)), b = Math.round((n & 255) * (1 - f));
-  return `rgb(${r},${g},${b})`;
-}
-// rask kule uten fargeovergang, til når det er mange av dem
-function kuleRask(x, y, r, farge, lys) {
-  sirkel(x, y, r, farge);
-  if (r > 3) sirkel(x - r * .3, y - r * .32, r * .34, lys);
-}
-function tekstMidt(t, x, y, str, farge) {
-  ctx.font = `700 ${str}px "Atkinson Hyperlegible", system-ui, sans-serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = farge; ctx.fillText(t, x, y);
-}
-// enkel og rask tilfeldighet som er lik fra ramme til ramme
-function rnd(i, j) {
-  const x = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
-  return x - Math.floor(x);
-}
+// ---------- felles 3D-hjelp ----------
+let omgivelse = null;
+const kamera = window.THREE ? new THREE.PerspectiveCamera(26, 1, 0.1, 100) : null;
+const NULL3 = window.THREE ? new THREE.Vector3() : null;
+// farger skrives slik de skal se ut på skjermen, og regnes om til lysverdier
+const farge = hex => new THREE.Color(hex).convertSRGBToLinear();
 
-// ---------- scener ----------
-// hver scene: { fra, til (meter), tittel, tekst, modell?, tegn(f) }
-// f er 0 til 1: hvor langt inne i scenen vi er
-let SCENER = {}, valgt = 'vann';
-
-function aktive() {
-  const liste = SCENER[valgt];
-  const ut = [];
-  liste.forEach((s, i) => {
-    // scenen er synlig mellom fra og til, med mykt overlapp i endene
-    const l = Math.log10(bredde), a = Math.log10(s.fra), b = Math.log10(s.til);
-    if (l > a + 0.22 || l < b - 0.22) return;
-    let alfa = 1;
-    if (l > a) alfa = 1 - (l - a) / 0.22;
-    if (l < b) alfa = 1 - (b - l) / 0.22;
-    ut.push({ s, alfa: Math.max(0, Math.min(1, alfa)), f: Math.max(0, Math.min(1, (a - l) / (a - b))) });
-  });
-  return ut;
-}
-
-function tegn(nå) {
-  const dt = Math.min(0.05, (nå - sisteRamme) / 1000 || 0);
-  sisteRamme = nå; tid += dt;
-  if (reiser) {
-    bredde *= Math.pow(10, -dt * 0.32);
-    if (bredde <= SLUTT) { bredde = SLUTT; settReiser(false); }
-    oppdaterSkyv();
+function lagOmgivelse() {
+  // Et enkelt «fotostudio» som alt blankt speiler: lys himmel, mørkt gulv og tre lyskasser
+  const s = new THREE.Scene();
+  const hg = new THREE.SphereGeometry(50, 32, 24), hp = hg.attributes.position, hc = new Float32Array(hp.count * 3);
+  for (let i = 0; i < hp.count; i++) {
+    const t = jevn((hp.getY(i) / 50 + 0.25) / 1.2);
+    hc[i * 3] = mellom(0.03, 0.42, t); hc[i * 3 + 1] = mellom(0.035, 0.48, t); hc[i * 3 + 2] = mellom(0.045, 0.58, t);
   }
-  ctx.clearRect(0, 0, W, H);
-  const lag = aktive();
-  lag.forEach(({ s, alfa, f }) => {
-    ctx.save(); ctx.globalAlpha = alfa; s.tegn(f); ctx.restore();
-  });
-  const fremst = lag.length ? lag.reduce((a, b) => (b.alfa >= a.alfa ? b : a)) : null;
-  if (fremst) {
-    $('tittel').textContent = fremst.s.tittel;
-    $('tekst').textContent = fremst.s.tekst;
-    $('modellnote').hidden = !fremst.s.modell;
-    if (fremst.s.modell) $('modellnote').textContent = fremst.s.modell;
-  }
-  $('forstorrelse').textContent = forstørrelse(bredde);
-  $('bredde').textContent = 'Utsnittet er ' + lengde(bredde) + ' bredt';
-  requestAnimationFrame(tegn);
+  hg.setAttribute('color', new THREE.BufferAttribute(hc, 3));
+  s.add(new THREE.Mesh(hg, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+  const kasse = (x, y, z, b, h, styrke) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(b, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(styrke, styrke, styrke * 1.04), side: THREE.DoubleSide }));
+    m.position.set(x, y, z); m.lookAt(0, 0, 0); s.add(m);
+  };
+  kasse(-20, 24, 16, 18, 12, 7); kasse(24, 9, -4, 7, 16, 3.2); kasse(2, -3, 28, 30, 5, 0.9);
+  const pm = new THREE.PMREMGenerator(renderer);
+  const t = pm.fromScene(s, 0.03).texture;
+  pm.dispose();
+  return t;
+}
+function lysSett(scene, styrke) {
+  scene.environment = omgivelse;
+  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x1a1c22, 0.55 * (styrke || 1)));
+  const sol = new THREE.DirectionalLight(0xfff4e4, 1.15 * (styrke || 1));
+  sol.position.set(-4, 7, 6); scene.add(sol);
+  const mot = new THREE.DirectionalLight(0x9fc0ff, 0.35 * (styrke || 1));
+  mot.position.set(6, -2, -5); scene.add(mot);
 }
 
-// ================= Felles scener: atom og kjerne =================
-function atomScene(sym, Z, N, skall, rAtom, fra, til, tekst) {
-  // rAtom er valgt slik at atomet er like stort som i scenen foran, så overgangen blir jevn
-  return {
-    fra, til, tittel: `Ett ${sym}-atom`, tekst,
-    modell: 'Elektronskallene er tegnet som ringer. I virkeligheten er elektronene «skyer» av sannsynlighet, ikke baner.',
-    tegn() {
-      const x = W / 2, y = H / 2;
-      const r = px(rAtom);
-      // elektronskyen antydes
-      const g = ctx.createRadialGradient(x, y, r * .1, x, y, r * 1.05);
-      g.addColorStop(0, 'rgba(90,160,255,.18)'); g.addColorStop(1, 'rgba(90,160,255,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 1.05, 0, TAU); ctx.fill();
-      skall.forEach((antall, i) => {
-        const rr = r * (0.42 + 0.58 * (skall.length === 1 ? 1 : i / (skall.length - 1)));
-        ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU);
-        ctx.strokeStyle = 'rgba(160,200,255,.35)'; ctx.lineWidth = Math.max(1, r * .006); ctx.stroke();
-        for (let k = 0; k < antall; k++) {
-          const v = (k / antall) * TAU + tid * (0.25 - i * 0.07) + i;
-          kule(x + rr * Math.cos(v), y + rr * Math.sin(v), Math.max(1.5, r * .035), '#5aa0ff', '#cfe3ff');
+// ---------- nivåer ----------
+// vis = [a, b, c, d]: usynlig når utsnittet er bredere enn a, helt synlig mellom b og c, borte under d
+function nivå(o) { return Object.assign({ scene: new THREE.Scene(), mat: [], bygget: false, enhet: 1 }, o); }
+function reg(n, m) { m.userData.basis = m.opacity; m.userData.gjennom = m.transparent; n.mat.push(m); return m; }
+function settAlfa(n, a) {
+  for (const m of n.mat) {
+    if (m.uniforms && m.uniforms.uAlfa) m.uniforms.uAlfa.value = a;
+    else { m.opacity = a * m.userData.basis; m.transparent = m.userData.gjennom || a < 0.999; }
+  }
+}
+function vindu(v, b) {
+  const l = Math.log10(b), A = Math.log10(v[0]), B = Math.log10(v[1]), C = Math.log10(v[2]), D = Math.log10(v[3]);
+  if (l >= A || l <= D) return 0;
+  if (l > B) return jevn((A - l) / (A - B));
+  if (l < C) return jevn((l - D) / (C - D));
+  return 1;
+}
+const framdrift = (fra, til, b) => Math.max(0, Math.min(1, (Math.log10(fra) - Math.log10(b)) / (Math.log10(fra) - Math.log10(til))));
+
+const _ret = window.THREE ? new THREE.Vector3() : null;
+function stillKamera(n) {
+  const k = n.kamera ? n.kamera(bredde) : {};
+  const mål = k.mål || NULL3;
+  const høyde = (k.høyde || 0), sving = (k.sving || 0) + Math.sin(tid * 0.23) * 0.045;   // liten pendling gir dybdefølelse
+  _ret.set(Math.sin(sving) * Math.cos(høyde), Math.sin(høyde), Math.cos(sving) * Math.cos(høyde));
+  const bU = synligBredde() / n.enhet, hU = bU / aspekt;
+  const d = (hU / 2) / Math.tan(THREE.MathUtils.degToRad(kamera.fov / 2));
+  kamera.position.copy(mål).addScaledVector(_ret, d);
+  kamera.up.set(0, 1, 0); kamera.lookAt(mål);
+  kamera.near = Math.max(d * 0.04, d - (k.foran !== undefined ? k.foran : d * 0.9));
+  kamera.far = d + (k.bak !== undefined ? k.bak : d * 30);
+  kamera.updateProjectionMatrix();
+  if (n.scene.fog) {
+    n.scene.fog.near = d + (k.tåkeNær !== undefined ? k.tåkeNær : 0);
+    n.scene.fog.far = d + (k.tåkeFjern !== undefined ? k.tåkeFjern : bU * 3);
+  }
+  return { d, bU };
+}
+
+// ================= Bakteppet =================
+// Én flate bak alt annet. Fargen følger hvor langt inn vi er, og i vann tegner den lysspill
+// som ligger fast i rommet, slik at det kjennes at vi zoomer selv om vannet er helt jevnt.
+const bakScene = new THREE.Scene(), bakKamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const bakMat = new THREE.ShaderMaterial({
+  depthTest: false, depthWrite: false,
+  uniforms: {
+    uTid: { value: 0 }, uL2: { value: 0 }, uAspekt: { value: 1 },
+    uTopp: { value: new THREE.Color() }, uBunn: { value: new THREE.Color() },
+    uKaustikk: { value: 0 }, uKorn: { value: 0 }, uKornCeller: { value: 1 }, uSkille: { value: 0 }
+  },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+  fragmentShader: `
+    varying vec2 vUv;
+    uniform float uTid, uL2, uAspekt, uKaustikk, uKorn, uKornCeller, uSkille;
+    uniform vec3 uTopp, uBunn;
+    float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+    float stoy(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }
+    void main(){
+      vec2 p = (vUv - 0.5) * vec2(uAspekt, 1.0);
+      float y = mix(smoothstep(0.0, 1.0, vUv.y), smoothstep(0.47, 0.53, vUv.y), uSkille);
+      vec3 c = mix(uBunn, uTopp, y);
+      if (uKaustikk > 0.001) {
+        float fr = fract(uL2), sum = 0.0, vekt = 0.0;
+        for (int i = 0; i < 5; i++) {
+          float e = fr + float(i) - 1.0;
+          float t = (e + 1.0) / 5.0;
+          float w = sin(3.14159 * t); w *= w;
+          float k = floor(uL2) - float(i) + 1.0;          // hvilken fysisk størrelse dette laget har
+          vec2 q = p * exp2(e) * 1.5 + vec2(k * 17.13, k * 9.71);
+          q += vec2(uTid * 0.035, uTid * 0.024) * (1.0 + mod(k, 3.0) * 0.5);
+          float n1 = stoy(q), n2 = stoy(q * 1.9 + 7.3 + n1 * 1.4);
+          float r = 1.0 - abs(2.0 * n2 - 1.0);
+          sum += w * pow(r, 6.0); vekt += w;
         }
-      });
-      // kjernen, en liten prikk på denne skalaen
-      // kjernen tegnes i riktig størrelse, og er bare en prikk på denne skalaen
-      kule(x, y, Math.max(1.2, px(1.2e-15 * Math.cbrt(Z + N))), '#e0534f', '#ffd0ce');
-      if (r > 60) tekstMidt(sym, x, y - r * .78, Math.max(12, r * .18), 'rgba(220,235,255,.85)');
-    }
-  };
+        c += uKaustikk * (sum / vekt) * vec3(0.5, 0.78, 1.0) * (0.3 + 0.7 * vUv.y);
+      }
+      if (uKorn > 0.001) {
+        vec2 g = p * uKornCeller;
+        float n = stoy(g + uTid * vec2(1.7, -1.3)) * 0.6 + stoy(g * 2.1 - uTid * vec2(1.1, 2.3)) * 0.4;
+        c += uKorn * (n - 0.5) * vec3(0.55, 0.7, 0.95);
+      }
+      float v = smoothstep(1.3, 0.3, length(p * vec2(0.85, 1.0)));
+      c *= mix(0.62, 1.0, v);
+      gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);      // fargene er ferdige skjermfarger, akkurat som tåka
+    }`
+});
+{ const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bakMat); m.frustumCulled = false; bakScene.add(m); }
+
+const bakTopp = new THREE.Color(), bakBunn = new THREE.Color(), bakMidt = new THREE.Color();
+const _fa = new THREE.Color(), _fb = new THREE.Color();
+// nøkler: [bredde, toppfarge, bunnfarge, lysspill, skille mellom oppe og nede]
+function oppdaterBakteppe(emne) {
+  const n = emne.bak, l = Math.log10(bredde);
+  let i = 0;
+  while (i < n.length - 2 && l < Math.log10(n[i + 1][0])) i++;
+  const a = n[i], b = n[i + 1];
+  const t = jevn(Math.max(0, Math.min(1, (Math.log10(a[0]) - l) / (Math.log10(a[0]) - Math.log10(b[0])))));
+  bakTopp.copy(_fa.set(a[1])).lerp(_fb.set(b[1]), t);
+  bakBunn.copy(_fa.set(a[2])).lerp(_fb.set(b[2]), t);
+  bakMidt.copy(bakTopp).lerp(bakBunn, 0.5);
+  const u = bakMat.uniforms;
+  u.uTopp.value.copy(bakTopp); u.uBunn.value.copy(bakBunn);
+  u.uKaustikk.value = mellom(a[3], b[3], t);
+  u.uSkille.value = mellom(a[4] || 0, b[4] || 0, t);
+  u.uTid.value = tid; u.uL2.value = Math.log2(bredde); u.uAspekt.value = aspekt;
+  // korn: vannmolekylene anes som uro før de kan skilles fra hverandre
+  let korn = 0;
+  if (emne.korn) {
+    const pxPerMolekyl = W * emne.korn / synligBredde();
+    korn = jevn((pxPerMolekyl - 1.2) / 5) * (1 - jevn(framdrift(7e-9, 4e-9, bredde)));
+    u.uKornCeller.value = (synligBredde() / aspekt) / emne.korn;
+  }
+  u.uKorn.value = korn * 0.5;
 }
 
-function kjerneScene(sym, Z, N, fra, til, tekst) {
-  const rNukleon = 0.85e-15;
-  const rKjerne = 1.2e-15 * Math.cbrt(Z + N);
-  const deler = [];
-  for (let i = 0; i < Z + N; i++) {
-    // pakket i en kule, fast fordeling
-    const u = rnd(i, 1) * 2 - 1, v = rnd(i, 2) * TAU, rr = Math.cbrt(rnd(i, 3)) * (rKjerne - rNukleon);
-    const s = Math.sqrt(1 - u * u);
-    deler.push({ x: rr * s * Math.cos(v), y: rr * s * Math.sin(v), z: rr * u, proton: i < Z, i });
-  }
-  deler.sort((a, b) => a.z - b.z);
-  return {
-    fra, til, tittel: `Kjernen i ${sym}`, tekst,
-    modell: 'Protoner og nøytroner er tegnet som kuler. De er egentlig satt sammen av kvarker.',
-    tegn() {
-      const x = W / 2, y = H / 2;
-      deler.forEach(d => {
-        const dx = Math.sin(tid * 1.7 + d.i) * rNukleon * .18, dy = Math.cos(tid * 1.3 + d.i * 1.7) * rNukleon * .18;
-        const r = px(rNukleon) * (0.86 + 0.14 * (d.z / rKjerne + 1));
-        kule(x + px(d.x + dx), y + px(d.y + dy), r, d.proton ? '#e0534f' : '#9aa6b2', d.proton ? '#ffd2d0' : '#e7edf3');
-        if (r > 26) tekstMidt(d.proton ? '+' : '', x + px(d.x + dx), y + px(d.y + dy), r * .9, 'rgba(255,255,255,.9)');
+// ================= Felles: elektronsky og atomkjerne =================
+// Elektronene tegnes som en sky av prikker. Hver prikk er et sted der et elektron kunne vært
+// funnet. Tettheten følger den virkelige fordelingen: to elektroner tett på kjernen, resten lenger ute.
+function skyNivå(o) {
+  // o.skall = [[andel, k, theta_pm], ...]: avstanden trekkes fra en gammafordeling
+  const n = nivå({
+    enhet: 1e-12, vis: o.vis, tåke: null,
+    kamera: () => ({ foran: 1e9, bak: 1e9 }),
+    bygg() {
+      const rnd = lagRnd(o.frø || 7), N = 70000;
+      const pos = new Float32Array(N * 3), fase = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        let u = rnd(), valgtSkall = o.skall[o.skall.length - 1];
+        for (const sk of o.skall) { if (u < sk[0]) { valgtSkall = sk; break; } u -= sk[0]; }
+        let prod = 1; for (let j = 0; j < valgtSkall[1]; j++) prod *= Math.max(1e-9, rnd());
+        const r = -valgtSkall[2] * Math.log(prod);
+        const cz = rnd() * 2 - 1, v = rnd() * TAU, sx = Math.sqrt(1 - cz * cz);
+        pos[i * 3] = r * sx * Math.cos(v); pos[i * 3 + 1] = r * sx * Math.sin(v); pos[i * 3 + 2] = r * cz;
+        fase[i] = rnd();
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('aFase', new THREE.BufferAttribute(fase, 1));
+      const mat = new THREE.ShaderMaterial({
+        transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
+        uniforms: { uTid: { value: 0 }, uPx: { value: 4 }, uAlfa: { value: 1 }, uD: { value: 1 }, uBU: { value: 1 }, uFarge: { value: farge(o.farge || 0x5f9bff) }, uLys: { value: 0.2 } },
+        vertexShader: `attribute float aFase; uniform float uTid, uPx, uD, uBU; varying float vA;
+          void main(){
+            vec3 p = position * (1.0 + 0.07 * sin(uTid * (0.7 + fract(aFase * 7.0)) + aFase * 40.0));
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            gl_Position = projectionMatrix * mv;
+            gl_PointSize = uPx * (0.7 + 0.6 * fract(aFase * 31.0));
+            vA = 0.45 + 0.55 * sin(uTid * 2.6 * (0.5 + fract(aFase * 13.0)) + aFase * 90.0);
+            vA *= smoothstep(1.5, 0.5, abs(-mv.z - uD) / uBU);      // bare et lag rundt stedet vi ser på
+          }`,
+        fragmentShader: `uniform vec3 uFarge; uniform float uAlfa, uLys; varying float vA;
+          void main(){
+            float d = length(gl_PointCoord - 0.5);
+            float a = smoothstep(0.5, 0.0, d);
+            gl_FragColor = vec4(uFarge * a * a * vA * uAlfa * uLys, 1.0);
+            #include <encodings_fragment>
+          }`
       });
+      n.mat.push(mat);
+      n.sky = new THREE.Points(geo, mat); n.sky.frustumCulled = false;
+      n.scene.add(n.sky);
+      // kjernen i riktig størrelse er usynlig her, så den merkes med en liten lysende prikk
+      const g2 = new THREE.BufferGeometry();
+      g2.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3), 3));
+      const m2 = new THREE.ShaderMaterial({
+        transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
+        uniforms: { uPx: { value: 4 }, uAlfa: { value: 1 } },
+        vertexShader: 'uniform float uPx; void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_PointSize = uPx; }',
+        fragmentShader: `uniform float uAlfa; void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.05, d);
+          gl_FragColor = vec4(vec3(1.0, 0.72, 0.5) * a * uAlfa, 1.0); }`
+      });
+      n.mat.push(m2); n.prikkMat = m2;
+      const prikk = new THREE.Points(g2, m2); prikk.frustumCulled = false; n.scene.add(prikk);
+    },
+    oppdater(dt, a, k) {
+      const dpr = renderer.getPixelRatio();
+      n.sky.material.uniforms.uD.value = k.d; n.sky.material.uniforms.uBU.value = Math.max(k.bU, 160);
+      n.sky.material.uniforms.uTid.value = tid;
+      n.sky.material.uniforms.uPx.value = Math.max(6, Math.min(W, H) / 85) * dpr;
+      // lenger inne er prikkene få, så hver av dem får lyse sterkere
+      n.sky.material.uniforms.uLys.value = mellom(0.085, 0.6, jevn(framdrift(1.2e-10, 1e-11, bredde)));
+      n.sky.rotation.y = tid * 0.05; n.sky.rotation.x = Math.sin(tid * 0.11) * 0.2;
+      n.prikkMat.uniforms.uPx.value = Math.max(4 * dpr, (2 * o.kjerneR / synligBredde()) * W * dpr);
+      n.prikkMat.uniforms.uAlfa.value = a * (1 - jevn(framdrift(1e-12, 3e-13, bredde)));
     }
-  };
+  });
+  return n;
+}
+
+function kjerneNivå(o) {
+  const n = nivå({
+    enhet: 1e-15, vis: o.vis, tåke: null,
+    kamera: () => ({ høyde: 0.12 }),
+    bygg() {
+      const s = n.scene; lysSett(s, 0.9);
+      const rnd = lagRnd(o.frø || 3), A = o.Z + o.N, rN = 0.85, R = 1.22 * Math.cbrt(A) - rN * 0.55;
+      const p = [];
+      for (let i = 0; i < A; i++) {
+        const cz = rnd() * 2 - 1, v = rnd() * TAU, r = Math.cbrt(rnd()) * R, sx = Math.sqrt(1 - cz * cz);
+        p.push(new THREE.Vector3(r * sx * Math.cos(v), r * sx * Math.sin(v), r * cz));
+      }
+      for (let it = 0; it < 160; it++) {                 // dytter kulene fra hverandre til de ligger tett
+        for (let i = 0; i < A; i++) for (let j = i + 1; j < A; j++) {
+          const d = p[i].distanceTo(p[j]);
+          if (d < rN * 1.86 && d > 1e-6) { const f = (rN * 1.86 - d) / d * 0.5; const dx = p[j].clone().sub(p[i]).multiplyScalar(f); p[i].sub(dx); p[j].add(dx); }
+        }
+        p.forEach(q => { const l = q.length(); if (l > R) q.multiplyScalar(R / l); q.multiplyScalar(0.995); });
+      }
+      // protoner og nøytroner blandes, slik de er i en virkelig kjerne
+      const rekke = p.map((q, i) => [rnd(), i]).sort((a, b) => a[0] - b[0]), type = [];
+      rekke.forEach(([_, idx], i) => { type[idx] = i < o.Z; });
+      const geo = new THREE.SphereGeometry(rN, 48, 32);
+      const mP = reg(n, new THREE.MeshStandardMaterial({ color: farge(0xd9412f), roughness: 0.42, metalness: 0.0, envMapIntensity: 0.9 }));
+      const mN = reg(n, new THREE.MeshStandardMaterial({ color: farge(0x93a1b3), roughness: 0.42, metalness: 0.0, envMapIntensity: 0.9 }));
+      n.gruppe = new THREE.Group(); s.add(n.gruppe);
+      n.kuler = p.map((q, i) => { const m = new THREE.Mesh(geo, type[i] ? mP : mN); m.position.copy(q); m.userData = { p0: q.clone(), f: rnd() * 100 }; n.gruppe.add(m); return m; });
+      const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+      const gr = g.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, 'rgba(255,190,140,.5)'); gr.addColorStop(0.5, 'rgba(255,120,80,.14)'); gr.addColorStop(1, 'rgba(255,90,60,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+      const glød = new THREE.Sprite(reg(n, new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })));
+      glød.scale.setScalar(R * 7); n.glød = glød; n.R = R; s.add(glød);
+    },
+    oppdater() {
+      n.glød.position.copy(kamera.position).normalize().multiplyScalar(-n.R * 1.8);     // gløden ligger bak kjernen
+      n.gruppe.rotation.y = tid * 0.22; n.gruppe.rotation.x = Math.sin(tid * 0.13) * 0.35;
+      for (const m of n.kuler) { const u = m.userData, t = tid * 2.3 + u.f;
+        m.position.set(u.p0.x + Math.sin(t) * 0.07, u.p0.y + Math.sin(t * 1.31 + 1.0) * 0.07, u.p0.z + Math.sin(t * 0.83 + 2.0) * 0.07); }
+    }
+  });
+  return n;
 }
 
 // ================= Vann =================
-function vannmolekyl(x, y, r, vinkel) {
-  const a = 104.5 * Math.PI / 180;
-  const rO = r, rH = r * 0.62, d = r * 1.5;
-  const h1 = [x + d * Math.cos(vinkel - a / 2), y + d * Math.sin(vinkel - a / 2)];
-  const h2 = [x + d * Math.cos(vinkel + a / 2), y + d * Math.sin(vinkel + a / 2)];
-  ctx.strokeStyle = 'rgba(210,230,255,.5)'; ctx.lineWidth = Math.max(1, r * .28);
-  [h1, h2].forEach(h => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(h[0], h[1]); ctx.stroke(); });
-  kule(h1[0], h1[1], rH, '#eef3f8', '#ffffff');
-  kule(h2[0], h2[1], rH, '#eef3f8', '#ffffff');
-  kule(x, y, rO, '#e0534f', '#ffd2d0');
-  if (rO > 26 && rO < Math.min(W, H) * 0.42) {
-    tekstMidt('O', x, y, rO * .9, 'rgba(255,255,255,.92)');
-    tekstMidt('H', h1[0], h1[1], rH * 1.1, 'rgba(40,60,80,.85)');
-    tekstMidt('H', h2[0], h2[1], rH * 1.1, 'rgba(40,60,80,.85)');
-  }
-}
+function glassNivå() {
+  const n = nivå({
+    enhet: 0.01, vis: [Infinity, Infinity, 0.11, 0.03], tåke: 'topp',
+    kamera(b) {
+      const f = jevn(framdrift(0.3, 0.035, b));
+      return { mål: n.mål.set(0, mellom(5.3, 6.3, f), mellom(0, 1.2, f)), høyde: mellom(0.17, 0.3, f), tåkeNær: 25, tåkeFjern: 120 };
+    },
+    bygg() {
+      const s = n.scene; lysSett(s, 1); s.fog = new THREE.Fog(0x000000, 1, 2);
+      const bord = new THREE.Mesh(new THREE.CircleGeometry(160, 64), reg(n, new THREE.MeshStandardMaterial({ color: farge(0x4a3c31), roughness: 0.6, metalness: 0, envMapIntensity: 0.7 })));
+      bord.rotation.x = -Math.PI / 2; s.add(bord);
+      const flekk = (farger, b, d, x, z, blanding) => {
+        const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+        const gr = g.createRadialGradient(128, 128, 6, 128, 128, 128); farger.forEach(([t, f]) => gr.addColorStop(t, f));
+        g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(b, d), reg(n, new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: blanding || THREE.NormalBlending })));
+        m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02 + (blanding ? 0.02 : 0), z); s.add(m);
+      };
+      flekk([[0, 'rgba(0,0,0,.8)'], [0.4, 'rgba(0,0,0,.45)'], [1, 'rgba(0,0,0,0)']], 19, 13, 3.0, -1.6);
+      flekk([[0, 'rgba(255,240,210,.55)'], [0.5, 'rgba(255,225,180,.16)'], [1, 'rgba(255,220,170,0)']], 6.5, 3.6, 4.6, -2.3, THREE.AdditiveBlending);  // lyset som samles gjennom vannet
 
-const VANN = [
-  { fra: 0.6, til: 0.02, tittel: 'Et glass vann', tekst: 'Slik vi ser det med det blotte øyet. Dra, rull eller bruk glidebryteren for å zoome innover.',
-    tegn() {
-      const x = W / 2, y = H / 2, h = px(0.09), b = px(0.062);
-      ctx.save();
-      ctx.beginPath(); ctx.moveTo(x - b / 2, y - h / 2); ctx.lineTo(x - b * .42, y + h / 2);
-      ctx.lineTo(x + b * .42, y + h / 2); ctx.lineTo(x + b / 2, y - h / 2); ctx.closePath();
-      ctx.fillStyle = 'rgba(200,225,250,.10)'; ctx.fill();
-      ctx.strokeStyle = 'rgba(210,235,255,.55)'; ctx.lineWidth = Math.max(1, px(0.0012)); ctx.stroke();
-      ctx.clip();
-      const vy = y - h * .22 + Math.sin(tid) * px(0.0008);
-      const g = ctx.createLinearGradient(0, vy, 0, y + h / 2);
-      g.addColorStop(0, 'rgba(90,170,230,.75)'); g.addColorStop(1, 'rgba(30,90,160,.9)');
-      ctx.fillStyle = g; ctx.fillRect(x - b, vy, b * 2, h);
-      ctx.restore();
-    } },
-  { fra: 0.03, til: 1e-3, tittel: 'Overflaten på vannet', tekst: 'Vi er nede på millimeteren. Fortsatt ser vannet helt jevnt ut.',
-    tegn() {
-      const g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, 'rgba(120,190,240,.55)'); g.addColorStop(1, 'rgba(25,80,150,.85)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      for (let i = 0; i < 40; i++) {
-        const y = (rnd(i, 7) * H + tid * 8 * (0.4 + rnd(i, 8))) % H;
-        ctx.strokeStyle = `rgba(255,255,255,${0.05 + rnd(i, 9) * 0.06})`;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.bezierCurveTo(W * .3, y - 12, W * .7, y + 12, W, y); ctx.stroke();
+      const Ry = y => 2.9 + 0.6 * y / 10.5, V = (r, y) => new THREE.Vector2(r, y);
+      const glassP = [V(0.001, 0), V(2.78, 0), V(2.9, 0.1)];
+      for (let y = 1; y <= 10; y++) glassP.push(V(Ry(y), y));
+      glassP.push(V(Ry(10.5), 10.5), V(Ry(10.5) - 0.06, 10.56), V(Ry(10.5) - 0.13, 10.5));
+      for (let y = 10; y >= 1; y--) glassP.push(V(Ry(y) - 0.14, y));
+      glassP.push(V(2.62, 0.74), V(0.001, 0.7));
+      const glass = new THREE.Mesh(new THREE.LatheGeometry(glassP, 80), reg(n, new THREE.MeshPhysicalMaterial({
+        color: farge(0xffffff), roughness: 0.04, metalness: 0, transmission: 0.93, transparent: true, envMapIntensity: 1.5, side: THREE.DoubleSide, depthWrite: false })));
+      glass.renderOrder = 3; s.add(glass);
+      const topp = 7.6, vannP = [V(0.001, 0.72), V(2.6, 0.74)];
+      for (let y = 1; y <= 7; y++) vannP.push(V(Ry(y) - 0.155, y));
+      vannP.push(V(Ry(topp) - 0.155, topp), V(0.001, topp));
+      const vann = new THREE.Mesh(new THREE.LatheGeometry(vannP, 80), reg(n, new THREE.MeshPhysicalMaterial({
+        color: farge(0x5fa9e6), roughness: 0.03, metalness: 0, transmission: 0.8, transparent: true, envMapIntensity: 1.3, depthWrite: false })));
+      vann.renderOrder = 2; s.add(vann);
+      // små luftbobler på innsiden av glasset, slik det blir når vann har stått litt
+      const rnd = lagRnd(11), bGeo = new THREE.SphereGeometry(1, 10, 8);
+      const bobler = new THREE.InstancedMesh(bGeo, reg(n, new THREE.MeshStandardMaterial({ color: farge(0xffffff), roughness: 0.05, metalness: 0, envMapIntensity: 2.4, transparent: true, opacity: 0.4 })), 46);
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sk = new THREE.Vector3();
+      for (let i = 0; i < 46; i++) {
+        const y = 1 + rnd() * 6, v = rnd() * TAU, r = Ry(y) - 0.2, st = 0.018 + rnd() * 0.032;
+        m4.compose(p.set(Math.cos(v) * r, y, Math.sin(v) * r), q, sk.setScalar(st)); bobler.setMatrixAt(i, m4);
       }
-    } },
-  { fra: 1.5e-3, til: 5e-9, tittel: 'Vann ser likt ut på alle disse størrelsene', tekst: 'Fra millimeter til nanometer skjer det ingenting nytt. Først når utsnittet er noen få nanometer bredt, dukker molekylene opp.',
-    tegn() {
-      const g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, 'rgba(70,150,215,.75)'); g.addColorStop(1, 'rgba(20,70,140,.9)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      // svake tetthetsvariasjoner som blir tydeligere jo lenger inn vi kommer
-      const styrke = Math.max(0, Math.min(1, (Math.log10(2e-6) - Math.log10(bredde)) / 2));
-      for (let i = 0; i < 70; i++) {
-        const x = (rnd(i, 1) * 1.4 - .2) * W + Math.sin(tid * .3 + i) * 12;
-        const y = (rnd(i, 2) * 1.4 - .2) * H + Math.cos(tid * .25 + i * 1.3) * 12;
-        sirkel(x, y, W * (.04 + rnd(i, 3) * .07), `rgba(190,225,255,${0.02 + 0.05 * styrke})`);
-      }
-    } },
-  { fra: 4e-9, til: 1.2e-9, tittel: 'Vannmolekyler i bevegelse', tekst: 'Nå ser vi molekylene. De sitter ikke fast, men sklir rundt hverandre og holdes sammen av svake bindinger. Det er derfor vann er flytende.',
-    modell: 'Fargene er valgt for å skille atomene, ikke fordi atomer har farge.',
-    tegn() {
-      const r = px(1.4e-10);
-      const avstand = 3.1e-10;
-      const n = Math.ceil(bredde / avstand) + 3;
-      for (let i = -1; i < n; i++) for (let j = -1; j < n * H / W + 2; j++) {
-        const jitter = Math.sin(tid * 1.6 + i * 2.1 + j) * 0.22, jitter2 = Math.cos(tid * 1.9 + j * 1.7) * 0.22;
-        const x = px((i + rnd(i, j) * .5 + jitter) * avstand) - px(bredde / 2) + W / 2;
-        const y = px((j + rnd(j, i) * .5 + jitter2) * avstand) - px(bredde / 2 * H / W) + H / 2;
-        if (x < -r * 3 || x > W + r * 3 || y < -r * 3 || y > H + r * 3) continue;
-        vannmolekyl(x, y, r, rnd(i + 3, j + 5) * TAU + tid * .3 * (rnd(i, j) - .5));
-      }
-    } },
-  { fra: 1.6e-9, til: 2.2e-10, tittel: 'Ett vannmolekyl', tekst: 'Ett oksygenatom og to hydrogenatomer, med en vinkel på omtrent 105 grader. Molekylet er rundt 0,28 nanometer bredt.',
-    modell: 'Kulene viser hvor atomene er, ikke hvordan de egentlig ser ut.',
-    tegn() { vannmolekyl(W / 2, H / 2 + px(0.3e-10), px(1.3e-10), -Math.PI / 2 + Math.sin(tid * .5) * .15); } },
-  atomScene('O', 8, 8, [2, 6], 1.3e-10, 3.2e-10, 4e-12,
-    'Oksygenatomet. Nesten hele atomet er tomrom: elektronene holder til langt ute, mens all massen ligger i den bittelille kjernen i midten.'),
-  kjerneScene('oksygen', 8, 8, 8e-12, 4e-15,
-    'Åtte protoner og åtte nøytroner. Legg merke til hvor lenge kjernen bare er en prikk: den er omtrent hundre tusen ganger mindre enn atomet, men har nesten all massen.')
-];
-
-// ================= Dyrecelle =================
-// Fosfolipidet tegnes forenklet når det er lite, og som ekte molekyl når det blir stort nok.
-// Overgangen skjer gradvis, slik at det ser ut som det samme molekylet hele veien.
-const C_C = 1.54e-10;                                   // bindingslengde karbon–karbon
-function fosfolipid(x, y, r, opp, hale, frø) {
-  const d = opp ? 1 : -1;
-  const atomR = px(0.77e-10);
-  if (atomR < 2.2) {                                    // for lite til å vise atomer
-    ctx.strokeStyle = 'rgba(240,210,120,.85)'; ctx.lineWidth = Math.max(1, r * .45); ctx.lineCap = 'round';
-    [-0.45, 0.45].forEach(o => {
-      ctx.beginPath();
-      ctx.moveTo(x + r * o, y);
-      ctx.bezierCurveTo(x + r * o * 1.6, y + d * hale * .36, x + r * o * .4, y + d * hale * .73, x + r * o * 1.1, y + d * hale);
-      ctx.stroke();
-    });
-    kule(x, y - d * r * .2, r, '#f2c14e', '#fff0c6');
-    return;
-  }
-  tegnFosfolipidAtomer(x, y, d, atomR, frø || 0);
-}
-
-// hodet: nitrogen, fosfor og oksygen. halene: kjeder av karbon med hydrogen på
-function tegnFosfolipidAtomer(x, y, d, rC, frø) {
-  const rH = rC * 0.6, steg = px(C_C) * 0.82, sideveis = px(C_C) * 0.55;
-  const rask = rC < 9;
-  const kul = (px_, py, rr, f, l) => (rask ? kuleRask : kule)(px_, py, rr, f, l);
-  const strek = (x1, y1, x2, y2, br) => {
-    ctx.strokeStyle = 'rgba(215,225,235,.45)'; ctx.lineWidth = Math.max(1, br);
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-  };
-  // hodet
-  const hy = y - d * rC * 1.2;
-  kul(x - sideveis * .9, hy - d * steg * .9, rC * 1.05, '#4f7fd8', '#bcd2ff');       // N
-  kul(x + sideveis * .2, hy, rC * 1.25, '#e8a13c', '#ffe0ac');                        // P
-  kul(x + sideveis * 1.3, hy - d * steg * .5, rC * .95, '#e0534f', '#ffd2d0');        // O
-  kul(x - sideveis * .2, hy + d * steg * .8, rC * .95, '#e0534f', '#ffd2d0');         // O
-  strek(x - sideveis * .9, hy - d * steg * .9, x + sideveis * .2, hy, rC * .34);
-  strek(x + sideveis * .2, hy, x + sideveis * 1.3, hy - d * steg * .5, rC * .34);
-  strek(x + sideveis * .2, hy, x - sideveis * .2, hy + d * steg * .8, rC * .34);
-  // to haler med fjorten karbon hver
-  [-1, 1].forEach((side, t) => {
-    let px_ = x + side * sideveis * 1.15, py = hy + d * steg * 1.6;
-    let forrigeX = px_, forrigeY = py;
-    for (let i = 0; i < 16; i++) {
-      const vri = ((i + t + frø) % 2 ? 1 : -1) * sideveis * .5;
-      const cx = px_ + vri, cy = py + d * steg * i;
-      if (i) strek(forrigeX, forrigeY, cx, cy, rC * .38);
-      [-1, 1].forEach(h => {
-        const hx = cx + h * sideveis * .85, hy2 = cy + d * steg * .2;
-        strek(cx, cy, hx, hy2, rC * .3);
-        kul(hx, hy2, rH, '#eef3f8', '#ffffff');
-      });
-      kul(cx, cy, rC, '#3a4048', '#8f9aa6');
-      forrigeX = cx; forrigeY = cy;
+      bobler.renderOrder = 1; s.add(bobler);
     }
   });
+  n.mål = new THREE.Vector3();
+  return n;
 }
 
-// myk overgang, så panoreringen ikke starter og stopper brått
-const jevn = f => f <= 0 ? 0 : f >= 1 ? 1 : f * f * (3 - 2 * f);
+// Vannmolekylene ligger like tett som i virkelig vann: 33 molekyler per kubikknanometer
+const VANN_O_R = 1.38, VANN_H_R = 1.02;          // litt under van der Waals-radius, så formen blir tydelig
+function vannMolekyler() {
+  const rnd = lagRnd(5), a = 3.104;
+  const vb = 62 * (aspekt >= 1.3 ? 1 : Math.max(0.6, aspekt / 1.3));     // bredden på utsnittet idet molekylene tones inn
+  const hx = vb / 2 * 1.2 + 2, hy = vb / aspekt / 2 * 1.2 + 2, dyp = 10;
+  const liste = [];
+  for (let x = -hx; x <= hx; x += a) for (let y = -hy; y <= hy; y += a) for (let z = -dyp; z <= 0.2; z += a) {
+    const p = [x + (rnd() - 0.5) * 1.5, y + (rnd() - 0.5) * 1.5, z + (rnd() - 0.5) * 1.3];
+    if (p[2] > 0.5) p[2] = 0.5 - rnd() * 0.6;
+    if (Math.hypot(p[0], p[1], p[2]) < 3.0) continue;      // plass til molekylet vi skal inn i
+    liste.push(p);
+  }
+  // molekylet i midten har seks nære naboer rundt seg i bildeplanet og bak
+  [[2.9, 0.6, -0.3], [-2.85, 0.9, -0.5], [0.4, 2.95, -0.6], [1.6, -2.7, -0.9], [-1.7, -2.6, -0.4], [0.2, 0.3, -2.9]].forEach(p => liste.push(p));
+  liste.sort((p, q) => Math.max(Math.abs(p[0]), Math.abs(p[1]) * aspekt) - Math.max(Math.abs(q[0]), Math.abs(q[1]) * aspekt));   // innenfra og ut
+  return liste.map(p => {
+    // tilfeldig retning og en tilfeldig akse molekylet vrir seg om
+    const ret = () => { const cz = rnd() * 2 - 1, v = rnd() * TAU, sx = Math.sqrt(1 - cz * cz); return new THREE.Vector3(sx * Math.cos(v), sx * Math.sin(v), cz); };
+    const kv = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), ret()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * TAU));
+    const k = ret(), del = v => { const kxv = new THREE.Vector3().crossVectors(k, v), kkv = k.clone().multiplyScalar(k.dot(v)); return [v.x, v.y, v.z, kxv.x, kxv.y, kxv.z, kkv.x, kkv.y, kkv.z]; };
+    const h1 = new THREE.Vector3(0.757, -0.586, 0).applyQuaternion(kv), h2 = new THREE.Vector3(-0.757, -0.586, 0).applyQuaternion(kv);
+    return { p, rad: Math.max(Math.abs(p[0]), Math.abs(p[1]) * aspekt), h1: del(h1), h2: del(h2), f: [rnd() * 100, rnd() * 100, rnd() * 100, rnd() * 100], w: 0.6 + rnd() * 0.9 };
+  });
+}
+const vannKamera = () => ({ foran: 7, bak: 60, tåkeNær: -2.5, tåkeFjern: 12.5 });
 
-const CELLE = [
-  { fra: 2e-3, til: 1.2e-4, tittel: 'Celler i et mikroskop', tekst: 'Dyreceller er rundt 20 mikrometer, altså to hundredeler av en millimeter. Her ser vi flere av dem ved siden av hverandre.',
-    tegn() {
-      const r = px(1.1e-5);
-      for (let i = -2; i < 6; i++) for (let j = -2; j < 6; j++) {
-        const x = W / 2 + px((i - 1.5 + rnd(i, j) * .4) * 2.6e-5);
-        const y = H / 2 + px((j - 1.5 + rnd(j, i) * .4) * 2.6e-5);
-        if (x < -r * 2 || x > W + r * 2 || y < -r * 2 || y > H + r * 2) continue;
-        ctx.beginPath(); ctx.ellipse(x, y, r * (0.85 + rnd(i, j + 9) * .3), r * (0.8 + rnd(j, i + 4) * .3), rnd(i, j) * 3, 0, TAU);
-        ctx.fillStyle = 'rgba(150,190,230,.30)'; ctx.fill();
-        ctx.strokeStyle = 'rgba(190,225,255,.6)'; ctx.lineWidth = Math.max(1, r * .05); ctx.stroke();
-        sirkel(x + r * .1, y - r * .1, r * .3, 'rgba(120,110,200,.6)');
+function vannNaboNivå() {
+  const n = nivå({
+    enhet: 1e-10, vis: [6.2e-9, 4e-9, 1.5e-9, 7.5e-10], tåke: 'midt', aspektAvhengig: true, kamera: vannKamera,
+    bygg() {
+      const s = n.scene; lysSett(s, 1); s.fog = new THREE.Fog(0x000000, 1, 2);
+      n.mol = vannMolekyler();
+      const N = n.mol.length; n.ytterst = n.mol[N - 1].rad;
+      const mO = reg(n, new THREE.MeshStandardMaterial({ color: farge(0xd5362c), roughness: 0.38, metalness: 0, envMapIntensity: 0.75 }));
+      const mH = reg(n, new THREE.MeshStandardMaterial({ color: farge(0xeef1f4), roughness: 0.42, metalness: 0, envMapIntensity: 0.75 }));
+      n.O = new THREE.InstancedMesh(new THREE.SphereGeometry(VANN_O_R, 18, 12), mO, N);
+      n.Hy = new THREE.InstancedMesh(new THREE.SphereGeometry(VANN_H_R, 14, 9), mH, N * 2);
+      const m4 = new THREE.Matrix4();
+      for (let i = 0; i < N; i++) { n.O.setMatrixAt(i, m4); n.Hy.setMatrixAt(i * 2, m4); n.Hy.setMatrixAt(i * 2 + 1, m4); }
+      n.O.frustumCulled = n.Hy.frustumCulled = false;
+      s.add(n.O); s.add(n.Hy);
+    },
+    oppdater(dt, a, k) {
+      const o = n.O.instanceMatrix.array, h = n.Hy.instanceMatrix.array, mol = n.mol, t = tid;
+      // molekylene er sortert innenfra og ut, så vi tegner bare dem som er i bildet
+      const grense = k.bU / 2 * 1.3 + 4;
+      let antall = mol.length;
+      if (grense < n.ytterst) { let lo = 0, hi = mol.length; while (lo < hi) { const m = (lo + hi) >> 1; if (mol[m].rad < grense) lo = m + 1; else hi = m; } antall = lo; }
+      n.O.count = antall; n.Hy.count = antall * 2;
+      for (let i = 0; i < antall; i++) {
+        const m = mol[i], f = m.f;
+        const x = m.p[0] + Math.sin(t * 1.9 * m.w + f[0]) * 0.32, y = m.p[1] + Math.sin(t * 2.3 * m.w + f[1]) * 0.32, z = m.p[2] + Math.sin(t * 1.6 * m.w + f[2]) * 0.26;
+        const v = Math.sin(t * 1.4 * m.w + f[3]) * 0.9 + Math.sin(t * 0.37 + f[0]) * 1.4, c = Math.cos(v), sn = Math.sin(v), e = 1 - c;
+        let k = i * 16; o[k + 12] = x; o[k + 13] = y; o[k + 14] = z;
+        const a = m.h1, b2 = m.h2;
+        k = i * 32; h[k + 12] = x + a[0] * c + a[3] * sn + a[6] * e; h[k + 13] = y + a[1] * c + a[4] * sn + a[7] * e; h[k + 14] = z + a[2] * c + a[5] * sn + a[8] * e;
+        k += 16; h[k + 12] = x + b2[0] * c + b2[3] * sn + b2[6] * e; h[k + 13] = y + b2[1] * c + b2[4] * sn + b2[7] * e; h[k + 14] = z + b2[2] * c + b2[5] * sn + b2[8] * e;
       }
-    } },
-  { fra: 1.6e-4, til: 8e-6, tittel: 'Én celle', tekst: 'Cellekjernen i midten, mitokondrier rundt, og ytterst cellemembranen som holder det hele samlet. Vi sikter oss inn mot kanten.',
-    modell: 'Membranen er tegnet tykkere enn den er. Ellers ville den vært tynnere enn en strek her.',
-    tegn(f) {
-      // bildet glir ut mot kanten, så det blir tydelig at det er membranen vi går inn i
-      const r = px(1.05e-5);
-      const x = W / 2, y = H / 2 + r * .92 * jevn(f);
-      ctx.beginPath(); ctx.ellipse(x, y, r, r * .92, .2, 0, TAU);
-      ctx.fillStyle = 'rgba(150,195,235,.22)'; ctx.fill();
-      ctx.strokeStyle = 'rgba(235,175,90,.9)'; ctx.lineWidth = Math.max(2.5, px(4.4e-9) * 12); ctx.stroke();
-      sirkel(x + r * .1, y - r * .08, r * .3, 'rgba(120,110,200,.55)');
-      ctx.strokeStyle = 'rgba(170,160,230,.8)'; ctx.lineWidth = Math.max(1, r * .012);
-      ctx.beginPath(); ctx.arc(x + r * .1, y - r * .08, r * .3, 0, TAU); ctx.stroke();
-      for (let i = 0; i < 9; i++) {
-        const v = i * 1.9 + .4, rr = r * (.45 + rnd(i, 2) * .38);
-        const mx = x + rr * Math.cos(v), my = y + rr * Math.sin(v) * .9;
-        ctx.save(); ctx.translate(mx, my); ctx.rotate(v + 1);
-        ctx.beginPath(); ctx.ellipse(0, 0, r * .16, r * .075, 0, 0, TAU);
-        ctx.fillStyle = 'rgba(230,140,120,.55)'; ctx.fill();
-        ctx.strokeStyle = 'rgba(240,170,150,.8)'; ctx.lineWidth = Math.max(1, r * .008); ctx.stroke();
-        ctx.restore();
+      n.O.instanceMatrix.needsUpdate = true; n.Hy.instanceMatrix.needsUpdate = true;
+    }
+  });
+  return n;
+}
+
+function vannSentralNivå() {
+  const n = nivå({
+    enhet: 1e-10, vis: [6.2e-9, 4e-9, 3.4e-10, 1.5e-10], tåke: 'midt', kamera: vannKamera,
+    bygg() {
+      const s = n.scene; lysSett(s, 1); s.fog = new THREE.Fog(0x000000, 1, 2);
+      const mO = reg(n, new THREE.MeshStandardMaterial({ color: farge(0xd5362c), roughness: 0.38, metalness: 0, envMapIntensity: 0.75 }));
+      const mH = reg(n, new THREE.MeshStandardMaterial({ color: farge(0xeef1f4), roughness: 0.42, metalness: 0, envMapIntensity: 0.75 }));
+      n.g = new THREE.Group();
+      n.g.add(new THREE.Mesh(new THREE.SphereGeometry(VANN_O_R, 64, 44), mO));
+      [1, -1].forEach(sg => { const h = new THREE.Mesh(new THREE.SphereGeometry(VANN_H_R, 48, 32), mH); h.position.set(0.757 * sg, -0.586, 0); n.g.add(h); });
+      s.add(n.g);
+    },
+    oppdater() {
+      // molekylet vrir seg mer mens det ligger i væsken, og roer seg når vi går helt inn på det
+      const uro = 1 - jevn(framdrift(2e-9, 7e-10, bredde));
+      n.g.rotation.set(Math.sin(tid * 0.9) * 0.12 * uro, Math.sin(tid * 0.6) * (0.1 + 0.3 * uro), Math.sin(tid * 0.75) * 0.14 * uro);
+    }
+  });
+  return n;
+}
+
+const VANN = {
+  navn: '💧 Vann', start: 0.3, slutt: 1.2e-14, korn: 3.1e-10,
+  bak: [
+    [0.3,    0x2a2f38, 0x14161b, 0, 0],
+    [0.13,   0x2a2f38, 0x14161b, 0, 0],
+    [0.04,   0x2f86c4, 0x0e3a66, 0.4, 0],
+    [1e-4,   0x2b7fbd, 0x0d3862, 0.4, 0],
+    [2e-6,   0x1f6aa3, 0x0c3157, 0.3, 0],
+    [2e-7,   0x124a78, 0x0b2a4b, 0.0, 0],
+    [5e-9,   0x0f3a61, 0x0a2440, 0, 0],
+    [6e-10,  0x0a2138, 0x08182a, 0, 0],
+    [1.5e-10, 0x05080f, 0x04060b, 0, 0],
+    [1e-15,  0x05070d, 0x04050a, 0, 0]
+  ],
+  lagNivåer: () => [
+    glassNivå(), vannNaboNivå(), vannSentralNivå(),
+    skyNivå({ vis: [3.6e-10, 1.7e-10, 1e-30, 1e-31], kjerneR: 3.0e-15, frø: 7,
+      skall: [[0.25, 3, 3.45], [0.75, 5, 11.9]] }),             // 1s tett på kjernen, seks elektroner lenger ute
+    kjerneNivå({ vis: [2.4e-12, 6e-13, 1e-30, 1e-31], Z: 8, N: 8, frø: 3 })
+  ],
+  kapitler: [
+    { til: 0.07, tittel: 'Et glass vann', tekst: 'Slik vi ser det med det blotte øyet. Rull, dra eller bruk glidebryteren for å zoome innover.' },
+    { til: 2e-4, tittel: 'Ned i vannet', tekst: 'Vi går gjennom overflaten og inn i vannet. Det ser helt jevnt og gjennomsiktig ut.',
+      modell: 'Lysspillet er tegnet for at du skal se at vi zoomer. Rent vann har ingen synlige detaljer her.' },
+    { til: 4e-7, tittel: 'Mikroskopets verden', tekst: 'Nå er utsnittet tynnere enn et hårstrå. Selv i et godt lysmikroskop ser vannet fortsatt helt jevnt ut.',
+      modell: 'Lysspillet er tegnet for at du skal se at vi zoomer. Rent vann har ingen synlige detaljer her.' },
+    { til: 7e-9, tittel: 'Mindre enn lysbølgene', tekst: 'Utsnittet er nå mindre enn bølgelengden til synlig lys, så her kan ingen se med vanlig lys lenger. Snart anes molekylene som en uro i vannet.' },
+    { til: 1.5e-9, tittel: 'Vannmolekyler', tekst: 'Vannet er ikke jevnt likevel. Det består av molekyler som ligger tett i tett, og som hele tiden dytter og vrir på hverandre.',
+      modell: 'Bevegelsen er bremset kraftig ned. Virkelige vannmolekyler farer av gårde med flere hundre meter i sekundet.',
+      forklaring: [['#d5362c', 'oksygen'], ['#eef1f4', 'hydrogen']] },
+    { til: 3.2e-10, tittel: 'Ett vannmolekyl', tekst: 'Ett oksygenatom og to hydrogenatomer: H₂O. Vinkelen mellom hydrogenatomene er omtrent 105 grader.',
+      modell: 'Kulene viser hvor stor plass atomene tar. Fargene er valgt for å skille dem, atomer har ikke farge.',
+      forklaring: [['#d5362c', 'oksygen'], ['#eef1f4', 'hydrogen']] },
+    { til: 4e-11, tittel: 'Inne i oksygenatomet', tekst: 'Atomet har ingen fast overflate. De åtte elektronene danner en sky rundt kjernen. Der skyen er tett, er sjansen størst for å finne et elektron.',
+      modell: 'Hver prikk er et sted der et elektron kunne vært. Elektronene går ikke i baner.',
+      forklaring: [['#5f9bff', 'elektronsky'], ['#ffb880', 'kjernen']] },
+    { til: 2.2e-12, tittel: 'Nesten bare tomrom', tekst: 'Vi zoomer videre mot kjernen gjennom nesten tomt rom. Hvis atomet var en fotballbane, ville kjernen vært et riskorn på midten.',
+      modell: 'Kjernen er merket med en lysende prikk. I riktig størrelse ville den ikke synes ennå.',
+      forklaring: [['#5f9bff', 'elektronsky'], ['#ffb880', 'kjernen']] },
+    { til: 0, tittel: 'Atomkjernen', tekst: 'Åtte protoner og åtte nøytroner, pakket tett sammen. Her ligger nesten hele massen til atomet.',
+      modell: 'Protoner og nøytroner er tegnet som kuler. De er selv bygd av enda mindre partikler, kvarker.',
+      forklaring: [['#d9412f', 'proton'], ['#93a1b3', 'nøytron']] }
+  ]
+};
+
+// ================= Dyrecelle =================
+const MEMB_H = 2.6;                       // halve tykkelsen på membranen, i nanometer
+const svaiTid = { value: 0 }, atomUro = { value: 0.12 };
+
+// Ett fosfolipid, atom for atom (DMPC: C36 H72 N O8 P, 118 atomer). Mål i ångstrøm, hodet opp.
+const lipidMal = (() => {
+  let mal = null;
+  return () => {
+    if (mal) return mal;
+    const tung = [];
+    const T = (el, x, y, z, h) => { tung.push({ el, p: new THREE.Vector3(x, y, z), h: h || 0, nb: [] }); return tung.length - 1; };
+    const B = (a, b) => { tung[a].nb.push(b); tung[b].nb.push(a); return b; };
+    const start = []; let fokus = 0;
+    [[-2.3, 0.15, 0.0], [2.3, -0.13, 0.6]].forEach(([x0, hel, z0], hale) => {       // to haler i sikksakk
+      const dx = Math.sin(hel), dy = -Math.cos(hel), ex = Math.cos(hel), ey = Math.sin(hel);
+      let forrige = -1;
+      for (let i = 0; i < 14; i++) {
+        const sik = (i % 2 ? 1 : -1) * 0.43, t = i * 1.27;
+        const id = T('C', x0 + dx * t + ex * sik, 16.9 + dy * t + ey * sik, z0, i === 0 ? 0 : i === 13 ? 3 : 2);
+        if (forrige >= 0) B(forrige, id); else start.push(id);
+        if (hale === 0 && i === 8) fokus = id;
+        forrige = id;
       }
-    } },
-  { fra: 1.1e-5, til: 2.5e-7, tittel: 'Cellemembranen', tekst: 'Kanten på cellen er ikke en vegg, men en hinne på bare 4 til 5 nanometer. Den er tegnet som en strek her, men er i virkeligheten to lag med molekyler.',
-    tegn() {
-      const y = H / 2, t = px(4.4e-9);
-      ctx.save();
-      ctx.beginPath(); ctx.moveTo(-10, y - px(1e-6));
-      ctx.quadraticCurveTo(W / 2, y - px(2.2e-6), W + 10, y - px(1e-6));
-      ctx.lineTo(W + 10, H + 10); ctx.lineTo(-10, H + 10); ctx.closePath();
-      ctx.fillStyle = 'rgba(150,195,235,.18)'; ctx.fill();
-      ctx.restore();
-      ctx.beginPath(); ctx.moveTo(-10, y - px(1e-6));
-      ctx.quadraticCurveTo(W / 2, y - px(2.2e-6), W + 10, y - px(1e-6));
-      ctx.strokeStyle = 'rgba(240,190,110,.95)'; ctx.lineWidth = Math.max(2, t); ctx.stroke();
-      ctx.fillStyle = 'rgba(200,225,250,.55)';
-      ctx.font = `600 ${Math.max(11, W * .018)}px "Atkinson Hyperlegible", sans-serif`;
-      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      ctx.fillText('inni cellen', 16, y + px(1.6e-6));
-      ctx.fillText('utenfor', 16, y - px(2.6e-6));
-    } },
-  { fra: 3e-7, til: 4e-9, tittel: 'To lag med fettmolekyler', tekst: 'Membranen består av fosfolipider. Hodene liker vann og vender utover, mens halene skyr vann og vender innover. Zoomer du videre, ser du at hvert molekyl er bygd av atomer.',
-    modell: 'Hodet er forenklet. Halene er tegnet med seksten karbonatomer hver.',
-    tegn() {
-      const y = H / 2, r = px(0.45e-9), avstand = 0.95e-9;
-      const n = Math.ceil(bredde / avstand) + 2;
-      const t = px(2.2e-9);   // halene er 2 nm, så hvert lag blir 2,2 nm
-      ctx.fillStyle = 'rgba(240,210,120,.06)'; ctx.fillRect(0, y - t, W, t * 2);
-      for (let i = -1; i < n; i++) {
-        const x = px(i * avstand) - px(bredde / 2) + W / 2 + Math.sin(tid + i) * r * .15;
-        if (x < -r * 3 || x > W + r * 3) continue;
-        if (Math.abs(i - Math.round(n * .62)) < 1.2) continue;            // plass til proteinet
-        fosfolipid(x, y - t, r, true, t * 0.92, i);        // øverste lag: halene peker innover
-        fosfolipid(x, y + t, r, false, t * 0.92, i + 1);   // nederste lag: halene peker oppover
+    });
+    const [c0, c1] = start;
+    B(c0, T('O', -3.9, 17.3, -0.3)); B(c1, T('O', 3.0, 17.2, 1.7));                 // karbonyl
+    const o0 = B(c0, T('O', -2.3, 18.2, 0.1)), o1 = B(c1, T('O', 1.4, 18.1, 0.6));
+    const g3 = B(o0, T('C', -1.2, 19.2, 0.1, 2)), g2 = B(g3, T('C', 0.2, 18.9, 0.6, 1)); B(o1, g2);
+    const g1 = B(g2, T('C', 0.7, 20.2, 1.2, 2));
+    const op = B(g1, T('O', 0.5, 21.4, 0.3)), P = B(op, T('P', -0.2, 22.6, -0.5));    // fosfat
+    B(P, T('O', -1.7, 22.4, -0.9)); B(P, T('O', 0.6, 22.9, -1.8));
+    const oc = B(P, T('O', -0.1, 23.9, 0.5));
+    const ca = B(oc, T('C', 1.1, 24.5, 1.0, 2)), cb = B(ca, T('C', 2.4, 23.8, 1.6, 2)), N = B(cb, T('N', 3.6, 24.5, 2.2));   // kolin
+    [[4.8, 23.6, 2.7], [3.2, 25.6, 3.2], [4.2, 25.2, 1.0]].forEach(p => B(N, T('C', p[0], p[1], p[2], 3)));
+    const atomer = tung.map(t => ({ el: t.el, p: t.p }));
+    const fokusIdx = fokus;
+    // hydrogenatomene settes på der det er ledig plass rundt hvert karbon
+    tung.forEach(t => {
+      if (!t.h) return;
+      const v = new THREE.Vector3(); t.nb.forEach(i => v.add(t.p.clone().sub(tung[i].p).normalize()));
+      if (v.lengthSq() < 1e-4) v.set(0, 1, 0); v.normalize();
+      const u = new THREE.Vector3().crossVectors(v, t.nb.length > 1 ? tung[t.nb[0]].p.clone().sub(tung[t.nb[1]].p) : new THREE.Vector3(0.3, 0.2, 1)).normalize();
+      const w = new THREE.Vector3().crossVectors(v, u);
+      const ret = t.h === 1 ? [v.clone()] : t.h === 2 ? [v.clone().multiplyScalar(0.58).addScaledVector(u, 0.81), v.clone().multiplyScalar(0.58).addScaledVector(u, -0.81)]
+        : [0, 1, 2].map(k => v.clone().multiplyScalar(0.34).addScaledVector(u, 0.94 * Math.cos(k * TAU / 3)).addScaledVector(w, 0.94 * Math.sin(k * TAU / 3)));
+      ret.forEach(r => atomer.push({ el: 'H', p: t.p.clone().addScaledVector(r, 1.09) }));
+    });
+    return mal = { atomer, fokus: atomer[fokusIdx].p.clone() };
+  };
+})();
+
+// Lipidene og proteinene i den biten av membranen vi zoomer inn på. Mål i nanometer.
+const membran = (() => {
+  let data = null;
+  return () => {
+    if (data) return data;
+    const rnd = lagRnd(21), prot = [];
+    for (let gx = -40; gx <= 40; gx++) for (let gz = 0; gz < 36; gz++) {
+      if (rnd() > 0.72) continue;
+      const x = gx * 16 + (rnd() - 0.5) * 9, z = -4.5 - gz * 16 - rnd() * 8;
+      if (Math.abs(x) < 13 && z > -12) continue;
+      prot.push({ x, z, r: 2.2 + rnd() * 1.6, opp: 1.5 + rnd() * 4.5, ned: 1 + rnd() * 4, type: Math.floor(rnd() * 3), f: rnd() });
+    }
+    prot.push({ x: 15.5, z: -5.2, r: 2.8, opp: 4.2, ned: 2.6, type: 0, f: 0.3 });
+    const nær = prot.filter(p => p.z > -36 && Math.abs(p.x) < 54), lip = [], a = 0.82;
+    for (let lag = 0; lag < 2; lag++) for (let j = 0; j < 33; j++) for (let i = -58; i <= 58; i++) {
+      const x = i * a + (j % 2) * a / 2 + (rnd() - 0.5) * 0.2, z = -0.45 - j * a * 0.87 - (rnd() - 0.5) * 0.18;
+      if (lag === 0 && Math.hypot(x, z + 0.45) < 0.62) continue;
+      if (nær.some(p => Math.hypot(p.x - x, p.z - z) < p.r + 0.3)) continue;
+      lip.push({ x, z, lag, rot: rnd() * TAU });
+    }
+    lip.push({ x: 0, z: -0.45, lag: 0, rot: 0 });           // lipidet vi skal inn i
+    lip.sort((p, q) => Math.abs(p.x) - Math.abs(q.x));
+    return data = { prot, nær, lip };
+  };
+})();
+
+// Kameraet glir fra midten av membranen, opp til ett lipid og inn mot ett karbonatom i halen
+const _mm = window.THREE ? new THREE.Vector3() : null;
+function membranKamera(enhet, tåke) {
+  return b => {
+    const fok = lipidMal().fokus, t1 = jevn(framdrift(1.8e-8, 6e-9, b)), t2 = jevn(framdrift(5e-9, 2.2e-9, b));
+    _mm.set(mellom(0, fok.x * 1e-10, t2), mellom(mellom(0, 1.25e-9, t1), fok.y * 1e-10, t2), mellom(0, -0.45e-9 + fok.z * 1e-10, t1)).multiplyScalar(1 / enhet);
+    const høyde = 0.24 * jevn(framdrift(2.5e-6, 4e-7, b)) * (1 - 0.6 * jevn(framdrift(1e-8, 3e-9, b)));
+    return Object.assign({ mål: _mm, høyde }, tåke(synligBredde() / enhet));
+  };
+}
+
+function celleNivå() {
+  const n = nivå({
+    enhet: 1e-6, vis: [Infinity, Infinity, 3.4e-6, 1.5e-6], tåke: null,
+    kamera(b) { return { mål: n.mål.set(0, 10 * jevn(framdrift(4.5e-5, 8e-6, b)), 0) }; },
+    bygg() {
+      const s = n.scene; lysSett(s, 1);
+      const rnd = lagRnd(9);
+      // ujevn kule: cellen er ikke helt rund. Toppen holdes glatt, for det er dit vi skal
+      const klump = (r, seg, styrke, glattTopp) => {
+        const g = new THREE.SphereGeometry(r, seg, Math.round(seg * 0.66)), p = g.attributes.position, v = new THREE.Vector3();
+        for (let i = 0; i < p.count; i++) {
+          v.fromBufferAttribute(p, i); const e = v.clone().normalize();
+          let d = Math.sin(e.x * 3.1 + 1.3) * Math.sin(e.y * 2.7 + 0.4) * Math.sin(e.z * 3.3 + 2.1) + 0.5 * Math.sin(e.x * 6.2 + e.z * 5.1) * Math.sin(e.y * 5.7 + 1.0);
+          if (glattTopp) d *= 1 - jevn((e.y - 0.72) / 0.2);
+          p.setXYZ(i, v.x + e.x * d * styrke, v.y + e.y * d * styrke, v.z + e.z * d * styrke);
+        }
+        g.computeVertexNormals(); return g;
+      };
+      const skarp = n.skarp = { value: 2.4 };
+      const kant = (fargeHex, styrke) => { const m = new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false, uniforms: { uAlfa: { value: 1 }, uFarge: { value: new THREE.Color(fargeHex) }, uStyrke: { value: styrke }, uSkarp: skarp },
+        vertexShader: 'varying vec3 vN, vV; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',
+        fragmentShader: 'uniform vec3 uFarge; uniform float uAlfa, uStyrke, uSkarp; varying vec3 vN, vV; void main(){ float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), uSkarp); gl_FragColor = vec4(uFarge, (0.17 / uSkarp + 0.93 * f) * uStyrke * uAlfa); }' });
+        n.mat.push(m); return m; };
+      const mKant = kant(0xf0c078, 0.95), mKantKjerne = kant(0xb9a8ff, 0.7);
+      const mCyto = reg(n, new THREE.MeshBasicMaterial({ color: farge(0x1b3a4a), transparent: true, opacity: 0.62, depthWrite: false, side: THREE.BackSide, toneMapped: false }));
+      const mKjerne = reg(n, new THREE.MeshStandardMaterial({ color: farge(0x6450b3), roughness: 0.6, metalness: 0, envMapIntensity: 0.5 }));
+      const gCelle = klump(10, 96, 0.45, true), gKjerne = klump(3.3, 48, 0.12, false), gNabo = klump(10, 48, 0.5, false);
+      const celle = (x, y, z, hoved) => {
+        const g = new THREE.Group(); g.position.set(x, y, z);
+        const cyto = new THREE.Mesh(hoved ? gCelle : gNabo, mCyto); cyto.renderOrder = 1; g.add(cyto);
+        const kj = new THREE.Mesh(gKjerne, mKjerne); kj.position.set(-1.2, -0.7, 0.4); g.add(kj);
+        const kjK = new THREE.Mesh(gKjerne, mKantKjerne); kjK.position.copy(kj.position); kjK.scale.setScalar(1.02); kjK.renderOrder = 2; g.add(kjK);
+        const hinne = new THREE.Mesh(hoved ? gCelle : gNabo, mKant); hinne.renderOrder = 3; g.add(hinne);
+        if (!hoved) g.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3);
+        s.add(g); return g;
+      };
+      const hovedcelle = celle(0, 0, 0, true);
+      [[-21.5, -2, -3], [21, -4, -5], [-11, -19.5, -4], [10.5, -20, -2], [31, -22, -9], [-33, -20, -8]].forEach(p => celle(p[0], p[1], p[2], false));
+
+      // organellene i hovedcellen
+      n.org = new THREE.Group(); hovedcelle.add(n.org);
+      const plass = (min, maks) => { for (;;) { const cz = rnd() * 2 - 1, v = rnd() * TAU, r = mellom(min, maks, Math.cbrt(rnd())), sx = Math.sqrt(1 - cz * cz);
+        const p = new THREE.Vector3(r * sx * Math.cos(v), r * sx * Math.sin(v) * 0.92, r * cz); if (p.distanceTo(new THREE.Vector3(-1.2, -0.7, 0.4)) > 4.4 && p.y < 7.6) return p; } };
+      const kap = []; for (let i = 0; i <= 10; i++) { const t = -Math.PI / 2 + i / 10 * Math.PI / 2; kap.push(new THREE.Vector2(Math.cos(t) * 0.36, Math.sin(t) * 0.36 - 0.75)); }
+      for (let i = 0; i <= 10; i++) { const t = i / 10 * Math.PI / 2; kap.push(new THREE.Vector2(Math.cos(t) * 0.36, Math.sin(t) * 0.36 + 0.75)); }
+      const mito = new THREE.InstancedMesh(new THREE.LatheGeometry(kap, 16), reg(n, new THREE.MeshStandardMaterial({ color: farge(0xd2553a), roughness: 0.5, metalness: 0, envMapIntensity: 0.6 })), 30);
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sk = new THREE.Vector3();
+      for (let i = 0; i < 30; i++) { m4.compose(plass(4.6, 8.7), q.setFromEuler(e.set(rnd() * 3, rnd() * 3, rnd() * 3)), sk.set(1, 0.8 + rnd() * 0.9, 1)); mito.setMatrixAt(i, m4); }
+      n.org.add(mito);
+      const ves = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 8), reg(n, new THREE.MeshStandardMaterial({ color: farge(0xa9c4dc), roughness: 0.45, metalness: 0, envMapIntensity: 0.6 })), 90);
+      for (let i = 0; i < 90; i++) { m4.compose(plass(4.2, 9.2), q.identity(), sk.setScalar(0.1 + rnd() * 0.22)); ves.setMatrixAt(i, m4); }
+      n.org.add(ves);
+      const mER = reg(n, new THREE.MeshStandardMaterial({ color: farge(0x2f9a98), roughness: 0.55, metalness: 0, envMapIntensity: 0.5 }));
+      for (let i = 0; i < 7; i++) {                                   // endoplasmatisk retikulum: folder rundt kjernen
+        const er = new THREE.Mesh(new THREE.TorusGeometry(4.3 + i * 0.36, 0.13, 8, 48, 1.6 + rnd() * 2.2), mER);
+        er.position.set(-1.2, -0.7, 0.4); er.rotation.set(1.2 + (rnd() - 0.5) * 0.9, (rnd() - 0.5) * 0.9, rnd() * TAU); er.scale.set(1, 1, 2.6); n.org.add(er);
       }
-      const pxpos = px(Math.round(n * .62) * avstand) - px(bredde / 2) + W / 2;
-      ctx.beginPath();
-      ctx.roundRect(pxpos - r * 1.8, y - t - r * 2.2, r * 3.6, t * 2 + r * 4.4, r);
-      ctx.fillStyle = 'rgba(120,190,150,.75)'; ctx.fill();
-      ctx.strokeStyle = 'rgba(160,230,190,.9)'; ctx.lineWidth = Math.max(1, r * .2); ctx.stroke();
-      if (r > 14) tekstMidt('protein', pxpos, y, Math.max(10, r * .55), 'rgba(15,35,25,.85)');
-    } },
-  { fra: 5.5e-9, til: 1.4e-9, tittel: 'Ett fosfolipid', tekst: 'Hodet med fosfor, oksygen og nitrogen øverst, og to lange haler av karbon og hydrogen nedover. Det er halene som gjør at membranen stenger vann ute.',
-    modell: 'Kulene viser hvor atomene sitter. Fargene skiller grunnstoffene.',
-    tegn(f) {
-      const rC = px(0.77e-10), steg = px(C_C) * 0.82;
-      // hodet ligger øverst, og vi glir nedover halen mot karbonatomet vi skal inn i
-      // panoreringen starter først når vi har sett hele molekylet
-      const g = jevn(Math.max(0, (f - 0.45) / 0.55));
-      const hodeY = H * 0.24 + (H / 2 - steg * 9.6 - H * 0.24) * g;
-      tegnFosfolipidAtomer(W / 2, hodeY, 1, rC, 0);
-    } },
-  atomScene('C', 6, 6, [2, 4], 0.8e-10, 1.7e-9, 4e-12,
-    'Ett karbonatom. Fire elektroner ytterst er grunnen til at karbon kan binde seg til fire andre atomer, og bygge alt fra fettmolekyler til DNA.'),
-  kjerneScene('karbon', 6, 6, 8e-12, 4e-15,
-    'Seks protoner og seks nøytroner. Det er antallet protoner som gjør dette til karbon.')
-];
+      const mGolgi = reg(n, new THREE.MeshStandardMaterial({ color: farge(0xd9a13d), roughness: 0.5, metalness: 0, envMapIntensity: 0.6 }));
+      for (let i = 0; i < 5; i++) {                                   // golgiapparatet: en stabel flate sekker
+        const g = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), mGolgi);
+        g.scale.set(1.5 - i * 0.14, 0.11, 0.85 - i * 0.06); g.position.set(4.6 + i * 0.1, 2.3 + i * 0.3, 1.5); g.rotation.z = -0.5; n.org.add(g);
+      }
+    },
+    oppdater() {
+      n.org.rotation.y = Math.sin(tid * 0.12) * 0.12; n.org.rotation.x = Math.sin(tid * 0.09) * 0.05;
+      n.skarp.value = mellom(2.4, 70, Math.pow(framdrift(4e-5, 3e-6, bredde), 2));     // jo nærmere, jo tynnere strek blir membranen
+    }
+  });
+  n.mål = new THREE.Vector3();
+  return n;
+}
 
-// ================= Valg, zoom og knapper =================
-SCENER = { vann: VANN, celle: CELLE };
-const EMNER = [
-  { id: 'vann', navn: '💧 Vann' },
-  { id: 'celle', navn: '🔬 Dyrecelle' }
-];
-const SLUTT = 4e-15;
+// Membranen på avstand: en tynn hinne tett i tett med proteiner
+function hinneNivå() {
+  const n = nivå({
+    enhet: 1e-9, vis: [3.4e-6, 1.6e-6, 6e-8, 3.2e-8], tåke: 'topp',
+    kamera: membranKamera(1e-9, bU => ({ tåkeNær: 0, tåkeFjern: bU * 2.2 })),
+    bygg() {
+      const s = n.scene; lysSett(s, 1); s.fog = new THREE.Fog(0x000000, 1, 2);
+      const c = document.createElement('canvas'); c.width = 4; c.height = 64; const g = c.getContext('2d');
+      const gr = g.createLinearGradient(0, 0, 0, 64);
+      [[0, '#d98f2b'], [0.2, '#d98f2b'], [0.3, '#f1ddaa'], [0.7, '#f1ddaa'], [0.8, '#d98f2b'], [1, '#d98f2b']].forEach(([t, f]) => gr.addColorStop(t, f));
+      g.fillStyle = gr; g.fillRect(0, 0, 4, 64);
+      const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+      const flate = reg(n, new THREE.MeshStandardMaterial({ color: farge(0xd98f2b), roughness: 0.7, metalness: 0, envMapIntensity: 0.4 }));
+      const snitt = reg(n, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, metalness: 0, envMapIntensity: 0.4 }));
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(5000, MEMB_H * 2, 3000), [flate, flate, flate, flate, snitt, flate]);
+      plate.position.z = -1500; s.add(plate);
+      const P = membran().prot, geo = new THREE.IcosahedronGeometry(1, 2);
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sk = new THREE.Vector3();
+      [0x3fa58f, 0x7d6fd0, 0xc9627f].forEach((hex, type) => {
+        const liste = P.filter(x => x.type === type);
+        const im = new THREE.InstancedMesh(geo, reg(n, new THREE.MeshStandardMaterial({ color: farge(hex), roughness: 0.6, metalness: 0, envMapIntensity: 0.5 })), liste.length);
+        liste.forEach((x, i) => { m4.compose(p.set(x.x, (x.opp - x.ned) / 2, x.z), q, sk.set(x.r * 1.1, MEMB_H + (x.opp + x.ned) / 2, x.r * 1.1)); im.setMatrixAt(i, m4); });
+        im.frustumCulled = false; s.add(im);
+      });
+    }
+  });
+  return n;
+}
 
-$('velg').innerHTML = EMNER.map((e, i) =>
-  `<button data-id="${e.id}" aria-pressed="${i === 0}">${e.navn}</button>`).join('');
-$('velg').addEventListener('click', ev => {
-  const b = ev.target.closest('button'); if (!b) return;
-  valgt = b.dataset.id;
-  $('velg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
-  bredde = SCENER[valgt][0].fra * 0.5;
-  settReiser(false);
-  oppdaterSkyv();
-});
+function svai(mat, type) {       // lipidene står aldri stille: hodene dupper og halene svaier
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uTid = svaiTid; sh.uniforms.uUro = atomUro;
+    const kode = type === 'hale'
+      ? 'float sv = position.y * position.y * 0.11; transformed.x += sin(uTid * 1.3 + ph + position.y * 1.6) * sv; transformed.z += cos(uTid * 1.1 + ph * 1.3 + position.y * 1.2) * sv;'
+      : type === 'hode' ? 'transformed.y += sin(uTid * 1.5 + ph) * 0.07; transformed.x += sin(uTid * 1.1 + ph * 0.7) * 0.06;'
+      : 'transformed += uUro * vec3(sin(uTid * 7.0 + ph), sin(uTid * 8.3 + ph * 1.7), sin(uTid * 6.1 + ph * 2.3));';
+    sh.vertexShader = 'uniform float uTid, uUro;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\n#ifdef USE_INSTANCING\n vec3 ip = instanceMatrix[3].xyz; float ph = ip.x * 3.1 + ip.y * 4.7 + ip.z * 2.9;\n ' + kode + '\n#endif');
+  };
+  return mat;
+}
 
-// glidebryteren går logaritmisk, fra start til kjernen
-const LOGSTART = Math.log10(START), LOGSLUTT = Math.log10(SLUTT);
+// To lag med fosfolipider, tegnet forenklet: ett hode og to haler
+function lipidNivå() {
+  const n = nivå({
+    enhet: 1e-9, vis: [8e-8, 4.2e-8, 2.8e-9, 1.5e-9], tåke: 'topp',
+    kamera: membranKamera(1e-9, () => ({ tåkeNær: -3, tåkeFjern: 23, foran: 30, bak: 60 })),
+    bygg() {
+      const s = n.scene; lysSett(s, 1); s.fog = new THREE.Fog(0x000000, 1, 2);
+      const M = membran(), L = M.lip; n.L = L;
+      const mHode = reg(n, svai(new THREE.MeshStandardMaterial({ color: farge(0xe2952f), roughness: 0.5, metalness: 0, envMapIntensity: 0.6 }), 'hode'));
+      const mHale = reg(n, svai(new THREE.MeshStandardMaterial({ color: farge(0xefdcae), roughness: 0.6, metalness: 0, envMapIntensity: 0.5 }), 'hale'));
+      const gHale = new THREE.CylinderGeometry(0.14, 0.11, 1.7, 5, 4, true); gHale.translate(0, -0.85, 0);
+      n.hoder = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.44, 1), mHode, L.length);
+      n.haler = new THREE.InstancedMesh(gHale, mHale, L.length * 2);
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), qNed = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI), p = new THREE.Vector3(), en = new THREE.Vector3(1, 1, 1);
+      L.forEach((l, i) => {
+        const sg = l.lag ? -1 : 1, dx = Math.cos(l.rot) * 0.21, dz = Math.sin(l.rot) * 0.21;
+        m4.compose(p.set(l.x, sg * 2.15, l.z), q.identity(), en); n.hoder.setMatrixAt(i, m4);
+        q.copy(l.lag ? qNed : q.identity());
+        m4.compose(p.set(l.x + dx, sg * 1.75, l.z + dz), q, en); n.haler.setMatrixAt(i * 2, m4);
+        m4.compose(p.set(l.x - dx, sg * 1.75, l.z - dz), q, en); n.haler.setMatrixAt(i * 2 + 1, m4);
+      });
+      n.hoder.frustumCulled = n.haler.frustumCulled = false; s.add(n.hoder); s.add(n.haler);
+      // proteinene som sitter i denne biten, tegnet som klumper av kuler
+      const rnd = lagRnd(33), gK = new THREE.IcosahedronGeometry(1, 2);
+      [0x3fa58f, 0x7d6fd0, 0xc9627f].forEach((hex, type) => {
+        const liste = M.nær.filter(x => x.type === type), per = 26;
+        if (!liste.length) return;
+        const im = new THREE.InstancedMesh(gK, reg(n, new THREE.MeshStandardMaterial({ color: farge(hex), roughness: 0.55, metalness: 0, envMapIntensity: 0.55 })), liste.length * per);
+        liste.forEach((x, i) => { for (let k = 0; k < per; k++) {
+          const v = rnd() * TAU, r = Math.sqrt(rnd()) * x.r * 0.75, y = mellom(-MEMB_H - x.ned + 0.8, MEMB_H + x.opp - 0.8, k / (per - 1));
+          m4.compose(p.set(x.x + Math.cos(v) * r, y, x.z + Math.sin(v) * r), q.identity(), en.setScalar(0.95 + rnd() * 0.5)); im.setMatrixAt(i * per + k, m4);
+        } });
+        en.set(1, 1, 1); im.frustumCulled = false; s.add(im);
+      });
+    },
+    oppdater(dt, a, k) {
+      svaiTid.value = tid;
+      // lipidene er sortert fra midten og ut, så vi tegner bare dem som er i bildet
+      const grense = k.bU / 2 * 1.35 + 3, L = n.L;
+      let lo = 0, hi = L.length; while (lo < hi) { const m = (lo + hi) >> 1; if (Math.abs(L[m].x) < grense) lo = m + 1; else hi = m; }
+      n.hoder.count = lo; n.haler.count = lo * 2;
+    }
+  });
+  return n;
+}
+
+// De nærmeste lipidene tegnet atom for atom
+const ATOMER = { C: [0x41464d, 1.45], H: [0xe9edf1, 1.0], O: [0xd5362c, 1.3], N: [0x3d6fe0, 1.35], P: [0xe58a2b, 1.6] };
+function lipidAtomNivå() {
+  const n = nivå({
+    enhet: 1e-10, vis: [6.5e-9, 4e-9, 4.2e-10, 2e-10], tåke: 'topp', andre: [],
+    kamera: membranKamera(1e-10, () => ({ tåkeNær: -8, tåkeFjern: 30, foran: 60, bak: 120 })),
+    bygg() {
+      const s = n.scene; lysSett(s, 1); s.fog = new THREE.Fog(0x000000, 1, 2);
+      n.andre.length = 0; const mal = lipidMal(), L = membran().lip.filter(l => Math.abs(l.x) < 4.9 && l.z > -1.75);
+      const pos = { nær: {}, fjern: {} }, v = new THREE.Vector3(), oppY = new THREE.Vector3(0, 1, 0);
+      L.forEach(l => {
+        const sentral = l.x === 0 && l.rot === 0 && l.lag === 0, mål = sentral ? pos.nær : pos.fjern;
+        mal.atomer.forEach(at => {
+          if (sentral && at.p.distanceTo(mal.fokus) < 0.01) return;   // fokusatomet får sin egen kule
+          v.copy(at.p).applyAxisAngle(oppY, l.rot); if (l.lag) v.y = -v.y;
+          (mål[at.el] = mål[at.el] || []).push(v.x + l.x * 10, v.y, v.z + l.z * 10);
+        });
+      });
+      const m4 = new THREE.Matrix4();
+      const legg = (sett, seg) => Object.entries(sett).forEach(([el, p]) => {
+        const [hex, r] = ATOMER[el], fin = seg || (el === 'H' ? 10 : 14);
+        const im = new THREE.InstancedMesh(new THREE.SphereGeometry(r, fin, Math.round(fin * 0.66)),
+          reg(n, svai(new THREE.MeshStandardMaterial({ color: farge(hex), roughness: 0.42, metalness: 0, envMapIntensity: 0.7 }), 'atom')), p.length / 3);
+        for (let i = 0; i < p.length / 3; i++) { m4.makeTranslation(p[i * 3], p[i * 3 + 1], p[i * 3 + 2]); im.setMatrixAt(i, m4); }
+        im.frustumCulled = false; s.add(im); n.andre.push(im);
+      });
+      legg(pos.fjern); legg(pos.nær, 40);
+      const fk = new THREE.Mesh(new THREE.SphereGeometry(ATOMER.C[1], 48, 32),
+        reg(n, new THREE.MeshStandardMaterial({ color: farge(0x565d66), roughness: 0.42, metalness: 0, envMapIntensity: 0.7 })));
+      fk.position.copy(mal.fokus); fk.position.z -= 4.5; s.add(fk);
+    },
+    oppdater() {
+      // naboatomene viker unna, så karbonatomet vi sikter på står alene før det løses opp i en sky
+      const f = 1 - jevn(framdrift(1.5e-9, 7.5e-10, bredde));
+      for (const im of n.andre) { im.visible = f > 0.004; im.material.opacity *= f; if (f < 0.999) im.material.transparent = true; }
+      svaiTid.value = tid; atomUro.value = 0.13 * (1 - jevn(framdrift(1.6e-9, 6e-10, bredde))); }   // atomene dirrer, og roer seg når vi går helt inn
+  });
+  return n;
+}
+
+const CELLE = {
+  navn: '🔬 Dyrecelle', start: 7e-5, slutt: 1.2e-14,
+  bak: [
+    [7e-5,   0x0b1018, 0x0b1018, 0, 0],
+    [4e-6,   0x0b1018, 0x0b1018, 0, 0],
+    [1.6e-6, 0x0a0f18, 0x173543, 0, 1],
+    [1e-8,   0x0a0f18, 0x173543, 0, 1],
+    [2.5e-9, 0x0a0f17, 0x12242e, 0, 1],
+    [5e-10,  0x06080e, 0x06080e, 0, 0],
+    [1e-15,  0x05070d, 0x04050a, 0, 0]
+  ],
+  lagNivåer: () => [
+    celleNivå(), hinneNivå(), lipidNivå(), lipidAtomNivå(),
+    skyNivå({ vis: [4.4e-10, 2e-10, 1e-30, 1e-31], kjerneR: 2.7e-15, frø: 17,
+      skall: [[0.333, 3, 4.65], [0.667, 5, 16.3]] }),            // karbon: to elektroner innerst, fire ytterst
+    kjerneNivå({ vis: [2.4e-12, 6e-13, 1e-30, 1e-31], Z: 6, N: 6, frø: 5 })
+  ],
+  kapitler: [
+    { til: 2.4e-5, tittel: 'En dyrecelle', tekst: 'Cellen er omtrent to hundredels millimeter bred. Innerst ligger cellekjernen, og rundt den flyter mitokondrier og andre organeller. Ytterst ligger cellemembranen.',
+      modell: 'Fargene er valgt for å skille delene. Virkelige celler er nesten gjennomsiktige.',
+      forklaring: [['#6450b3', 'cellekjerne'], ['#d2553a', 'mitokondrier'], ['#2f9a98', 'ER'], ['#d9a13d', 'golgi'], ['#f0c078', 'cellemembran']] },
+    { til: 1.6e-6, tittel: 'Mot cellemembranen', tekst: 'Vi zoomer inn på kanten av cellen. Membranen er så tynn at den bare ser ut som en strek, selv i et godt lysmikroskop.',
+      forklaring: [['#f0c078', 'cellemembran'], ['#d2553a', 'mitokondrier']] },
+    { til: 7e-8, tittel: 'Cellemembranen', tekst: 'Nå ser vi membranen skrått ovenfra, fra utsiden av cellen. Den er bare omtrent 5 nanometer tykk, og full av proteiner som slipper stoffer inn og ut.',
+      modell: 'Nede i bildet ser vi tverrsnittet av membranen. Under det ligger innsiden av cellen.',
+      forklaring: [['#d98f2b', 'membran'], ['#3fa58f', ''], ['#7d6fd0', ''], ['#c9627f', 'proteiner']] },
+    { til: 5.5e-9, tittel: 'To lag med fettmolekyler', tekst: 'Membranen består av fosfolipider i to lag. Hodene liker vann og vender ut mot vannet på hver side. Halene skyr vann og gjemmer seg i midten.',
+      modell: 'Vannmolekylene på begge sider er ikke tegnet. Da ville de dekket hele bildet.',
+      forklaring: [['#e2952f', 'hode'], ['#efdcae', 'haler'], ['#3fa58f', 'protein']] },
+    { til: 1.4e-9, tittel: 'Ett fosfolipid, atom for atom', tekst: 'Hvert fosfolipid er bygd av 118 atomer. Hodet inneholder fosfor, nitrogen og oksygen. Halene er lange kjeder av karbon og hydrogen.',
+      modell: 'Kulene viser hvor stor plass atomene tar. Fargene er valgt for å skille grunnstoffene.',
+      forklaring: [['#41464d', 'karbon'], ['#e9edf1', 'hydrogen'], ['#d5362c', 'oksygen'], ['#3d6fe0', 'nitrogen'], ['#e58a2b', 'fosfor']] },
+    { til: 4e-10, tittel: 'Et karbonatom i halen', tekst: 'Vi sikter oss inn på ett av karbonatomene. Naboatomene er tatt bort, så vi ser det alene. Det sitter egentlig fast i to karbonatomer og to hydrogenatomer.',
+      forklaring: [['#41464d', 'karbon'], ['#e9edf1', 'hydrogen']] },
+    { til: 4e-11, tittel: 'Inne i karbonatomet', tekst: 'Atomet har ingen fast overflate. De seks elektronene danner en sky rundt kjernen. Der skyen er tett, er sjansen størst for å finne et elektron.',
+      modell: 'Hver prikk er et sted der et elektron kunne vært. Elektronene går ikke i baner.',
+      forklaring: [['#5f9bff', 'elektronsky'], ['#ffb880', 'kjernen']] },
+    { til: 2.2e-12, tittel: 'Nesten bare tomrom', tekst: 'Vi zoomer videre mot kjernen gjennom nesten tomt rom. Hvis atomet var en fotballbane, ville kjernen vært et riskorn på midten.',
+      modell: 'Kjernen er merket med en lysende prikk. I riktig størrelse ville den ikke synes ennå.',
+      forklaring: [['#5f9bff', 'elektronsky'], ['#ffb880', 'kjernen']] },
+    { til: 0, tittel: 'Atomkjernen', tekst: 'Seks protoner og seks nøytroner. Det er antallet protoner som gjør dette til karbon.',
+      modell: 'Protoner og nøytroner er tegnet som kuler. De er selv bygd av enda mindre partikler, kvarker.',
+      forklaring: [['#d9412f', 'proton'], ['#93a1b3', 'nøytron']] }
+  ]
+};
+
+// ================= Tegning, valg og styring =================
+const EMNER = { vann: VANN };
+if (typeof CELLE !== 'undefined') EMNER.celle = CELLE;
+Object.values(EMNER).forEach(e => { e.nivåer = null; });
+
+function størrelse() {
+  const r = $('scene').getBoundingClientRect();
+  W = Math.max(1, r.width); H = Math.max(1, r.height); aspekt = W / H;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.setSize(W, H, false);
+  kamera.aspect = aspekt;
+}
+
+function tømNivå(n) {
+  n.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  n.mat.forEach(m => m.dispose());
+  n.scene = new THREE.Scene(); n.mat = []; n.bygget = false;
+}
+function klargjør(n) {
+  if (n.bygget && n.aspektAvhengig && Math.abs(aspekt / n.aspektBygget - 1) > 0.3) tømNivå(n);
+  if (!n.bygget) { n.bygg(); n.bygget = true; n.aspektBygget = aspekt; }
+}
+
+let visteKapittel = null;
+function tegn(nå) {
+  const dt = Math.min(0.05, (nå - sisteRamme) / 1000 || 0);
+  sisteRamme = nå; tid += dt;
+  const emne = EMNER[valgt];
+  if (reiser) {
+    bredde *= Math.pow(10, -dt * 0.3);
+    if (bredde <= emne.slutt) { bredde = emne.slutt; settReiser(false); }
+    oppdaterSkyv();
+  }
+  if (!emne.nivåer) emne.nivåer = emne.lagNivåer();
+  renderer.clear();
+  oppdaterBakteppe(emne);
+  renderer.render(bakScene, bakKamera);
+  for (const n of emne.nivåer) {
+    const a = vindu(n.vis, bredde);
+    if (a <= 0) continue;
+    klargjør(n);
+    settAlfa(n, a);
+    const k = stillKamera(n);
+    if (n.scene.fog) n.scene.fog.color.copy(n.tåke === 'topp' ? bakTopp : n.tåke === 'bunn' ? bakBunn : bakMidt);
+    if (n.oppdater) n.oppdater(dt, a, k);
+    renderer.clearDepth();
+    renderer.render(n.scene, kamera);
+  }
+  const kap = emne.kapitler.find(k => bredde > k.til) || emne.kapitler[emne.kapitler.length - 1];
+  if (kap !== visteKapittel) {
+    visteKapittel = kap;
+    $('tittel').textContent = kap.tittel; $('tekst').textContent = kap.tekst;
+    $('modellnote').hidden = !kap.modell; $('modellnote').textContent = kap.modell || '';
+    $('forklaring').hidden = !kap.forklaring;
+    $('forklaring').innerHTML = (kap.forklaring || []).map(([f, t]) => `<span><i style="background:${f}"></i>${t}</span>`).join('').replace(/<\/i><\/span><span>/g, '</i>');
+  }
+  $('forstorrelse').textContent = forstørrelse(bredde);
+  $('bredde').textContent = 'Utsnittet er ' + lengde(synligBredde()) + ' bredt';
+  requestAnimationFrame(tegn);
+}
+
+// glidebryteren går i jevne tierpotenser fra start til kjernen
 function oppdaterSkyv() {
-  const t = (LOGSTART - Math.log10(bredde)) / (LOGSTART - LOGSLUTT);
-  $('skyv').value = Math.round(Math.max(0, Math.min(1, t)) * 1000);
+  const e = EMNER[valgt], a = Math.log10(e.start), b = Math.log10(e.slutt);
+  $('skyv').value = Math.round(Math.max(0, Math.min(1, (a - Math.log10(bredde)) / (a - b))) * 1000);
 }
 function settBredde(b) {
-  bredde = Math.max(SLUTT, Math.min(START, b));
+  const e = EMNER[valgt];
+  bredde = Math.max(e.slutt, Math.min(e.start, b));
   oppdaterSkyv();
 }
-$('skyv').addEventListener('input', e => {
-  settReiser(false);
-  bredde = Math.pow(10, LOGSTART - (e.target.value / 1000) * (LOGSTART - LOGSLUTT));
-});
-const zoom = faktor => { settReiser(false); settBredde(bredde * faktor); };
-$('innZoom').addEventListener('click', () => zoom(1 / 2));
-$('utZoom').addEventListener('click', () => zoom(2));
-$('utBtn').addEventListener('click', () => { settReiser(false); settBredde(START); });
-
 function settReiser(på) {
   reiser = på;
   $('reisBtn').textContent = på ? '⏸ Stopp' : '▶ Reis innover';
   $('reisBtn').classList.toggle('primary', på);
 }
-$('reisBtn').addEventListener('click', () => {
-  if (!reiser && bredde <= SLUTT * 1.01) settBredde(START);
-  settReiser(!reiser);
-});
-
-// mus, berøring og tastatur
-const scene = $('scene');
-scene.addEventListener('wheel', ev => {
-  ev.preventDefault();
+function velgEmne(id) {
+  valgt = id;
+  $('velg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.id === id));
   settReiser(false);
-  settBredde(bredde * Math.exp(ev.deltaY * 0.0016));
-}, { passive: false });
+  settBredde(EMNER[id].start);
+}
 
-let dra = null, knip = null;
-const pekere = new Map();
-scene.addEventListener('pointerdown', ev => {
-  scene.setPointerCapture(ev.pointerId);
-  pekere.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-  if (pekere.size === 2) {
-    const [a, b] = [...pekere.values()];
-    knip = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, b0: bredde };
-    dra = null;
-  } else dra = { y: ev.clientY, b0: bredde };
-  settReiser(false);
-});
-scene.addEventListener('pointermove', ev => {
-  if (!pekere.has(ev.pointerId)) return;
-  pekere.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-  if (knip && pekere.size >= 2) {
-    const [a, b] = [...pekere.values()];
-    const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
-    settBredde(knip.b0 * knip.d0 / d);
-  } else if (dra) {
-    settBredde(dra.b0 * Math.exp((ev.clientY - dra.y) * 0.006));
-  }
-});
-const slipp = ev => {
-  pekere.delete(ev.pointerId);
-  if (pekere.size < 2) knip = null;
-  if (!pekere.size) dra = null;
-};
-scene.addEventListener('pointerup', slipp);
-scene.addEventListener('pointercancel', slipp);
-document.addEventListener('keydown', ev => {
-  if (ev.key === 'ArrowDown' || ev.key === '+') { zoom(1 / 1.4); ev.preventDefault(); }
-  if (ev.key === 'ArrowUp' || ev.key === '-') { zoom(1.4); ev.preventDefault(); }
-  if (ev.key === ' ') { $('reisBtn').click(); ev.preventDefault(); }
-});
+function start() {
+  omgivelse = lagOmgivelse();
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.autoClear = false;
+  renderer.setClearColor(0x05070b, 1);
 
-størrelse();
-oppdaterSkyv();
-requestAnimationFrame(tegn);
+  $('velg').innerHTML = Object.entries(EMNER).map(([id, e]) => `<button data-id="${id}" aria-pressed="${id === valgt}">${e.navn}</button>`).join('');
+  $('velg').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) velgEmne(b.dataset.id); });
+  $('skyv').addEventListener('input', ev => {
+    settReiser(false);
+    const e = EMNER[valgt], a = Math.log10(e.start), b = Math.log10(e.slutt);
+    bredde = Math.pow(10, a - (ev.target.value / 1000) * (a - b));
+  });
+  const zoom = faktor => { settReiser(false); settBredde(bredde * faktor); };
+  $('innZoom').addEventListener('click', () => zoom(1 / 1.8));
+  $('utZoom').addEventListener('click', () => zoom(1.8));
+  $('utBtn').addEventListener('click', () => { settReiser(false); settBredde(EMNER[valgt].start); });
+  $('reisBtn').addEventListener('click', () => {
+    if (!reiser && bredde <= EMNER[valgt].slutt * 1.01) settBredde(EMNER[valgt].start);
+    settReiser(!reiser);
+  });
+
+  const scene = $('scene');
+  scene.addEventListener('wheel', ev => { ev.preventDefault(); settReiser(false); settBredde(bredde * Math.exp(ev.deltaY * 0.0016)); }, { passive: false });
+  let dra = null, knip = null;
+  const pekere = new Map();
+  scene.addEventListener('pointerdown', ev => {
+    try { scene.setPointerCapture(ev.pointerId); } catch (e) {}
+    pekere.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (pekere.size === 2) { const [a, b] = [...pekere.values()]; knip = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, b0: bredde }; dra = null; }
+    else dra = { y: ev.clientY, b0: bredde };
+    settReiser(false);
+  });
+  scene.addEventListener('pointermove', ev => {
+    if (!pekere.has(ev.pointerId)) return;
+    pekere.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (knip && pekere.size >= 2) { const [a, b] = [...pekere.values()]; settBredde(knip.b0 * knip.d0 / (Math.hypot(a.x - b.x, a.y - b.y) || 1)); }
+    else if (dra) settBredde(dra.b0 * Math.exp((ev.clientY - dra.y) * 0.006));
+  });
+  const slipp = ev => { pekere.delete(ev.pointerId); if (pekere.size < 2) knip = null; if (!pekere.size) dra = null; };
+  scene.addEventListener('pointerup', slipp); scene.addEventListener('pointercancel', slipp);
+  document.addEventListener('keydown', ev => {
+    if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'BUTTON') return;
+    if (ev.key === 'ArrowDown' || ev.key === '+') { zoom(1 / 1.4); ev.preventDefault(); }
+    if (ev.key === 'ArrowUp' || ev.key === '-') { zoom(1.4); ev.preventDefault(); }
+    if (ev.key === ' ') { $('reisBtn').click(); ev.preventDefault(); }
+  });
+
+  new ResizeObserver(størrelse).observe(scene);
+  størrelse();
+  velgEmne('vann');
+  requestAnimationFrame(tegn);
+}
+
+if (renderer) start();
+else {
+  $('scene').insertAdjacentHTML('beforeend', `<div class="feil"><div><strong>Denne siden trenger 3D-grafikk (WebGL), og det får den ikke til å starte her.</strong>
+    <br>Prøv en annen nettleser eller maskin, eller bruk <a href="zoom-enkel.html">den enkle versjonen</a>.</div></div>`);
+  $('lerret').hidden = true;
+}
 
 </script>
 </body>
