@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arealmodellen</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<script src="../plangeometri/geo-motor.js"></script>
+<script src="algebra.js"></script>
+<script src="alg-felles.js"></script>
+</head>
+<body>
+<script>
+const {rint,pick,shuffle,svg,text}=GEO, A=ALG, {nz,ask,poly,is}=AF;
+
+// Et ledd [c,k] som tekst med fortegn («−4», «3x»)
+const T=t=>A.fmt(A.mk([t]));
+const prodT=(s,t)=>A.P.mul(A.mk([s]),A.mk([t]));
+// Faktor som tekst, med parentes når den har flere ledd
+const F=f=>f.length>1?'('+A.fmt(poly(f))+')':A.fmt(poly(f));
+const COL=d=>['#fef3c7','#bbf7d0','#bfdbfe','#ddd6fe','#fbcfe8'][Math.min(d,4)];
+const degOf=p=>{ const k=[...p.keys()][0]||''; return (k.match(/[a-z](\^\d+)?/g)||[]).reduce((s,t)=>s+(t.length>1?+t.slice(2):1),0); };
+
+// ── AREALMODELL ── kolonner = ledd i første faktor, rader = ledd i andre. fill: 'tom' | 'alle' | 'noen'
+function grid(cols,rows,fill='tom',o={}){
+  const W=o.W||Math.min(GEO.W(),560), lw=70, top=40;
+  const cw=Math.min(120,(W-lw-20)/cols.length), ch=Math.min(64,o.ch||64);
+  const ox=lw+(W-lw-cw*cols.length)/2-lw/2, H=top+ch*rows.length+14;
+  let s='';
+  cols.forEach((c,i)=>{ s+=text(ox+lw+i*cw+cw/2,top-14,T(c),{size:17,col:'#7c2d12'}); });
+  rows.forEach((r,j)=>{
+    s+=text(ox+lw-12,top+j*ch+ch/2,T(r),{size:17,col:'#7c2d12',anchor:'end'});
+    cols.forEach((c,i)=>{
+      const p=prodT(c,r), x=ox+lw+i*cw, y=top+j*ch;
+      const show=fill==='alle'||(fill==='noen'&&(i+j)%2===0);
+      s+=`<rect x="${x}" y="${y}" width="${cw}" height="${ch}" fill="${show?COL(degOf(p)):'#fff'}" stroke="#9a3412" stroke-width="2"/>`;
+      s+=text(x+cw/2,y+ch/2,show?A.fmt(p):'?',{size:show?17:20,col:show?'#1e293b':'#cbd5e1'});
+    });
+  });
+  return svg(W,H,s);
+}
+// Ganger ut to faktorer: alle ledd · alle ledd
+function expand(f1,f2){ return A.P.mul(poly(f1),poly(f2)); }
+const cellsText=(f1,f2)=>f2.map(r=>f1.map(c=>A.fmt(prodT(c,r)))).flat().map((t,i)=>i&&!t.startsWith('−')?'+ '+t:t.replace(/^−/,i?'− ':'−')).join(' ');
+
+function task(o){
+  const {f1,f2,key,type,q,lv,fill,hint,extra}=o, tgt=expand(f1,f2), v=o.vars||['x'];
+  return {key,type,q:q||`Gang ut og trekk sammen: <b>${F(f1)}${F(f2)}</b>`,
+    draw:el=>{ el.innerHTML=grid(f1,f2,fill); },
+    ask:[ask(tgt,'simplified',{lab:'=',vars:v})],
+    hint,
+    sol:[grid(f1,f2,'alle'),`${F(f1)}${F(f2)} = ${cellsText(f1,f2)}`,`= <b>${A.fmt(tgt)}</b>`],
+    mistakes:([s])=>(extra&&extra(s,tgt))||null};
+}
+// Typiske feil
+const glemtAndre=(f1,f2)=>s=>{ // bare første ledd i parentesen ganget
+  const p=A.P.add(prodT(f1[0],f2[0]),A.mk(f2.slice(1)));
+  return is(s,p)?'Du må gange med <b>alle</b> leddene inne i parentesen, ikke bare det første.':null; };
+
+// ── NIVÅ 1: tall · parentes ──
+function L1(){
+  const a=rint(2,7), c=pick([1,1,2,3]), b=Math.random()<0.7?rint(1,9):-rint(1,9);
+  const f1=[[a,'']], f2=[[c,'x'],[b,'']];
+  return task({f1,f2,key:'tall',type:'Tall ganger parentes',fill:'noen',
+    hint:`Tallet utenfor ganges med hvert ledd i parentesen: ${a} · ${T(f2[0])} og ${a} · ${b}.`,
+    extra:glemtAndre(f1,f2)});
+}
+// ── NIVÅ 2: ledd med bokstav · parentes ──
+function L2(){
+  const v=pick(['x','a']), k=pick([1,1,2,3]), c=pick([1,2,3]), b=nz(-8,8);
+  const f1=[[k,v]], f2=[[c,v],[b,'']];
+  return task({f1,f2,key:'bokstav'+k,type:'Bokstav ganger parentes',fill:'noen',vars:[v],
+    hint:`${v} · ${v} = ${v}². Gang tallene for seg og bokstavene for seg: ${T(f1[0])} · ${T(f2[0])}.`,
+    extra:(s,t)=>{ const g=glemtAndre(f1,f2)(s); if(g) return g;
+      return is(s,A.P.add(A.mk([[2*k*c,v]]),A.mk([[k*b,v]])))?`${v} · ${v} er ${v}², ikke 2${v}.`:null; }});
+}
+// ── NIVÅ 3: (x + a)(x + b) ──
+function L3(){
+  const a=rint(1,9), b=rint(1,9), c=pick([1,1,1,2]);
+  const f1=[[c,'x'],[a,'']], f2=[[1,'x'],[b,'']];
+  return task({f1,f2,key:'par'+c,type:'Parentes ganger parentes',fill:'tom',
+    hint:'Hvert ledd i den første parentesen ganges med hvert ledd i den andre. Det blir fire ruter i modellen. Trekk sammen de to x-leddene til slutt.',
+    extra:(s,t)=>is(s,A.mk([[c,'x^2'],[a*b,'']]))?'Du har glemt de to midterste rutene: '+T(f1[0])+' · '+b+' og '+a+' · x.':null});
+}
+// ── NIVÅ 4: med negative ledd ──
+function L4(){
+  const kind=pick(['mp','mm','2x']);
+  let f1,f2;
+  if(kind==='mp'){ f1=[[1,'x'],[-rint(1,9),'']]; f2=[[1,'x'],[rint(1,9),'']]; }
+  if(kind==='mm'){ f1=[[1,'x'],[-rint(1,9),'']]; f2=[[1,'x'],[-rint(1,9),'']]; }
+  if(kind==='2x'){ const p=nz(-5,5); f1=[[pick([2,3]),'x'],[p,'']]; f2=[[1,'x'],[p>0?-rint(1,6):nz(-6,6),'']]; }
+  if(Math.random()<0.5) [f1,f2]=[f2,f1];
+  if(A.P.mul(poly(f1),poly(f2)).size<3) return L4(); // (x−3)(x+3) hører hjemme i kvadratsetningene
+  const a=f1[1][0], b=f2[1][0];
+  return task({f1,f2,key:'neg'+kind,type:'Negative ledd',fill:'tom',
+    hint:'Pass på fortegnene: minus ganger pluss blir minus, og minus ganger minus blir pluss.',
+    extra:(s,t)=>{ const c=new Map(t); c.set('',-t.get('')); return is(s,c)?`Sjekk fortegnet på tallleddet: ${T([a,''])} · ${b<0?'('+T([b,''])+')':b} = ${T([a*b,''])}.`:null; }});
+}
+// ── NIVÅ 5: to bokstaver ──
+function L5(){
+  const [u,v]=pick([['a','b'],['x','y']]);
+  const f1=[[pick([1,1,2]),u],[nz(-3,3),v]], f2=[[pick([1,1,2,3]),u],[nz(-3,3),v]];
+  if(A.P.mul(poly(f1),poly(f2)).size<3) return L5();
+  return task({f1,f2,key:'to',type:'To bokstaver',fill:'tom',vars:[u,v],
+    hint:`${u} · ${v} skrives ${u}${v}, og ${v} · ${u} er det samme som ${u}${v}. Trekk sammen ${u}${v}-leddene.`,
+    extra:(s,t)=>is(s,A.P.add(t,A.mk([[-(t.get(u+v)||0),u+v]])))?`Du har glemt ${u}${v}-leddene i midten.`:null});
+}
+// ── NIVÅ 6: lengre uttrykk ──
+function L6(){
+  if(Math.random()<0.6){
+    const f1=[[1,'x'],[nz(-4,4),'']], f2=[[1,'x^2'],[nz(-4,4),'x'],[nz(-5,5),'']];
+    return task({f1,f2,key:'tri',type:'Parentes med tre ledd',fill:'tom',
+      hint:'Det blir seks ruter: hvert av de to leddene ganges med hvert av de tre. x · x² = x³. Trekk sammen like ledd til slutt.'});
+  }
+  // (x + a)(x + b) − c(x + d): to produkter
+  const a=rint(1,6), b=nz(-5,5), c=rint(2,5), d=nz(-5,5);
+  const p1=expand([[1,'x'],[a,'']],[[1,'x'],[b,'']]), p2=expand([[c,'']],[[1,'x'],[d,'']]);
+  const tgt=A.P.add(p1,A.P.mul(p2,A.mk([[-1,'']])));
+  const e1=`(x + ${a})(${A.fmt(poly([[1,'x'],[b,'']]))})`, e2=`${c}(${A.fmt(poly([[1,'x'],[d,'']]))})`;
+  return {key:'to prod',type:'To produkter',q:`Gang ut og trekk sammen: <b>${e1} − ${e2}</b>`,
+    ask:[ask(tgt,'simplified',{lab:'='})],
+    hint:'Gang ut hvert produkt for seg. Sett det andre produktet i parentes før du trekker fra, så alle fortegnene skifter.',
+    sol:[`${e1} = ${A.fmt(p1)}`,`${e2} = ${A.fmt(p2)}`,`(${A.fmt(p1)}) − (${A.fmt(p2)}) = <b>${A.fmt(tgt)}</b>`],
+    mistakes:([s])=>is(s,A.P.add(p1,A.P.add(A.mk([[-c,'x']]),A.mk([[c*d,'']]))))&&c*d!==0?'Minus foran det andre produktet gjelder alle leddene. Husk at − · − blir +.':
+      is(s,A.P.add(p1,A.P.add(A.mk([[-c,'x']]),A.mk([[d,'']]))))?'Minus foran det andre produktet skifter fortegn på alle leddene, og tallet må også ganges med '+c+'.':null};
+}
+const MAKE={1:L1,2:L2,3:L3,4:L4,5:L5,6:L6};
+
+// ── UTFORSK: (x + a)(x + b) som et ekte rektangel ──
+function explore(el){
+  let a=3, b=2, xv=5;
+  function draw(){
+    const W=GEO.W(), u=Math.min(26,(W-140)/(xv+6)), H=40+(xv+6)*u+16, X=xv*u, ox=(W-(X+a*u))/2+20, oy=40;
+    const parts=[[0,0,X,X,'x²','#bfdbfe'],[X,0,a*u,X,a+'x','#bbf7d0'],[0,X,X,b*u,b+'x','#bbf7d0'],[X,X,a*u,b*u,String(a*b),'#fef3c7']];
+    let s='';
+    parts.forEach(([x,y,w,h,l,c])=>{ s+=`<rect x="${ox+x}" y="${oy+y}" width="${w}" height="${h}" fill="${c}" stroke="#334155" stroke-width="2"/>`;
+      s+=text(ox+x+w/2,oy+y+h/2,l,{size:w<30||h<30?12:16,col:'#0f172a'}); });
+    s+=text(ox+X/2,oy-14,'x',{col:'#7c2d12'})+text(ox+X+a*u/2,oy-14,String(a),{col:'#7c2d12'});
+    s+=text(ox-10,oy+X/2,'x',{anchor:'end',col:'#7c2d12'})+text(ox-10,oy+X+b*u/2,String(b),{anchor:'end',col:'#7c2d12'});
+    el.innerHTML=`<div>${svg(W,H,s)}</div>
+      <div class="ex-row"><span>a =</span><input type="range" min="1" max="6" value="${a}" id="ar" style="width:120px"><b>${a}</b>
+        <span style="margin-left:14px">b =</span><input type="range" min="1" max="6" value="${b}" id="br" style="width:120px"><b>${b}</b></div>
+      <table class="ex"><tr><th>Uttrykk</th><th>Fire deler</th><th>Trukket sammen</th></tr>
+        <tr><td>(x + ${a})(x + ${b})</td><td>x² + ${a}x + ${b}x + ${a*b}</td><td><b>x² + ${a+b}x + ${a*b}</b></td></tr></table>
+      <div class="ex-tip">Hele rektangelet har sidene x + ${a} og x + ${b}. Arealet er summen av de fire delene. De to grønne delene er x-leddene.</div>`;
+    el.querySelector('#ar').oninput=e=>{ a=+e.target.value; draw(); };
+    el.querySelector('#br').oninput=e=>{ b=+e.target.value; draw(); };
+  }
+  draw();
+}
+
+GEO.init({
+  id:'arealmodellen', title:'Arealmodellen', icon:'🟦', version:'1.0', color:'#c2410c',
+  subtitle:'Multiplikasjon av parenteser',
+  intro:'Gang ut parenteser med en arealmodell: hvert ledd ganges med hvert ledd. Fra 3(x + 4) til (x + 1)(x² + 2x + 3).',
+  levels:{
+    1:{name:'Nivå 1',desc:'Tall ganger parentes: 3(x + 4)'},
+    2:{name:'Nivå 2',desc:'Bokstav ganger parentes: x(x + 5), 2a(3a − 1)'},
+    3:{name:'Nivå 3',desc:'Parentes ganger parentes: (x + 2)(x + 3)'},
+    4:{name:'Nivå 4',desc:'Negative ledd: (x − 4)(x + 1), (2x − 1)(x + 3)'},
+    5:{name:'Nivå 5',desc:'To bokstaver: (a + b)(a + 2b)'},
+    6:{name:'Nivå 6',desc:'Tre ledd i parentesen, og to produkter'},
+  },
+  make:l=>MAKE[l](),
+  explore:{title:'Utforsk arealmodellen',render:explore},
+});
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>

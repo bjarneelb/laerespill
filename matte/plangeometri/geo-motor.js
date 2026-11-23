@@ -1,4 +1,4 @@
-// ── geo-motor.js v1.0 ──
+// ── geo-motor.js v1.1 ──
 // Felles motor for geometrispillene i plangeometri (vinkler, vinkelsum, mangekanter, sirkel, figurer).
 // Bygger startskjerm, topplinje, oppgavekort, sjekk av svar, hint, løsning, poeng, nivå, rapport og rom.
 // Krever /js/spill-utils.js (syncToTimecode, levelTracker, initRoom, syncRoomScore, showToast, SU.recordResult).
@@ -101,6 +101,11 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 .row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:800;font-size:1.05rem;}
 .num-in{padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-family:inherit;font-size:1.05rem;font-weight:800;outline:none;text-align:center;width:110px;}
 .num-in:focus{border-color:var(--accent);}
+.expr-in{width:min(320px,80vw);text-align:left;font-size:1.1rem;letter-spacing:0.5px;}
+.expr-keys{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:-4px;}
+.expr-keys button{min-width:38px;padding:5px 9px;border-radius:8px;border:2px solid var(--border);background:#fff;font-family:inherit;font-weight:900;font-size:0.95rem;cursor:pointer;color:var(--text);}
+.expr-keys button:active{background:var(--border);}
+.expr-tip{font-size:0.72rem;color:var(--muted);font-weight:700;text-align:center;}
 .u{color:var(--muted);min-width:1.5em;text-align:left;}
 .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
 .chip{padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:white;font-family:inherit;font-weight:800;font-size:0.92rem;cursor:pointer;color:var(--text);}
@@ -253,6 +258,9 @@ G.next=function(){
   if(t.draw) t.draw($('stage'));
   $('ask').innerHTML=t.ask.map((a,i)=>{
     if(a.kind==='num') return `<div class="row">${a.lab?`<span>${a.lab}</span>`:''}<input class="num-in" data-i="${i}" type="text" inputmode="decimal" autocomplete="off"><span class="u">${a.unit??''}</span></div>`;
+    if(a.kind==='expr'){ const keys=(a.vars||['x']).concat(['²','(',')','+','−']);
+      return `<div class="row" style="flex-direction:column;gap:6px"><div class="row">${a.lab?`<span>${a.lab}</span>`:''}<input class="num-in expr-in" data-i="${i}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${a.ph||'skriv uttrykket'}"></div>
+        <div class="expr-keys" data-i="${i}">${keys.map(k=>`<button type="button" data-k="${k}">${k}</button>`).join('')}</div>${i===0?'<div class="expr-tip">Skriv potenser som x^2 eller x². Gange kan skrives 3x eller 3·x.</div>':''}</div>`; }
     return `<div class="row" style="flex-direction:column;gap:6px">${a.lab?`<span>${a.lab}</span>`:''}<div class="chips${a.kind==='multi'?' multi':''}" data-i="${i}">${a.options.map((o,k)=>`<button class="chip" data-k="${k}" type="button">${o}</button>`).join('')}</div></div>`;
   }).join('');
   $('ask').querySelectorAll('.chips').forEach(c=>{
@@ -265,6 +273,9 @@ G.next=function(){
       else { sel[i]=k; c.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b)); }
     });
   });
+  $('ask').querySelectorAll('.expr-keys').forEach(kb=>{ const inp=document.querySelector(`.num-in[data-i="${kb.dataset.i}"]`);
+    kb.querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(done) return; const k=b.dataset.k, st=inp.selectionStart??inp.value.length, en=inp.selectionEnd??st;
+      inp.value=inp.value.slice(0,st)+k+inp.value.slice(en); inp.focus(); inp.setSelectionRange(st+k.length,st+k.length); }); });
   $('fb').className='fb'; $('fb').innerHTML='';
   $('checkBtn').style.display=''; $('showBtn').style.display='none'; $('nextBtn').style.display='none'; $('skipBtn').style.display='';
   const first=document.querySelector('.num-in'); if(first&&window.innerWidth>600) first.focus();
@@ -276,6 +287,7 @@ G.skip=function(){
 G.__fill=function(){ // kun for automatiske tester
   task.ask.forEach((a,i)=>{
     if(a.kind==='num') document.querySelector(`.num-in[data-i="${i}"]`).value=G.fmt(a.val);
+    else if(a.kind==='expr') document.querySelector(`.num-in[data-i="${i}"]`).value=a.show;
     else document.querySelectorAll(`.chips[data-i="${i}"] .chip`).forEach(b=>{ const o=a.options[+b.dataset.k]; if(a.kind==='choice'?o===a.val:a.val.includes(o)) b.click(); });
   });
 };
@@ -285,13 +297,16 @@ G.check=function(){
   const vals=[]; let missing=false;
   task.ask.forEach((a,i)=>{
     if(a.kind==='num'){ const inp=document.querySelector(`.num-in[data-i="${i}"]`); const v=G.parseNum(inp.value); if(!Number.isFinite(v)) missing=true; vals.push(v); }
+    else if(a.kind==='expr'){ const inp=document.querySelector(`.num-in[data-i="${i}"]`); if(!inp.value.trim()) missing=true; vals.push(inp.value); }
     else if(a.kind==='choice'){ if(sel[i]===undefined) missing=true; vals.push(sel[i]===undefined?null:optVal(a,sel[i])); }
     else { vals.push(sel[i]?[...sel[i]].map(k=>optVal(a,k)):[]); }
   });
   if(missing){ $('fb').className='fb err'; $('fb').innerHTML='Svar på alt før du sjekker. Skriv tall med komma for desimaler, og trykk på et valg der det er knapper.'; return; }
-  let allOk=true;
+  let allOk=true, exprMsg=null;
   task.ask.forEach((a,i)=>{
     let ok;
+    if(a.kind==='expr'){ const r=a.check(vals[i]); ok=r.ok; if(!ok&&r.msg&&!exprMsg) exprMsg=r.msg; a._res=r;
+      const inp=document.querySelector(`.num-in[data-i="${i}"]`); inp.classList.remove('ok','bad'); inp.classList.add(ok?'ok':'bad'); a._ok=ok; if(!ok) allOk=false; return; }
     if(a.kind==='num'){ ok=Math.abs(vals[i]-a.val)<=(a.tol!=null?a.tol:0.0051); const inp=document.querySelector(`.num-in[data-i="${i}"]`); inp.classList.remove('ok','bad'); inp.classList.add(ok?'ok':'bad'); }
     else if(a.kind==='choice'){ ok=vals[i]===a.val; const b=document.querySelector(`.chips[data-i="${i}"] .chip[data-k="${sel[i]}"]`); if(b){ b.classList.add(ok?'ok':'bad'); } }
     else { const want=new Set(a.val), got=new Set(vals[i]); ok=want.size===got.size&&[...want].every(x=>got.has(x));
@@ -299,7 +314,7 @@ G.check=function(){
     a._ok=ok; if(!ok) allOk=false;
   });
   if(allOk){ right(); return; }
-  wrong(task.mistakes?task.mistakes(vals):null);
+  wrong(exprMsg||(task.mistakes?task.mistakes(vals):null));
 };
 function wrong(msg){
   tries++; tcWrong++;
@@ -325,6 +340,7 @@ function finish(won,extra){
   // Vis riktige svar i feltene
   task.ask.forEach((a,i)=>{
     if(a.kind==='num'){ const inp=document.querySelector(`.num-in[data-i="${i}"]`); if(!won){ inp.value=G.fmt(a.val); } inp.readOnly=true; }
+    else if(a.kind==='expr'){ const inp=document.querySelector(`.num-in[data-i="${i}"]`); if(!won){ inp.value=a.show; inp.classList.remove('bad'); inp.classList.add('ok'); } inp.readOnly=true; }
     else if(a.kind==='choice'){ document.querySelectorAll(`.chips[data-i="${i}"] .chip`).forEach(b=>{ b.classList.remove('on','bad'); if(a.options[+b.dataset.k]===a.val) b.classList.add('ok'); }); }
     else { const want=new Set(a.val); document.querySelectorAll(`.chips[data-i="${i}"] .chip`).forEach(b=>{ b.classList.remove('on','bad','ok'); if(want.has(a.options[+b.dataset.k])) b.classList.add('ok'); }); }
   });

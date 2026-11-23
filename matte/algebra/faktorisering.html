@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faktorisering</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<script src="../plangeometri/geo-motor.js"></script>
+<script src="algebra.js"></script>
+<script src="alg-felles.js"></script>
+</head>
+<body>
+<script>
+const {rint,pick,shuffle,svg,text}=GEO, A=ALG, {nz,ask,poly,is}=AF;
+const gcd=(a,b)=>{ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a; };
+const T=t=>A.fmt(A.mk([t]));
+const mi=str=>str.replace(/(^|[\s(>])-(\d)/g,'$1−$2'); // ekte minustegn
+// Indre parentes uten felles faktor
+function primitive(list){ const g=list.reduce((s,[c])=>gcd(s,c),0); return g===1; }
+
+// Felles faktor: outer = [c, k] (monom), inner = liste av ledd (primitiv)
+function common(o){
+  const {outer,inner,key,type,hint,vars}=o;
+  const tgt=A.P.mul(A.mk([outer]),poly(inner));
+  const ot=T(outer), it=A.fmt(poly(inner));
+  const show=`${ot}(${it})`;
+  // Ledd for ledd: 6x = 3 · 2x
+  const steps=[...tgt.keys()].sort(A.order).map(k=>A.fmt(new Map([[k,tgt.get(k)]])));
+  return {key,type,q:`Faktoriser: <b>${A.fmt(tgt)}</b>`,
+    ask:[ask(tgt,'factored',{lab:'=',vars:vars||['x'],show})],
+    hint,
+    sol:[`Felles faktor i alle leddene: <b>${ot}</b>`,
+      `${steps.join(', ')} delt på ${ot} gir ${inner.map(t=>T(t)).join(', ')}`,
+      `${A.fmt(tgt)} = <b>${show}</b>`,'Sjekk: gang ut parentesen, så skal du få det du startet med.'],
+    mistakes:([s])=>{
+      const tooBig=A.P.mul(A.mk([outer]),tgt);
+      return is(s,tooBig)?'Når du setter '+ot+' utenfor, må du <b>dele</b> hvert ledd på '+ot+' inne i parentesen.':null;
+    }};
+}
+// ── NIVÅ 1: felles tallfaktor ──
+function L1(){
+  const g=rint(2,7), v=pick(['x','a']);
+  let inner;
+  do{ inner=Math.random()<0.75?[[rint(1,5),v],[nz(-7,7),'']]:[[rint(1,4),v],[nz(-5,5),'y'],[nz(-5,5),'']]; }while(!primitive(inner));
+  const vars=inner.length>2?[v,'y']:[v];
+  return common({outer:[g,''],inner,key:'tall'+inner.length,type:'Felles tallfaktor',vars,
+    hint:'Finn det største tallet som går opp i alle tallene. Sett det utenfor en parentes, og del hvert ledd på det.'});
+}
+// ── NIVÅ 2: felles bokstav ──
+function L2(){
+  const v=pick(['x','a']);
+  let inner;
+  if(Math.random()<0.65) inner=[[1,v],[nz(-9,9),'']];
+  else { const w=v==='x'?'y':'b'; inner=[[1,w],[nz(-9,9),'']]; return common({outer:[1,v],inner,key:'bokstav2',type:'Felles bokstav',vars:[v,w],
+    hint:`Begge leddene inneholder ${v}. Sett ${v} utenfor parentesen.`}); }
+  return common({outer:[1,v],inner,key:'bokstav',type:'Felles bokstav',vars:[v],
+    hint:`${v}² = ${v} · ${v}. Begge leddene inneholder ${v}, så ${v} kan settes utenfor parentesen.`});
+}
+// ── NIVÅ 3: tall og bokstav ──
+function L3(){
+  const v=pick(['x','a']), g=rint(2,6);
+  let inner;
+  do{ inner=[[rint(1,5),v],[nz(-7,7),'']]; }while(!primitive(inner));
+  return common({outer:[g,v],inner,key:'tallbokstav',type:'Tall og bokstav',vars:[v],
+    hint:'Finn både det største felles tallet og bokstaven som er i alle leddene. Begge skal utenfor parentesen.'});
+}
+// ── NIVÅ 4: flere bokstaver ──
+function L4(){
+  const [u,v]=pick([['a','b'],['x','y']]), g=rint(1,5);
+  const forms=[
+    ()=>({outer:[g,u],inner:[[rint(1,4),v],[nz(-6,6),'']]}),
+    ()=>({outer:[g,u+v],inner:[[rint(1,4),u],[nz(-5,5),v]]}),
+    ()=>({outer:[g,u+v],inner:[[rint(1,3),u],[nz(-5,5),''],[nz(-4,4),v]]}),
+    ()=>({outer:[g,u+'^2'],inner:[[rint(1,4),v],[nz(-5,5),u]]}),
+  ];
+  let f; do{ f=pick(forms)(); }while(!primitive(f.inner));
+  if(f.outer[0]===1&&f.outer[1].length===1&&Math.random()<0.5) f.outer[0]=rint(2,5);
+  return common({...f,key:'flere'+f.inner.length,type:'Flere bokstaver',vars:[u,v],
+    hint:`Se på tallene, så på hver bokstav for seg. Alt som finnes i <b>alle</b> leddene settes utenfor.`});
+}
+// ── NIVÅ 5 og 6: trinomer ──
+function trinom(m,n,lv){
+  const tgt=A.P.mul(poly([[1,'x'],[m,'']]),poly([[1,'x'],[n,'']]));
+  const p=m+n, q=m*n;
+  const show=`(${A.fmt(poly([[1,'x'],[m,'']]))})(${A.fmt(poly([[1,'x'],[n,'']]))})`;
+  const a=ask(tgt,'linear',{lab:'=',show});
+  const sgn=v=>v<0?'('+v+')':String(v);
+  return {key:'trinom'+lv+(q<0?'neg':p<0?'mm':'pp'),type:lv===5?'Trinomer':'Trinomer med minus',q:`Faktoriser: <b>${A.fmt(tgt)}</b>`,
+    ask:[a],
+    hint:mi(`Finn to tall som ganget blir ${q} og lagt sammen blir ${p}.`)+` Svaret skrives (x + _)(x + _).`,
+    sol:[mi(`To tall med produkt ${q} og sum ${p}: <b>${m}</b> og <b>${n}</b>, fordi ${sgn(m)} · ${sgn(n)} = ${q} og ${sgn(m)} + ${sgn(n)} = ${p}.`),`${A.fmt(tgt)} = <b>${show}</b>`],
+    mistakes:([s])=>{ let pp; try{ pp=A.poly(s); }catch(e){ return null; }
+      const c0=pp.get('')||0, c1=pp.get('x')||0, c2=pp.get('x^2')||0;
+      if(c2!==1) return null;
+      if(c0===q&&c1!==p) return mi('Produktet av tallene stemmer, men ikke summen. Prøv et annet tallpar som gir '+q+'.');
+      if(c1===p&&c0!==q) return mi('Summen av tallene stemmer, men ikke produktet. Tallene skal ganget bli '+q+'.');
+      if(c0===q&&c1===-p) return 'Nesten! Sjekk fortegnene inne i parentesene.';
+      return null; }};
+}
+function L5(){
+  let m,n; do{ m=rint(1,8); n=rint(1,8); }while(m===n&&Math.random()<0.7);
+  return trinom(m,n,5);
+}
+function L6(){
+  const kind=pick(['neg','neg','mm','felles']);
+  if(kind==='felles'){
+    const g=rint(2,4), m=nz(-6,6), n=nz(-6,6);
+    if(m===-n) return L6();
+    const tgt=A.P.mul(A.mk([[g,'']]),A.P.mul(poly([[1,'x'],[m,'']]),poly([[1,'x'],[n,'']])));
+    const inner=A.P.mul(poly([[1,'x'],[m,'']]),poly([[1,'x'],[n,'']]));
+    const show=`${g}(${A.fmt(poly([[1,'x'],[m,'']]))})(${A.fmt(poly([[1,'x'],[n,'']]))})`;
+    const base=ask(tgt,'linear',{lab:'=',show});
+    return {key:'trinomfelles',type:'Felles faktor og trinom',q:`Faktoriser så langt det går: <b>${A.fmt(tgt)}</b>`,
+      ask:[{...base,check:s=>{ const r=A.check(s,tgt,'linear'); if(!r.ok){ if(r.formOnly&&A.check(s,tgt,'factored').ok) return {ok:false,formOnly:true,msg:'Riktig så langt, men parentesen kan faktoriseres videre til to parenteser.'}; return r; } return A.check(s,tgt,'factored'); }}],
+      hint:`Sett først ${g} utenfor parentesen. Faktoriser så det som står igjen inne i parentesen.`,
+      sol:[`${A.fmt(tgt)} = ${g}(${A.fmt(inner)})`,`${A.fmt(inner)} = (${A.fmt(poly([[1,'x'],[m,'']]))})(${A.fmt(poly([[1,'x'],[n,'']]))})`,`Svar: <b>${show}</b>`]};
+  }
+  let m,n;
+  if(kind==='neg'){ do{ m=rint(1,9); n=-rint(1,9); }while(m===-n); if(Math.random()<0.5) [m,n]=[n,m]; }
+  else { m=-rint(1,8); n=-rint(1,8); }
+  return trinom(m,n,6);
+}
+const MAKE={1:L1,2:L2,3:L3,4:L4,5:L5,6:L6};
+
+// ── UTFORSK: tallpar ──
+function explore(el){
+  let p=5, q=6;
+  function draw(){
+    const pairs=[];
+    for(let m=-Math.abs(q);m<=Math.abs(q);m++){ if(m===0||q%m!==0) continue; const n=q/m; if(m<=n) pairs.push([m,n]); }
+    const hit=pairs.find(([m,n])=>m+n===p);
+    const sgn=v=>v<0?'('+v+')':String(v);
+    const fx=v=>v<0?'x − '+(-v):'x + '+v;
+    el.innerHTML=mi(`<div style="font-size:1.4rem;font-weight:900;text-align:center;margin:6px 0">x² ${p<0?'−':'+'} ${Math.abs(p)}x ${q<0?'−':'+'} ${Math.abs(q)}</div>
+      <div class="ex-row"><span>sum (tallet foran x) =</span><input type="range" min="-12" max="12" value="${p}" id="pr" style="width:140px"><b>${p}</b></div>
+      <div class="ex-row"><span>produkt (tallet uten x) =</span><input type="range" min="-36" max="36" value="${q}" id="qr" style="width:140px"><b>${q}</b></div>
+      ${q===0?'<div class="ex-tip">Når tallet uten x er 0, kan du sette x utenfor: x(x + …).</div>':`
+      <table class="ex"><tr><th>Tallpar</th><th>Produkt</th><th>Sum</th></tr>
+        ${pairs.map(([m,n])=>`<tr style="${m+n===p?'background:#bbf7d0':''}"><td>${m} og ${n}</td><td>${sgn(m)} · ${sgn(n)} = ${q}</td><td>${sgn(m)} + ${sgn(n)} = <b>${m+n}</b></td></tr>`).join('')}</table>
+      <div class="ex-tip">${hit?`Tallparet ${hit[0]} og ${hit[1]} passer: x² ${p<0?'−':'+'} ${Math.abs(p)}x ${q<0?'−':'+'} ${Math.abs(q)} = <b>(${fx(hit[0])})(${fx(hit[1])})</b>`:'Ingen hele tallpar passer. Da kan ikke uttrykket faktoriseres med hele tall.'}</div>`}`);
+    el.querySelector('#pr').oninput=e=>{ p=+e.target.value; draw(); };
+    el.querySelector('#qr').oninput=e=>{ q=+e.target.value; draw(); };
+  }
+  draw();
+}
+
+GEO.init({
+  id:'faktorisering', title:'Faktorisering', icon:'🧩', version:'1.0', color:'#7c3aed',
+  subtitle:'Sett felles faktor utenfor og finn tallpar',
+  intro:'Faktorisering er det motsatte av å gange ut. Sett felles faktorer utenfor parentesen, og skriv uttrykk som x² + 5x + 6 som (x + 2)(x + 3).',
+  levels:{
+    1:{name:'Nivå 1',desc:'Felles tallfaktor: 6x + 9'},
+    2:{name:'Nivå 2',desc:'Felles bokstav: x² + 3x'},
+    3:{name:'Nivå 3',desc:'Tall og bokstav: 4x² − 6x'},
+    4:{name:'Nivå 4',desc:'Flere bokstaver: 6ab + 9a'},
+    5:{name:'Nivå 5',desc:'Trinomer: x² + 5x + 6'},
+    6:{name:'Nivå 6',desc:'Trinomer med minus: x² − x − 12'},
+  },
+  make:l=>MAKE[l](),
+  explore:{title:'Utforsk tallpar',render:explore},
+});
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>

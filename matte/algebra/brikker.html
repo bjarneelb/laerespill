@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algebrabrikker</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<script src="../plangeometri/geo-motor.js"></script>
+<script src="algebra.js"></script>
+<script src="alg-felles.js"></script>
+</head>
+<body>
+<script>
+const {rint,pick,shuffle}=GEO, A=ALG, {nz,ask,terms,poly,is}=AF;
+const LET=['x','a','b','n','y','t'];
+
+// ── NIVÅ 1: hva betyr x? ──
+function L1(){
+  const v=pick(['x','a','n']);
+  if(Math.random()<0.5){
+    const k=rint(2,6), c=rint(0,5);
+    const parts=Array(k).fill(v).concat(c?[String(c)]:[]);
+    const tgt=poly([[k,v],[c,'']]);
+    return {key:'sum',type:'Hva betyr '+v+'?',q:`Skriv kortere: <b>${parts.join(' + ')}</b>`,
+      ask:[ask(tgt,'simplified',{vars:[v]})],
+      hint:`${v} + ${v} + ${v} betyr «tre ${v}-er», og skrives 3${v}.`,
+      sol:[`Det er ${k} ${v}-er${c?' og '+c+' enere':''}: <b>${A.fmt(tgt)}</b>`]};
+  }
+  const nx=rint(1,5), n1=rint(0,6);
+  const tgt=poly([[nx,'x'],[n1,'']]);
+  return {key:'brikker',type:'Algebrabrikker',q:'Hver grønn brikke er <b>x</b>, og hver gule er <b>1</b>. Skriv et uttrykk for brikkene.',
+    draw:el=>{ el.innerHTML=AF.tiles([{k:'x',n:nx},{k:'1',n:n1}]); },
+    ask:[ask(tgt,'simplified')],
+    hint:'Tell x-brikkene og enerne hver for seg.',
+    sol:[`${nx} x-brikker og ${n1} enere: <b>${A.fmt(tgt)}</b>`]};
+}
+// ── NIVÅ 2: like ledd, én variabel ──
+function L2(){
+  const v=pick(LET), n=rint(2,4);
+  let list; do{ list=Array.from({length:n},(_,i)=>[i===0?rint(1,9):nz(-7,9),v]); }while(list.reduce((a,b)=>a+b[0],0)<=0);
+  const tgt=poly(list);
+  return {key:'like1',type:'Trekk sammen',q:`Trekk sammen: <b>${terms(list)}</b>`,
+    ask:[ask(tgt,'simplified',{vars:[v]})],
+    hint:`Alle leddene er ${v}-ledd. Legg sammen og trekk fra tallene foran ${v}.`,
+    sol:[`${list.map(t=>t[0]<0?'('+t[0]+')':t[0]).join(' + ')} = ${list.reduce((a,b)=>a+b[0],0)}`,`Svar: <b>${A.fmt(tgt)}</b>`]};
+}
+// ── NIVÅ 3: to variabler og tall ──
+function L3(){
+  const [u,w]=shuffle(['a','b','x','y']).slice(0,2);
+  let list;
+  do{ list=shuffle([[rint(1,6),u],[nz(-3,5),u],[rint(1,6),w],[nz(-3,5),w],[rint(1,9),'']].concat(Math.random()<0.5?[[nz(-5,5),'']]:[])); }
+  while([...poly(list).keys()].length<3||poly(list).get(u)<=0||poly(list).get(w)<=0);
+  const tgt=poly(list);
+  return {key:'like2',type:'Trekk sammen',q:`Trekk sammen: <b>${terms(list)}</b>`,
+    ask:[ask(tgt,'simplified',{vars:[u,w]})],
+    hint:`Bare like ledd kan trekkes sammen: ${u}-ledd med ${u}-ledd, ${w}-ledd med ${w}-ledd, og tall med tall.`,
+    sol:[`${u}-ledd: ${list.filter(t=>t[1]===u).map(t=>t[0]).join(' + ').replace(/\+ -/g,'− ')} = ${tgt.get(u)}`,`${w}-ledd: ${list.filter(t=>t[1]===w).map(t=>t[0]).join(' + ').replace(/\+ -/g,'− ')} = ${tgt.get(w)}`,`Tall: ${list.filter(t=>t[1]==='').map(t=>t[0]).join(' + ').replace(/\+ -/g,'− ')} = ${tgt.get('')||0}`,`Svar: <b>${A.fmt(tgt)}</b>`],
+    mistakes:([s])=>{ try{ const p=A.poly(s); if(p.size===1&&!p.has('')) return 'Du kan ikke legge sammen '+u+'-ledd og '+w+'-ledd. De er ikke like ledd.'; }catch(e){} return null; }};
+}
+// ── NIVÅ 4: negative tall og ledd som forsvinner ──
+function L4(){
+  const [u,w]=shuffle(['x','y','a','b']).slice(0,2);
+  const c1=rint(2,7), d=nz(-6,6), e=rint(1,9), f=nz(-9,9);
+  // u-leddene nuller hverandre ut
+  let list=shuffle([[c1,u],[-c1,u],[d,w],[e,''],[f,'']]).concat(Math.random()<0.5?[[nz(-4,4),w]]:[]);
+  let tgt=poly(list); if(tgt.size===0) return L4();
+  return {key:'neg',type:'Negative ledd',q:`Trekk sammen: <b>${terms(list)}</b>`,
+    ask:[ask(tgt,'simplified',{vars:[u,w]})],
+    hint:`Et ledd og det samme leddet med minus foran blir null til sammen: ${c1}${u} − ${c1}${u} = 0.`,
+    sol:[`${c1}${u} − ${c1}${u} = 0, så ${u}-leddene forsvinner.`,`Svar: <b>${A.fmt(tgt)}</b>`],
+    mistakes:([s])=>{ try{ const p=A.poly(s); if(p.has(u)) return 'Se på '+u+'-leddene igjen. Blir de til sammen null?'; }catch(e){} return null; }};
+}
+// ── NIVÅ 5: x² og x ──
+function L5(){
+  let list;
+  do{ list=shuffle([[rint(1,5),'x^2'],[nz(-3,4),'x^2'],[rint(1,6),'x'],[nz(-5,5),'x'],[nz(-8,9),'']].concat(Math.random()<0.5?[[nz(-4,4),'']]:[])); }
+  while(poly(list).size<3);
+  const tgt=poly(list);
+  const wrong=A.mk([[[...tgt].reduce((a,[k,c])=>a+(k==='x^2'||k==='x'?c:0),0),'x'],[tgt.get('')||0,'']]);
+  return {key:'x2',type:'x² og x',q:`Trekk sammen: <b>${terms(list)}</b>`,
+    ask:[ask(tgt,'simplified')],
+    hint:'x² og x er ikke like ledd, akkurat som x og y. Trekk sammen x²-leddene for seg og x-leddene for seg.',
+    sol:[`x²-ledd: ${tgt.get('x^2')||0}x². x-ledd: ${tgt.get('x')||0}x. Tall: ${tgt.get('')||0}`,`Svar: <b>${A.fmt(tgt)}</b>`],
+    mistakes:([s])=>is(s,wrong)?'x² og x kan ikke legges sammen. De er ulike ledd.':null};
+}
+// ── NIVÅ 6: parenteser med + og − foran ──
+function L6(){
+  const v=pick(['x','a']), a=rint(2,9), b=rint(1,6), c=nz(-9,9), minus=Math.random()<0.65;
+  const inner=[[b,v],[c,'']];
+  const before=[[a,v]], after=Math.random()<0.5?[[nz(-5,5),'']]:[];
+  const sgn=minus?-1:1;
+  const tgt=A.P.add(A.P.add(poly(before),poly(inner),sgn),poly(after));
+  const q=terms(before)+(minus?' − ':' + ')+'('+terms(inner)+')'+(after.length?(after[0][0]<0?' − ':' + ')+Math.abs(after[0][0]):'');
+  const wrongSign=A.P.add(A.P.add(poly(before),poly([[b*sgn,v],[c,'']])),poly(after));
+  return {key:minus?'minus':'pluss',type:'Parenteser',q:`Løs opp parentesen og trekk sammen: <b>${q}</b>`,
+    ask:[ask(tgt,'simplified',{vars:[v]})],
+    hint:minus?'Minus foran en parentes snur fortegnet på alle leddene inni parentesen.':'Pluss foran en parentes: parentesen kan bare fjernes.',
+    sol:minus?[`${terms(before)} − (${terms(inner)}) = ${terms(before)}${AF.more([[-b,v],[-c,'']])}${AF.more(after)}`,`Svar: <b>${A.fmt(tgt)}</b>`]
+      :[`Pluss foran: ${terms([...before,...inner,...after])}`,`Svar: <b>${A.fmt(tgt)}</b>`],
+    mistakes:([s])=>minus&&is(s,wrongSign)?'Husk: minus foran parentesen snur fortegnet på <b>alle</b> leddene inni, også det siste.':null};
+}
+// ── NIVÅ 7: tall ganger parentes, så trekke sammen ──
+function L7(){
+  const v=pick(['x','a']), k1=rint(2,5), k2=nz(-5,5), p1=[[1,v],[nz(-6,6),'']], p2=[[rint(1,3),v],[nz(-6,6),'']];
+  const tgt=A.P.add(A.P.mul(A.P.num(k1),poly(p1)),A.P.mul(A.P.num(k2),poly(p2)));
+  if(tgt.size===0) return L7();
+  const q=`${k1}(${terms(p1)}) ${k2<0?'−':'+'} ${Math.abs(k2)===1?'':Math.abs(k2)}(${terms(p2)})`;
+  // Typisk feil: ganger bare det første leddet i parentesen
+  const wrong=A.P.add(poly([[k1*p1[0][0],v],[p1[1][0],'']]),poly([[k2*p2[0][0],v],[k2<0?-p2[1][0]:p2[1][0],'']]));
+  if(A.equal(wrong,tgt)) return L7();
+  const e1=A.P.mul(A.P.num(k1),poly(p1)), e2=A.P.mul(A.P.num(k2),poly(p2));
+  return {key:'gange',type:'Tall ganger parentes',q:`Regn ut og trekk sammen: <b>${q}</b>`,
+    ask:[ask(tgt,'simplified',{vars:[v]})],
+    hint:'Gang tallet foran med hvert ledd inni parentesen. Er tallet negativt, snur fortegnet på leddene. Trekk så sammen.',
+    sol:[`${k1}(${terms(p1)}) = ${A.fmt(e1)}`,`${k2===-1?'−':String(k2).replace('-','−')}(${terms(p2)}) = ${A.fmt(e2)}`,`${A.fmt(e1)} ${A.fmt(e2).startsWith('−')?'− '+A.fmt(e2).slice(1):'+ '+A.fmt(e2)} = <b>${A.fmt(tgt)}</b>`],
+    mistakes:([s])=>is(s,wrong)?'Tallet foran skal ganges med <b>begge</b> leddene i parentesen.':null};
+}
+const MAKE={1:L1,2:L2,3:L3,4:L4,5:L5,6:L6,7:L7};
+
+// ── UTFORSK ──
+function explore(el){
+  const board={x2:0,x:0,y:0,'1':0}, raw=[];
+  el.innerHTML=`<div class="ex-row" id="addRow"></div><div id="exBoard"></div><div class="ex-info" id="exExpr"></div>
+    <div class="ex-row"><button class="chip" id="tsam">🧲 Trekk sammen</button><button class="chip" id="tom">🗑️ Tøm brettet</button></div>
+    <div class="ex-tip">Legg brikker på brettet. En grønn og en rød x-brikke er til sammen null. Trykk «Trekk sammen» for å rydde.</div>`;
+  const kinds=[['x2','x²'],['x','x'],['y','y'],['1','1']];
+  el.querySelector('#addRow').innerHTML=kinds.map(([k,l])=>`<button class="chip" data-k="${k}" data-s="1">+${l}</button><button class="chip" data-k="${k}" data-s="-1" style="color:#b91c1c">−${l}</button>`).join('');
+  el.querySelectorAll('#addRow .chip').forEach(b=>b.onclick=()=>{ raw.push({k:b.dataset.k,n:+b.dataset.s}); draw(); });
+  el.querySelector('#tom').onclick=()=>{ raw.length=0; draw(); };
+  el.querySelector('#tsam').onclick=()=>{ const sum={}; raw.forEach(t=>sum[t.k]=(sum[t.k]||0)+t.n); raw.length=0; kinds.forEach(([k])=>{ if(sum[k]) raw.push({k,n:sum[k]}); }); draw(true); };
+  function draw(merged){
+    const groups=merged?raw:raw.map(t=>({k:t.k,n:t.n}));
+    el.querySelector('#exBoard').innerHTML=raw.length?AF.tiles(groups):GEO.svg(GEO.W(),80,GEO.text(GEO.W()/2,40,'Brettet er tomt',{col:'#94a3b8'}));
+    const list=raw.map(t=>[t.n,t.k==='x2'?'x^2':t.k==='1'?'':t.k]);
+    const p=A.mk(list);
+    el.querySelector('#exExpr').innerHTML=raw.length?`Uttrykk: ${terms(list)||'0'}<br>Trukket sammen: <b>${A.fmt(p)}</b>`:'';
+  }
+  draw();
+}
+
+GEO.init({
+  id:'algebrabrikker', title:'Algebrabrikker', icon:'🧱', version:'1.0', color:'#047857',
+  subtitle:'Trekk sammen algebraiske uttrykk',
+  intro:'Hva betyr en bokstav? Trekk sammen like ledd, regn med negative ledd, x² og x, og løs opp parenteser.',
+  levels:{
+    1:{name:'Nivå 1',desc:'Hva betyr x? x + x + x = 3x, og brikker'},
+    2:{name:'Nivå 2',desc:'Like ledd med én variabel: 3a + 5a − 2a'},
+    3:{name:'Nivå 3',desc:'To variabler og tall: 2a + 3b − a + 4'},
+    4:{name:'Nivå 4',desc:'Negative ledd og ledd som blir null'},
+    5:{name:'Nivå 5',desc:'x²-ledd og x-ledd hver for seg'},
+    6:{name:'Nivå 6',desc:'Parenteser med + og − foran'},
+    7:{name:'Nivå 7',desc:'Tall ganger parentes, så trekke sammen'},
+  },
+  make:l=>MAKE[l](),
+  explore:{title:'Utforsk med algebrabrikker',render:explore},
+});
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>

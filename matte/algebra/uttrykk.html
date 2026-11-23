@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uttrykksfabrikken</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="/js/spill-utils.js"></script>
+<script src="../plangeometri/geo-motor.js"></script>
+<script src="algebra.js"></script>
+<script src="alg-felles.js"></script>
+</head>
+<body>
+<script>
+const {rint,pick,shuffle,fmt,svg,text}=GEO, A=ALG, {nz,ask,terms,poly,is,mono}=AF;
+
+// ── FIGURER ── (polygon i enhetskoordinater med etiketter på sidene)
+function figure(pts,labels,o={}){
+  const W=GEO.W(), H=o.H||250, M=56;
+  const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+  const x0=Math.min(...xs), x1=Math.max(...xs), y0=Math.min(...ys), y1=Math.max(...ys);
+  const k=Math.min((W-2*M)/(x1-x0),(H-2*M*0.8)/(y1-y0));
+  const ox=(W-(x1-x0)*k)/2, oy=(H-(y1-y0)*k)/2;
+  const X=x=>ox+(x-x0)*k, Y=y=>H-oy-(y-y0)*k;
+  let s=`<path d="M${pts.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join('L')}Z" fill="#d1fae5" stroke="#047857" stroke-width="3.5" stroke-linejoin="round"/>`;
+  const cx=xs.reduce((a,b)=>a+b,0)/xs.length, cy=ys.reduce((a,b)=>a+b,0)/ys.length;
+  labels.forEach((L,i)=>{ if(!L) return; const a=pts[i], b=pts[(i+1)%pts.length];
+    const mx=(X(a[0])+X(b[0]))/2, my=(Y(a[1])+Y(b[1]))/2, dx=X(b[0])-X(a[0]), dy=Y(b[1])-Y(a[1]), len=Math.hypot(dx,dy);
+    let nx=dy/len, ny=-dx/len; if((mx-X(cx))*nx+(my-Y(cy))*ny<0){ nx=-nx; ny=-ny; }
+    s+=text(mx+nx*20,my+ny*16,L,{anchor:Math.abs(nx)>0.7?(nx>0?'start':'end'):'middle',col:'#065f46',size:16}); });
+  if(o.inner) s+=text(X(cx),Y(cy),o.inner,{col:'#047857',size:15});
+  return svg(W,H,s);
+}
+const rectPts=(w,h)=>[[0,0],[w,0],[w,h],[0,h]];
+
+// ── NIVÅ 1: sett inn verdi ──
+function L1(){
+  const v=pick(['x','a','n']), val=rint(1,9);
+  const forms=[
+    ()=>{ const a=rint(2,9), b=nz(-9,9); return {e:`${a}${v} ${b<0?'−':'+'} ${Math.abs(b)}`,f:x=>a*x+b,st:x=>`${a} · ${x} ${b<0?'−':'+'} ${Math.abs(b)} = ${a*x} ${b<0?'−':'+'} ${Math.abs(b)}`}; },
+    ()=>{ const a=rint(2,6), b=rint(1,9); return {e:`${b} + ${a}${v}`,f:x=>b+a*x,st:x=>`${b} + ${a} · ${x} = ${b} + ${a*x}`}; },
+    ()=>{ const a=rint(2,5), b=rint(1,6); return {e:`${a}(${v} + ${b})`,f:x=>a*(x+b),st:x=>`${a} · (${x} + ${b}) = ${a} · ${x+b}`}; },
+    ()=>{ const b=rint(1,9); return {e:`${v}² + ${b}`,f:x=>x*x+b,st:x=>`${x}² + ${b} = ${x*x} + ${b}`}; },
+  ];
+  const F=pick(forms)();
+  return {key:'verdi'+F.e.length,type:'Sett inn verdi',q:`Hva er verdien av <b>${F.e}</b> når ${v} = ${val}?`,
+    ask:[{kind:'num',lab:'Verdi =',unit:'',val:F.f(val)}],
+    hint:`Bytt ut ${v} med ${val}. Husk at ${'3'+v} betyr 3 · ${v}. Regn ganging før pluss og minus.`,
+    sol:[`${F.st(val)} = <b>${F.f(val)}</b>`],
+    mistakes:([x])=>{ const m=F.e.match(/^(\d)([a-z])/); return m&&x===+(m[1]+String(val))+(F.f(val)-(+m[1])*val)?'3'+v+' betyr 3 · '+v+', ikke at tallene står ved siden av hverandre.':null; }};
+}
+// ── NIVÅ 2: fra tekst til uttrykk ──
+const TEXTS=[
+  v=>{ const a=rint(2,5), b=rint(2,9); return {t:`${b} mer enn det ${['','','dobbelte','tredobbelte','firedobbelte','femdobbelte'][a]} av ${v}`,p:[[a,v],[b,'']]}; },
+  v=>{ const b=rint(2,9); return {t:`${b} mindre enn ${v}`,p:[[1,v],[-b,'']]}; },
+  v=>({t:`halvparten av ${v}`,p:[[0.5,v]],show:`${v}/2`}),
+  v=>{ const a=rint(2,4), b=rint(2,8); return {t:`det ${['','','dobbelte','tredobbelte','firedobbelte'][a]} av summen av ${v} og ${b}`,p:[[a,v],[a*b,'']],show:`${a}(${v} + ${b})`}; },
+  v=>{ const b=rint(10,50); return {t:`Ola har ${v} kroner. Kari har ${b} kroner mer enn Ola. Hvor mye har Kari?`,p:[[1,v],[b,'']],story:true}; },
+  v=>{ const p=pick([65,85,120,150]), g=pick([20,25,30,49]); return {t:`En konsertbillett koster ${p} kr, og det kommer ${g} kr i gebyr per bestilling. Hva koster ${v} billetter i én bestilling?`,p:[[p,v],[g,'']],story:true}; },
+  v=>{ const a=rint(3,9); return {t:`Du har ${v} klistremerker og gir bort ${a}. Hvor mange har du igjen?`,p:[[1,v],[-a,'']],story:true}; },
+  v=>{ const a=rint(2,5); return {t:`Lisa er ${v} år. Moren er ${a} ganger så gammel. Hvor gammel er moren?`,p:[[a,v]],story:true}; },
+];
+function L2(){
+  const v=pick(['n','x']), T=pick(TEXTS)(v), tgt=poly(T.p);
+  return {key:'tekst'+T.t.slice(0,8),type:'Fra tekst til uttrykk',q:T.story?T.t+' Skriv et uttrykk.':`Skriv som et uttrykk: <b>${T.t}</b>`,
+    ask:[ask(tgt,'value',{vars:[v],show:T.show})],
+    hint:'«Det dobbelte» betyr 2 ·, «mer enn» betyr +, «mindre enn» betyr −, «halvparten» betyr : 2. Sjekk ved å sette inn et tall for '+v+'.',
+    sol:[`<b>${T.show||A.fmt(tgt)}</b>`]};
+}
+// ── NIVÅ 3: omkrets ──
+function L3(){
+  const kind=pick(['rekt','kvad','trekant','femkant']), v=pick(['x','a']);
+  let pts, labs, sides, name;
+  if(kind==='rekt'){ const b=rint(1,6); sides=[[[1,v]],[[1,v],[b,'']],[[1,v]],[[1,v],[b,'']]]; pts=rectPts(1.6,1); labs=[`${v} + ${b}`,v,`${v} + ${b}`,v]; sides=[[[1,v],[b,'']],[[1,v]],[[1,v],[b,'']],[[1,v]]]; name='rektangelet'; }
+  if(kind==='kvad'){ const b=rint(1,5); pts=rectPts(1,1); labs=[`${v} + ${b}`,null,null,null]; sides=Array(4).fill([[1,v],[b,'']]); name='kvadratet'; }
+  if(kind==='trekant'){ const a=rint(2,3), b=rint(1,6); pts=[[0,0],[1.6,0],[0.6,1.1]]; labs=[`${a}${v}`,`${v} + ${b}`,v]; sides=[[[a,v]],[[1,v],[b,'']],[[1,v]]]; name='trekanten'; }
+  if(kind==='femkant'){ const b=rint(1,4); pts=[[0,0],[1.4,0],[1.4,0.9],[0.7,1.5],[0,0.9]]; labs=[`2${v}`,`${v}`,`${v} + ${b}`,`${v} + ${b}`,v]; sides=[[[2,v]],[[1,v]],[[1,v],[b,'']],[[1,v],[b,'']],[[1,v]]]; name='figuren'; }
+  const tgt=sides.reduce((acc,sd)=>A.P.add(acc,poly(sd)),new Map());
+  return {key:'omkrets'+kind,type:'Omkrets med uttrykk',q:`Lag et uttrykk for omkretsen av ${name}${kind==='kvad'?' (alle sidene er like lange)':''}. Trekk sammen.`,
+    draw:el=>{ el.innerHTML=figure(pts,labs); },
+    ask:[ask(tgt,'simplified',{lab:'O =',vars:[v]})],
+    hint:'Omkretsen er summen av alle sidene. Skriv alle sidene etter hverandre med +, og trekk sammen like ledd.',
+    sol:[`O = ${sides.map(sd=>terms(sd)).map(t=>t.includes('+')||t.includes('−')?'('+t+')':t).join(' + ')}`,`O = <b>${A.fmt(tgt)}</b>`]};
+}
+// ── NIVÅ 4: areal ──
+function L4(){
+  const v='x', kind=pick(['tall','xx','tallpar','xpar']);
+  let w,h,lw,lh,tgt;
+  if(kind==='tall'){ const a=rint(2,9); w=[[1,v]]; h=[[a,'']]; lw=v; lh=String(a); }
+  if(kind==='xx'){ w=[[1,v]]; h=[[1,v]]; lw=v; lh=v; }
+  if(kind==='tallpar'){ const a=rint(2,6), b=rint(1,7); w=[[1,v],[b,'']]; h=[[a,'']]; lw=`${v} + ${b}`; lh=String(a); }
+  if(kind==='xpar'){ const b=rint(1,6); w=[[1,v],[b,'']]; h=[[1,v]]; lw=`${v} + ${b}`; lh=v; }
+  tgt=A.P.mul(poly(w),poly(h));
+  return {key:'areal'+kind,type:'Areal med uttrykk',q:'Lag et uttrykk for arealet av rektangelet.',
+    draw:el=>{ el.innerHTML=figure(rectPts(kind==='tall'||kind==='tallpar'?1.8:1.4,1),[lw,lh,null,null]); },
+    ask:[ask(tgt,'value',{lab:'A =',show:A.fmt(tgt)})],
+    hint:'Areal av rektangel: lengde · bredde. x · x skrives x². Et tall ganger en parentes ganges med begge leddene.',
+    sol:[`A = ${lh.length>1?'('+lh+')':lh} · ${lw.length>1?'('+lw+')':lw} = <b>${A.fmt(tgt)}</b>`],
+    mistakes:([s])=>kind==='xx'&&is(s,poly([[2,v]]))?'x · x er ikke 2x. Det er x², x ganget med seg selv.':null};
+}
+// ── NIVÅ 5: sammensatte figurer ──
+function L5(){
+  const v='x', h1=rint(4,7), w2=rint(2,5), h2=rint(1,h1-2);
+  // Venstre del: bredde x, høyde h1. Høyre del: bredde w2, høyde h2 (nede)
+  const xw=1.2, sc=1/h1;
+  const pts=[[0,0],[xw+w2*sc*1.2,0],[xw+w2*sc*1.2,h2*sc],[xw,h2*sc],[xw,1],[0,1]];
+  const labs=[`${v} + ${w2}`,String(h2),String(w2),String(h1-h2),v,String(h1)];
+  const O=poly([[2,v],[2*w2,''],[2*h1,'']]), Ar=poly([[h1,v],[w2*h2,'']]);
+  return {key:'sammensatt',type:'Sammensatt figur',q:'Figuren består av to rektangler. Lag uttrykk for omkretsen og arealet.',
+    draw:el=>{ el.innerHTML=figure(pts,labs,{H:260}); },
+    ask:[ask(O,'simplified',{lab:'a) O =',ph:'omkrets'}),ask(Ar,'value',{lab:'b) A =',ph:'areal'})],
+    hint:'Omkrets: legg sammen alle de seks sidene. Areal: del figuren i to rektangler og legg sammen arealene.',
+    sol:[`a) O = (${v} + ${w2}) + ${h2} + ${w2} + ${h1-h2} + ${v} + ${h1} = <b>${A.fmt(O)}</b>`,`b) Venstre: ${v} · ${h1} = ${h1}${v}. Høyre: ${w2} · ${h2} = ${w2*h2}. A = <b>${A.fmt(Ar)}</b>`]};
+}
+// ── NIVÅ 6: lag uttrykk og sett inn verdi ──
+function L6(){
+  if(Math.random()<0.5){
+    const start=pick([39,45,50,59]), km=pick([11,12,14,15]), d=rint(4,20), v='k';
+    const tgt=poly([[km,v],[start,'']]);
+    return {key:'taxi',type:'Lag uttrykk og regn ut',q:`En taxitur koster ${start} kr i startpris og ${km} kr per kilometer.<br>a) Lag et uttrykk for prisen når du kjører <b>k</b> kilometer.<br>b) Hva koster en tur på ${d} km?`,
+      ask:[ask(tgt,'value',{lab:'a) Pris =',vars:['k']}),{kind:'num',lab:'b)',unit:'kr',val:km*d+start}],
+      hint:'Prisen er startprisen pluss prisen per kilometer ganger antall kilometer. Sett så inn k = '+d+'.',
+      sol:[`a) <b>${A.fmt(tgt)}</b>`,`b) ${km} · ${d} + ${start} = <b>${km*d+start} kr</b>`]};
+  }
+  const b=rint(1,6), x=rint(3,12), v='x';
+  const O=poly([[4,v],[2*b,'']]), Ar=A.P.mul(poly([[1,v],[b,'']]),poly([[1,v]]));
+  return {key:'rektverdi',type:'Lag uttrykk og regn ut',q:`Et rektangel er ${v} + ${b} langt og ${v} bredt.<br>a) Lag et uttrykk for omkretsen.<br>b) Hva er omkretsen når ${v} = ${x}?<br>c) Hva er arealet når ${v} = ${x}?`,
+    draw:el=>{ el.innerHTML=figure(rectPts(1.6,1),[`${v} + ${b}`,v,null,null]); },
+    ask:[ask(O,'simplified',{lab:'a) O ='}),{kind:'num',lab:'b) O =',unit:'',val:4*x+2*b},{kind:'num',lab:'c) A =',unit:'',val:(x+b)*x}],
+    hint:'Lag uttrykket først, og sett inn verdien etterpå. Areal = lengde · bredde.',
+    sol:[`a) O = 2(${v} + ${b}) + 2${v} = <b>${A.fmt(O)}</b>`,`b) 4 · ${x} + ${2*b} = <b>${4*x+2*b}</b>`,`c) (${x} + ${b}) · ${x} = <b>${(x+b)*x}</b>`]};
+}
+const MAKE={1:L1,2:L2,3:L3,4:L4,5:L5,6:L6};
+
+// ── UTFORSK ──
+function explore(el){
+  let x=4, b=2;
+  function draw(){
+    const W=GEO.W(), H=260, k=Math.min((W-120)/(14+6),(H-70)/14), w=(x+b)*k, h=x*k, ox=(W-w)/2, oy=(H-h)/2;
+    let s=`<rect x="${ox}" y="${oy}" width="${w}" height="${h}" fill="#d1fae5" stroke="#047857" stroke-width="3"/>`;
+    for(let i=1;i<x+b;i++) s+=`<line x1="${ox+i*k}" y1="${oy}" x2="${ox+i*k}" y2="${oy+h}" stroke="#a7f3d0"/>`;
+    for(let j=1;j<x;j++) s+=`<line x1="${ox}" y1="${oy+j*k}" x2="${ox+w}" y2="${oy+j*k}" stroke="#a7f3d0"/>`;
+    s+=text(ox+w/2,oy+h+18,`x + ${b} = ${x+b}`,{col:'#065f46'})+text(ox-10,oy+h/2,`x = ${x}`,{anchor:'end',col:'#065f46'});
+    el.innerHTML=`<div>${svg(W,H,s)}</div>
+      <div class="ex-row"><span>x =</span><input type="range" min="1" max="12" value="${x}" id="xr" style="width:180px"><b>${x}</b>
+        <span style="margin-left:14px">tillegg:</span><input type="range" min="1" max="6" value="${b}" id="br" style="width:110px"><b>${b}</b></div>
+      <table class="ex"><tr><th></th><th>Uttrykk</th><th>Når x = ${x}</th></tr>
+        <tr><td>Omkrets</td><td>2(x + ${b}) + 2x = 4x + ${2*b}</td><td>4 · ${x} + ${2*b} = <b>${4*x+2*b}</b></td></tr>
+        <tr><td>Areal</td><td>x(x + ${b}) = x² + ${b}x</td><td>${x}² + ${b} · ${x} = <b>${x*x+b*x}</b></td></tr></table>
+      <div class="ex-tip">Uttrykket er det samme uansett hva x er. Bare verdien endrer seg. Tell rutene og sjekk arealet!</div>`;
+    el.querySelector('#xr').oninput=e=>{ x=+e.target.value; draw(); };
+    el.querySelector('#br').oninput=e=>{ b=+e.target.value; draw(); };
+  }
+  draw();
+}
+
+GEO.init({
+  id:'uttrykksfabrikken', title:'Uttrykksfabrikken', icon:'📏', version:'1.0', color:'#0f766e',
+  subtitle:'Fra figur og tekst til uttrykk',
+  intro:'Sett inn verdier, gjør tekst om til uttrykk, og lag uttrykk for omkrets og areal av figurer der sidene har bokstaver.',
+  levels:{
+    1:{name:'Nivå 1',desc:'Sett inn verdi: hva er 3x + 2 når x = 4?'},
+    2:{name:'Nivå 2',desc:'Fra tekst til uttrykk'},
+    3:{name:'Nivå 3',desc:'Uttrykk for omkrets'},
+    4:{name:'Nivå 4',desc:'Uttrykk for areal: x · 4, x · x = x²'},
+    5:{name:'Nivå 5',desc:'Sammensatte figurer: omkrets og areal'},
+    6:{name:'Nivå 6',desc:'Lag uttrykk og sett inn verdi'},
+  },
+  make:l=>MAKE[l](),
+  explore:{title:'Utforsk uttrykk og verdier',render:explore},
+});
+</script>
+<script type="module">
+  import { database, ref, set, update, onValue, get, remove } from "/js/firebase-config.js";
+  window._db=database; window._ref=ref; window._set=set; window._update=update; window._onValue=onValue; window._get=get; window._remove=remove; window._fbReady=true;
+</script>
+</body>
+</html>

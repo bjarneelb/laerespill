@@ -297,7 +297,15 @@
         <div class="card-icon">📐</div>
         <div class="card-title">Plangeometri</div>
         <div class="card-desc">Areal på rutenett og med formler: kvadrat, rektangel, trekant, parallellogram, rombe, trapes, sirkel og sammensatte figurer.</div>
-        <div class="card-tag">2 spill</div>
+        <div class="card-tag">8 spill</div>
+        <div class="card-btn">Åpne →</div>
+      </a>
+
+      <a class="card c-purple" href="algebra/">
+        <div class="card-icon">🧮</div>
+        <div class="card-title">Algebra</div>
+        <div class="card-desc">Trekke sammen uttrykk, uttrykk for figurer, gange ut parenteser og faktorisere.</div>
+        <div class="card-tag">4 spill</div>
         <div class="card-btn">Åpne →</div>
       </a>
 
@@ -372,7 +380,7 @@ window.getActiveSession=function(){
 };
 
 // Kom eleven fra en temaside uten å være logget inn, sendes hen tilbake dit etterpå
-const NESTE=(()=>{ const t=new URLSearchParams(location.search).get('neste'); return ['likninger','funksjoner','figurtall','plangeometri'].includes(t)?t:null; })();
+const NESTE=(()=>{ const t=new URLSearchParams(location.search).get('neste'); return ['likninger','funksjoner','figurtall','plangeometri','algebra'].includes(t)?t:null; })();
 function goNext(){ if(NESTE) location.href=NESTE+'/'; }
 
 window.addEventListener('load',()=>{
