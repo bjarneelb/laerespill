@@ -183,7 +183,7 @@ function build(cfg){
     <button class="btn btn-check" id="checkBtn" onclick="GEO.check()">✅ Sjekk svar</button>
     <button class="btn btn-soft" id="showBtn" onclick="GEO.showSolution()" style="display:none">💡 Vis løsningen</button>
     <button class="btn btn-next" id="nextBtn" onclick="GEO.next()" style="display:none">Neste oppgave ➡️</button>
-    <button class="btn btn-soft" id="skipBtn" onclick="GEO.skip()">⏭️ Ny oppgave</button>
+    <button class="btn btn-soft" id="skipBtn" onclick="GEO.skip()" data-su-skip>⏭️ Ny oppgave</button>
   </div>
 </div>
 <div class="explore" id="explore" style="display:none">
@@ -269,7 +269,10 @@ G.next=function(){
   $('checkBtn').style.display=''; $('showBtn').style.display='none'; $('nextBtn').style.display='none'; $('skipBtn').style.display='';
   const first=document.querySelector('.num-in'); if(first&&window.innerWidth>600) first.focus();
 };
-G.skip=function(){ window.streak=0; G.next(); };
+G.skip=function(){
+  if(task&&!done){ const base=cfg.points?cfg.points(currentLevel):10+5*currentLevel; suSkip(base,tries,{get:()=>window.currentScore,set:x=>{ window.currentScore=x; }}); sync(); }
+  window.streak=0; G.next();
+};
 G.__fill=function(){ // kun for automatiske tester
   task.ask.forEach((a,i)=>{
     if(a.kind==='num') document.querySelector(`.num-in[data-i="${i}"]`).value=G.fmt(a.val);

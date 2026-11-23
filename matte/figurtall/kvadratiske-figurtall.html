@@ -189,7 +189,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
     <button class="btn btn-check" id="checkBtn" onclick="checkAnswer()">✅ Sjekk svar</button>
     <button class="btn btn-soft" id="showBtn" onclick="showSolution()" style="display:none">💡 Vis løsningen</button>
     <button class="btn btn-next" id="nextBtn" onclick="nextTask()" style="display:none">Neste oppgave ➡️</button>
-    <button class="btn btn-soft" id="skipBtn" onclick="nextTask()">⏭️ Ny oppgave</button>
+    <button class="btn btn-soft" id="skipBtn" onclick="skipTask()" data-su-skip>⏭️ Ny oppgave</button>
   </div>
 </div>
 
@@ -712,6 +712,14 @@ function completeTask(){
   $('nextBtn').style.display=''; $('nextBtn').focus();
 }
 
+window.skipTask=function(){
+  if(task&&!done&&!task.usedSolution){
+    const el=(Date.now()-taskStart)/1000, base=110+task.level*25+task.steps.length*10;
+    suSkip(Math.max(10,Math.round(Math.max(30,base-el*0.5))),tries,{get:()=>currentScore,set:x=>{currentScore=x;}});
+    streak=0; syncTC();
+  }
+  nextTask();
+};
 window.nextTask=function(){
   if(busy&&!stepBtnWaiting) return;
   busy=false; stepBtnWaiting=false;

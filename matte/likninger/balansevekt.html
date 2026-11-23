@@ -274,7 +274,7 @@ button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;}
   <div class="controls">
     <button class="btn btn-reset" onclick="undo()">⟲ Angre</button>
     <button class="btn btn-reset" onclick="resetTask()">↺ Start likningen på nytt</button>
-    <button class="btn btn-reset" onclick="nextTask()" id="skipBtn">⏭️ Ny likning</button>
+    <button class="btn btn-reset" onclick="skipTask()" id="skipBtn" data-su-skip>⏭️ Ny likning</button>
     <button class="btn btn-next" id="nextBtn" onclick="nextTask()" style="display:none">Neste likning ➡️</button>
   </div>
 </div>
@@ -926,6 +926,14 @@ window.resetTask=function(){
   cancelDrag();
   pans={L:clone(original.L),R:clone(original.R)};
   startFresh();
+};
+window.skipTask=function(){
+  if(original&&!solved){
+    const el=(Date.now()-taskStart)/1000;
+    suSkip(Math.max(10,Math.round(Math.max(20,150+currentLevel*10-el))),taskInvalid,{get:()=>score,set:x=>{score=x;}});
+    lvStreak=0; doSync();
+  }
+  nextTask();
 };
 window.nextTask=function(){cancelDrag();loadTask();};
 

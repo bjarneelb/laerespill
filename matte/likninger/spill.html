@@ -446,7 +446,7 @@
     <div class="ctrl-sep"></div>
     <button class="ctrl-btn check" onclick="checkSolution()">✅ Sjekk svar</button>
     <button class="ctrl-btn reset" onclick="resetTask()">↺ Nullstill</button>
-    <button class="ctrl-btn new"   onclick="newTask()">⏭️ Ny oppgave</button>
+    <button class="ctrl-btn new"   onclick="skipTask()" data-su-skip>⏭️ Ny oppgave</button>
   </div>
 
 </div><!-- /main -->
@@ -1375,7 +1375,7 @@ window.checkSolution=function(){
       return;
     }
 
-    totalWins++; winsOnLevel++;
+    totalWins++; winsOnLevel++; skipSolved=true;
     document.getElementById('winCount').textContent=totalWins;
     recordLevelResult(true);
     tcCorrect++; tcMaxLevel=Math.max(tcMaxLevel,currentLevel); syncTC();
@@ -1399,13 +1399,22 @@ window.checkSolution=function(){
     setTimeout(()=>{ maybeIncident(speedRate); if(!incidentActive) newTask(); },1400);
   } else {
     recordLevelResult(false);
-    tcWrong++; syncTC();
+    tcWrong++; skipWrongs++; syncTC();
     showToast('❌ Ikke i balanse ennå – prøv igjen!','error');
   }
 };
 
 // ── NEW TASK ──
+let skipSolved=false, skipWrongs=0;
+window.skipTask=function(){
+  if(gameMode!=='practice'&&!skipSolved&&!incidentActive){
+    suSkip(Math.max(10,Math.round(200-(Date.now()-lvTaskStart)/1000*1.5)),skipWrongs,{get:()=>currentScore,set:x=>{currentScore=x;}});
+    lvStreak=0; syncTC();
+  }
+  newTask();
+};
 window.newTask=function(){
+  skipSolved=false; skipWrongs=0;
   const task=generateTask(currentLevel);
   applyTask(task);
 };

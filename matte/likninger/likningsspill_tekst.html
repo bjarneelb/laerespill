@@ -444,7 +444,7 @@
       <div class="actions-row">
         <button class="action-btn btn-check" onclick="checkSolution()">✅ Sjekk svar</button>
         <button class="action-btn btn-reset" onclick="resetTask()">↺ Nullstill</button>
-        <button class="action-btn btn-new"   onclick="initGame()">⏭️ Ny oppgave</button>
+        <button class="action-btn btn-new"   onclick="skipTask()" data-su-skip>⏭️ Ny oppgave</button>
       </div>
     </div>
     <div class="score-card">
@@ -953,7 +953,16 @@ function taskIsValid(t){
 
 // ── INIT GAME ──
 let taskGen=0;
+let skipSolved=false, skipWrongs=0;
+window.skipTask=function(){
+  if(gameMode!=='practice'&&!skipSolved&&!incidentActive){
+    suSkip(Math.max(10,Math.round((timerSeconds/maxSeconds)*100)),skipWrongs,{get:()=>currentScore,set:x=>{currentScore=x;}});
+    streakCorrect=0; syncTC();
+  }
+  initGame();
+};
 function initGame() {
+  skipSolved=false; skipWrongs=0;
   ++taskGen;
   clearTimer();
   sides = {left:[],right:[],bank:[]};
@@ -1177,6 +1186,7 @@ window.checkSolution=function(){
     }
 
     // ── NORMAL MODUS ──
+    skipSolved=true;
     totalCorrect++;
     let bonus=0;
     if(gameMode!=='practice'){
@@ -1201,7 +1211,7 @@ window.checkSolution=function(){
     const genOk=taskGen;
     setTimeout(()=>{ if(genOk!==taskGen) return; maybeIncident(speedRate); if(!incidentActive) initGame(); },incidentActive?0:1600);
   } else {
-    adjustLevel(0);
+    adjustLevel(0); skipWrongs++;
     showToast('❌ Ikke løst ennå – prøv igjen!','error');
   }
 };

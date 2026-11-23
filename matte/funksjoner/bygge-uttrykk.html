@@ -190,7 +190,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
   </div>
 
   <div class="controls">
-    <button class="btn btn-skip" onclick="nextTask()">↩ Ny oppgave</button>
+    <button class="btn btn-skip" onclick="skipTask()" data-su-skip>↩ Ny oppgave</button>
     <button class="btn btn-next" id="nextBtn" onclick="nextTask()">➡️ Neste oppgave</button>
   </div>
 
@@ -798,6 +798,14 @@ function finishTask(){
 }
 
 // ── NEXT ──
+window.skipTask=function(){
+  if(currentTask&&!taskFinished){
+    const el=(Date.now()-taskStartTime)/1000, wr=Object.values(stepTries).reduce((a,b)=>a+b,0);
+    suSkip(Math.round(Math.max(30,150-el)),wr,{get:()=>currentScore,set:x=>{currentScore=x;}});
+    streak=0; if(typeof syncTC==='function') syncTC();
+  }
+  nextTask();
+};
 window.nextTask=function(){
   window._abMode=false; window._abDone=0;
   currentTask=pickTask();
