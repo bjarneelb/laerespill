@@ -494,7 +494,7 @@
 
 <!-- MAIN SCRIPT -->
 <script>
-const VERSION='2.4';
+const VERSION='2.5';
 document.querySelectorAll('.vn').forEach(el=>el.textContent=VERSION);
 
 // ── PLAYER NAME ──
@@ -579,7 +579,9 @@ function updateLevelUI(){
   document.getElementById('levelInfoDesc').textContent=lv.desc;
   // Bank / build panel
   document.getElementById('bankPanel').style.display   = (lv.bank && !lv.build14) ? 'block' : 'none';
-  document.getElementById('mulXBtn').style.display     = lv.mulX ? 'inline-flex' : 'none';
+  // «× x» vises på x-i-nevner-nivåene, og ellers når likningen har en brøk med x i nevneren (f.eks. i blandingsnivåene)
+  const hasXi=[...(sides.left||[]),...(sides.right||[])].some(i=>i.type==='fracxi');
+  document.getElementById('mulXBtn').style.display     = (lv.mulX||hasXi) ? 'inline-flex' : 'none';
   const b14 = lv.build14 ? 'flex' : 'none';
   document.getElementById('build14Left').style.display  = b14;
   document.getElementById('build14Right').style.display = b14;
